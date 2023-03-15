@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ABEAudio", "ABEAudio\ABEAud
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ABEUI", "ABEUI\ABEUI.csproj", "{72E15428-8ECA-4401-AF2B-735939D66389}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Box2D.NetStandard", "Box2D\Box2D.NetStandard.csproj", "{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{72E15428-8ECA-4401-AF2B-735939D66389}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72E15428-8ECA-4401-AF2B-735939D66389}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{72E15428-8ECA-4401-AF2B-735939D66389}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

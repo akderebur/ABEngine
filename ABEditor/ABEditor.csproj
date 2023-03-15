@@ -45,11 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Box2D.NetStandard">
-      <HintPath>..\..\Documents\box2d-netstandard-2.4\src\box2dx\Box2D.NetStandard\bin\Release\netstandard2.1\Box2D.NetStandard.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\Box2D\Box2D.NetStandard.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\" />
