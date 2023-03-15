@@ -1,0 +1,239 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Dynamic;
+using System.Linq;
+using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Text;
+using Newtonsoft.Json;
+using Veldrid;
+using System.Runtime.CompilerServices;
+using Halak;
+using ABEngine.ABERuntime.ECS;
+using ABEngine.ABERuntime.Core.Assets;
+
+namespace ABEngine.ABERuntime
+{
+    public class PipelineMaterial : Asset, JSerializable
+    {
+        //public int pipelineID;
+        public int instanceID;
+        public ResourceLayout propLayout;
+        public ResourceLayout texLayout;
+        public PipelineAsset pipelineAsset;
+
+        public List<ShaderProp> shaderProps;
+        public uint shaderPropBufferSize;
+        public bool updated = false;
+
+        public BindableResource[] texResources;
+        public DeviceBuffer propBuffer;
+
+        public Dictionary<uint, ResourceSet> bindableSets = new Dictionary<uint, ResourceSet>();
+        public ResourceSet propSet;
+        public ResourceSet textureSet;
+        public bool isLateRender = false;
+
+        public byte[] shaderPropData;
+
+        public PipelineMaterial(PipelineAsset pipelineAsset, ResourceLayout propLayout, ResourceLayout texLayout)
+        {
+            this.pipelineAsset = pipelineAsset;
+            this.instanceID = GraphicsManager.GetPipelineMaterialCount();
+            this.propLayout = propLayout;
+            this.texLayout = texLayout;
+
+            GraphicsManager.AddPipelineMaterial(this);
+            Console.WriteLine(this.instanceID);
+        }
+
+        public void SetShaderPropBuffer(List<ShaderProp> shaderProps, uint bufferSize)
+        {
+            this.shaderProps = shaderProps;
+            this.shaderPropBufferSize = (uint)(MathF.Ceiling(bufferSize / 16f) * 16);
+            this.shaderPropData = new byte[this.shaderPropBufferSize];
+
+            unsafe
+            {
+                fixed (byte* dataPtr = shaderPropData)
+                {
+                    byte* tempPtr = dataPtr;
+                    foreach (var prop in shaderProps)
+                    {
+                        tempPtr = dataPtr + prop.Offset;
+                        Unsafe.CopyBlock(tempPtr, prop.Bytes, prop.SizeInBytes);
+                    }
+                }
+            }
+
+            propBuffer = GraphicsManager.rf.CreateBuffer(new BufferDescription(this.shaderPropBufferSize, BufferUsage.UniformBuffer));
+            propSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(this.propLayout, propBuffer));
+
+            GraphicsManager.gd.UpdateBuffer(propBuffer, 0, this.shaderPropData);
+
+            bindableSets.Add(2, propSet);
+        }
+
+        public void SetShaderTextureResources(List<string> textureNames)
+        {
+            if (textureNames.Count > 0)
+            {
+                BindableResource[] resources = new BindableResource[textureNames.Count * 2];
+                int index = 0;
+                foreach (var textureName in textureNames)
+                {
+                    if (textureName.Equals("ScreenTex"))
+                    {
+                        isLateRender = true;
+                        resources[index] = Game.compositeRenderTexture;
+                    }
+                    else
+                    {
+                        resources[index] = GraphicsManager.defaultTexView;
+                    }
+
+                    index++;
+                    resources[index] = GraphicsManager.linearSamplerWrap;
+                    index++;
+                }
+
+                texResources = resources;
+                textureSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(
+                    this.texLayout,
+                    texResources
+                    ));
+               
+                bindableSets.Add(3, textureSet);
+            }
+
+            
+        }
+
+        public void SetTexture(string textureName, TextureView texture)
+        {
+            int texNameInd = pipelineAsset.GetTextureID(textureName);
+            if(texNameInd > -1)
+            {
+                int texInd = texNameInd * 2;
+                texResources[texInd] = texture;
+                textureSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(
+                   this.texLayout,
+                   texResources
+                   ));
+
+                bindableSets[3] = textureSet;
+            }
+        }
+
+        public PipelineMaterial GetCopy()
+        {
+            var matCopy = new PipelineMaterial(this.pipelineAsset, this.propLayout, this.texLayout);
+            matCopy.SetShaderPropBuffer(this.shaderProps.ToList(), this.shaderPropBufferSize);
+            matCopy.SetShaderTextureResources(this.pipelineAsset.GetTextureNames());
+
+            return matCopy;
+        }
+
+        public void SetFloat(string propName, float value)
+        {
+            int propInd = pipelineAsset.GetPropID(propName);
+            if (propInd > -1)
+            {
+                ShaderProp prop = shaderProps[propInd];
+                prop.SetValue(value);
+                UpdatePropBuffer(prop);
+            }
+        }
+
+        public void SetVector4(string propName, Vector4 value)
+        {
+            int propInd = pipelineAsset.GetPropID(propName);
+            if (propInd > -1)
+            {
+                ShaderProp prop = shaderProps[propInd];
+                prop.SetValue(value);
+                UpdatePropBuffer(prop);
+            }
+        }
+
+        private unsafe void UpdatePropBuffer(ShaderProp prop)
+        {
+            fixed (byte* dataPtr = shaderPropData)
+            {
+                byte* tempPtr = dataPtr;
+                tempPtr = dataPtr + prop.Offset;
+                Unsafe.CopyBlock(tempPtr, prop.Bytes, prop.SizeInBytes);
+            }
+
+            GraphicsManager.gd.UpdateBuffer(propBuffer, 0, this.shaderPropData);
+        }
+
+        public JValue Serialize()
+        {
+            JsonObjectBuilder jObj = new JsonObjectBuilder(200);
+            jObj.Put("type", GetType().ToString());
+            jObj.Put("PipelineAsset", pipelineAsset.ToString());
+            
+
+            return jObj.Build();
+        }
+
+        public void Deserialize(string json)
+        {
+            JValue data = JValue.Parse(json);
+            //texturePath = data["TexPath"];
+        }
+
+        public void SetReferences()
+        {
+            // No Refs
+        }
+
+        public JSerializable GetCopy(ref Entity newEntity)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal override JValue SerializeAsset()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public unsafe struct ShaderProp
+    {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        [FieldOffset(0)]
+        public fixed byte Bytes[24];
+
+        [FieldOffset(0)] public float Float1;
+        [FieldOffset(0)] public Vector2 Float2;
+        [FieldOffset(0)] public Vector3 Float3;
+        [FieldOffset(0)] public Vector4 Float4;
+        //[FieldOffset(0)] public Matrix4x4 Matrix;
+        [FieldOffset(16)] public uint SizeInBytes;
+        [FieldOffset(20)] public int Offset;
+
+        public void SetValue(float floatVal)
+        {
+            Float1 = floatVal;
+        }
+
+        public void SetValue(Vector2 vec2)
+        {
+            Float2 = vec2;
+        }
+
+        public void SetValue(Vector3 vec3)
+        {
+            Float3 = vec3;
+        }
+
+        public void SetValue(Vector4 vec4)
+        {
+            Float4 = vec4;
+        }
+    }
+}

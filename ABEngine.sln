@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.810.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ABERuntime", "ABERuntime\ABERuntime.csproj", "{6C9872CF-2F64-417D-AEB5-5D07989822EF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ABEditor", "ABEditor\ABEditor.csproj", "{39AD5D73-918D-4866-A84B-3FDBA1447E74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ABEAudio", "ABEAudio\ABEAudio.csproj", "{B44B202C-83F0-4A2F-8FD8-78CCA96285BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ABEUI", "ABEUI\ABEUI.csproj", "{72E15428-8ECA-4401-AF2B-735939D66389}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6C9872CF-2F64-417D-AEB5-5D07989822EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C9872CF-2F64-417D-AEB5-5D07989822EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C9872CF-2F64-417D-AEB5-5D07989822EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C9872CF-2F64-417D-AEB5-5D07989822EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39AD5D73-918D-4866-A84B-3FDBA1447E74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39AD5D73-918D-4866-A84B-3FDBA1447E74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39AD5D73-918D-4866-A84B-3FDBA1447E74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39AD5D73-918D-4866-A84B-3FDBA1447E74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B44B202C-83F0-4A2F-8FD8-78CCA96285BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B44B202C-83F0-4A2F-8FD8-78CCA96285BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B44B202C-83F0-4A2F-8FD8-78CCA96285BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B44B202C-83F0-4A2F-8FD8-78CCA96285BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72E15428-8ECA-4401-AF2B-735939D66389}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72E15428-8ECA-4401-AF2B-735939D66389}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72E15428-8ECA-4401-AF2B-735939D66389}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72E15428-8ECA-4401-AF2B-735939D66389}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6DF75023-D7BC-43A6-BEC9-A399B774D0F2}
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.DotNetNamingPolicy = $1
+		$1.DirectoryNamespaceAssociation = PrefixedHierarchical
+	EndGlobalSection
+EndGlobal

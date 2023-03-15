@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>ABEngine.ABEUI</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="SharpText.Veldrid" />
+    <None Remove="SharpText.Core" />
+    <None Remove="Veldrid.ImGui" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Veldrid.ImGui" Version="5.87.0-g181a86f652" />
+  </ItemGroup>
+</Project>

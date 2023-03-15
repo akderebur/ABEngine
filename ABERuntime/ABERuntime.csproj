@@ -1,0 +1,81 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>ABEngine.ABEditor</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+
+<ItemGroup> 
+  <InternalsVisibleTo Include="ABEditor" /> 
+</ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>10.0</LangVersion>
+    <RootNamespace>ABEngine.ABERuntime</RootNamespace>
+    <PackOnBuild>true</PackOnBuild>
+    <PackageVersion>0.1</PackageVersion>
+    <Authors>Burak Akdere</Authors>
+    <Copyright>Burak Akdere</Copyright>
+    <Owners>Burak Akdere</Owners>
+    <Title>ABERuntime</Title>
+    <Description>Runtime for the ABEngine</Description>
+    <PackageId>ABEngine.ABERuntime</PackageId>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Veldrid" />
+    <None Remove="Veldrid.ImageSharp" />
+    <None Remove="Veldrid.StartupUtilities" />
+    <None Remove="Veldrid.ImGui" />
+    <None Remove="Veldrid.SPIRV" />
+    <None Remove="System.Text.Json" />
+    <None Remove="Newtonsoft.Json" />
+    <None Remove="Box2D.NetStandard" />
+    <None Remove="Pipelines\" />
+    <None Remove="Tweening\" />
+    <None Remove="Physics\" />
+    <None Remove="Rendering\" />
+    <None Remove="Systems\" />
+    <None Remove="Core\" />
+    <None Remove="Debug\" />
+    <None Remove="Core\Managers\" />
+    <None Remove="Core\Animation\" />
+    <None Remove="Core\Components\" />
+    <None Remove="Core\Assets\" />
+    <None Remove="Systems\Base\" />
+    <None Remove="Crc32.NET" />
+    <None Remove="System.IO.Hashing" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Crc32.NET" Version="1.2.0" />
+    <PackageReference Include="Veldrid" Version="4.9.0-beta2" />
+    <PackageReference Include="Veldrid.ImageSharp" Version="4.9.0-beta2" />
+    <PackageReference Include="Veldrid.StartupUtilities" Version="4.9.0-beta2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Box2D.NetStandard">
+      <HintPath>..\..\Documents\box2d-netstandard-2.4\src\box2dx\Box2D.NetStandard\bin\Release\netstandard2.1\Box2D.NetStandard.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Tweening\" />
+    <Folder Include="Physics\" />
+    <Folder Include="Systems\" />
+    <Folder Include="Core\" />
+    <Folder Include="Debug\" />
+    <Folder Include="Core\Managers\" />
+    <Folder Include="Core\Animation\" />
+    <Folder Include="Core\Components\" />
+    <Folder Include="Core\Assets\" />
+    <Folder Include="Systems\Base\" />
+  </ItemGroup>
+</Project>

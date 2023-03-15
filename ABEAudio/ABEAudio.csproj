@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <PackageVersion>0.1</PackageVersion>
+    <Authors>Burak Akdere</Authors>
+    <Copyright>Burak Akdere</Copyright>
+    <Owners>Burak Akdere</Owners>
+    <Description>Audio module for ABEngine</Description>
+    <PackageId>AbeAudioTest</PackageId>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <RootNamespace>ABEngine.ABEAudio</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="NetCoreAudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NetCoreAudio" Version="1.7.0" />
+  </ItemGroup>
+</Project>

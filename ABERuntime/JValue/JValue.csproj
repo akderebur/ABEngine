@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <Version>1.7.11</Version>
+    <RootNamespace>Halak</RootNamespace>
+    <Product>JValue</Product>
+    <Authors>Halak</Authors>
+    <Description>Lightweight Json parser for .NET</Description>
+    <RepositoryUrl>https://github.com/halak/jvalue</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>json</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/halak/jvalue</PackageProjectUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Update="JNumber.Generated.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>JNumber.Generated.cs</LastGenOutput>
+    </None>
+    <Compile Update="JNumber.Generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>JNumber.Generated.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy $(ProjectDir)*.cs $(ProjectDir)..\..\upm\jvalue\Runtime\ /Y /Q" />
+  </Target>
+</Project>
