@@ -16,7 +16,6 @@ namespace ABEngine.ABEditor
         public static bool isActive = false;
         static Texture texture;
         static IntPtr texPtr = IntPtr.Zero;
-        static IntPtr greenBoxPtr = IntPtr.Zero;
 
         static float cutWidth = 720;
         static float cutHeight = 720;
@@ -63,7 +62,6 @@ namespace ABEngine.ABEditor
         {
             selFrames = new List<CutQuad>();
             curSelection = new List<CutQuad>();
-            greenBoxPtr = Editor.GetImGuiTexture(Editor.greenBoxTex);
             greenCol = ImGui.GetColorU32(new Vector4(0f, 0.7f, 0f, 1));
             blueCol = ImGui.GetColorU32(new Vector4(0f, 0f, 1f, 1));
             whiteCol = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 1));

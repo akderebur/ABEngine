@@ -59,20 +59,20 @@ namespace ABEngine.ABERuntime
 
 
 
-
         //public static Pipeline GetPipelineFromID(int id)
         //{
         //    return pipelines[id];
         //}
 
-        //public static Pipeline GetDefaultPipeline()
-        //{
-        //    return pipelines[0];
-        //}
 
-        public static PipelineMaterial GetDefaultPipelineMaterial()
+        public static PipelineMaterial GetUberMaterial()
         {
             return pipelineMaterials[0];
+        }
+
+        public static PipelineMaterial GetUberAdditiveMaterial()
+        {
+            return pipelineMaterials[1];
         }
 
         public static int GetPipelineCount()
@@ -287,7 +287,8 @@ namespace ABEngine.ABERuntime
                compositeFB.OutputDescription);
             CompositePipeline = gd.ResourceFactory.CreateGraphicsPipeline(ref compositePD);
 
-            var uberAsset = new UberPipelineAsset(mainRenderFB);
+            var uberAlpha = new UberPipelineAsset(mainRenderFB);
+            var uberAdditive = new UberPipelineAdditive(mainRenderFB);
             var waterAsset = new WaterPipelineAsset(mainRenderFB);
 
             //pipelineMaterials.Add(CreateNewPipeline(UberPipelineAsset, mainRenderFB, true));
@@ -336,7 +337,8 @@ namespace ABEngine.ABERuntime
             pipelineMaterials = new List<PipelineMaterial>();
             pipelineAssets = new Dictionary<string, PipelineAsset>();
 
-            var uberAsset = new UberPipelineAsset(mainRenderFB);
+            var uberAlpha = new UberPipelineAsset(mainRenderFB);
+            var uberAdditive = new UberPipelineAdditive(mainRenderFB);
             var waterAsset = new WaterPipelineAsset(mainRenderFB);
         }
 

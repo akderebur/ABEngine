@@ -461,6 +461,9 @@ Fragment
 
         float dummy = Time - Time;
         //vec3 dummy2 = DummyProp - DummyProp;
+
+        // Sprite Color Tint
+        color *= fsin_Tint;
       
         // OUTLINE
 
@@ -473,7 +476,7 @@ Fragment
 	        }
 	        outline = min(outline, 1.0);
         
-	        color = mix(color, OutlineColor, outline - color.a);
+	        color = mix(color, OutlineColor, outline - step(0.1, color.a));
         }
 
 
@@ -489,8 +492,6 @@ Fragment
             color.a *= floor(DissolveFade + min(1, value));
         }
 
-        // Sprite Color Tint
-        color *= fsin_Tint;
 
         
         if(EnableShine == -1)

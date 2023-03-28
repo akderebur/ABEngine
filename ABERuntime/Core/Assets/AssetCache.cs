@@ -249,6 +249,32 @@ namespace ABEngine.ABERuntime
             byte data = 255;
             Array.Fill(pixelData, data);
 
+            int offset = 10;
+            for (int x = 0; x < 128; x++)
+            {
+                if (x < offset || x > (128 - offset))
+                {
+                    for (int y = 0; y < 128; y++)
+                    {
+                        int coord = (y * 128 * 4) + (x * 4) + 3;
+                        pixelData[coord] = 0;
+                    }
+                }
+            }
+
+
+            for (int y = 0; y < 128 * 128 * 4; y += 128 * 4)
+            {
+                if (y < offset * 128 * 4 || y > (128 * 128 * 4 - offset * 128 * 4))
+                {
+                    for (int x = 0; x < 128; x++)
+                    {
+                        int coord = y + x * 4 + 3; 
+                        pixelData[coord] = 0;
+                    }
+                }
+            }
+
             unsafe
             {
                 fixed (byte* pin = pixelData)
@@ -268,7 +294,7 @@ namespace ABEngine.ABERuntime
                 }
             }
 
-            defTexture = new Texture2D(1, tex, GraphicsManager.linearSampleClamp, Vector2.Zero); ;
+            defTexture = new Texture2D(1, tex, GraphicsManager.pointSamplerClamp, Vector2.Zero); ;
             return defTexture;
         }
 

@@ -52,6 +52,7 @@
     <None Remove="Systems\Base\" />
     <None Remove="Crc32.NET" />
     <None Remove="System.IO.Hashing" />
+    <None Remove="Core\Math\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" />
@@ -72,6 +73,7 @@
     <Folder Include="Core\Components\" />
     <Folder Include="Core\Assets\" />
     <Folder Include="Systems\Base\" />
+    <Folder Include="Core\Math\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Box2D\Box2D.NetStandard.csproj" />

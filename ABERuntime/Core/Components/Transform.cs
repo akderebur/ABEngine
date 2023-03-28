@@ -4,6 +4,7 @@ using System.Linq;
 using System.Numerics;
 using Halak;
 using ABEngine.ABERuntime.ECS;
+using ABEngine.ABERuntime.Core.Math;
 
 namespace ABEngine.ABERuntime
 {
@@ -36,6 +37,9 @@ namespace ABEngine.ABERuntime
         public string tag { get; set; }
 
         bool keepWorldPos = true;
+        internal bool manualTRS = false;
+
+        internal static HashSet<Transform> rootNodes = new HashSet<Transform>();
 
         public Transform()
         {
@@ -90,11 +94,19 @@ namespace ABEngine.ABERuntime
             }
         }
 
+        internal void ForceTRS()
+        {
+            manualTRS = false;
+            RecalculateTRS();
+            manualTRS = true;
+        }
 
         private void RecalculateTRS()
         {
+            if (manualTRS)
+                return;
+
             localMatrix = Matrix4x4.CreateScale(_localScale) * Matrix4x4.CreateFromQuaternion(_localRotation) * Matrix4x4.CreateTranslation(_localPosition);
-            //localMatrix = Matrix4x4.CreateFromQuaternion(_localRotation) * Matrix4x4.CreateScale(_localScale) *  Matrix4x4.CreateTranslation(_localPosition);
             Matrix4x4 worldMat = localMatrix;
             if (_parent != null)
                 worldMat *= _parent.worldMatrix;
@@ -191,7 +203,12 @@ namespace ABEngine.ABERuntime
         public Quaternion localRotation
         {
             get { return _localRotation; }
-            set { _localRotation = value; RecalculateTRS(); }
+            set
+            {
+                _localRotation = value;
+                _localEulerAngles = value.ToEulerAngles();
+                RecalculateTRS();
+            }
         }
 
         public Vector3 localEulerAngles
@@ -200,7 +217,7 @@ namespace ABEngine.ABERuntime
             set
             {
                 _localEulerAngles = value;
-                localRotation = Quaternion.CreateFromYawPitchRoll(_localEulerAngles.X, _localEulerAngles.Y, _localEulerAngles.Z);
+                _localRotation = Quaternion.CreateFromYawPitchRoll(_localEulerAngles.X, _localEulerAngles.Y, _localEulerAngles.Z);
                 RecalculateTRS();
             }
         }
@@ -227,6 +244,9 @@ namespace ABEngine.ABERuntime
             get { return _parent; }
             set
             {
+                if (_parent == value)
+                    return;
+
                 if (value == null)
                 {
                     if (_parent != null)
@@ -241,11 +261,10 @@ namespace ABEngine.ABERuntime
 
                     _parent = value;
                 }
-                else if (value != _parent)
+                else //if (value != _parent)
                 {
                     if (_parent != null)
                         _parent.RemoveChild(this);
-
 
                     if (keepWorldPos)
                     {
@@ -262,7 +281,6 @@ namespace ABEngine.ABERuntime
                     _parent = value;
                     RecalculateTRS();
                     _parent.AddChild(this);
-
                 }
             }
         }

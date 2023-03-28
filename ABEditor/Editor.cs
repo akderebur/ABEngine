@@ -17,6 +17,7 @@ using ABEngine.ABERuntime.Debug;
 using ABEngine.ABERuntime.Tweening;
 using ABEngine.ABERuntime.Components;
 using ABEditor.Debug;
+using ABEngine.ABEditor.ImGuiPlugins;
 
 namespace ABEngine.ABEditor
 {
@@ -45,7 +46,6 @@ namespace ABEngine.ABEditor
         int buildC = 0;
 
         string tmpJson;
-        public static Texture greenBoxTex;
         public static string EditorAssetPath;
 
         static bool isGameOpen = false;
@@ -53,7 +53,15 @@ namespace ABEngine.ABEditor
         static ImFontPtr defaultFont;
 
         float accumulator;
-    
+
+        int stateID = 10;
+
+        ImGradientHDRState state = new ImGradientHDRState();
+        ImGradientHDRTemporaryState tempState = new ImGradientHDRTemporaryState();
+
+        ImGradientHDRState state2 = new ImGradientHDRState();
+        ImGradientHDRTemporaryState tempState2 = new ImGradientHDRTemporaryState();
+
 
         public static List<Type> GetUserTypes()
         {
@@ -86,6 +94,18 @@ namespace ABEngine.ABEditor
 
         protected override void Init(string windowName)
         {
+
+            // Gradient Test
+            state.AddColorMarker(0.0f, new Vector3(1.0f, 1.0f, 1.0f), 1.0f);
+            state.AddColorMarker(1.0f, new Vector3(1.0f, 1.0f, 1.0f), 1.0f);
+            state.AddAlphaMarker(0.0f, 1.0f);
+            state.AddAlphaMarker(1.0f, 1.0f);
+
+            state2.AddColorMarker(0.0f, new Vector3(1.0f, 1.0f, 1.0f), 1.0f);
+            state2.AddColorMarker(1.0f, new Vector3(1.0f, 1.0f, 1.0f), 1.0f);
+            state2.AddAlphaMarker(0.0f, 1.0f);
+            state2.AddAlphaMarker(1.0f, 1.0f);
+
             gameMode = GameMode.Editor;
 
             // ECS and Physics Worlds
@@ -135,7 +155,6 @@ namespace ABEngine.ABEditor
 
             // Editor Resources
             EditorAssetPath = AssetPath;
-            greenBoxTex = new ImageSharpTexture(AssetPath + "Sprites/bbox_frame.png").CreateDeviceTexture(GraphicsManager.gd, GraphicsManager.rf);
 
             // Editor UI Inits
             SpriteEditor.Init();

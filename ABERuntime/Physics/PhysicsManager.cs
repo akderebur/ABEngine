@@ -17,18 +17,18 @@ namespace ABEngine.ABERuntime.Physics
         internal static void InitSettings()
         {
             layersPath = Game.AssetPath + "PhysicsLayers.abconfig";
-            if (!File.Exists(layersPath))
-            {
-                File.WriteAllText(layersPath, "Default");
-            }
+            //if (!File.Exists(layersPath))
+            //{
+            //    File.WriteAllText(layersPath, "Default");
+            //}
 
             collisionLayers = new List<string>();
-            foreach (var line in File.ReadAllLines(layersPath))
-            {
-                string layerName = line.Trim();
-                if (!collisionLayers.Contains(layerName))
-                    collisionLayers.Add(layerName);
-            }
+            //foreach (var line in File.ReadAllLines(layersPath))
+            //{
+            //    string layerName = line.Trim();
+            //    if (!collisionLayers.Contains(layerName))
+            //        collisionLayers.Add(layerName);
+            //}
         }
 
         public static void AddCollisionLayer(string layerName)

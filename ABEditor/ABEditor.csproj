@@ -34,6 +34,8 @@
     <None Remove="Assets\" />
     <None Remove="Assets\Meta\" />
     <None Remove="ComponentDrawers\" />
+    <None Remove="ImGuiPlugins\" />
+    <None Remove="PropertyDrawers\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" />
@@ -51,5 +53,7 @@
     <Folder Include="Assets\" />
     <Folder Include="Assets\Meta\" />
     <Folder Include="ComponentDrawers\" />
+    <Folder Include="ImGuiPlugins\" />
+    <Folder Include="PropertyDrawers\" />
   </ItemGroup>
 </Project>

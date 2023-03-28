@@ -26,6 +26,7 @@ namespace ABEditor.Debug
         Vector4 normalColor = RgbaFloat.Green.ToVector4();
         Vector4 selColor = RgbaFloat.Red.ToVector4();
 
+        public bool render = false;
 
         public override void Awake()
         {
@@ -109,6 +110,9 @@ namespace ABEditor.Debug
 
         public override void Render()
         {
+            if (!render)
+                return;
+
             pipelineAsset.BindPipeline();
 
             foreach (var chunkKV in chunkBuffers)

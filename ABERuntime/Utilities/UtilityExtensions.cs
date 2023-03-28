@@ -33,14 +33,11 @@ namespace ABEngine.ABERuntime
             return new Func<Task>(() => task);
         }
 
-        //public static JValue ToJSON(this Vector2 vec2)
-        //{
-        //    JsonObjectBuilder vecObj = new JsonObjectBuilder(100);
-        //    vecObj.Put("X", vec2.X);
-        //    vecObj.Put("Y", vec2.Y);
-        //    return vecObj.Build();
-        //}
-
+        // Random
+        public static float NextFloat(this Random rnd, float min, float max)
+        {
+            return (float)rnd.NextDouble() * (max - min) + min;
+        }
 
         #region Conversions
         public static int ToMilliseconds(this float seconds)
@@ -60,6 +57,10 @@ namespace ABEngine.ABERuntime
             return new Vector3(vec.X, vec.Y, 0f);
         }
 
+        public static Vector3 ToVector3(this Vector4 vec)
+        {
+            return new Vector3(vec.X, vec.Y, vec.Z);
+        }
 
         public static Vector2 PixelToWorld(this Vector2 vec)
         {
@@ -90,25 +91,12 @@ namespace ABEngine.ABERuntime
 
         public static List<Vector2> GetAdjacent(this Vector2 tilePos, Vector2 tileSize)
         {
-            // Find neigbors start from left
             List<Vector2> neighbors = new List<Vector2>();
 
             neighbors.Add((tilePos + new Vector2(tileSize.X, 0f)).RoundTo2Dec()); // Right
             neighbors.Add((tilePos - new Vector2(tileSize.X, 0f)).RoundTo2Dec()); // Left
             neighbors.Add((tilePos + new Vector2(0f, tileSize.Y)).RoundTo2Dec()); // Up
             neighbors.Add((tilePos - new Vector2(0f, tileSize.Y)).RoundTo2Dec()); // Down
-
-            //Vector2 cur = tilePos - new Vector2(tileSize.X, 0f);
-
-            //for (int i = 0; i < 3; i++)
-            //{
-            //    if (i != 1)
-            //        neighbors.Add(cur.RoundTo2Dec()); // Middle if not self
-            //    neighbors.Add((cur + new Vector2(0f, tileSize.Y)).RoundTo2Dec()); // Up
-            //    neighbors.Add((cur - new Vector2(0f, tileSize.Y)).RoundTo2Dec()); // Down
-
-            //    cur += new Vector2(tileSize.X, 0f);
-            //}
 
             return neighbors;
         }

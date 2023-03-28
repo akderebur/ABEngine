@@ -423,7 +423,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             ImGui.InputInt("##Layer", ref layerIndex);
             ImGui.PopItemWidth();
 
-            ImGui.Text("Brush Collision");
+            ImGui.Text("Chunk Brush");
             ImGui.SameLine();
             ImGui.Checkbox("##BrushCol", ref placeWithCol);
 

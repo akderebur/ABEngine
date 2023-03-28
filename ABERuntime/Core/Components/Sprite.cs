@@ -63,6 +63,8 @@ namespace ABEngine.ABERuntime.Components
         public Vector2 uvScale = Vector2.One;
         public Vector3 flipScale = Vector3.One;
 
+        internal bool manualLifetime = false;
+
         private int _renderLayerIndex = 0;
         public int renderLayerIndex
         {
@@ -104,12 +106,13 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
-        public void SetMaterial(PipelineMaterial mat)
+        public void SetMaterial(PipelineMaterial mat, bool updateBatch = true)
         {
             int lastMatInsId = _material.instanceID;
             _material = mat;
             sharedMaterial = mat;
-            Game.spriteBatcher.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
+            if(updateBatch)
+                Game.spriteBatcher.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
         }
 
         public PipelineMaterial sharedMaterial;
@@ -119,15 +122,16 @@ namespace ABEngine.ABERuntime.Components
 
         public Sprite() : base()
         {
-            sharedMaterial = GraphicsManager.GetDefaultPipelineMaterial();
+            sharedMaterial = GraphicsManager.GetUberMaterial();
             _material = sharedMaterial;
+            this.texture = AssetCache.GetDefaultTexture();
         }
 
         public Sprite(Texture2D texture)
         {
             this.texture = texture;
             Resize(texture.imageSize);
-            sharedMaterial = GraphicsManager.GetDefaultPipelineMaterial();
+            sharedMaterial = GraphicsManager.GetUberMaterial();
             _material = sharedMaterial;
         }
 
@@ -138,7 +142,7 @@ namespace ABEngine.ABERuntime.Components
             Resize(texture.spriteSize);
             this.uvScale = spriteSize / texture.imageSize;
             sizeSet = true;
-            sharedMaterial = GraphicsManager.GetDefaultPipelineMaterial();
+            sharedMaterial = GraphicsManager.GetUberMaterial();
             _material = sharedMaterial;
         }
 
@@ -149,7 +153,7 @@ namespace ABEngine.ABERuntime.Components
             Resize(texture.spriteSize);
             this.SetUVPosScale(spritePos / texture.imageSize, spriteSize / texture.imageSize);
             sizeSet = true;
-            sharedMaterial = GraphicsManager.GetDefaultPipelineMaterial();
+            sharedMaterial = GraphicsManager.GetUberMaterial();
             _material = sharedMaterial;
         }
 

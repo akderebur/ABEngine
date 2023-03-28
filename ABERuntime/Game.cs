@@ -84,6 +84,7 @@ namespace ABEngine.ABERuntime
         protected static LightRenderSystem lightRenderer;
         protected Tweening.TweenSystem tweenSystem;
         protected private ColliderDebugSystem colDebug;
+        protected private ParticleModuleSystem particleSystem;
 
         public static Texture mainRenderTexture;
         public static Texture mainDepthTexture;
@@ -154,6 +155,7 @@ namespace ABEngine.ABERuntime
             lightRenderer = new LightRenderSystem(lightPipelineAsset);
             tweenSystem = new Tweening.TweenSystem();
             colDebug = new ColliderDebugSystem(lineDbgPipelineAsset);
+            particleSystem = new ParticleModuleSystem();
 
             // User systems _ Reflection
             RegisterSystems();
@@ -183,6 +185,7 @@ namespace ABEngine.ABERuntime
             spriteAnim.Start();
             camMove.Start();
             lightRenderer.Start();
+            particleSystem.Start();
             if (debug)
                 colDebug.Start();
            
@@ -323,6 +326,7 @@ namespace ABEngine.ABERuntime
                     spriteBatcher = new SpriteBatchSystem(null);
                     lightRenderer = new LightRenderSystem(lightPipelineAsset);
                     tweenSystem = new Tweening.TweenSystem();
+                    particleSystem = new ParticleModuleSystem();
                     if (debug)
                         colDebug = new ColliderDebugSystem(lineDbgPipelineAsset);
 
@@ -357,6 +361,7 @@ namespace ABEngine.ABERuntime
                     camMove.Start();
                     lightRenderer.Start();
                     tweenSystem.Start();
+                    particleSystem.Start();
                     if (debug)
                         colDebug.Start();
 
@@ -585,6 +590,7 @@ namespace ABEngine.ABERuntime
             }
             tweenSystem.Update(newTime, elapsed);
             spriteAnim.Update(newTime, elapsed);
+            particleSystem.Update(newTime, elapsed);
             rbMove.Update(newTime, interpolation);
             spriteBatcher.Update(newTime, elapsed);
             lightRenderer.Update(newTime, elapsed);
@@ -691,7 +697,7 @@ namespace ABEngine.ABERuntime
                 preferDepthRangeZeroToOne: true,
                 preferStandardClipSpaceYDirection: true,
                 swapchainSrgbFormat: false
-            ), GraphicsBackend.Metal);
+            ));
             rf = new DisposeCollectorResourceFactory(gd.ResourceFactory);
             _commandList = gd.ResourceFactory.CreateCommandList();
 
@@ -782,7 +788,11 @@ namespace ABEngine.ABERuntime
                     newBB.sizeSet = true;
                 }
             });
-            GameWorld.OnRemove((Sprite sprite) => Game.spriteBatcher.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID));
+            GameWorld.OnRemove((Sprite sprite) =>
+            {
+                if (!sprite.manualLifetime)
+                    Game.spriteBatcher.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+            });
 
             GameWorld.OnRemove((Rigidbody rb) => rb.Destroy());
 

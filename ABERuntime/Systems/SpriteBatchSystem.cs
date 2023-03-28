@@ -65,7 +65,7 @@ namespace ABEngine.ABERuntime
                                 SpriteBatch sb = new SpriteBatch(textureGroup.Key, matGroup.Key, layerGroup.Key, true);
                                 foreach (var spriteEnt in statics)
                                 {
-                                    sb.AddSpriteEntity(spriteEnt);
+                                    sb.AddSpriteEntity(spriteEnt.transform, spriteEnt.Get<Sprite>());
                                 }
 
                                 sb.InitBatch();
@@ -79,7 +79,7 @@ namespace ABEngine.ABERuntime
                                 SpriteBatch sb = new SpriteBatch(textureGroup.Key, matGroup.Key, layerGroup.Key, false);
                                 foreach (var spriteEnt in dynamics)
                                 {
-                                    sb.AddSpriteEntity(spriteEnt);
+                                    sb.AddSpriteEntity(spriteEnt.transform, spriteEnt.Get<Sprite>());
                                 }
 
                                 sb.InitBatch();
@@ -118,6 +118,26 @@ namespace ABEngine.ABERuntime
             }
         }
 
+        internal void DeleteBatch(SpriteBatch batch)
+        {
+            var batchKV = batches.FirstOrDefault(b => b.Value == batch);
+            if (!string.IsNullOrEmpty(batchKV.Key))
+                batches.Remove(batchKV.Key);
+        }
+
+        internal SpriteBatch GetBatchFromSprite(Transform spriteTrans, Sprite sprite)
+        {
+            PipelineMaterial mat = sprite.sharedMaterial;
+
+            int staticKey = spriteTrans.isStatic ? 1 : 0;
+            string key = sprite.renderLayerIndex + "_" + sprite.texture.textureID + "_" + mat.instanceID + "_" + staticKey;
+
+            if (batches.TryGetValue(key, out SpriteBatch batch))
+                return batch;
+
+            return null;
+        }
+
         public void UpdateSpriteBatch(Sprite sprite, int oldRenderLayerID, Texture2D oldTex, int oldMatInsId)
         {
             if (!started || sprite.transform == null)
@@ -134,30 +154,28 @@ namespace ABEngine.ABERuntime
                     batches.Remove(key);
             }
 
-            AddSpriteToBatch(ref sprite.transform);
+            AddSpriteToBatch(sprite.transform, sprite);
         }
 
-        public void AddSpriteToBatch(ref Transform spriteTrans)
+        public void AddSpriteToBatch(Transform spriteTrans, Sprite sprite)
         {
             if (!started)
                 return;
 
-            Entity spriteEnt = spriteTrans.entity;
-            Sprite sprite = spriteEnt.Get<Sprite>();
             PipelineMaterial mat = sprite.sharedMaterial;
 
-            int staticKey = spriteEnt.transform.isStatic ? 1 : 0;
+            int staticKey = spriteTrans.isStatic ? 1 : 0;
             string key = sprite.renderLayerIndex + "_" + sprite.texture.textureID + "_" + mat.instanceID + "_" + staticKey;
 
             if (batches.ContainsKey(key))
             {
-                batches[key].AddSpriteEntity(spriteEnt);
+                batches[key].AddSpriteEntity(spriteTrans, sprite);
                 batches[key].InitBatch();
             }
             else
             {
-                SpriteBatch sb = new SpriteBatch(sprite.texture, mat, sprite.renderLayerIndex, spriteEnt.transform.isStatic);
-                sb.AddSpriteEntity(spriteEnt);
+                SpriteBatch sb = new SpriteBatch(sprite.texture, mat, sprite.renderLayerIndex, spriteTrans.isStatic);
+                sb.AddSpriteEntity(spriteTrans, sprite);
                 sb.InitBatch();
                 batches.Add(key, sb);
 

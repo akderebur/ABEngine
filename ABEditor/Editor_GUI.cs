@@ -2,17 +2,22 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
 using System.Numerics;
 using System.Reflection;
+using System.Security.Cryptography;
 using ABEngine.ABEditor.Assets;
 using ABEngine.ABEditor.Assets.Meta;
 using ABEngine.ABEditor.ComponentDrawers;
+using ABEngine.ABEditor.ImGuiPlugins;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.ECS;
-using ImGuiNET;
 using Veldrid;
+using ImGuiNET;
+using ABEngine.ABEditor.PropertyDrawers;
 
 namespace ABEngine.ABEditor
 {
@@ -24,12 +29,19 @@ namespace ABEngine.ABEditor
         SaveFile,
     }
 
-	internal partial class Editor : Game
+  
+    internal partial class Editor : Game
 	{
         static FileDialogType fileDialogType;
         static FilePicker picker;
         static bool tilemapSelected = false;
         static string loadedScenePath = null;
+        private static Vector2 startPoint = new Vector2(0.0f, 0.0f);
+        private static Vector2 endPoint = new Vector2(1f, 1f);
+        private static Vector2 controlPoint1 = new Vector2(0.4f, 0.1f);
+        private static Vector2 controlPoint2 = new Vector2(0.6f, 0.9f);
+
+        static ABERuntime.Core.Math.BezierCurve curve = new ABERuntime.Core.Math.BezierCurve(startPoint, endPoint, controlPoint1, controlPoint2);
 
         private void UpdateEditorUI()
         {
@@ -37,6 +49,126 @@ namespace ABEngine.ABEditor
             if (!isPlaying)
             {
                 MainMenu();
+
+                // Gradient Test
+
+                //ImGui.Begin("ImGradientHDR");
+
+                //bool isMarkerShown = true;
+                //ImGradientHDR.DrawGradient(stateID, ref state, ref tempState, isMarkerShown);
+
+                //if (ImGui.IsItemHovered())
+                //{
+                //    ImGui.SetTooltip("Gradient");
+                //}
+
+                //if (tempState.selectedMarkerType == ImGradientHDRMarkerType.Color)
+                //{
+                //    var selectedColorMarker = state.GetColorMarker(tempState.selectedIndex);
+                //    if (selectedColorMarker != null)
+                //    {
+                //        ImGui.ColorEdit3("Color", ref selectedColorMarker.Color, ImGuiColorEditFlags.Float);
+                //        ImGui.DragFloat("Intensity", ref selectedColorMarker.Intensity, 0.1f, 0.0f, 10.0f, "%f");
+                //    }
+                //}
+
+                //if (tempState.selectedMarkerType == ImGradientHDRMarkerType.Alpha)
+                //{
+                //    var selectedAlphaMarker = state.GetAlphaMarker(tempState.selectedIndex);
+                //    if (selectedAlphaMarker != null)
+                //    {
+                //        ImGui.DragFloat("Alpha", ref selectedAlphaMarker.Alpha, 0.1f, 0.0f, 1.0f, "%f");
+                //    }
+                //}
+
+                //if (tempState.selectedMarkerType != ImGradientHDRMarkerType.Unknown)
+                //{
+                //    if (ImGui.Button("Delete"))
+                //    {
+                //        if (tempState.selectedMarkerType == ImGradientHDRMarkerType.Color)
+                //        {
+                //            state.RemoveColorMarker(tempState.selectedIndex);
+                //            tempState = new ImGradientHDRTemporaryState();
+                //        }
+                //        else if (tempState.selectedMarkerType == ImGradientHDRMarkerType.Alpha)
+                //        {
+                //            state.RemoveAlphaMarker(tempState.selectedIndex);
+                //            tempState = new ImGradientHDRTemporaryState{ };
+                //        }
+                //    }
+                //}
+
+                //ImGui.End();
+
+                //ImGui.SetNextWindowSize(new Vector2(400, 300), ImGuiCond.Appearing);
+                //ImGui.SetNextWindowPos(new Vector2(screenSize.X / 2f - 200, screenSize.Y / 2f - 150), ImGuiCond.Appearing);
+                //ImGui.Begin("Bezier Curve Editor", ImGuiWindowFlags.NoSavedSettings);
+
+                //Vector2 canvasSize = ImGui.GetContentRegionAvail() - new Vector2(20, 20);
+                //Vector2 canvasPos = ImGui.GetCursorScreenPos();
+
+                //// Draw the background grid
+                //for (int i = 0; i <= 10; i++)
+                //{
+                //    float x = canvasPos.X + i * (canvasSize.X / 10);
+                //    float y = canvasPos.Y + i * (canvasSize.Y / 10);
+                //    ImGui.GetWindowDrawList().AddLine(new Vector2(x, canvasPos.Y), new Vector2(x, canvasPos.Y + canvasSize.Y), ImGui.GetColorU32(ImGuiCol.Border));
+                //    ImGui.GetWindowDrawList().AddLine(new Vector2(canvasPos.X, y), new Vector2(canvasPos.X + canvasSize.X, y), ImGui.GetColorU32(ImGuiCol.Border));
+                //}
+
+                //// Draw labels for the x-axis
+                //ImGui.GetWindowDrawList().AddText(new Vector2(ToCanvas(startPoint).X - 5, ToCanvas(new Vector2(0, 0)).Y + 5), ImGui.GetColorU32(ImGuiCol.Text), "0");
+                //ImGui.GetWindowDrawList().AddText(new Vector2(ToCanvas(endPoint).X - 5, ToCanvas(new Vector2(0, 0)).Y + 5), ImGui.GetColorU32(ImGuiCol.Text), "1");
+
+                //// Draw labels for the y-axis
+                //ImGui.GetWindowDrawList().AddText(new Vector2(ToCanvas(startPoint).X - 5, ToCanvas(new Vector2(0, 1)).Y - 5), ImGui.GetColorU32(ImGuiCol.Text), "1");
+
+                //Vector2 ToCanvas(Vector2 point) => new Vector2(canvasPos.X + point.X * canvasSize.X, canvasPos.Y + (1f - point.Y) * canvasSize.Y);
+                //Vector2 FromCanvas(Vector2 point) => new Vector2((point.X - canvasPos.X) / canvasSize.X, 1f - (point.Y - canvasPos.Y) / canvasSize.Y);
+
+                //// Draw the Bezier curve
+                //ImGui.GetWindowDrawList().AddBezierCubic(
+                //    ToCanvas(startPoint),
+                //    ToCanvas(controlPoint1),
+                //    ToCanvas(controlPoint2),
+                //    ToCanvas(endPoint),
+                //    ImGui.GetColorU32(ImGuiCol.PlotLines),
+                //    2
+                //);
+
+                //// Draw and handle interaction for the start, end, and control points
+                //Vector2[] points = new[] { startPoint, endPoint, controlPoint1, controlPoint2 };
+                //for (int i = 0; i < points.Length; i++)
+                //{
+                //    Vector2 screenPoint = ToCanvas(points[i]);
+                //    ImGui.SetCursorScreenPos(screenPoint - new Vector2(4, 4));
+                //    ImGui.InvisibleButton($"point{i}", new Vector2(12, 12));
+
+                //    if (ImGui.IsItemActive() && ImGui.IsMouseDragging(ImGuiMouseButton.Left))
+                //    {
+                //        Vector2 newPosition = FromCanvas(ImGui.GetIO().MousePos);
+
+                //        if (i < 2) // start and end points
+                //        {
+                //            newPosition.X = points[i].X; // Restrict movement to vertical only
+                //        }
+                //        newPosition.X = Math.Clamp(newPosition.X, 0, 1);
+                //        newPosition.Y = Math.Clamp(newPosition.Y, 0, 1);
+                //        points[i] = newPosition;
+                //    }
+
+                //    ImGui.GetWindowDrawList().AddCircleFilled(screenPoint, 4, ImGui.GetColorU32(ImGuiCol.PlotLinesHovered), 12);
+                //}
+                //startPoint = points[0];
+                //endPoint = points[1];
+                //controlPoint1 = points[2];
+                //controlPoint2 = points[3];
+
+                
+
+                //ImGui.End();
+
+                // End  test
 
                 // Individual Editors
                 AssetsFolderView.Draw();
@@ -598,7 +730,19 @@ namespace ABEngine.ABEditor
                     if (ImGui.CollapsingHeader("Tilemap"))
                     {
                         TilemapDrawer.RenderTilemap(tilemap, transform);
-                    }    
+                    }
+                }
+                else if(type == typeof(ParticleModule))
+                {
+                    if (ImGui.CollapsingHeader("Lifetime Size"))
+                    {
+                        CurveEditor.Draw(curve);
+                    }
+
+                    if (ImGui.CollapsingHeader("Lifetime Color"))
+                    {
+                        ImGradientHDR.DrawGradient(11, ref state, ref tempState, false);
+                    }
                 }
             }
 
@@ -608,11 +752,13 @@ namespace ABEngine.ABEditor
             {
                 tilemapSelected = true;
                 gridTrans.entity.SetEnabled(true);
+                TMColliderGizmo.render = true;
             }
             else
             {
                 tilemapSelected = false;
                 gridTrans.entity.SetEnabled(false);
+                TMColliderGizmo.render = false;
             }
         }
 
