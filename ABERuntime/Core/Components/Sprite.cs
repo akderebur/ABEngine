@@ -230,7 +230,9 @@ namespace ABEngine.ABERuntime.Components
             this.uvPos = Vector2.Zero;
 
             this.sizeSet = true;
-            Game.spriteBatcher.UpdateSpriteBatch(this, renderLayerIndex, oldTex, _material.instanceID);
+
+            if(!manualLifetime)
+                Game.spriteBatcher.UpdateSpriteBatch(this, renderLayerIndex, oldTex, _material.instanceID);
         }
 
         public void SetUVPosScale(Vector2 uvPos, Vector2 uvScale)

@@ -54,15 +54,6 @@ namespace ABEngine.ABEditor
 
         float accumulator;
 
-        int stateID = 10;
-
-        ImGradientHDRState state = new ImGradientHDRState();
-        ImGradientHDRTemporaryState tempState = new ImGradientHDRTemporaryState();
-
-        ImGradientHDRState state2 = new ImGradientHDRState();
-        ImGradientHDRTemporaryState tempState2 = new ImGradientHDRTemporaryState();
-
-
         public static List<Type> GetUserTypes()
         {
             return userTypes;
@@ -94,18 +85,6 @@ namespace ABEngine.ABEditor
 
         protected override void Init(string windowName)
         {
-
-            // Gradient Test
-            state.AddColorMarker(0.0f, new Vector3(1.0f, 1.0f, 1.0f), 1.0f);
-            state.AddColorMarker(1.0f, new Vector3(1.0f, 1.0f, 1.0f), 1.0f);
-            state.AddAlphaMarker(0.0f, 1.0f);
-            state.AddAlphaMarker(1.0f, 1.0f);
-
-            state2.AddColorMarker(0.0f, new Vector3(1.0f, 1.0f, 1.0f), 1.0f);
-            state2.AddColorMarker(1.0f, new Vector3(1.0f, 1.0f, 1.0f), 1.0f);
-            state2.AddAlphaMarker(0.0f, 1.0f);
-            state2.AddAlphaMarker(1.0f, 1.0f);
-
             gameMode = GameMode.Editor;
 
             // ECS and Physics Worlds
@@ -141,6 +120,7 @@ namespace ABEngine.ABEditor
             //SpriteRenderSystem spriteRenderer = new SpriteRenderSystem();
             spriteBatcher = new SpriteBatchSystem(null);
             lightRenderer = new LightRenderSystem(lightPipelineAsset);
+            particleSystem = new ParticleModuleSystem();
             colDebug = new ColliderDebugSystem(lineDbgPipelineAsset);
             TMColliderGizmo = new TilemapColliderGizmo(tmColPipelineAsset);
             sharedSystems = new List<BaseSystem> { spriteBatcher, lightRenderer };
@@ -364,6 +344,7 @@ namespace ABEngine.ABEditor
                 _checkCamUpdate = false;
             }
 
+            particleSystem.Update(newTime, elapsed);
             spriteBatcher.Update(newTime, elapsed);
             lightRenderer.Update(newTime, elapsed);
             colDebug.Update(newTime, elapsed);
@@ -444,6 +425,10 @@ namespace ABEngine.ABEditor
             GameWorld.OnSet((Entity entity, ref Tilemap tilemap) =>
             {
                 tilemap.SetTransform(entity.transform);
+            });
+            GameWorld.OnSet((Entity entity, ref ParticleModule pm) =>
+            {
+                pm.Init(entity.transform);
             });
             GameWorld.OnSet((Entity entity, ref Camera newCam) => TriggerCamCheck());
             GameWorld.OnSet((Entity entity, ref AABB newBB) =>
@@ -562,6 +547,7 @@ namespace ABEngine.ABEditor
             // Sprite renderer
             spriteBatcher.Start();
             lightRenderer.Start();
+            particleSystem.Start();
             isGameOpen = true;
         }
 

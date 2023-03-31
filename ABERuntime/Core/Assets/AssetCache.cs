@@ -69,6 +69,17 @@ namespace ABEngine.ABERuntime
                     uint hash = Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(localPath));
                     hashToFName.Add(hash, localPath);
                 }
+
+
+                var materials = Directory.EnumerateFiles(Game.AssetPath, "*.*", SearchOption.AllDirectories)
+                .Where(s => s.ToLower().EndsWith(".abmat"));
+                foreach (var material in materials)
+                {
+                    string localPath = material.Replace(Game.AssetPath, "");
+                    uint hash = Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(localPath));
+                    hashToFName.Add(hash, localPath);
+                }
+
                 return;
             }
           
@@ -110,7 +121,7 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        private static Texture GetTexture(uint hash)
+        private static Texture GetTextureFromPK(uint hash)
         {
             if (!s_textures.TryGetValue(hash, out Texture tex))
             {
@@ -172,6 +183,40 @@ namespace ABEngine.ABERuntime
             return tex;
         }
 
+        private static PipelineMaterial GetMaterialFromPK(uint hash)
+        {
+            // Find material in asset dictionary
+
+            AssetEntry matAsset = assetDictPK[hash];
+            BinaryReader pr = pkReaders[matAsset.streamId];
+
+            pr.BaseStream.Position = matAsset.offset;
+            byte[] compressed = pr.ReadBytes(matAsset.size);
+
+            // Decompress Data
+            using (var inputStream = new MemoryStream(compressed))
+            {
+                using (var outputStream = new MemoryStream())
+                {
+                    using (var compressionStream = new BrotliStream(inputStream, CompressionMode.Decompress))
+                    {
+                        compressionStream.CopyTo(outputStream);
+                    }
+
+                    // Parse material data
+                    BinaryReader br = new BinaryReader(outputStream);
+                    br.BaseStream.Position = 0;
+
+                    
+
+                   
+                }
+            }
+
+
+            return null;
+        }
+
         //General purpose
         public static Texture2D CreateTexture2D(string texturePath)
         {
@@ -188,10 +233,16 @@ namespace ABEngine.ABERuntime
             return GetOrCreateTexture2D(texturePath, sampler, spriteSize);
         }
 
+
         // Serialization - Retrieve from hash
-        internal static Texture2D GetSerializedTexture(uint hash, Sampler sampler, Vector2 spriteSize)
+        //internal static Texture2D GetSerializedTexture(uint hash, Sampler sampler, Vector2 spriteSize)
+        //{
+        //    return GetOrCreateTexture2D(null, sampler, spriteSize, hash); ;
+        //}
+
+        internal static PipelineMaterial GetSerializedMaterial(uint hash)
         {
-            return GetOrCreateTexture2D(null, sampler, spriteSize, hash); ;
+            return null;
         }
 
         // Editor
@@ -209,10 +260,16 @@ namespace ABEngine.ABERuntime
         //}
         // End Editor
 
-        public static PipelineMaterial CreateMaterial(PipelineMaterial refeferenceMat)
+        //public static PipelineMaterial CreateMaterial(PipelineMaterial refeferenceMat)
+        //{
+        //    PipelineMaterial newMat = refeferenceMat.GetCopy();
+        //    s_materials.Add(newMat);
+        //    return newMat;
+        //}
+
+        public static PipelineMaterial CreateMaterial(string matPath)
         {
-            PipelineMaterial newMat = refeferenceMat.GetCopy();
-            s_materials.Add(newMat);
+            var newMat = GetOrCreateMaterial(matPath);
             return newMat;
         }
 
@@ -353,7 +410,7 @@ namespace ABEngine.ABERuntime
 
             Texture tex = null;
             if (!Game.debug)
-                tex = GetTexture(hash);
+                tex = GetTextureFromPK(hash);
             else
             {
                 if (preHash != 0)
@@ -370,7 +427,34 @@ namespace ABEngine.ABERuntime
             return tex2d;
         }
 
-        
+        private static PipelineMaterial GetOrCreateMaterial(string matPath, uint preHash = 0)
+        {
+            uint hash = preHash;
+            if (hash == 0)
+                hash = Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(matPath));
+
+            PipelineMaterial mat = s_materials.FirstOrDefault(t => t.fPathHash == hash);
+            if (mat != null)
+                return mat;
+
+            if (!Game.debug)
+                mat = GetMaterialFromPK(hash);
+            else
+            {
+                if (preHash != 0)
+                    matPath = hashToFName[preHash];
+                mat = LoadMaterialRAW(preHash, File.ReadAllBytes(Game.AssetPath + matPath));
+            }
+
+            s_materials.Add(mat);
+            if (assetDict.ContainsKey(hash))
+                assetDict[hash] = mat;
+            else
+                assetDict.Add(hash, mat);
+            return mat;
+        }
+
+
 
         private static PipelineMaterial FindExistingMaterial(int matInsID)
         {
@@ -459,6 +543,24 @@ namespace ABEngine.ABERuntime
             }
 
             return tex;
+        }
+
+        internal static PipelineMaterial LoadMaterialRAW(uint hash, byte[] data)
+        {
+            using (MemoryStream ms = new MemoryStream(data))
+            using (BinaryReader br = new BinaryReader(ms))
+            {
+                string pipelineName = br.ReadString();
+
+                PipelineAsset pipelineAsset = GraphicsManager.GetPipelineAssetByName(pipelineName);
+                var layouts = pipelineAsset.GetResourceLayouts();
+
+                PipelineMaterial mat = new PipelineMaterial(hash, pipelineAsset, layouts[0], layouts[1]);
+                ShaderProp prop = new ShaderProp();
+                
+            }
+
+            return null;
         }
 
         // Serialization

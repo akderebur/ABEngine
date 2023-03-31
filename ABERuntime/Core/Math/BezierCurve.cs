@@ -11,8 +11,14 @@ namespace ABEngine.ABERuntime.Core.Math
         public Vector2 ControlPoint1 { get; set; }
         public Vector2 ControlPoint2 { get; set; }
 
-        public Vector2 offset { get; set; }
-        public Vector2 scale { get; set; }
+        public float offset { get { return _offset; } set { _offset = value; _offsetVec = Vector2.One * _offset; } }
+        public float scale { get { return _scale; } set { _scale = value; _scaleVec = Vector2.One * _scale; } }
+
+        private float _offset;
+        private float _scale;
+
+        private Vector2 _offsetVec;
+        private Vector2 _scaleVec;
 
         public BezierCurve(Vector2 startPoint, Vector2 endPoint, Vector2 controlPoint1, Vector2 controlPoint2)
         {
@@ -21,8 +27,8 @@ namespace ABEngine.ABERuntime.Core.Math
             ControlPoint1 = controlPoint1;
             ControlPoint2 = controlPoint2;
 
-            offset = Vector2.Zero;
-            scale = Vector2.One;
+            offset = 0f;
+            scale = 1f;
         }
 
         public Vector2 Evaluate(float t)
@@ -32,10 +38,10 @@ namespace ABEngine.ABERuntime.Core.Math
 
             float invT = 1.0f - t;
 
-            return invT * invT * invT * (StartPoint * scale + offset) +
-                   3 * invT * invT * t * (ControlPoint1 * scale + offset) +
-                   3 * invT * t * t * (ControlPoint2 * scale + offset) +
-                   t * t * t * (EndPoint * scale + offset);
+            return invT * invT * invT * (StartPoint * _scaleVec + _offsetVec) +
+                   3 * invT * invT * t * (ControlPoint1 * _scaleVec + _offsetVec) +
+                   3 * invT * t * t * (ControlPoint2 * _scaleVec + _offsetVec) +
+                   t * t * t * (EndPoint * _scaleVec + _offsetVec);
         }
     }
 

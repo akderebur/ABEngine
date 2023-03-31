@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using ABEngine.ABERuntime.Core.Math;
+using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
 using Box2D.NetStandard.Common;
+using Halak;
+using Veldrid;
 using Vortice.DXGI;
 
 namespace ABEngine.ABERuntime.Components
@@ -15,7 +18,7 @@ namespace ABEngine.ABERuntime.Components
         World
     }
 
-    public class ParticleModule
+    public class ParticleModule : JSerializable
     {
         public int maxParticles { get; set; }
         public float startLifetime { get; set; }
@@ -25,9 +28,49 @@ namespace ABEngine.ABERuntime.Components
         public float startSize { get; set; }
         public BezierCurve lifetimeSize { get; set; }
         public ColorGradient lifetimeColor { get; set; }
-        public Texture2D particleTexture { get; set; }
+
+        private Texture2D _particleTexture;
+        public Texture2D particleTexture
+        {
+            get { return _particleTexture; }
+            set
+            {
+                if (_particleTexture == value || _particleTexture == null)
+                    return;
+
+                if (particleBatch != null)
+                {
+                    Stop();
+                    _particleTexture = value;
+                    Play();
+                }
+                else
+                    _particleTexture = value;
+            }
+        }
+
+        public PipelineMaterial _particleMaterial;
+        public PipelineMaterial particleMaterial
+        {
+            get { return _particleMaterial; }
+            set
+            {
+                if (_particleMaterial == value || _particleMaterial == null)
+                    return;
+
+                if (particleBatch != null)
+                {
+                    Stop();
+                    _particleMaterial = value;
+                    Play();
+                }
+                else
+                    _particleMaterial = value;
+            }
+        }
+
+
         public SimulationSpace simulationSpace;
-        public PipelineMaterial particleMaterial;
         public bool isPlaying { get; private set; }
 
         LinkedList<Particle> particles = new LinkedList<Particle>();
@@ -45,16 +88,29 @@ namespace ABEngine.ABERuntime.Components
 
         public ParticleModule()
         {
-            spawnRate = 1f;
+            spawnRate = 1;
             startSize = 1f;
             spawnRange = 1f;
-            speed = 1f;
-            startLifetime = 1f;
+            speed = 2f;
+            startLifetime = 3f;
             maxParticles = 100;
             rnd = new Random();
-            particleTexture = AssetCache.GetDefaultTexture();
+            _particleTexture = AssetCache.GetDefaultTexture();
+            _particleMaterial = GraphicsManager.GetUberMaterial();
             simulationSpace = SimulationSpace.Local;
-            particleMaterial = GraphicsManager.GetUberMaterial();
+
+            lifetimeSize = new BezierCurve(Vector2.UnitY, Vector2.One, new Vector2(0.25f, 1f), new Vector2(0.75f, 1f));
+            lifetimeColor = new ColorGradient()
+            {
+                colorKeys = {
+                    new ColorKey(0f, RgbaFloat.White.ToVector4().ToVector3()),
+                    new ColorKey(1f, RgbaFloat.White.ToVector4().ToVector3())
+                },
+                alphaKeys = {
+                    new AlphaKey(0f, 1f),
+                    new AlphaKey(1f, 1f)
+                }
+            };
         }
 
         public void Init(Transform transform)
@@ -67,8 +123,8 @@ namespace ABEngine.ABERuntime.Components
         {
             Sprite sprite = new Sprite(particleTexture);
             sprite.manualLifetime = true;
-            sprite.SetMaterial(particleMaterial, false);
-            Transform trans = new Transform();
+            sprite.SetMaterial(_particleMaterial, true);
+            Transform trans = new Transform("EditorNotVisible");
             var entity = Game.GameWorld.CreateEntity("P" + particles.Count, Guid.NewGuid(), trans, sprite);
             trans.localPosition = new Vector3(0f, 0f, -10f);
             Game.spriteBatcher.AddSpriteToBatch(trans, sprite);
@@ -105,7 +161,7 @@ namespace ABEngine.ABERuntime.Components
                 return;
 
             spawnInterval = 1f / spawnRate;
-            scale = moduleTrans.worldScale.X;
+            scale = moduleTrans.worldScale.X + 0.00001f;
             float scaledDelta = deltaTime * scale;
             float moveDelta = simulationSpace == SimulationSpace.Local ? deltaTime : scaledDelta;
 
@@ -136,11 +192,12 @@ namespace ABEngine.ABERuntime.Components
                 newPos.Z = -normLT;
                 particle.Transform.localPosition = newPos;
 
-                
-                if(simulationSpace == SimulationSpace.Local)
-                    particle.Transform.localScale = startSize * new Vector3(lifetimeSize.Evaluate(normLT), 1f);
+
+                Vector2 sizeCurvePoint = lifetimeSize.Evaluate(normLT);
+                if (simulationSpace == SimulationSpace.Local)
+                    particle.Transform.localScale = startSize * new Vector3(sizeCurvePoint.Y, sizeCurvePoint.Y, 1f);
                 else
-                    particle.Transform.localScale = moduleTrans.worldScale * startSize * new Vector3(lifetimeSize.Evaluate(normLT), 1f);
+                    particle.Transform.localScale = moduleTrans.worldScale * startSize * new Vector3(sizeCurvePoint.Y, sizeCurvePoint.Y, 1f);
 
                 particle.Sprite.tintColor = lifetimeColor.Evaluate(normLT);
                 if (particle.Lifetime <= 0)
@@ -218,8 +275,9 @@ namespace ABEngine.ABERuntime.Components
 
                     Transform trans = reusePart.Transform;
 
+                    Vector2 startSizePoint = lifetimeSize.Evaluate(0f);
                     trans.localPosition = moduleTrans.worldPosition + spawnVec * rnd.NextFloat(-spawnMid, spawnMid);
-                    trans.localScale = moduleTrans.worldScale * startSize * new Vector3(lifetimeSize.Evaluate(0f), 1f);
+                    trans.localScale = moduleTrans.worldScale * startSize * new Vector3(startSizePoint.Y, startSizePoint.Y, 1f);
                     //trans.localRotation = moduleTrans.worldRotation;
                     if(simulationSpace == SimulationSpace.Local)
                         trans.parent = moduleTrans;
@@ -229,21 +287,22 @@ namespace ABEngine.ABERuntime.Components
                 {
                     Sprite sprite = new Sprite(particleTexture);
                     sprite.manualLifetime = true;
-                    sprite.SetMaterial(particleMaterial, false);
+                    sprite.SetMaterial(_particleMaterial, false);
 
                     //sprite.sharedMaterial.SetFloat("EnableOutline", 1f);
                     //sprite.sharedMaterial.SetFloat("OutlineThickness", 0.01f);
                     //sprite.sharedMaterial.SetVector4("OutlineColor", Veldrid.RgbaFloat.Blue.ToVector4());
 
-                    Transform trans = new Transform();
+                    Transform trans = new Transform("EditorNotVisible");
                     var entity = Game.GameWorld.CreateEntity("P" + particles.Count, Guid.NewGuid(), trans, sprite);
 
                     particleBatch.AddSpriteEntity(trans, sprite);
 
                     float spawnMid = spawnRange * scale / 2f;
 
+                    Vector2 startSizePoint = lifetimeSize.Evaluate(0f);
                     trans.localPosition = moduleTrans.worldPosition + spawnVec * rnd.NextFloat(-spawnMid, spawnMid);
-                    trans.localScale = moduleTrans.worldScale * startSize * new Vector3(lifetimeSize.Evaluate(0f), 1f);
+                    trans.localScale = moduleTrans.worldScale * startSize * new Vector3(startSizePoint.Y, startSizePoint.Y, 1f);
                     //trans.localRotation = moduleTrans.worldRotation;
                     if (simulationSpace == SimulationSpace.Local)
                         trans.parent = moduleTrans;
@@ -264,6 +323,26 @@ namespace ABEngine.ABERuntime.Components
 
             if (spawnC > 0)
                 particleBatch.InitBatch();
+        }
+
+        public JValue Serialize()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Deserialize(string json)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetReferences()
+        {
+            throw new NotImplementedException();
+        }
+
+        public JSerializable GetCopy(ref Entity newEntity)
+        {
+            throw new NotImplementedException();
         }
     }
 

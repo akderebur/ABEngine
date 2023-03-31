@@ -41,6 +41,8 @@ namespace ABEngine.ABEditor
         private static Vector2 controlPoint1 = new Vector2(0.4f, 0.1f);
         private static Vector2 controlPoint2 = new Vector2(0.6f, 0.9f);
 
+
+
         static ABERuntime.Core.Math.BezierCurve curve = new ABERuntime.Core.Math.BezierCurve(startPoint, endPoint, controlPoint1, controlPoint2);
 
         private void UpdateEditorUI()
@@ -50,55 +52,7 @@ namespace ABEngine.ABEditor
             {
                 MainMenu();
 
-                // Gradient Test
-
-                //ImGui.Begin("ImGradientHDR");
-
-                //bool isMarkerShown = true;
-                //ImGradientHDR.DrawGradient(stateID, ref state, ref tempState, isMarkerShown);
-
-                //if (ImGui.IsItemHovered())
-                //{
-                //    ImGui.SetTooltip("Gradient");
-                //}
-
-                //if (tempState.selectedMarkerType == ImGradientHDRMarkerType.Color)
-                //{
-                //    var selectedColorMarker = state.GetColorMarker(tempState.selectedIndex);
-                //    if (selectedColorMarker != null)
-                //    {
-                //        ImGui.ColorEdit3("Color", ref selectedColorMarker.Color, ImGuiColorEditFlags.Float);
-                //        ImGui.DragFloat("Intensity", ref selectedColorMarker.Intensity, 0.1f, 0.0f, 10.0f, "%f");
-                //    }
-                //}
-
-                //if (tempState.selectedMarkerType == ImGradientHDRMarkerType.Alpha)
-                //{
-                //    var selectedAlphaMarker = state.GetAlphaMarker(tempState.selectedIndex);
-                //    if (selectedAlphaMarker != null)
-                //    {
-                //        ImGui.DragFloat("Alpha", ref selectedAlphaMarker.Alpha, 0.1f, 0.0f, 1.0f, "%f");
-                //    }
-                //}
-
-                //if (tempState.selectedMarkerType != ImGradientHDRMarkerType.Unknown)
-                //{
-                //    if (ImGui.Button("Delete"))
-                //    {
-                //        if (tempState.selectedMarkerType == ImGradientHDRMarkerType.Color)
-                //        {
-                //            state.RemoveColorMarker(tempState.selectedIndex);
-                //            tempState = new ImGradientHDRTemporaryState();
-                //        }
-                //        else if (tempState.selectedMarkerType == ImGradientHDRMarkerType.Alpha)
-                //        {
-                //            state.RemoveAlphaMarker(tempState.selectedIndex);
-                //            tempState = new ImGradientHDRTemporaryState{ };
-                //        }
-                //    }
-                //}
-
-                //ImGui.End();
+                
 
                 //ImGui.SetNextWindowSize(new Vector2(400, 300), ImGuiCond.Appearing);
                 //ImGui.SetNextWindowPos(new Vector2(screenSize.X / 2f - 200, screenSize.Y / 2f - 150), ImGuiCond.Appearing);
@@ -164,7 +118,7 @@ namespace ABEngine.ABEditor
                 //controlPoint1 = points[2];
                 //controlPoint2 = points[3];
 
-                
+
 
                 //ImGui.End();
 
@@ -574,6 +528,8 @@ namespace ABEngine.ABEditor
             }
         }
 
+        Transform lastDetailsView;
+        bool firstGradientOpen = false;
         void DetailsView(Entity selectedEntity)
         {
             string entName = selectedEntity.Get<string>();
@@ -582,6 +538,11 @@ namespace ABEngine.ABEditor
                 selectedEntity.Set<string>(entName);
 
             Transform transform = selectedEntity.Get<Transform>();
+            bool newSelection = transform != lastDetailsView;
+            lastDetailsView = transform;
+
+            if (newSelection)
+                firstGradientOpen = false;
 
             ImGui.GetStateStorage().SetInt(ImGui.GetID("Transform"), 1);
 
@@ -734,14 +695,12 @@ namespace ABEngine.ABEditor
                 }
                 else if(type == typeof(ParticleModule))
                 {
-                    if (ImGui.CollapsingHeader("Lifetime Size"))
-                    {
-                        CurveEditor.Draw(curve);
-                    }
+                    ParticleModule pm = (ParticleModule)comp;
+                    ImGui.GetStateStorage().SetInt(ImGui.GetID("Particle Module"), 1);
 
-                    if (ImGui.CollapsingHeader("Lifetime Color"))
+                    if (ImGui.CollapsingHeader("Particle Module"))
                     {
-                        ImGradientHDR.DrawGradient(11, ref state, ref tempState, false);
+                        ParticleModuleDrawer.Draw(pm, newSelection);
                     }
                 }
             }
@@ -788,6 +747,10 @@ namespace ABEngine.ABEditor
                 else if (ImGui.MenuItem("Animator"))
                 {
                     ComponentManager.AddAnimator(selectedEntity);
+                }
+                else if (ImGui.MenuItem("Particle Module"))
+                {
+                    ComponentManager.AddParticleModule(selectedEntity);
                 }
 
                 ImGui.Spacing();

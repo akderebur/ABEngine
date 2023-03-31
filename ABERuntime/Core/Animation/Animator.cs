@@ -226,7 +226,7 @@ namespace ABEngine.ABERuntime.Animation
                 Trigger trigger = triggerKV.Value;
                 if (trigger.timeLeft > 0)
                     trigger.timeLeft -= deltaTime;
-                else if (trigger.timeLeft < 0)
+                else if (trigger.timeLeft <= 0)
                 {
                     parameters[trigger.key] = trigger.orgValue;
                     trigger.resetAction?.Invoke();

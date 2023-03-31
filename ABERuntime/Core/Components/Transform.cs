@@ -39,8 +39,6 @@ namespace ABEngine.ABERuntime
         bool keepWorldPos = true;
         internal bool manualTRS = false;
 
-        internal static HashSet<Transform> rootNodes = new HashSet<Transform>();
-
         public Transform()
         {
             tag = "None";
@@ -176,14 +174,14 @@ namespace ABEngine.ABERuntime
 
         protected void AddChild(Transform child)
         {
-            if (!children.Contains(child))
+            //if (!children.Contains(child))
                 children.Add(child);
         }
 
 
         protected void RemoveChild(Transform child)
         {
-            if (children.Contains(child))
+            //if (children.Contains(child))
                 children.Remove(child);
         }
 
@@ -281,6 +279,7 @@ namespace ABEngine.ABERuntime
                     _parent = value;
                     RecalculateTRS();
                     _parent.AddChild(this);
+
                 }
             }
         }

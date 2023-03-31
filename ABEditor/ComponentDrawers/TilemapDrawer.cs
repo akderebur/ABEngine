@@ -559,9 +559,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     selectedChunk = null;
                 }
             }
-
         }
-
 
         // Drag drop image
         unsafe static void CheckTilemapTextureDrop(Tilemap tilemap)

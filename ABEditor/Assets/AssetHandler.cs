@@ -23,14 +23,14 @@ namespace ABEngine.ABEditor.Assets
 			foreach (var file in files)
 			{
 				AssetMeta sharedMeta = null;
-				string ext = Path.GetExtension(file);
-				string metaFullPath = null;
-				if (ext.ToLower().Equals(".png"))
+				string extOrg = Path.GetExtension(file);
+                string ext = extOrg.ToLower();
+				string metaFullPath  = file.Replace(ext, ".abmeta");
+                if (ext.Equals(".png"))
 				{
 					TextureMeta meta = new TextureMeta();
 					sharedMeta = meta;
 
-				    metaFullPath = file.Replace(ext, ".abmeta");
 					if (File.Exists(metaFullPath))
 						meta.Deserialize(File.ReadAllText(metaFullPath));
 					else
@@ -44,6 +44,18 @@ namespace ABEngine.ABEditor.Assets
 					meta.refreshEvent += RefreshTextureAsset;
 
 				}
+				else if(ext.Equals(".abmat"))
+				{
+					MaterialMeta meta = new MaterialMeta();
+					sharedMeta = meta;
+
+                    if (File.Exists(metaFullPath))
+                        meta.Deserialize(File.ReadAllText(metaFullPath));
+                    else
+                    {
+                        File.WriteAllText(metaFullPath, meta.Serialize().Serialize());
+                    }
+                }
 
 				if(sharedMeta != null)
 				{

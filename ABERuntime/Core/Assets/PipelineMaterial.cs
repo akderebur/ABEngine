@@ -15,9 +15,8 @@ using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABERuntime
 {
-    public class PipelineMaterial : Asset, JSerializable
+    public class PipelineMaterial : Asset
     {
-        //public int pipelineID;
         public int instanceID;
         public ResourceLayout propLayout;
         public ResourceLayout texLayout;
@@ -37,7 +36,7 @@ namespace ABEngine.ABERuntime
 
         public byte[] shaderPropData;
 
-        public PipelineMaterial(PipelineAsset pipelineAsset, ResourceLayout propLayout, ResourceLayout texLayout)
+        public PipelineMaterial(uint hash, PipelineAsset pipelineAsset, ResourceLayout propLayout, ResourceLayout texLayout)
         {
             this.pipelineAsset = pipelineAsset;
             this.instanceID = GraphicsManager.GetPipelineMaterialCount();
@@ -48,7 +47,7 @@ namespace ABEngine.ABERuntime
             Console.WriteLine(this.instanceID);
         }
 
-        public void SetShaderPropBuffer(List<ShaderProp> shaderProps, uint bufferSize)
+        internal void SetShaderPropBuffer(List<ShaderProp> shaderProps, uint bufferSize)
         {
             this.shaderProps = shaderProps;
             this.shaderPropBufferSize = (uint)(MathF.Ceiling(bufferSize / 16f) * 16);
@@ -75,7 +74,7 @@ namespace ABEngine.ABERuntime
             bindableSets.Add(2, propSet);
         }
 
-        public void SetShaderTextureResources(List<string> textureNames)
+        internal void SetShaderTextureResources(List<string> textureNames)
         {
             if (textureNames.Count > 0)
             {
@@ -99,6 +98,8 @@ namespace ABEngine.ABERuntime
                 }
 
                 texResources = resources;
+                if(textureSet != null)
+                    textureSet.Dispose();
                 textureSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(
                     this.texLayout,
                     texResources
@@ -117,6 +118,8 @@ namespace ABEngine.ABERuntime
             {
                 int texInd = texNameInd * 2;
                 texResources[texInd] = texture;
+                if(textureSet != null)
+                    textureSet.Dispose();
                 textureSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(
                    this.texLayout,
                    texResources
@@ -128,7 +131,7 @@ namespace ABEngine.ABERuntime
 
         public PipelineMaterial GetCopy()
         {
-            var matCopy = new PipelineMaterial(this.pipelineAsset, this.propLayout, this.texLayout);
+            var matCopy = new PipelineMaterial(0, this.pipelineAsset, this.propLayout, this.texLayout);
             matCopy.SetShaderPropBuffer(this.shaderProps.ToList(), this.shaderPropBufferSize);
             matCopy.SetShaderTextureResources(this.pipelineAsset.GetTextureNames());
 
@@ -169,35 +172,13 @@ namespace ABEngine.ABERuntime
             GraphicsManager.gd.UpdateBuffer(propBuffer, 0, this.shaderPropData);
         }
 
-        public JValue Serialize()
-        {
-            JsonObjectBuilder jObj = new JsonObjectBuilder(200);
-            jObj.Put("type", GetType().ToString());
-            jObj.Put("PipelineAsset", pipelineAsset.ToString());
-            
-
-            return jObj.Build();
-        }
-
-        public void Deserialize(string json)
-        {
-            JValue data = JValue.Parse(json);
-            //texturePath = data["TexPath"];
-        }
-
-        public void SetReferences()
-        {
-            // No Refs
-        }
-
-        public JSerializable GetCopy(ref Entity newEntity)
-        {
-            throw new NotImplementedException();
-        }
-
         internal override JValue SerializeAsset()
         {
-            throw new NotImplementedException();
+            JsonObjectBuilder assetEnt = new JsonObjectBuilder(200);
+            assetEnt.Put("TypeID", 1);
+            assetEnt.Put("FileHash", (long)fPathHash);
+            assetEnt.Put("PipelineAsset", pipelineAsset.ToString());
+            return assetEnt.Build();
         }
     }
 
@@ -212,7 +193,6 @@ namespace ABEngine.ABERuntime
         [FieldOffset(0)] public Vector2 Float2;
         [FieldOffset(0)] public Vector3 Float3;
         [FieldOffset(0)] public Vector4 Float4;
-        //[FieldOffset(0)] public Matrix4x4 Matrix;
         [FieldOffset(16)] public uint SizeInBytes;
         [FieldOffset(20)] public int Offset;
 

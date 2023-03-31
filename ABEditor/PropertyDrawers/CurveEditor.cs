@@ -15,8 +15,8 @@ namespace ABEngine.ABEditor.PropertyDrawers
 
         public static void Draw(BezierCurve curve)
         {
-            Vector2 scale = curve.scale;
-            Vector2 offset = curve.offset;
+            float scale = curve.scale;
+            float offset = curve.offset;
 
             Vector2 startPoint = curve.StartPoint;
             Vector2 endPoint = curve.EndPoint;
@@ -39,12 +39,12 @@ namespace ABEngine.ABEditor.PropertyDrawers
             }
 
             // Draw labels for the x-axis
-            ImGui.GetWindowDrawList().AddText(new Vector2(ToCanvas(startPoint).X - 5, ToCanvas(new Vector2(0, 0)).Y + 5), ImGui.GetColorU32(ImGuiCol.Text), "" + offset.X);
-            ImGui.GetWindowDrawList().AddText(new Vector2(ToCanvas(endPoint).X - 5, ToCanvas(new Vector2(0, 0)).Y + 5), ImGui.GetColorU32(ImGuiCol.Text), "" + (offset.X + scale.X));
+            ImGui.GetWindowDrawList().AddText(new Vector2(ToCanvas(startPoint).X - 5, ToCanvas(new Vector2(0, 0)).Y + 5), ImGui.GetColorU32(ImGuiCol.Text), "" + 0);
+            ImGui.GetWindowDrawList().AddText(new Vector2(ToCanvas(endPoint).X - 5, ToCanvas(new Vector2(0, 0)).Y + 5), ImGui.GetColorU32(ImGuiCol.Text), "" + 1);
 
             // Draw labels for the y-axis
-            ImGui.GetWindowDrawList().AddText(new Vector2(ToCanvas(startPoint).X - 5, ToCanvas(new Vector2(0, 0)).Y - 5), ImGui.GetColorU32(ImGuiCol.Text), "" + offset.Y);
-            ImGui.GetWindowDrawList().AddText(new Vector2(ToCanvas(startPoint).X - 5, ToCanvas(new Vector2(0, 1)).Y - 5), ImGui.GetColorU32(ImGuiCol.Text), "" + (offset.Y + scale.Y));
+            ImGui.GetWindowDrawList().AddText(new Vector2(ToCanvas(startPoint).X - 5, ToCanvas(new Vector2(0, 0)).Y - 5), ImGui.GetColorU32(ImGuiCol.Text), "" + offset);
+            ImGui.GetWindowDrawList().AddText(new Vector2(ToCanvas(startPoint).X - 5, ToCanvas(new Vector2(0, 1)).Y - 5), ImGui.GetColorU32(ImGuiCol.Text), "" + (offset + scale));
 
             Vector2 ToCanvas(Vector2 point) => new Vector2(canvasPos.X + point.X * canvasSize.X, canvasPos.Y + (1f - point.Y) * canvasSize.Y);
             Vector2 FromCanvas(Vector2 point) => new Vector2((point.X - canvasPos.X) / canvasSize.X, 1f - (point.Y - canvasPos.Y) / canvasSize.Y);
@@ -87,14 +87,13 @@ namespace ABEngine.ABEditor.PropertyDrawers
 
             ImGui.Text("Offset");
             ImGui.SameLine();
-            if (ImGui.InputFloat2("##Offset", ref offset, "%.2f"))
+            if (ImGui.InputFloat("##Offset", ref offset))
                 curve.offset = offset;
 
             ImGui.Text("Scale");
             ImGui.SameLine();
-            if (ImGui.InputFloat2("##Scale", ref scale, "%.2f"))
+            if (ImGui.InputFloat("##Scale", ref scale))
                 curve.scale = scale;
-
 
             curve.StartPoint = points[0];
             curve.EndPoint = points[1];

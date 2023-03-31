@@ -8,7 +8,6 @@ namespace ABEngine.ABERuntime
 {
     public static class EntityManager
     {
-
         public static Entity Instantiate(in Entity entity)
         {
             Entity copy = Game.GameWorld.CreateEntity();
@@ -52,7 +51,6 @@ namespace ABEngine.ABERuntime
                     copy.Set(type, comp);
                 }
             }
-
 
             if (newRb != null)
                 Game.b2dInit.AddRBRuntime(ref copy);

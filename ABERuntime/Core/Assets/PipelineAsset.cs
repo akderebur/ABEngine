@@ -211,7 +211,7 @@ namespace ABEngine.ABERuntime
                 dest.shaders = CompileShaderSet(vertexShader, fragmentShader);
             }
 
-            dest.refMaterial = new PipelineMaterial(dest, shaderPropUniform, texUniform);
+            dest.refMaterial = new PipelineMaterial(0, dest, shaderPropUniform, texUniform);
 
             // Shader Props Array
             uint vertBufferSize = 0;
@@ -289,6 +289,16 @@ namespace ABEngine.ABERuntime
         public List<string> GetTextureNames()
         {
             return textureNames.Keys.ToList();
+        }
+
+        public List<string> GetPropNames()
+        {
+            return propNames.Keys.ToList();
+        }
+
+        internal List<ResourceLayout> GetResourceLayouts()
+        {
+            return resourceLayouts;
         }
     }
 }

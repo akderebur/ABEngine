@@ -4,6 +4,7 @@ using ABEngine.ABERuntime;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Animation;
+using System.Security.Principal;
 
 namespace ABEngine.ABEditor
 {
@@ -18,7 +19,7 @@ namespace ABEngine.ABEditor
             //squareTex = new Texture2D(Editor.EditorAssetPath, "Sprites/square-128.png", GraphicsManager.linearSampleClamp);
         }
 
-        public static void AddSprite(Entity entity)
+        public static void AddSprite(in Entity entity)
         {
             Sprite sprite = new Sprite(squareTex);
             entity.Set(sprite);
@@ -26,7 +27,7 @@ namespace ABEngine.ABEditor
             //entity.Set(sprite);
         }
 
-        public static void AddAABB(Entity entity)
+        public static void AddAABB(in Entity entity)
         {
             AABB aabb = new AABB();
             if (entity.Has<Sprite>())
@@ -38,14 +39,20 @@ namespace ABEngine.ABEditor
             entity.Set(aabb);
         }
 
-        public static void AddRigidbody(Entity entity)
+        public static void AddRigidbody(in Entity entity)
         {
             entity.Set(new Rigidbody());
         }
 
-        public static void AddAnimator(Entity entity)
+        public static void AddAnimator(in Entity entity)
         {
             entity.Set(new Animator());
+        }
+
+        public static void AddParticleModule(in Entity entity)
+        {
+            entity.transform.tag = "NoChild";
+            entity.Set(new ParticleModule());
         }
 
     }

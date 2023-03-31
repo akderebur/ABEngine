@@ -29,8 +29,8 @@ namespace ABEngine.ABEditor.Assets.Meta
             JValue data = JValue.Parse(json);
 
             base.uniqueID = Guid.Parse(data["GUID"]);
-            imageSize = new Vector2(data["ImageSizeX"], data["ImageSizeY"]);
-            spriteSize = new Vector2(data["SpriteSizeX"], data["SpriteSizeY"]);
+            imageSize = data["ImageSize"];
+            spriteSize = data["SpriteSize"];
 
             string sampler = data["Sampler"];
             switch (sampler)
@@ -55,10 +55,8 @@ namespace ABEngine.ABEditor.Assets.Meta
             JsonObjectBuilder jObj = new JsonObjectBuilder(500);
             jObj.Put("GUID", uniqueID.ToString());
             jObj.Put("Sampler", sampler.Name);
-            jObj.Put("ImageSizeX", imageSize.X);
-            jObj.Put("ImageSizeY", imageSize.Y);
-            jObj.Put("SpriteSizeX", spriteSize.X);
-            jObj.Put("SpriteSizeY", spriteSize.Y);
+            jObj.Put("ImageSize", imageSize);
+            jObj.Put("SpriteSize", spriteSize);
 
             return jObj.Build();
         }
