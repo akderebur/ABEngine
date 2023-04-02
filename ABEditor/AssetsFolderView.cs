@@ -61,6 +61,14 @@ namespace ABEngine.ABEditor
 
             newFileName = "New";
         }
+
+        public string GetLocalPath()
+        {
+            if (!string.IsNullOrEmpty(curDir))
+                return curDir + "/";
+            else
+                return curDir;
+        }
     }
 
     public class AssetsFolderView
@@ -79,6 +87,7 @@ namespace ABEngine.ABEditor
         static CategoryDirectory imgCatDir;
         static CategoryDirectory clipCatDir;
         static CategoryDirectory animGraphCatDir;
+        static CategoryDirectory materialCatDir;
 
         public static void SetAssetsFolder(string path)
         {
@@ -108,6 +117,22 @@ namespace ABEngine.ABEditor
             });
             clipCatDir.payloadName = "ClipFileInd";
             clipCatDir.canDragDrop = true;
+
+            materialCatDir = new CategoryDirectory("", ".abmat", "Materials", () =>
+            {
+
+            });
+            materialCatDir.newFileAction = () =>
+            {
+                string newFPath = Editor.AssetPath + "/" + animGraphCatDir.curDir + "/NewMaterial.abmat";
+                int dupeInd = 0;
+                while (File.Exists(newFPath))
+                    newFPath = newFPath.Replace(".abmat", ++dupeInd + ".abmat");
+
+                AssetHandler.CreateMaterial(newFPath);
+            };
+            materialCatDir.payloadName = "MaterialFileInd";
+            materialCatDir.canDragDrop = true;
 
             animGraphCatDir = new CategoryDirectory("", ".abanimgraph", "Anim Graphs", () =>
             {
@@ -171,6 +196,7 @@ namespace ABEngine.ABEditor
             animGraphCatDir.curDir = animGraphCatDir.curDir;
             clipCatDir.curDir = clipCatDir.curDir;
             imgCatDir.curDir = imgCatDir.curDir;
+            materialCatDir.curDir = materialCatDir.curDir;
         }
 
         static bool renaming = false;
@@ -232,7 +258,7 @@ namespace ABEngine.ABEditor
                                 selFile = file;
 
                                 Game.GameWorld.SetData<Entity>(default(Entity));
-                                Game.GameWorld.SetData<string>(catDir.curDir + "/" + selFile);
+                                Game.GameWorld.SetData<string>(catDir.GetLocalPath() + selFile);
                             }
                         }
                         //if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) // Left clik - details
@@ -312,6 +338,7 @@ namespace ABEngine.ABEditor
             {
                 DrawAssetTab(imgCatDir);
                 DrawAssetTab(clipCatDir);
+                DrawAssetTab(materialCatDir);
                 DrawAssetTab(animGraphCatDir);
 
                 ImGui.EndTabBar();

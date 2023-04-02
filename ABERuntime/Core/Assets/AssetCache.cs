@@ -16,6 +16,7 @@ using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using Halak;
 using ABEngine.ABERuntime.Core.Assets;
+using System.Runtime.CompilerServices;
 
 namespace ABEngine.ABERuntime
 {
@@ -240,10 +241,8 @@ namespace ABEngine.ABERuntime
         //    return GetOrCreateTexture2D(null, sampler, spriteSize, hash); ;
         //}
 
-        internal static PipelineMaterial GetSerializedMaterial(uint hash)
-        {
-            return null;
-        }
+
+       
 
         // Editor
         //public static Texture2D CreateTexture2D(string folderPath, string texturePath, Sampler sampler)
@@ -454,7 +453,22 @@ namespace ABEngine.ABERuntime
             return mat;
         }
 
+        internal static void AddMaterial(PipelineMaterial mat, uint hash)
+        {
+            s_materials.Add(mat);
+            if (assetDict.ContainsKey(hash))
+                assetDict[hash] = mat;
+            else
+                assetDict.Add(hash, mat);
+        }
 
+        internal static uint AddFileHash(string file)
+        {
+            uint hash = Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(file));
+            hashToFName.Add(hash, file);
+
+            return hash;
+        }
 
         private static PipelineMaterial FindExistingMaterial(int matInsID)
         {
@@ -556,11 +570,42 @@ namespace ABEngine.ABERuntime
                 var layouts = pipelineAsset.GetResourceLayouts();
 
                 PipelineMaterial mat = new PipelineMaterial(hash, pipelineAsset, layouts[0], layouts[1]);
-                ShaderProp prop = new ShaderProp();
-                
-            }
 
-            return null;
+                // Shader props
+                List<ShaderProp> shaderProps = new List<ShaderProp>();
+                uint propBufferSize = 0;
+
+                int propC = br.ReadInt32();
+                for (int i = 0; i < propC; i++)
+                {
+                    byte[] propData = br.ReadBytes(24);
+                    ShaderProp prop = new ShaderProp();
+                    unsafe
+                    {
+                        fixed(byte* propDataPtr = propData)
+                            Unsafe.CopyBlock(prop.Bytes, propDataPtr, 24);
+                    }
+                    propBufferSize += prop.SizeInBytes;
+                    shaderProps.Add(prop);
+                }
+
+                List<string> textureNames = pipelineAsset.GetTextureNames();
+                mat.SetShaderPropBuffer(shaderProps, propBufferSize);
+                mat.SetShaderTextureResources(textureNames);
+
+                // Texture references
+                for (int i = 0; i < textureNames.Count; i++)
+                {
+                    uint tHash = br.ReadUInt32();
+                    if (tHash == 0) // Procedural texture skip
+                        continue;
+
+                    Texture2D tex2d = GetOrCreateTexture2D(null, null, Vector2.Zero, hash);
+                    mat.SetTexture(textureNames[i], tex2d);
+                }
+
+                return mat;
+            }
         }
 
         // Serialization
@@ -587,17 +632,22 @@ namespace ABEngine.ABERuntime
                 Asset curAsset = null;
 
                 uint hash = (uint)((long)asset["FileHash"]);
+                if (hash == 0) // Not a disk asset
+                    continue;
+
                 int typeID = asset["TypeID"];
                 switch (typeID)
                 {
                     case 0: // Texture
                         curAsset = DeserializeTexture(asset, hash);
                         break;
+                    case 1: // Material
+                        curAsset = GetOrCreateMaterial(null, hash);
+                        break;
                     default:
                         break;
                 }
             }
-
         }
 
         internal static int GetAssetSceneIndex(Asset asset)

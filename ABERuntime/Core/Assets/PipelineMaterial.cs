@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Dynamic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -10,7 +8,6 @@ using Newtonsoft.Json;
 using Veldrid;
 using System.Runtime.CompilerServices;
 using Halak;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABERuntime
@@ -18,23 +15,24 @@ namespace ABEngine.ABERuntime
     public class PipelineMaterial : Asset
     {
         public int instanceID;
-        public ResourceLayout propLayout;
-        public ResourceLayout texLayout;
+        private ResourceLayout propLayout;
+        private ResourceLayout texLayout;
         public PipelineAsset pipelineAsset;
 
-        public List<ShaderProp> shaderProps;
-        public uint shaderPropBufferSize;
-        public bool updated = false;
+        internal List<ShaderProp> shaderProps;
+        internal List<uint> texHashes;
 
-        public BindableResource[] texResources;
-        public DeviceBuffer propBuffer;
+        public uint shaderPropBufferSize;
+
+        private BindableResource[] texResources;
+        private DeviceBuffer propBuffer;
 
         public Dictionary<uint, ResourceSet> bindableSets = new Dictionary<uint, ResourceSet>();
-        public ResourceSet propSet;
-        public ResourceSet textureSet;
+        private ResourceSet propSet;
+        private ResourceSet textureSet;
         public bool isLateRender = false;
 
-        public byte[] shaderPropData;
+        private byte[] shaderPropData;
 
         public PipelineMaterial(uint hash, PipelineAsset pipelineAsset, ResourceLayout propLayout, ResourceLayout texLayout)
         {
@@ -76,6 +74,10 @@ namespace ABEngine.ABERuntime
 
         internal void SetShaderTextureResources(List<string> textureNames)
         {
+            texHashes = new List<uint>();
+            foreach (var texName in textureNames) // Invalid Textures
+                texHashes.Add(0);
+
             if (textureNames.Count > 0)
             {
                 BindableResource[] resources = new BindableResource[textureNames.Count * 2];
@@ -107,17 +109,17 @@ namespace ABEngine.ABERuntime
                
                 bindableSets.Add(3, textureSet);
             }
-
             
         }
 
-        public void SetTexture(string textureName, TextureView texture)
+        public void SetTexture(string textureName, Texture2D tex2d)
         {
             int texNameInd = pipelineAsset.GetTextureID(textureName);
             if(texNameInd > -1)
             {
                 int texInd = texNameInd * 2;
-                texResources[texInd] = texture;
+                texResources[texInd] = tex2d.texture;
+                texHashes[texInd] = tex2d.fPathHash;
                 if(textureSet != null)
                     textureSet.Dispose();
                 textureSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(
@@ -146,6 +148,31 @@ namespace ABEngine.ABERuntime
                 ShaderProp prop = shaderProps[propInd];
                 prop.SetValue(value);
                 UpdatePropBuffer(prop);
+                shaderProps[propInd] = prop;
+            }
+        }
+
+        public void SetVector2(string propName, Vector2 value)
+        {
+            int propInd = pipelineAsset.GetPropID(propName);
+            if (propInd > -1)
+            {
+                ShaderProp prop = shaderProps[propInd];
+                prop.SetValue(value);
+                UpdatePropBuffer(prop);
+                shaderProps[propInd] = prop;
+            }
+        }
+
+        public void SetVector3(string propName, Vector4 value)
+        {
+            int propInd = pipelineAsset.GetPropID(propName);
+            if (propInd > -1)
+            {
+                ShaderProp prop = shaderProps[propInd];
+                prop.SetValue(value);
+                UpdatePropBuffer(prop);
+                shaderProps[propInd] = prop;
             }
         }
 
@@ -157,6 +184,7 @@ namespace ABEngine.ABERuntime
                 ShaderProp prop = shaderProps[propInd];
                 prop.SetValue(value);
                 UpdatePropBuffer(prop);
+                shaderProps[propInd] = prop;
             }
         }
 
@@ -177,9 +205,16 @@ namespace ABEngine.ABERuntime
             JsonObjectBuilder assetEnt = new JsonObjectBuilder(200);
             assetEnt.Put("TypeID", 1);
             assetEnt.Put("FileHash", (long)fPathHash);
-            assetEnt.Put("PipelineAsset", pipelineAsset.ToString());
             return assetEnt.Build();
         }
+    }
+
+    struct Test
+    {
+        public float aa { get; set; } // 4 bytes
+        public Vector2 bb { get; set; } // 0 bytes + 8
+
+        // 8 byte
     }
 
     [StructLayout(LayoutKind.Explicit)]

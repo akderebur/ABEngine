@@ -36,14 +36,6 @@ namespace ABEngine.ABEditor
         static FilePicker picker;
         static bool tilemapSelected = false;
         static string loadedScenePath = null;
-        private static Vector2 startPoint = new Vector2(0.0f, 0.0f);
-        private static Vector2 endPoint = new Vector2(1f, 1f);
-        private static Vector2 controlPoint1 = new Vector2(0.4f, 0.1f);
-        private static Vector2 controlPoint2 = new Vector2(0.6f, 0.9f);
-
-
-
-        static ABERuntime.Core.Math.BezierCurve curve = new ABERuntime.Core.Math.BezierCurve(startPoint, endPoint, controlPoint1, controlPoint2);
 
         private void UpdateEditorUI()
         {
@@ -168,6 +160,10 @@ namespace ABEngine.ABEditor
             }
         }
 
+
+        PipelineMaterial editMat = null;
+        string editMatPath = null;
+
         void AssetDetails()
         {
             string selectedAsset = GameWorld.GetData<string>();
@@ -205,6 +201,75 @@ namespace ABEngine.ABEditor
                         {
                             texMeta.RefreshAsset(selectedAsset);
                             AssetHandler.SaveMeta(texMeta);
+                        }
+                        ImGui.End();
+                    }
+                    else if (metaType.Equals(typeof(MaterialMeta)))
+                    {
+                        bool changed = false;
+
+                        MaterialMeta matMeta = meta as MaterialMeta;
+                        if (editMatPath != selectedAsset)
+                        {
+                            editMatPath = selectedAsset;
+                            editMat = AssetHandler.GetMaterialBinding(matMeta, selectedAsset);
+                        }
+
+
+                        ImGui.Begin("Details");
+
+                        ImGui.Text(matMeta.pipelineAsset.ToString());
+
+                        ImGui.Spacing();
+                        ImGui.Text("Properties");
+                        ImGui.Separator();
+
+                        var propNames = editMat.pipelineAsset.GetPropNames();
+                        for (int i = 0; i < propNames.Count; i++)
+                        {
+                            string propName = propNames[i];
+                            ShaderProp prop = editMat.shaderProps[i];
+
+                            ImGui.Text(propName);
+                            ImGui.SameLine();
+
+                            bool locChange = false;
+                            if(prop.SizeInBytes == 4) // Float
+                            {
+                                if (ImGui.InputFloat("##" + propName, ref prop.Float1))
+                                    locChange = true;
+                            }
+                            else if (prop.SizeInBytes == 8) // Vector2
+                            {
+                                if (ImGui.InputFloat2("##" + propName, ref prop.Float2))
+                                    locChange = true;
+                            }
+                            else if (prop.SizeInBytes == 12) // Vector3
+                            {
+                                if (ImGui.InputFloat3("##" + propName, ref prop.Float3))
+                                    locChange = true;
+                            }
+                            else if (prop.SizeInBytes == 16) // Vector4
+                            {
+                                if (ImGui.InputFloat4("##" + propName, ref prop.Float4))
+                                    locChange = true;
+                            }
+
+                            if (locChange && !changed)
+                            {
+                                changed = true;
+                                matMeta.changedData = prop.Float4;
+                                matMeta.changedPropName = propName;
+                            }
+
+                        }
+
+                        if (changed)
+                            matMeta.RefreshAsset(selectedAsset);
+                        
+                        if (ImGui.Button("Save"))
+                        {
+                            AssetHandler.SaveMeta(matMeta);
                         }
                         ImGui.End();
                     }

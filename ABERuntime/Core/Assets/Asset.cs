@@ -5,7 +5,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 {
 	public abstract class Asset
 	{
-		public uint fPathHash { get; set; }
+		internal uint fPathHash { get; set; }
 
 		internal abstract JValue SerializeAsset();
 	}

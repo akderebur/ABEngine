@@ -11,11 +11,9 @@ namespace ABEngine.ABEditor.Assets.Meta
 {
 	public class TextureMeta : AssetMeta
 	{
-        public Sampler sampler { get; set; }
-        public Vector2 imageSize { get; set; }
-        public Vector2 spriteSize { get; set; }
-
-        public List<Vector2> spriteOffsets { get; set; }
+        internal Sampler sampler { get; set; }
+        internal Vector2 imageSize { get; set; }
+        internal Vector2 spriteSize { get; set; }
 
         public TextureMeta() : base()
 		{

@@ -14,8 +14,9 @@ namespace ABEngine.ABEditor.Assets
 		static string AssetsPath;
 		static Dictionary<string, AssetMeta> metaDict = new Dictionary<string, AssetMeta>();
 		static Dictionary<TextureMeta, Texture2D> sceneTextures = new Dictionary<TextureMeta, Texture2D>();
+        static Dictionary<MaterialMeta, PipelineMaterial> sceneMaterials = new Dictionary<MaterialMeta, PipelineMaterial>();
 
-		public static void InitFiles(string assetsPath)
+        public static void InitFiles(string assetsPath)
 		{
             AssetsPath = assetsPath;
 			var files = Directory.GetFiles(assetsPath, "*", SearchOption.AllDirectories);
@@ -55,6 +56,9 @@ namespace ABEngine.ABEditor.Assets
                     {
                         File.WriteAllText(metaFullPath, meta.Serialize().Serialize());
                     }
+
+                    metaDict.Add(file.Replace(assetsPath, ""), meta);
+                    meta.refreshEvent += RefreshMaterialAsset;
                 }
 
 				if(sharedMeta != null)
@@ -63,6 +67,23 @@ namespace ABEngine.ABEditor.Assets
                 }
 			}
 		}
+
+		public static void CreateMaterial(string file)
+		{
+            string extOrg = Path.GetExtension(file);
+            string ext = extOrg.ToLower();
+            string metaFullPath = file.Replace(ext, ".abmeta");
+
+            MaterialMeta meta = new MaterialMeta();
+			meta.pipelineAsset = GraphicsManager.GetUberMaterial().pipelineAsset;
+
+            File.WriteAllText(metaFullPath, meta.Serialize().Serialize());
+
+			MaterialMeta.CreateMaterialAsset(file);
+
+            metaDict.Add(file.Replace(Game.AssetPath, ""), meta);
+            meta.refreshEvent += RefreshMaterialAsset;
+        }
 
 		public static AssetMeta GetMeta(string file)
 		{
@@ -84,12 +105,34 @@ namespace ABEngine.ABEditor.Assets
             }
         }
 
-		public static void SaveMeta(AssetMeta meta)
+        public static PipelineMaterial GetMaterialBinding(MaterialMeta matMeta, string matPath)
+        {
+            if (sceneMaterials.ContainsKey(matMeta))
+                return sceneMaterials[matMeta];
+            else
+            {
+				PipelineMaterial mat = AssetCache.CreateMaterial(matPath);
+                sceneMaterials.Add(matMeta, mat);
+                return mat;
+            }
+        }
+
+        public static void SaveMeta(AssetMeta meta)
 		{
 			File.WriteAllText(AssetsPath + meta.metaAssetPath, meta.Serialize().Serialize());
 		}
 
-		private static void RefreshTextureAsset(AssetMeta assetMeta, string assetPath)
+		private static void RefreshMaterialAsset(AssetMeta assetMeta, string assetPath)
+		{
+			MaterialMeta matMeta = assetMeta as MaterialMeta;
+			if (sceneMaterials.ContainsKey(matMeta))
+			{
+				PipelineMaterial mat = sceneMaterials[matMeta];
+				mat.SetVector4(matMeta.changedPropName, matMeta.changedData);
+			}
+		}
+
+        private static void RefreshTextureAsset(AssetMeta assetMeta, string assetPath)
 		{
 			TextureMeta texMeta = assetMeta as TextureMeta;
 			if (sceneTextures.ContainsKey(texMeta))
@@ -118,6 +161,7 @@ namespace ABEngine.ABEditor.Assets
 				sceneTextures.Add(texMeta, newTex);
 			}
 		}
+
 	}
 }
 
