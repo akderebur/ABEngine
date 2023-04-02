@@ -63,7 +63,7 @@ namespace ABEngine.ABERuntime.Components
         public Vector2 uvScale = Vector2.One;
         public Vector3 flipScale = Vector3.One;
 
-        internal bool manualLifetime = false;
+        internal bool manualBatching = false;
 
         private int _renderLayerIndex = 0;
         public int renderLayerIndex
@@ -106,7 +106,7 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
-        public void SetMaterial(PipelineMaterial mat, bool updateBatch = true)
+        internal void SetMaterial(PipelineMaterial mat, bool updateBatch = true)
         {
             int lastMatInsId = _material.instanceID;
             _material = mat;
@@ -231,7 +231,7 @@ namespace ABEngine.ABERuntime.Components
 
             this.sizeSet = true;
 
-            if(!manualLifetime)
+            if(!manualBatching)
                 Game.spriteBatcher.UpdateSpriteBatch(this, renderLayerIndex, oldTex, _material.instanceID);
         }
 

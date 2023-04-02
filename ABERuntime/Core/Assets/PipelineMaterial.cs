@@ -15,6 +15,8 @@ namespace ABEngine.ABERuntime
     public class PipelineMaterial : Asset
     {
         public int instanceID;
+        public string matName;
+
         private ResourceLayout propLayout;
         private ResourceLayout texLayout;
         public PipelineAsset pipelineAsset;
@@ -40,6 +42,7 @@ namespace ABEngine.ABERuntime
             this.instanceID = GraphicsManager.GetPipelineMaterialCount();
             this.propLayout = propLayout;
             this.texLayout = texLayout;
+            matName = hash + "_" + instanceID;
 
             GraphicsManager.AddPipelineMaterial(this);
             Console.WriteLine(this.instanceID);
@@ -142,38 +145,17 @@ namespace ABEngine.ABERuntime
 
         public void SetFloat(string propName, float value)
         {
-            int propInd = pipelineAsset.GetPropID(propName);
-            if (propInd > -1)
-            {
-                ShaderProp prop = shaderProps[propInd];
-                prop.SetValue(value);
-                UpdatePropBuffer(prop);
-                shaderProps[propInd] = prop;
-            }
+            SetVector4(propName, Vector4.UnitX * value);
         }
 
         public void SetVector2(string propName, Vector2 value)
         {
-            int propInd = pipelineAsset.GetPropID(propName);
-            if (propInd > -1)
-            {
-                ShaderProp prop = shaderProps[propInd];
-                prop.SetValue(value);
-                UpdatePropBuffer(prop);
-                shaderProps[propInd] = prop;
-            }
+            SetVector4(propName, new Vector4(value, 0f, 0f));
         }
 
-        public void SetVector3(string propName, Vector4 value)
+        public void SetVector3(string propName, Vector3 value)
         {
-            int propInd = pipelineAsset.GetPropID(propName);
-            if (propInd > -1)
-            {
-                ShaderProp prop = shaderProps[propInd];
-                prop.SetValue(value);
-                UpdatePropBuffer(prop);
-                shaderProps[propInd] = prop;
-            }
+            SetVector4(propName, new Vector4(value, 0f));
         }
 
         public void SetVector4(string propName, Vector4 value)
@@ -183,18 +165,21 @@ namespace ABEngine.ABERuntime
             {
                 ShaderProp prop = shaderProps[propInd];
                 prop.SetValue(value);
-                UpdatePropBuffer(prop);
                 shaderProps[propInd] = prop;
+                unsafe
+                {
+                    UpdatePropBuffer(prop.Offset, prop.Bytes, prop.SizeInBytes);
+                }
             }
         }
 
-        private unsafe void UpdatePropBuffer(ShaderProp prop)
+        private unsafe void UpdatePropBuffer(int offset, byte* data, uint size)
         {
             fixed (byte* dataPtr = shaderPropData)
             {
                 byte* tempPtr = dataPtr;
-                tempPtr = dataPtr + prop.Offset;
-                Unsafe.CopyBlock(tempPtr, prop.Bytes, prop.SizeInBytes);
+                tempPtr = dataPtr + offset;
+                Unsafe.CopyBlock(tempPtr, data, size);
             }
 
             GraphicsManager.gd.UpdateBuffer(propBuffer, 0, this.shaderPropData);

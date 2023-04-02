@@ -790,7 +790,7 @@ namespace ABEngine.ABERuntime
             });
             GameWorld.OnRemove((Sprite sprite) =>
             {
-                if (!sprite.manualLifetime)
+                if (!sprite.manualBatching)
                     Game.spriteBatcher.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 

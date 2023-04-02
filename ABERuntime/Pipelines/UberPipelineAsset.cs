@@ -12,6 +12,7 @@ namespace ABEngine.ABERuntime.Pipelines
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedTextureLayout);
             shaderOptimised = false;
+            defaultMatName = "UberStandard";
 
             PipelineAsset.ParseAsset(Shaders.UberPipelineAsset, this);
 

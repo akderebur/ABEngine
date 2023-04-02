@@ -13,6 +13,7 @@ namespace ABEngine.ABERuntime
 {
     public class PipelineAsset
     {
+        protected string defaultMatName;
         protected GraphicsDevice gd;
         protected CommandList cl;
         protected ResourceFactory rf;
@@ -212,6 +213,7 @@ namespace ABEngine.ABERuntime
             }
 
             dest.refMaterial = new PipelineMaterial(0, dest, shaderPropUniform, texUniform);
+            dest.refMaterial.matName = dest.defaultMatName;
 
             // Shader Props Array
             uint vertBufferSize = 0;

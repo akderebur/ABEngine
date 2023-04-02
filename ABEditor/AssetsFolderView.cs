@@ -124,7 +124,7 @@ namespace ABEngine.ABEditor
             });
             materialCatDir.newFileAction = () =>
             {
-                string newFPath = Editor.AssetPath + "/" + animGraphCatDir.curDir + "/NewMaterial.abmat";
+                string newFPath = Editor.AssetPath + materialCatDir.GetLocalPath() + "NewMaterial.abmat";
                 int dupeInd = 0;
                 while (File.Exists(newFPath))
                     newFPath = newFPath.Replace(".abmat", ++dupeInd + ".abmat");

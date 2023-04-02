@@ -122,7 +122,7 @@ namespace ABEngine.ABERuntime.Components
         public void Play()
         {
             Sprite sprite = new Sprite(particleTexture);
-            sprite.manualLifetime = true;
+            sprite.manualBatching = true;
             sprite.SetMaterial(_particleMaterial, true);
             Transform trans = new Transform("EditorNotVisible");
             var entity = Game.GameWorld.CreateEntity("P" + particles.Count, Guid.NewGuid(), trans, sprite);
@@ -286,7 +286,7 @@ namespace ABEngine.ABERuntime.Components
                 else if (particles.Count <= maxParticles)
                 {
                     Sprite sprite = new Sprite(particleTexture);
-                    sprite.manualLifetime = true;
+                    sprite.manualBatching = true;
                     sprite.SetMaterial(_particleMaterial, false);
 
                     //sprite.sharedMaterial.SetFloat("EnableOutline", 1f);

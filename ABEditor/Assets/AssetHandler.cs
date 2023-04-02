@@ -112,6 +112,7 @@ namespace ABEngine.ABEditor.Assets
             else
             {
 				PipelineMaterial mat = AssetCache.CreateMaterial(matPath);
+				mat.matName = Path.GetFileNameWithoutExtension(matPath);
                 sceneMaterials.Add(matMeta, mat);
                 return mat;
             }
