@@ -6,6 +6,8 @@ using Newtonsoft.Json.Serialization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Halak;
+using Force.Crc32;
+using System.Text;
 
 namespace ABEngine.ABERuntime
 {
@@ -99,6 +101,12 @@ namespace ABEngine.ABERuntime
             neighbors.Add((tilePos - new Vector2(0f, tileSize.Y)).RoundTo2Dec()); // Down
 
             return neighbors;
+        }
+
+        // Hashing
+        public static uint ToHash32(this string str)
+        {
+            return Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(str));
         }
 
         #endregion

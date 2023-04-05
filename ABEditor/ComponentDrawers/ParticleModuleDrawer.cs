@@ -209,7 +209,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     string spriteFilePath = AssetsFolderView.files[srcIndex];
 
                     TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;
-                    pm.particleTexture = AssetHandler.GetTextureBinding(texMeta, spriteFilePath);
+                    pm.particleTexture = AssetHandler.GetAssetBinding(texMeta, spriteFilePath) as Texture2D;
                     imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, pm.particleTexture.texture);
                 }
 

@@ -6,7 +6,6 @@ using System.Numerics;
 using Veldrid;
 using Veldrid.ImageSharp;
 using Veldrid.Utilities;
-using Force.Crc32;
 using System.Text;
 using System.IO.Compression;
 using SixLabors.ImageSharp.PixelFormats;
@@ -50,16 +49,20 @@ namespace ABEngine.ABERuntime
         private static Texture2D gridTexture = null;
 
         // Serialize
-        
-
         static Dictionary<uint, AssetEntry> assetDictPK;
         static Dictionary<uint, Asset> assetDict;
 
+        // Scene specific serialize
+        static List<Asset> sceneAssets = new List<Asset>();
+         
 
         static List<BinaryReader> pkReaders; 
         public static void InitAssetCache()
         {
             assetDict = new Dictionary<uint, Asset>();
+
+            LoadDefaultMaterials();
+
             if (Game.debug)
             {
                 var images = Directory.EnumerateFiles(Game.AssetPath, "*.*", SearchOption.AllDirectories)
@@ -67,8 +70,7 @@ namespace ABEngine.ABERuntime
                 foreach (var image in images)
                 {
                     string localPath = image.Replace(Game.AssetPath, "");
-                    uint hash = Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(localPath));
-                    hashToFName.Add(hash, localPath);
+                    hashToFName.Add(localPath.ToHash32(), localPath);
                 }
 
 
@@ -77,8 +79,7 @@ namespace ABEngine.ABERuntime
                 foreach (var material in materials)
                 {
                     string localPath = material.Replace(Game.AssetPath, "");
-                    uint hash = Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(localPath));
-                    hashToFName.Add(hash, localPath);
+                    hashToFName.Add(localPath.ToHash32(), localPath);
                 }
 
                 return;
@@ -208,8 +209,6 @@ namespace ABEngine.ABERuntime
                     BinaryReader br = new BinaryReader(outputStream);
                     br.BaseStream.Position = 0;
 
-                    
-
                    
                 }
             }
@@ -234,37 +233,6 @@ namespace ABEngine.ABERuntime
             return GetOrCreateTexture2D(texturePath, sampler, spriteSize);
         }
 
-
-        // Serialization - Retrieve from hash
-        //internal static Texture2D GetSerializedTexture(uint hash, Sampler sampler, Vector2 spriteSize)
-        //{
-        //    return GetOrCreateTexture2D(null, sampler, spriteSize, hash); ;
-        //}
-
-
-       
-
-        // Editor
-        //public static Texture2D CreateTexture2D(string folderPath, string texturePath, Sampler sampler)
-        //{
-        //    var exTex = FindExistingTex2D(folderPath + texturePath, sampler, Vector2.Zero);
-        //    if (exTex != null)
-        //        return exTex;
-        //    else
-        //    {
-        //        Texture2D newTex = new Texture2D(folderPath, texturePath, sampler);
-        //        s_texture2ds.Add(newTex);
-        //        return newTex;
-        //    }
-        //}
-        // End Editor
-
-        //public static PipelineMaterial CreateMaterial(PipelineMaterial refeferenceMat)
-        //{
-        //    PipelineMaterial newMat = refeferenceMat.GetCopy();
-        //    s_materials.Add(newMat);
-        //    return newMat;
-        //}
 
         public static PipelineMaterial CreateMaterial(string matPath)
         {
@@ -400,8 +368,8 @@ namespace ABEngine.ABERuntime
         private static Texture2D GetOrCreateTexture2D(string texPath, Sampler sampler, Vector2 spriteSize, uint preHash = 0)
         {
             uint hash = preHash;
-            if(hash == 0)
-                hash = Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(texPath));
+            if (hash == 0)
+                hash = texPath.ToHash32();
 
             var tex2d = s_texture2ds.FirstOrDefault(t => t.fPathHash == hash && t.textureSampler == sampler && t.spriteSize == spriteSize);
             if (tex2d != null)
@@ -430,7 +398,7 @@ namespace ABEngine.ABERuntime
         {
             uint hash = preHash;
             if (hash == 0)
-                hash = Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(matPath));
+                hash = matPath.ToHash32();
 
             PipelineMaterial mat = s_materials.FirstOrDefault(t => t.fPathHash == hash);
             if (mat != null)
@@ -442,7 +410,7 @@ namespace ABEngine.ABERuntime
             {
                 if (preHash != 0)
                     matPath = hashToFName[preHash];
-                mat = LoadMaterialRAW(preHash, File.ReadAllBytes(Game.AssetPath + matPath));
+                mat = LoadMaterialRAW(hash, File.ReadAllBytes(Game.AssetPath + matPath));
             }
 
             s_materials.Add(mat);
@@ -453,8 +421,10 @@ namespace ABEngine.ABERuntime
             return mat;
         }
 
-        internal static void AddMaterial(PipelineMaterial mat, uint hash)
+        // Editor ONLY remove later
+        internal static void AddMaterial(PipelineMaterial mat, uint hash, string file)
         {
+            hashToFName.Add(hash, file);
             s_materials.Add(mat);
             if (assetDict.ContainsKey(hash))
                 assetDict[hash] = mat;
@@ -462,12 +432,20 @@ namespace ABEngine.ABERuntime
                 assetDict.Add(hash, mat);
         }
 
-        internal static uint AddFileHash(string file)
+        internal static void UpdateAsset(uint oldHash, uint hash, string file)
         {
-            uint hash = Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(file));
-            hashToFName.Add(hash, file);
+            if (assetDict.ContainsKey(hash) || !assetDict.ContainsKey(oldHash))
+                return;
 
-            return hash;
+            if (hashToFName.ContainsKey(oldHash))
+                hashToFName.Remove(oldHash);
+            if (!hashToFName.ContainsKey(hash))
+                hashToFName.Add(hash, file);
+
+            var asset = assetDict[oldHash];
+            asset.fPathHash = hash;
+            assetDict.Remove(oldHash);
+            assetDict.Add(hash, asset);
         }
 
         private static PipelineMaterial FindExistingMaterial(int matInsID)
@@ -564,12 +542,14 @@ namespace ABEngine.ABERuntime
             using (MemoryStream ms = new MemoryStream(data))
             using (BinaryReader br = new BinaryReader(ms))
             {
+                string matName = br.ReadString();
                 string pipelineName = br.ReadString();
 
                 PipelineAsset pipelineAsset = GraphicsManager.GetPipelineAssetByName(pipelineName);
                 var layouts = pipelineAsset.GetResourceLayouts();
 
                 PipelineMaterial mat = new PipelineMaterial(hash, pipelineAsset, layouts[0], layouts[1]);
+                mat.name = matName;
 
                 // Shader props
                 List<ShaderProp> shaderProps = new List<ShaderProp>();
@@ -608,23 +588,27 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        // Serialization
+        // Serialization - For scene
         internal static JValue SerializeAssets()
         {
             JsonObjectBuilder assets = new JsonObjectBuilder(2000);
-            assets.Put("Count", assetDict.Count);
+            assets.Put("Count", sceneAssets.Count);
 
             JsonArrayBuilder assetsArr = new JsonArrayBuilder(2000);
 
-            foreach (var assetKV in assetDict)
-                assetsArr.Push(assetKV.Value.SerializeAsset());
+            foreach (var asset in sceneAssets)
+                assetsArr.Push(asset.SerializeAsset());
 
             assets.Put("Entries", assetsArr.Build());
+
+            sceneAssets.Clear();
+
             return assets.Build();
         }
 
         internal static void DeserializeAssets(JValue assets)
         {
+            sceneAssets = new List<Asset>();
             int assetC = assets["Count"];
            
             foreach (var asset in assets["Entries"].Array())
@@ -647,25 +631,32 @@ namespace ABEngine.ABERuntime
                     default:
                         break;
                 }
+                if (curAsset != null)
+                    sceneAssets.Add(curAsset);
             }
         }
 
-        internal static int GetAssetSceneIndex(Asset asset)
+        internal static int GetAssetSceneIndex(uint hash)
         {
-            int index = 0;
-            foreach (var assetKV in assetDict)
+            if (!assetDict.ContainsKey(hash))
+                return -1;
+
+            Asset asset = assetDict[hash];
+            int assetIndex = sceneAssets.IndexOf(asset);
+            if(assetIndex == -1) // Not in the list
             {
-                if (assetKV.Value == asset)
-                    return index;
-                index++;
+                sceneAssets.Add(asset);
+                return sceneAssets.Count - 1;
             }
 
-            return -1;
+            return assetIndex;
         }
 
         internal static Asset GetAssetFromSceneIndex(int index)
         {
-            return assetDict.ElementAt(index).Value;
+            if (index < 0 || index >= sceneAssets.Count)
+                return null;
+            return sceneAssets[index];
         }
 
         internal static void ClearSceneCache()
@@ -674,6 +665,22 @@ namespace ABEngine.ABERuntime
             s_clips.Clear();
             s_materials.Clear();
             assetDict.Clear();
+            sceneAssets.Clear();
+
+            LoadDefaultMaterials();
+        }
+
+        static void LoadDefaultMaterials()
+        {
+            // Default Materials
+            var uberMat = GraphicsManager.GetUberMaterial();
+            var additiveMat = GraphicsManager.GetUberAdditiveMaterial();
+
+            s_materials.Add(uberMat);
+            s_materials.Add(additiveMat);
+
+            assetDict.Add(uberMat.fPathHash, uberMat);
+            assetDict.Add(additiveMat.fPathHash, uberMat);
         }
 
         private static Texture2D DeserializeTexture(JValue texAsset, uint hash)

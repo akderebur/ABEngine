@@ -102,8 +102,7 @@ namespace ABEngine.ABEditor
               window.Width,
               window.Height);
             SetupImGuiStyle();
-            //ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
-            ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.ViewportsEnable;
+            ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
 
             LightPipelineAsset lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
             LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);

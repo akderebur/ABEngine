@@ -161,7 +161,8 @@ namespace ABEngine.ABERuntime.Components
         {
             JsonObjectBuilder jObj = new JsonObjectBuilder(200);
             jObj.Put("type", GetType().ToString());
-            jObj.Put("Texture", AssetCache.GetAssetSceneIndex(this.texture));
+            jObj.Put("Texture", AssetCache.GetAssetSceneIndex(this.texture.fPathHash));
+            jObj.Put("Material", AssetCache.GetAssetSceneIndex(this.sharedMaterial.fPathHash));
             jObj.Put("RenderLayerIndex", renderLayerIndex);
             jObj.Put("FlipX", flipX);
             jObj.Put("FlipY", flipY);
@@ -180,25 +181,34 @@ namespace ABEngine.ABERuntime.Components
             flipY = data["FlipY"];
             _renderLayerIndex = data["RenderLayerIndex"];
 
-            int assetSceneIndex = data["Texture"];
-            var tex2d = AssetCache.GetAssetFromSceneIndex(assetSceneIndex) as Texture2D;
+            int texSceneIndex = data["Texture"];
+            int matSceneIndex = data["Material"];
 
-            SetTexture(tex2d);
+            var tex2d = AssetCache.GetAssetFromSceneIndex(texSceneIndex) as Texture2D;
+            var material = AssetCache.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
+
+            if (tex2d != null)
+            {
+                SetTexture(tex2d);
+
+                for (int i = 0; i < tex2d.Length; i++)
+                {
+                    Vector2 samplePos = tex2d[i] / tex2d.imageSize;
+
+                    if (samplePos.X >= uvPos.X && samplePos.Y >= uvPos.Y)
+                    {
+                        spriteID = i;
+                        break;
+                    }
+                }
+            }
 
             SetUVPosScale(new Vector2(data["UVPosX"], data["UVPosY"]),
                           new Vector2(data["UVScaX"], data["UVScaY"]));
 
 
-            for (int i = 0; i < tex2d.Length; i++)
-            {
-                Vector2 samplePos = tex2d[i] / tex2d.imageSize;
-
-                if(samplePos.X >= uvPos.X && samplePos.Y >= uvPos.Y)
-                {
-                    spriteID = i;
-                    break;
-                }
-            }
+            _material = material;
+            sharedMaterial = material;
         }
 
 

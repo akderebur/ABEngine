@@ -54,6 +54,7 @@ namespace ABEngine.ABERuntime
             resourceLayouts = new List<ResourceLayout>();
             propNames = new Dictionary<string, int>();
             textureNames = new Dictionary<string, int>();
+            defaultMatName = "NoName";
         }
 
         public virtual void BindPipeline()
@@ -212,8 +213,8 @@ namespace ABEngine.ABERuntime
                 dest.shaders = CompileShaderSet(vertexShader, fragmentShader);
             }
 
-            dest.refMaterial = new PipelineMaterial(0, dest, shaderPropUniform, texUniform);
-            dest.refMaterial.matName = dest.defaultMatName;
+            dest.refMaterial = new PipelineMaterial(dest.defaultMatName.ToHash32(), dest, shaderPropUniform, texUniform);
+            dest.refMaterial.name = dest.defaultMatName;
 
             // Shader Props Array
             uint vertBufferSize = 0;

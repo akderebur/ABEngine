@@ -15,7 +15,6 @@ namespace ABEngine.ABERuntime
     public class PipelineMaterial : Asset
     {
         public int instanceID;
-        public string matName;
 
         private ResourceLayout propLayout;
         private ResourceLayout texLayout;
@@ -42,10 +41,11 @@ namespace ABEngine.ABERuntime
             this.instanceID = GraphicsManager.GetPipelineMaterialCount();
             this.propLayout = propLayout;
             this.texLayout = texLayout;
-            matName = hash + "_" + instanceID;
+            name = hash + "_" + instanceID;
+            fPathHash = hash;
 
             GraphicsManager.AddPipelineMaterial(this);
-            Console.WriteLine(this.instanceID);
+            //Console.WriteLine(this.instanceID);
         }
 
         internal void SetShaderPropBuffer(List<ShaderProp> shaderProps, uint bufferSize)

@@ -513,7 +513,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                                 init = true;
                 
                                 TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;
-                                texture2d = AssetHandler.GetTextureBinding(texMeta, spriteFilePath);
+                                texture2d = AssetHandler.GetAssetBinding(texMeta, spriteFilePath) as Texture2D;
                                 tilemap.tileImage = texture2d;
                                 texture = texture2d.texture;
 

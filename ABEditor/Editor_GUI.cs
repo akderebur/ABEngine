@@ -212,8 +212,8 @@ namespace ABEngine.ABEditor
                         if (editMatPath != selectedAsset)
                         {
                             editMatPath = selectedAsset;
-                            editMat = AssetHandler.GetMaterialBinding(matMeta, selectedAsset);
-                            editMat.matName = Path.GetFileNameWithoutExtension(selectedAsset);
+                            editMat = AssetHandler.GetAssetBinding(matMeta, selectedAsset) as PipelineMaterial;
+                            editMat.name = Path.GetFileNameWithoutExtension(selectedAsset);
                         }
 
                         ImGui.Begin("Details");
@@ -500,6 +500,7 @@ namespace ABEngine.ABEditor
                     {
                         ResetWorld();
                         AssetCache.ClearSceneCache();
+                        AssetHandler.ResetScene();
 
                         canvas = new Canvas(screenSize.X, screenSize.Y);
                         canvas.isDynamicSize = false;

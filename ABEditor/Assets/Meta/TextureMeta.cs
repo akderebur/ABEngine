@@ -6,6 +6,7 @@ using Halak;
 using Veldrid;
 using ImGuiNET;
 using System.Collections.Generic;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor.Assets.Meta
 {
@@ -22,11 +23,21 @@ namespace ABEngine.ABEditor.Assets.Meta
 			sampler = GraphicsManager.linearSampleClamp;
 		}
 
+        public override JValue Serialize()
+        {
+            base.Serialize();
+
+            jObj.Put("Sampler", sampler.Name);
+            jObj.Put("ImageSize", imageSize);
+            jObj.Put("SpriteSize", spriteSize);
+
+            return jObj.Build();
+        }
+
         public override void Deserialize(string json)
         {
-            JValue data = JValue.Parse(json);
+            base.Deserialize(json);
 
-            base.uniqueID = Guid.Parse(data["GUID"]);
             imageSize = data["ImageSize"];
             spriteSize = data["SpriteSize"];
 
@@ -48,17 +59,6 @@ namespace ABEngine.ABEditor.Assets.Meta
             }
         }
 
-        public override JValue Serialize()
-        {
-            JsonObjectBuilder jObj = new JsonObjectBuilder(500);
-            jObj.Put("GUID", uniqueID.ToString());
-            jObj.Put("Sampler", sampler.Name);
-            jObj.Put("ImageSize", imageSize);
-            jObj.Put("SpriteSize", spriteSize);
-
-            return jObj.Build();
-        }
-
         public override JSerializable GetCopy(ref Entity newEntity)
         {
             throw new NotImplementedException();
@@ -72,6 +72,12 @@ namespace ABEngine.ABEditor.Assets.Meta
         public override void DrawMeta()
         {
             
+        }
+
+        public override Texture2D CreateAssetBinding()
+        {
+            Texture2D tex = AssetCache.CreateTexture2D(base.fPath, sampler, spriteSize);
+            return tex;
         }
     }
 }

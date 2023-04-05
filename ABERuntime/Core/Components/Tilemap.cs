@@ -774,7 +774,7 @@ namespace ABEngine.ABERuntime.Components
             JsonObjectBuilder jObj = new JsonObjectBuilder(20000);
             jObj.Put("type", GetType().ToString());
             //jObj.Put("TransformGuid", transform.entity.Get<Guid>().ToString());
-            jObj.Put("TileImage", AssetCache.GetAssetSceneIndex(this.tileImage));
+            jObj.Put("TileImage", AssetCache.GetAssetSceneIndex(this.tileImage.fPathHash));
 
             JsonArrayBuilder tilesArr = new JsonArrayBuilder(10000);
 			foreach (var tile in tiles.Values)

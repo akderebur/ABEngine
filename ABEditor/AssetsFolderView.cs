@@ -28,6 +28,7 @@ namespace ABEngine.ABEditor
             newFileName = "New";
         }
 
+        public bool renaming { get; set; }
         public string categoryName { get; set; }
         public string categoryExtension { get; set; }
         public Action ContextMenuRender { get; set; }
@@ -55,11 +56,22 @@ namespace ABEngine.ABEditor
 
         public void RenameFile(string file)
         {
-            string oldPath = Editor.AssetPath + _curDir + "/" + file;
-            string newPath = Editor.AssetPath + _curDir + "/" + newFileName + categoryExtension;
-            File.Move(oldPath, newPath);
+            string oldFile = file;
+            string newFile = newFileName + categoryExtension;
 
+            int fileInd = files.IndexOf(oldFile);
+            if (fileInd > -1)
+                files[fileInd] = newFile;
+
+            string oldPath = Editor.AssetPath + GetLocalPath() + oldFile;
+            string newPath = Editor.AssetPath + GetLocalPath() + newFile;
             newFileName = "New";
+
+
+            if (File.Exists(newPath))
+                return;
+
+            File.Move(oldPath, newPath);
         }
 
         public string GetLocalPath()
@@ -172,12 +184,30 @@ namespace ABEngine.ABEditor
                                  | NotifyFilters.Security
                                  | NotifyFilters.Size;
 
-            watcher.Created += ReloadFiles;
+            watcher.Created += CreatedFile;
             watcher.Deleted += ReloadFiles;
+            watcher.Renamed += FileMoved;
             watcher.IncludeSubdirectories = true;
             watcher.EnableRaisingEvents = true;
 
             isActive = true;
+        }
+
+        private static void FileMoved(object sender, RenamedEventArgs e)
+        {
+            string oldAssetPath = e.OldFullPath.Replace(assetsPath, "");
+            string ext = Path.GetExtension(oldAssetPath);
+            string oldMetaPath = oldAssetPath.Replace(ext, ".abmeta");
+            string newAssetPath = e.FullPath.Replace(assetsPath, "");
+
+            AssetHandler.FileMoved(oldMetaPath, oldAssetPath, newAssetPath);
+            LoadFiles();
+        }
+
+        private static void CreatedFile(object sender, FileSystemEventArgs e)
+        {
+            AssetHandler.NewFileCreated(e.FullPath.Replace(assetsPath, ""));
+            LoadFiles();
         }
 
         private static void ReloadFiles(object sender, FileSystemEventArgs e)
@@ -199,8 +229,6 @@ namespace ABEngine.ABEditor
             materialCatDir.curDir = materialCatDir.curDir;
         }
 
-        static bool renaming = false;
-
         static unsafe void DrawAssetTab(CategoryDirectory catDir)
         {
             if (ImGui.BeginTabItem(catDir.categoryName))
@@ -208,7 +236,7 @@ namespace ABEngine.ABEditor
                 if (ImGui.Button("Assets"))
                 {
                     catDir.curDir = "";
-                    renaming = false;
+                    catDir.renaming = false;
                 }
 
                 for (int i = 0; i < catDir.curDirParts.Length; i++)
@@ -236,16 +264,17 @@ namespace ABEngine.ABEditor
                     if (ImGui.Button(folder))
                     {
                         changedDir = true;
+                        catDir.renaming = false;
                         folderName = folder;
                     }
                 }
 
                 foreach (var file in catDir.files)
                 {
-                    if (renaming && selFile == file)
+                    if (catDir.renaming && selFile == file)
                     {
                         ImGui.InputText("", ref catDir.newFileName, 200);
-                        ImGui.SetKeyboardFocusHere();
+                        //ImGui.SetKeyboardFocusHere();
                     }
                     else
                     {
@@ -267,7 +296,7 @@ namespace ABEngine.ABEditor
                         //}
                         if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) // Right click - context menu
                         {
-                            renaming = false;
+                            catDir.renaming = false;
 
                             selFile = file;
                             ImGui.OpenPopup("FileContext");
@@ -277,7 +306,7 @@ namespace ABEngine.ABEditor
                         {
                             if (ImGui.BeginDragDropSource())
                             {
-                                renaming = false;
+                                catDir.renaming = false;
 
                                 ImGui.Text(file);
 
@@ -295,7 +324,7 @@ namespace ABEngine.ABEditor
                     catDir.ContextMenuRender();
                     if(ImGui.MenuItem("Rename"))
                     {
-                        renaming = true;
+                        catDir.renaming = true;
                         catDir.newFileName = Path.GetFileNameWithoutExtension(selFile);
                     }
                     ImGui.EndPopup();
@@ -306,19 +335,21 @@ namespace ABEngine.ABEditor
                     catDir.curDir += "/" + folderName;
                 }
 
- 
-
-                if (renaming)
+                if (catDir.renaming)
                 {
                     if (ImGui.IsKeyPressed(ImGuiKey.Enter))
                     {
-                        renaming = false;
-                        catDir.RenameFile(selFile);
+                        catDir.renaming = false;
+                        if (!string.IsNullOrEmpty(catDir.newFileName))
+                        {
+                            catDir.RenameFile(selFile);
+                            selFile = catDir.newFileName + catDir.categoryExtension;
+                        }
                     }
                 }
 
                 // Create new
-                if (catDir.newFileAction != null)
+                if (!catDir.renaming && catDir.newFileAction != null)
                 {
                     if (ImGui.Button("Create New"))
                         catDir.newFileAction();

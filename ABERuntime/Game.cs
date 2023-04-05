@@ -135,11 +135,11 @@ namespace ABEngine.ABERuntime
             // Init
             PhysicsManager.InitSettings();
             GraphicsManager.InitSettings();
-            AssetCache.InitAssetCache();
 
 
             // Veldrid 
             SetupGraphics(windowName);
+            AssetCache.InitAssetCache();
 
             LightPipelineAsset lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
             LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
@@ -907,8 +907,6 @@ namespace ABEngine.ABERuntime
             JsonObjectBuilder scene = new JsonObjectBuilder(10000);
             scene.Put("SceneName", "Test");
 
-            scene.Put("Assets", AssetCache.SerializeAssets());
-
             JsonArrayBuilder extensions = new JsonArrayBuilder(1000);
             foreach (var rendExt in renderExtensions)
             {
@@ -960,6 +958,7 @@ namespace ABEngine.ABERuntime
                 entArr.Push(entObj.Build());
             }
 
+            scene.Put("Assets", AssetCache.SerializeAssets());
             scene.Put("Entities", entArr.Build());
 
             //Console.WriteLine(scene.Build().ToString());

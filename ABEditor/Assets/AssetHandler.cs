@@ -6,6 +6,12 @@ using System.Collections.Generic;
 using Veldrid.ImageSharp;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
+using System.Xml;
+using Halak;
+using Vortice;
+using static System.Net.Mime.MediaTypeNames;
+using System.Reflection.PortableExecutable;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor.Assets
 {
@@ -13,76 +19,250 @@ namespace ABEngine.ABEditor.Assets
 	{
 		static string AssetsPath;
 		static Dictionary<string, AssetMeta> metaDict = new Dictionary<string, AssetMeta>();
-		static Dictionary<TextureMeta, Texture2D> sceneTextures = new Dictionary<TextureMeta, Texture2D>();
-        static Dictionary<MaterialMeta, PipelineMaterial> sceneMaterials = new Dictionary<MaterialMeta, PipelineMaterial>();
+        static Dictionary<AssetMeta, Asset> sceneAssets = new Dictionary<AssetMeta, Asset>();
+
+
+        //static Dictionary<TextureMeta, Texture2D> sceneTextures = new Dictionary<TextureMeta, Texture2D>();
+        //      static Dictionary<MaterialMeta, PipelineMaterial> sceneMaterials = new Dictionary<MaterialMeta, PipelineMaterial>();
+
+        static Dictionary<Guid, string> guidToMeta = new Dictionary<Guid, string>();
+		static List<Guid> loadedGuids = new List<Guid>();
+		static HashSet<string> assetExts = new HashSet<string>()
+		{
+			".png",
+			".abmat"
+		};
+
+		static int guidMagic = 1230324289; // ABUI
 
         public static void InitFiles(string assetsPath)
 		{
             AssetsPath = assetsPath;
-			var files = Directory.GetFiles(assetsPath, "*", SearchOption.AllDirectories);
+			var files = Directory.GetFiles(AssetsPath, "*", SearchOption.AllDirectories);
+			var metaFiles = Directory.GetFiles(AssetsPath, "*.abmeta", SearchOption.AllDirectories);
+            var sceneFiles = Directory.GetFiles(AssetsPath, "*.abscene", SearchOption.AllDirectories);
 
-			foreach (var file in files)
+			Dictionary<uint, uint> updatedAssetHashes = new Dictionary<uint, uint>();
+
+            // Map guid to metas
+            foreach (var metaFile in metaFiles)
 			{
-				AssetMeta sharedMeta = null;
-				string extOrg = Path.GetExtension(file);
-                string ext = extOrg.ToLower();
-				string metaFullPath  = file.Replace(ext, ".abmeta");
-                if (ext.Equals(".png"))
-				{
-					TextureMeta meta = new TextureMeta();
-					sharedMeta = meta;
+                JValue data = JValue.Parse(File.ReadAllText(metaFile));
+				Guid guid = Guid.Parse(data["GUID"]);
 
-					if (File.Exists(metaFullPath))
-						meta.Deserialize(File.ReadAllText(metaFullPath));
-					else
+				if(!guidToMeta.ContainsKey(guid))
+					guidToMeta.Add(guid, metaFile.Replace(AssetsPath, ""));
+            }
+
+            foreach (var file in files)
+			{
+				string ext = Path.GetExtension(file);
+
+                if (assetExts.Contains(ext.ToLower())) // Viable asset file
+				{
+                    string fileAssetPath = file.Replace(AssetsPath, "");
+                    string metaAssetPath = fileAssetPath.Replace(ext, ".abmeta");
+
+                    Guid assetGuid = Guid.Empty;
+
+                    using (FileStream fs = new FileStream(file, FileMode.Open))
+					using (BinaryReader br = new BinaryReader(fs))
 					{
-						ImageSharpTexture img = new ImageSharpTexture(file);
-						meta.imageSize = new Vector2(img.Width, img.Height);
-						File.WriteAllText(metaFullPath, meta.Serialize().Serialize());
+						fs.Position = fs.Length - 20;
+						int magic = br.ReadInt32();
+						if (magic == guidMagic)
+						{
+							byte[] guidBytes = br.ReadBytes(16);
+							assetGuid = new Guid(guidBytes);
+						}
 					}
 
-					metaDict.Add(file.Replace(assetsPath, ""), meta);
-					meta.refreshEvent += RefreshTextureAsset;
-
-				}
-				else if(ext.Equals(".abmat"))
-				{
-					MaterialMeta meta = new MaterialMeta();
-					sharedMeta = meta;
-
-                    if (File.Exists(metaFullPath))
-                        meta.Deserialize(File.ReadAllText(metaFullPath));
-                    else
+                    if (guidToMeta.ContainsKey(assetGuid) && !loadedGuids.Contains(assetGuid))
                     {
-                        File.WriteAllText(metaFullPath, meta.Serialize().Serialize());
+						string oldMetaAssetPath = guidToMeta[assetGuid];
+						AssetMeta meta = new DummyMeta();
+						meta.Deserialize(File.ReadAllText(assetsPath + oldMetaAssetPath));
+
+						if (meta.fPath.Equals(fileAssetPath))
+						{
+						    meta = CreateMetaFromExtension(ext);
+							meta.metaAssetPath = metaAssetPath;
+							meta.Deserialize(File.ReadAllText(assetsPath + metaAssetPath));
+							metaDict.Add(fileAssetPath, meta);
+							loadedGuids.Add(meta.uniqueID);
+						}
+						else // File moved or renamed
+						{
+							updatedAssetHashes.Add(meta.fPath.ToHash32(), fileAssetPath.ToHash32());
+							HandleMovedFile(oldMetaAssetPath, meta.fPath, fileAssetPath);
+						}
+                    }
+                    else
+					{
+						HandleNewFile(fileAssetPath);
                     }
 
-                    metaDict.Add(file.Replace(assetsPath, ""), meta);
-                    meta.refreshEvent += RefreshMaterialAsset;
-                }
-
-				if(sharedMeta != null)
-				{
-					sharedMeta.metaAssetPath = metaFullPath.Replace(assetsPath, "");
                 }
 			}
+
+			// Replace hashes
+			// TODO: Fix horrible string replacement
+			foreach (var sceneFile in sceneFiles)
+			{
+				string sceneData = File.ReadAllText(sceneFile);
+
+				foreach (var updateHashKV in updatedAssetHashes)
+				{
+					string toFind = "\"FileHash\":" + updateHashKV.Key;
+					string toReplace = "\"FileHash\":" + updateHashKV.Value;
+					if (sceneData.Contains(toFind))
+						sceneData = sceneData.Replace(toFind, toReplace);
+                }
+
+				File.WriteAllText(sceneFile, sceneData);
+            }
 		}
 
-		public static void CreateMaterial(string file)
+		public static void ResetScene()
 		{
-            string extOrg = Path.GetExtension(file);
-            string ext = extOrg.ToLower();
-            string metaFullPath = file.Replace(ext, ".abmeta");
+			sceneAssets.Clear();
+		}
 
-            MaterialMeta meta = new MaterialMeta();
-			meta.pipelineAsset = GraphicsManager.GetUberMaterial().pipelineAsset;
+		private static AssetMeta CreateMetaFromExtension(string ext)
+		{
+			AssetMeta meta = null;
+			switch (ext.ToLower())
+			{
+				case ".png":
+					meta = new TextureMeta();
+					meta.refreshEvent += RefreshTextureAsset;
+					break;
+				case ".abmat":
+                    meta = new MaterialMeta();
+                    meta.refreshEvent += RefreshMaterialAsset;
+                    break;
+            }
 
-            File.WriteAllText(metaFullPath, meta.Serialize().Serialize());
+			return meta;
+		}
 
+		// Public New/Moved File Methods
+		public static void NewFileCreated(string fileAssetPath)
+		{
+            string ext = Path.GetExtension(fileAssetPath);
+			if (!assetExts.Contains(ext.ToLower()))
+				return;
+				
+            HandleNewFile(fileAssetPath);
+		}
+
+        public static void FileMoved(string oldMetaAssetPath, string oldFileAssetPath, string newFileAssetPath)
+        {
+            string ext = Path.GetExtension(newFileAssetPath);
+            if (!assetExts.Contains(ext.ToLower()))
+                return;
+
+            HandleMovedFile(oldMetaAssetPath, oldFileAssetPath, newFileAssetPath);
+        }
+
+
+        private static void HandleNewFile(string fileAssetPath)
+		{
+			string fullPath = AssetsPath + fileAssetPath;
+			if (!File.Exists(fullPath) || metaDict.ContainsKey(fileAssetPath))
+				return;
+
+			string ext = Path.GetExtension(fileAssetPath);
+            string metaAssetPath = fileAssetPath.Replace(ext, ".abmeta");
+
+            AssetMeta meta = CreateMetaFromExtension(ext);
+			meta.fPath = fileAssetPath;
+			meta.metaAssetPath = metaAssetPath;
+            meta.fPathHash = fileAssetPath.ToHash32();
+
+            if (meta.GetType() == typeof(TextureMeta))
+            {
+                ImageSharpTexture img = new ImageSharpTexture(fullPath);
+                ((TextureMeta)meta).imageSize = new Vector2(img.Width, img.Height);
+            }
+
+            File.WriteAllText(Game.AssetPath + metaAssetPath, meta.Serialize().Serialize());
+
+			// Write GUID to the end of file
+			using (FileStream fs = new FileStream(fullPath, FileMode.Open))
+			using (BinaryReader br = new BinaryReader(fs))
+			using (BinaryWriter bw = new BinaryWriter(fs))
+			{
+				fs.Position = fs.Length - 20;
+				int magic = br.ReadInt32();
+				if (magic == guidMagic) // Existing ABE GUID Tag, duplicate file maybe?
+				{
+                    bw.Write(meta.uniqueID.ToByteArray());
+                }
+                else
+				{
+					fs.Position = fs.Length;
+					bw.Write(guidMagic);
+					bw.Write(meta.uniqueID.ToByteArray());
+				}
+			}
+
+			metaDict.Add(fileAssetPath, meta);
+			guidToMeta.Add(meta.uniqueID, metaAssetPath);
+			loadedGuids.Add(meta.uniqueID);
+        }
+
+        private static void HandleMovedFile(string oldMetaAssetPath, string oldFileAssetPath, string newFileAssetPath)
+		{
+            string ext = Path.GetExtension(oldFileAssetPath);
+
+			string metaAssetPath = newFileAssetPath.Replace(ext, ".abmeta");
+
+            string oldFullPath = AssetsPath + oldFileAssetPath;
+			string oldMetaFullPath = AssetsPath + oldMetaAssetPath;
+
+			string newFullPath = AssetsPath + newFileAssetPath;
+			string newMetaFullPath = newFullPath.Replace(ext, ".abmeta");
+
+			AssetMeta meta = null;
+			if (metaDict.ContainsKey(oldFileAssetPath)) // Editor runtime
+			{
+				meta = metaDict[oldFileAssetPath];
+				metaDict.Remove(oldFileAssetPath);
+
+                if (sceneAssets.ContainsKey(meta))
+					sceneAssets[meta].fPathHash = newFileAssetPath.ToHash32();
+            }
+			else
+			{
+				meta = CreateMetaFromExtension(ext);
+				if (File.Exists(oldMetaFullPath))
+					meta.Deserialize(File.ReadAllText(oldMetaFullPath));
+            }
+
+            meta.metaAssetPath = metaAssetPath;
+			meta.fPath = newFileAssetPath;
+			meta.fPathHash = newFileAssetPath.ToHash32();
+
+			if (guidToMeta.ContainsKey(meta.uniqueID))
+				guidToMeta.Remove(meta.uniqueID);
+
+            metaDict.Add(newFileAssetPath, meta);
+
+            if (File.Exists(oldMetaFullPath))
+				File.Move(oldMetaFullPath, newMetaFullPath);
+
+			// Overwrite either way
+			File.WriteAllText(newMetaFullPath, meta.Serialize().Serialize());
+			guidToMeta.Add(meta.uniqueID, metaAssetPath);
+            loadedGuids.Add(meta.uniqueID);
+
+			AssetCache.UpdateAsset(oldFileAssetPath.ToHash32(), newFileAssetPath.ToHash32(), newFileAssetPath);
+        }
+
+        public static void CreateMaterial(string file)
+		{
 			MaterialMeta.CreateMaterialAsset(file);
-
-            metaDict.Add(file.Replace(Game.AssetPath, ""), meta);
-            meta.refreshEvent += RefreshMaterialAsset;
         }
 
 		public static AssetMeta GetMeta(string file)
@@ -93,30 +273,19 @@ namespace ABEngine.ABEditor.Assets
 				return null;
 		}
 
-		public static Texture2D GetTextureBinding(TextureMeta texMeta, string texPath)
+		public static Asset GetAssetBinding(AssetMeta meta, string assetPath)
 		{
-			if (sceneTextures.ContainsKey(texMeta))
-				return sceneTextures[texMeta];
+			if (sceneAssets.ContainsKey(meta))
+				return sceneAssets[meta];
 			else
 			{
-                Texture2D tex = AssetCache.CreateTexture2D(texPath, texMeta.sampler, texMeta.spriteSize);
-				sceneTextures.Add(texMeta, tex);
-				return tex;
-            }
-        }
+				var asset = meta.CreateAssetBinding();
+                sceneAssets.Add(meta, asset);
+				return asset;
+			}
+		}
 
-        public static PipelineMaterial GetMaterialBinding(MaterialMeta matMeta, string matPath)
-        {
-            if (sceneMaterials.ContainsKey(matMeta))
-                return sceneMaterials[matMeta];
-            else
-            {
-				PipelineMaterial mat = AssetCache.CreateMaterial(matPath);
-				mat.matName = Path.GetFileNameWithoutExtension(matPath);
-                sceneMaterials.Add(matMeta, mat);
-                return mat;
-            }
-        }
+		
 
         public static void SaveMeta(AssetMeta meta)
 		{
@@ -126,9 +295,9 @@ namespace ABEngine.ABEditor.Assets
 		private static void RefreshMaterialAsset(AssetMeta assetMeta, string assetPath)
 		{
 			MaterialMeta matMeta = assetMeta as MaterialMeta;
-			if (sceneMaterials.ContainsKey(matMeta))
+			if (sceneAssets.ContainsKey(matMeta))
 			{
-				PipelineMaterial mat = sceneMaterials[matMeta];
+				PipelineMaterial mat = sceneAssets[matMeta] as PipelineMaterial; 
 				mat.SetVector4(matMeta.changedPropName, matMeta.changedData);
 			}
 		}
@@ -136,9 +305,9 @@ namespace ABEngine.ABEditor.Assets
         private static void RefreshTextureAsset(AssetMeta assetMeta, string assetPath)
 		{
 			TextureMeta texMeta = assetMeta as TextureMeta;
-			if (sceneTextures.ContainsKey(texMeta))
+			if (sceneAssets.ContainsKey(texMeta))
 			{
-				Texture2D oldTex = sceneTextures[texMeta];
+				Texture2D oldTex = sceneAssets[texMeta] as Texture2D;
 				Texture2D newTex = AssetCache.CreateTexture2D(assetPath, texMeta.sampler, texMeta.spriteSize);
 
 				// Find all entities with this texture
@@ -158,8 +327,8 @@ namespace ABEngine.ABEditor.Assets
                     }
 				});
 
-				sceneTextures.Remove(texMeta);
-				sceneTextures.Add(texMeta, newTex);
+				sceneAssets.Remove(texMeta);
+                sceneAssets.Add(texMeta, newTex);
 			}
 		}
 

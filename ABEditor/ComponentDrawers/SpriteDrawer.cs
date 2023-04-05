@@ -41,7 +41,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             }
 
             ImGui.Text("Material");
-            ImGui.InputText("##matName", ref sprite.sharedMaterial.matName, 100, ImGuiInputTextFlags.ReadOnly);
+            ImGui.InputText("##matName", ref sprite.sharedMaterial.name, 100, ImGuiInputTextFlags.ReadOnly);
             CheckMaterialDropSprite(sprite);
         }
 
@@ -58,7 +58,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     var spriteFilePath = AssetsFolderView.files[srcIndex];
 
                     TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;
-                    Texture2D texture = AssetHandler.GetTextureBinding(texMeta, spriteFilePath);
+                    Texture2D texture = AssetHandler.GetAssetBinding(texMeta, spriteFilePath) as Texture2D;
 
                     sourceSprite.SetTexture(texture);
 
@@ -80,7 +80,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                     var materialFilePath = AssetsFolderView.files[srcIndex];
                     MaterialMeta matMeta = AssetHandler.GetMeta(materialFilePath) as MaterialMeta;
-                    PipelineMaterial mat = AssetHandler.GetMaterialBinding(matMeta, materialFilePath);
+                    PipelineMaterial mat = AssetHandler.GetAssetBinding(matMeta, materialFilePath) as PipelineMaterial;
 
                     sprite.SetMaterial(mat);
                 }
