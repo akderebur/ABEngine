@@ -434,13 +434,13 @@ namespace ABEngine.ABERuntime
 
         internal static void UpdateAsset(uint oldHash, uint hash, string file)
         {
-            if (assetDict.ContainsKey(hash) || !assetDict.ContainsKey(oldHash))
-                return;
-
             if (hashToFName.ContainsKey(oldHash))
                 hashToFName.Remove(oldHash);
             if (!hashToFName.ContainsKey(hash))
                 hashToFName.Add(hash, file);
+
+            if (assetDict.ContainsKey(hash) || !assetDict.ContainsKey(oldHash))
+                return;
 
             var asset = assetDict[oldHash];
             asset.fPathHash = hash;

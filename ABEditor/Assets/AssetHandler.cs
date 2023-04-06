@@ -8,9 +8,6 @@ using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using System.Xml;
 using Halak;
-using Vortice;
-using static System.Net.Mime.MediaTypeNames;
-using System.Reflection.PortableExecutable;
 using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor.Assets
@@ -21,9 +18,8 @@ namespace ABEngine.ABEditor.Assets
 		static Dictionary<string, AssetMeta> metaDict = new Dictionary<string, AssetMeta>();
         static Dictionary<AssetMeta, Asset> sceneAssets = new Dictionary<AssetMeta, Asset>();
 
-
         //static Dictionary<TextureMeta, Texture2D> sceneTextures = new Dictionary<TextureMeta, Texture2D>();
-        //      static Dictionary<MaterialMeta, PipelineMaterial> sceneMaterials = new Dictionary<MaterialMeta, PipelineMaterial>();
+        //static Dictionary<MaterialMeta, PipelineMaterial> sceneMaterials = new Dictionary<MaterialMeta, PipelineMaterial>();
 
         static Dictionary<Guid, string> guidToMeta = new Dictionary<Guid, string>();
 		static List<Guid> loadedGuids = new List<Guid>();
@@ -40,7 +36,6 @@ namespace ABEngine.ABEditor.Assets
             AssetsPath = assetsPath;
 			var files = Directory.GetFiles(AssetsPath, "*", SearchOption.AllDirectories);
 			var metaFiles = Directory.GetFiles(AssetsPath, "*.abmeta", SearchOption.AllDirectories);
-            var sceneFiles = Directory.GetFiles(AssetsPath, "*.abscene", SearchOption.AllDirectories);
 
 			Dictionary<uint, uint> updatedAssetHashes = new Dictionary<uint, uint>();
 
@@ -105,9 +100,11 @@ namespace ABEngine.ABEditor.Assets
                 }
 			}
 
-			// Replace hashes
-			// TODO: Fix horrible string replacement
-			foreach (var sceneFile in sceneFiles)
+            // Replace hashes in scenes
+            // TODO: Fix horrible string replacement
+            var sceneFiles = Directory.GetFiles(AssetsPath, "*.abscene", SearchOption.AllDirectories);
+
+            foreach (var sceneFile in sceneFiles)
 			{
 				string sceneData = File.ReadAllText(sceneFile);
 
@@ -121,6 +118,26 @@ namespace ABEngine.ABEditor.Assets
 
 				File.WriteAllText(sceneFile, sceneData);
             }
+		}
+
+		static void UpdateSceneHash(uint oldHash, uint newHash)
+		{
+			string toFind = "\"FileHash\":" + oldHash;
+			string toReplace = "\"FileHash\":" + newHash;
+
+			// Replace hashes in scenes
+			// TODO: Fix horrible string replacement
+			var sceneFiles = Directory.GetFiles(AssetsPath, "*.abscene", SearchOption.AllDirectories);
+
+			foreach (var sceneFile in sceneFiles)
+			{
+				string sceneData = File.ReadAllText(sceneFile);
+
+				if (sceneData.Contains(toFind))
+					sceneData = sceneData.Replace(toFind, toReplace);
+
+				File.WriteAllText(sceneFile, sceneData);
+			}
 		}
 
 		public static void ResetScene()
@@ -224,7 +241,10 @@ namespace ABEngine.ABEditor.Assets
 			string newFullPath = AssetsPath + newFileAssetPath;
 			string newMetaFullPath = newFullPath.Replace(ext, ".abmeta");
 
-			AssetMeta meta = null;
+			uint oldHash = oldFileAssetPath.ToHash32();
+			uint newHash = newFileAssetPath.ToHash32();
+
+            AssetMeta meta = null;
 			if (metaDict.ContainsKey(oldFileAssetPath)) // Editor runtime
 			{
 				meta = metaDict[oldFileAssetPath];
@@ -242,7 +262,7 @@ namespace ABEngine.ABEditor.Assets
 
             meta.metaAssetPath = metaAssetPath;
 			meta.fPath = newFileAssetPath;
-			meta.fPathHash = newFileAssetPath.ToHash32();
+			meta.fPathHash = newHash;
 
 			if (guidToMeta.ContainsKey(meta.uniqueID))
 				guidToMeta.Remove(meta.uniqueID);
@@ -257,7 +277,8 @@ namespace ABEngine.ABEditor.Assets
 			guidToMeta.Add(meta.uniqueID, metaAssetPath);
             loadedGuids.Add(meta.uniqueID);
 
-			AssetCache.UpdateAsset(oldFileAssetPath.ToHash32(), newFileAssetPath.ToHash32(), newFileAssetPath);
+			AssetCache.UpdateAsset(oldHash, newHash, newFileAssetPath);
+			UpdateSceneHash(oldHash, newHash);
         }
 
         public static void CreateMaterial(string file)
