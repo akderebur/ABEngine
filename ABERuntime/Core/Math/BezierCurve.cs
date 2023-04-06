@@ -4,7 +4,7 @@ using System.Numerics;
 
 namespace ABEngine.ABERuntime.Core.Math
 {
-    public class BezierCurve
+    public class BezierCurve : AutoSerializable
     {
         public Vector2 StartPoint { get; set; }
         public Vector2 EndPoint { get; set; }

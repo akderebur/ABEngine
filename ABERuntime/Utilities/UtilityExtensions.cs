@@ -103,6 +103,12 @@ namespace ABEngine.ABERuntime
             return neighbors;
         }
 
+        // IO
+        public static string ToCommonPath(this string path)
+        {
+            return path.Replace("\\", "/");
+        }
+
         // Hashing
         public static uint ToHash32(this string str)
         {

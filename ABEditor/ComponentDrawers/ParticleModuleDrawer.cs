@@ -9,6 +9,7 @@ using Veldrid;
 using ABEngine.ABEditor.Assets;
 using ABEngine.ABEditor.Assets.Meta;
 using System.Numerics;
+using ABEngine.ABERuntime.Core.Math;
 
 namespace ABEngine.ABEditor.ComponentDrawers
 {
@@ -106,19 +107,14 @@ namespace ABEngine.ABEditor.ComponentDrawers
             }
 
             int maxParticles = pm.maxParticles;
-            float startLifetime = pm.startLifetime;
-            float spawnRate = pm.spawnRate;
             float spawnRange = pm.spawnRange;
-            float speed = pm.speed;
+            FloatRange startLifetime = pm.startLifetime;
+            FloatRange spawnRate = pm.spawnRate;
+            FloatRange speed = pm.speed;
 
-            if (ImGui.InputFloat("Start Lifetime", ref startLifetime))
-                pm.startLifetime = startLifetime;
-
-            if (ImGui.InputFloat("Speed", ref speed))
-                pm.speed = speed;
-
-            if (ImGui.InputFloat("Spawn Rate", ref spawnRate))
-                pm.spawnRate = spawnRate;
+            DrawFloatRangeEditor(startLifetime, "Start Lifetime");
+            DrawFloatRangeEditor(speed, "Speed");
+            DrawFloatRangeEditor(spawnRate, "Spawn Rate");
 
             if (ImGui.InputFloat("Spawn Range", ref spawnRange))
                 pm.spawnRange = spawnRange;
@@ -193,6 +189,30 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     ImGui.EndCombo();
                 }
             }
+        }
+
+        static void DrawFloatRangeEditor(FloatRange range, string name)
+        {
+            if (range.isConstant)
+            {
+                float val = range.value;
+                if (ImGui.InputFloat(name, ref val))
+                    range.value = val;
+            }
+            else
+            {
+                Vector2 val = range.range;
+                if (ImGui.InputFloat2(name, ref val))
+                    range.range = val;
+            }
+
+            ImGui.PushID(name);
+            ImGui.SameLine();
+            bool ticked = !range.isConstant;
+            if (ImGui.Checkbox("Range", ref ticked))
+                    range.isConstant = !ticked;
+            ImGui.PopID();
+
         }
 
         // Drag drop image

@@ -46,16 +46,16 @@ namespace ABEngine.ABEditor.Assets
 				Guid guid = Guid.Parse(data["GUID"]);
 
 				if(!guidToMeta.ContainsKey(guid))
-					guidToMeta.Add(guid, metaFile.Replace(AssetsPath, ""));
+					guidToMeta.Add(guid, metaFile.ToCommonPath().Replace(AssetsPath, ""));
             }
 
             foreach (var file in files)
 			{
-				string ext = Path.GetExtension(file);
+                string ext = Path.GetExtension(file);
 
                 if (assetExts.Contains(ext.ToLower())) // Viable asset file
 				{
-                    string fileAssetPath = file.Replace(AssetsPath, "");
+                    string fileAssetPath = file.ToCommonPath().Replace(AssetsPath, "");
                     string metaAssetPath = fileAssetPath.Replace(ext, ".abmeta");
 
                     Guid assetGuid = Guid.Empty;

@@ -21,11 +21,11 @@ namespace ABEngine.ABERuntime.Components
     public class ParticleModule : JSerializable
     {
         public int maxParticles { get; set; }
-        public float startLifetime { get; set; }
-        public float spawnRate { get; set; }
+        public FloatRange startLifetime { get; set; }
+        public FloatRange spawnRate { get; set; }
         public float spawnRange { get; set; }
-        public float speed { get; set; }
-        public float startSize { get; set; }
+        public FloatRange speed { get; set; }
+        public FloatRange startSize { get; set; }
         public BezierCurve lifetimeSize { get; set; }
         public ColorGradient lifetimeColor { get; set; }
 
@@ -88,11 +88,11 @@ namespace ABEngine.ABERuntime.Components
 
         public ParticleModule()
         {
-            spawnRate = 1;
-            startSize = 1f;
+            spawnRate = new FloatRange(1f);
+            startSize = new FloatRange(1f);
             spawnRange = 1f;
-            speed = 2f;
-            startLifetime = 3f;
+            speed = new FloatRange(2f);
+            startLifetime = new FloatRange(2f);
             maxParticles = 100;
             rnd = new Random();
             _particleTexture = AssetCache.GetDefaultTexture();
@@ -138,6 +138,9 @@ namespace ABEngine.ABERuntime.Components
             };
             particles.AddLast(particle);
             isPlaying = true;
+
+            float rate = Math.Clamp(spawnRate.NextValue(), 0.5f, 10000f);
+            spawnInterval = 1f / rate;
         }
 
         public void Stop()
@@ -160,7 +163,6 @@ namespace ABEngine.ABERuntime.Components
             if (!isPlaying)
                 return;
 
-            spawnInterval = 1f / spawnRate;
             scale = moduleTrans.worldScale.X + 0.00001f;
             float scaledDelta = deltaTime * scale;
             float moveDelta = simulationSpace == SimulationSpace.Local ? deltaTime : scaledDelta;
@@ -187,17 +189,17 @@ namespace ABEngine.ABERuntime.Components
                 }
 
                 particle.Lifetime -= scaledDelta;
-                float normLT = Math.Clamp(1f - particle.Lifetime / (startLifetime * scale), 0, 1);
-                Vector3 newPos = particle.Transform.localPosition + rotatedMoveDir * speed * moveDelta;
+                float normLT = Math.Clamp(1f - particle.Lifetime / (particle.StartLifetime), 0, 1);
+                Vector3 newPos = particle.Transform.localPosition + rotatedMoveDir * particle.Speed * moveDelta;
                 newPos.Z = -normLT;
                 particle.Transform.localPosition = newPos;
 
 
                 Vector2 sizeCurvePoint = lifetimeSize.Evaluate(normLT);
                 if (simulationSpace == SimulationSpace.Local)
-                    particle.Transform.localScale = startSize * new Vector3(sizeCurvePoint.Y, sizeCurvePoint.Y, 1f);
+                    particle.Transform.localScale = particle.StartSize * new Vector3(sizeCurvePoint.Y, sizeCurvePoint.Y, 1f);
                 else
-                    particle.Transform.localScale = moduleTrans.worldScale * startSize * new Vector3(sizeCurvePoint.Y, sizeCurvePoint.Y, 1f);
+                    particle.Transform.localScale = moduleTrans.worldScale * particle.StartSize * new Vector3(sizeCurvePoint.Y, sizeCurvePoint.Y, 1f);
 
                 particle.Sprite.tintColor = lifetimeColor.Evaluate(normLT);
                 if (particle.Lifetime <= 0)
@@ -244,11 +246,13 @@ namespace ABEngine.ABERuntime.Components
 
             int spawnLimit = 10000;
             int spawnC = 0;
+            bool intervalPassed = false;
 
             accumulator += deltaTime;
             while (accumulator >= spawnInterval && spawnC < spawnLimit)
             {
                 accumulator -= spawnInterval;
+                intervalPassed = true;
 
                 Particle reusePart = null;
                 foreach (var particle in particles)
@@ -269,7 +273,10 @@ namespace ABEngine.ABERuntime.Components
                 Vector3 spawnVec = Vector3.Transform(Vector3.UnitX, rotMat);
                 if (reusePart != null)
                 {
-                    reusePart.Lifetime = startLifetime * scale;
+                    reusePart.Lifetime = startLifetime.NextValue() * scale;
+                    reusePart.StartLifetime = reusePart.Lifetime;
+                    reusePart.Speed = speed.NextValue();
+                    reusePart.StartSize = startSize.NextValue();
 
                     float spawnMid = spawnRange * scale / 2f;
 
@@ -277,7 +284,7 @@ namespace ABEngine.ABERuntime.Components
 
                     Vector2 startSizePoint = lifetimeSize.Evaluate(0f);
                     trans.localPosition = moduleTrans.worldPosition + spawnVec * rnd.NextFloat(-spawnMid, spawnMid);
-                    trans.localScale = moduleTrans.worldScale * startSize * new Vector3(startSizePoint.Y, startSizePoint.Y, 1f);
+                    trans.localScale = moduleTrans.worldScale * reusePart.StartSize * new Vector3(startSizePoint.Y, startSizePoint.Y, 1f);
                     //trans.localRotation = moduleTrans.worldRotation;
                     if(simulationSpace == SimulationSpace.Local)
                         trans.parent = moduleTrans;
@@ -289,6 +296,7 @@ namespace ABEngine.ABERuntime.Components
                     sprite.manualBatching = true;
                     sprite.SetMaterial(_particleMaterial, false);
 
+
                     //sprite.sharedMaterial.SetFloat("EnableOutline", 1f);
                     //sprite.sharedMaterial.SetFloat("OutlineThickness", 0.01f);
                     //sprite.sharedMaterial.SetVector4("OutlineColor", Veldrid.RgbaFloat.Blue.ToVector4());
@@ -296,13 +304,25 @@ namespace ABEngine.ABERuntime.Components
                     Transform trans = new Transform("EditorNotVisible");
                     var entity = Game.GameWorld.CreateEntity("P" + particles.Count, Guid.NewGuid(), trans, sprite);
 
+                    float lifetime = startLifetime.NextValue() * scale;
+                    Particle particle = new Particle()
+                    {
+                        Transform = trans,
+                        Sprite = sprite,
+                        Lifetime = lifetime,
+                        StartLifetime = lifetime,
+                        Speed = speed.NextValue(),
+                        StartSize = startSize.NextValue()
+                    };
+                    particles.AddLast(particle);
+
                     particleBatch.AddSpriteEntity(trans, sprite);
 
                     float spawnMid = spawnRange * scale / 2f;
 
                     Vector2 startSizePoint = lifetimeSize.Evaluate(0f);
                     trans.localPosition = moduleTrans.worldPosition + spawnVec * rnd.NextFloat(-spawnMid, spawnMid);
-                    trans.localScale = moduleTrans.worldScale * startSize * new Vector3(startSizePoint.Y, startSizePoint.Y, 1f);
+                    trans.localScale = moduleTrans.worldScale * particle.StartSize * new Vector3(startSizePoint.Y, startSizePoint.Y, 1f);
                     //trans.localRotation = moduleTrans.worldRotation;
                     if (simulationSpace == SimulationSpace.Local)
                         trans.parent = moduleTrans;
@@ -310,19 +330,17 @@ namespace ABEngine.ABERuntime.Components
                     sprite.tintColor = lifetimeColor.Evaluate(0f);
 
                     spawnC++;
-
-                    Particle particle = new Particle()
-                    {
-                        Transform = trans,
-                        Sprite = sprite,
-                        Lifetime = startLifetime * scale,
-                    };
-                    particles.AddLast(particle);
                 }
             }
 
             if (spawnC > 0)
                 particleBatch.InitBatch();
+
+            if (intervalPassed)
+            {
+                float rate = Math.Clamp(spawnRate.NextValue(), 0.5f, 10000f);
+                spawnInterval = 1f / rate;
+            }
         }
 
         public JValue Serialize()
@@ -351,6 +369,10 @@ namespace ABEngine.ABERuntime.Components
         public float Lifetime;
         public Transform Transform;
         public Sprite Sprite;
+
+        public float StartLifetime;
+        public float StartSize;
+        public float Speed;
     }
 }
 
