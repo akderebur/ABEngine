@@ -685,9 +685,12 @@ namespace ABEngine.ABERuntime
             //_window = new Sdl2Window("Snake", 50, 50, width, height, SDL_WindowFlags., false);
             options.SyncToVerticalBlank = true;
             options.ResourceBindingModel = ResourceBindingModel.Improved;
-            
+
             //gd = VeldridStartup.CreateGraphicsDevice(window, options);
 
+            var backend = VeldridStartup.GetPlatformDefaultBackend();
+            if (backend != GraphicsBackend.Metal)
+                backend = GraphicsBackend.OpenGL;
 
             gd = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions(
                 debug: false,
@@ -697,7 +700,7 @@ namespace ABEngine.ABERuntime
                 preferDepthRangeZeroToOne: true,
                 preferStandardClipSpaceYDirection: true,
                 swapchainSrgbFormat: false
-            ));
+            ), backend);
             rf = new DisposeCollectorResourceFactory(gd.ResourceFactory);
             _commandList = gd.ResourceFactory.CreateCommandList();
 
