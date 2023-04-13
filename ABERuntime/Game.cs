@@ -69,23 +69,19 @@ namespace ABEngine.ABERuntime
         const int VelocityIterations = 8;
         const int PositionIterations = 3;
 
-        //const float TICKS_PER_SECOND = 50f;
-        //const float SKIP_TICKS = 1f / TICKS_PER_SECOND;
-        //const int MAX_FRAMESKIP = 5;
-        //float next_game_tick = 0f;
-
 
         // Systems
-        protected CameraMovementSystem camMove;
-        internal static B2DInitSystem b2dInit;
-        protected SpriteAnimatorSystem spriteAnim;
-        protected RigidbodyMoveSystem rbMove;
-        public static SpriteBatchSystem spriteBatcher;
-        protected static LightRenderSystem lightRenderer;
+        protected CameraMovementSystem camMoveSystem;
+        internal static B2DInitSystem b2dInitSystem;
+        protected SpriteAnimatorSystem spriteAnimSystem;
+        protected RigidbodyMoveSystem rbMoveSystem;
+        public static SpriteBatchSystem spriteBatchSystem;
+        protected static LightRenderSystem lightRenderSystem;
         protected Tweening.TweenSystem tweenSystem;
-        protected private ColliderDebugSystem colDebug;
+        protected private ColliderDebugSystem colDebugSystem;
         protected private ParticleModuleSystem particleSystem;
 
+        // Framebuffer
         public static Texture mainRenderTexture;
         public static Texture mainDepthTexture;
         public static TextureView mainRenderView;
@@ -146,15 +142,15 @@ namespace ABEngine.ABERuntime
 
             // Systems
             // Shared
-            camMove = new CameraMovementSystem();
-            b2dInit = new B2DInitSystem();
-            spriteAnim = new SpriteAnimatorSystem();
-            rbMove = new RigidbodyMoveSystem();
-            spriteBatcher = new SpriteBatchSystem(null);
+            camMoveSystem = new CameraMovementSystem();
+            b2dInitSystem = new B2DInitSystem();
+            spriteAnimSystem = new SpriteAnimatorSystem();
+            rbMoveSystem = new RigidbodyMoveSystem();
+            spriteBatchSystem = new SpriteBatchSystem(null);
             renderExtensions = new List<RenderSystem>();
-            lightRenderer = new LightRenderSystem(lightPipelineAsset);
+            lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
             tweenSystem = new Tweening.TweenSystem();
-            colDebug = new ColliderDebugSystem(lineDbgPipelineAsset);
+            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
             particleSystem = new ParticleModuleSystem();
 
             // User systems _ Reflection
@@ -169,10 +165,10 @@ namespace ABEngine.ABERuntime
 
             // Awake events
             if (debug)
-                colDebug.Awake();
+                colDebugSystem.Awake();
 
             // Start Events
-            b2dInit.Start();
+            b2dInitSystem.Start();
             //rbMove.ResetSmoothStates();
             foreach (var system in userSystems)
             {
@@ -181,13 +177,13 @@ namespace ABEngine.ABERuntime
 
 
             //spriteRenderer.Start();
-            spriteBatcher.Start();
-            spriteAnim.Start();
-            camMove.Start();
-            lightRenderer.Start();
+            spriteBatchSystem.Start();
+            spriteAnimSystem.Start();
+            camMoveSystem.Start();
+            lightRenderSystem.Start();
             particleSystem.Start();
             if (debug)
-                colDebug.Start();
+                colDebugSystem.Start();
            
 
             foreach (var rendExt in renderExtensions)
@@ -315,20 +311,17 @@ namespace ABEngine.ABERuntime
                     lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
                     lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
 
-
                     // Systems
-                    // Shared
-                    //SpriteRenderSystem spriteRenderer = new SpriteRenderSystem();
-                    camMove = new CameraMovementSystem();
-                    b2dInit = new B2DInitSystem();
-                    spriteAnim = new SpriteAnimatorSystem();
-                    rbMove = new RigidbodyMoveSystem();
-                    spriteBatcher = new SpriteBatchSystem(null);
-                    lightRenderer = new LightRenderSystem(lightPipelineAsset);
+                    camMoveSystem = new CameraMovementSystem();
+                    b2dInitSystem = new B2DInitSystem();
+                    spriteAnimSystem = new SpriteAnimatorSystem();
+                    rbMoveSystem = new RigidbodyMoveSystem();
+                    spriteBatchSystem = new SpriteBatchSystem(null);
+                    lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
                     tweenSystem = new Tweening.TweenSystem();
                     particleSystem = new ParticleModuleSystem();
                     if (debug)
-                        colDebug = new ColliderDebugSystem(lineDbgPipelineAsset);
+                        colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
 
                     renderExtensions = new List<RenderSystem>();
 
@@ -348,7 +341,7 @@ namespace ABEngine.ABERuntime
                     Input.UpdateFrameInput(snapshot);
 
                     // Start Events
-                    b2dInit.Start();
+                    b2dInitSystem.Start();
                     //rbMove.ResetSmoothStates();
                     foreach (var system in userSystems)
                     {
@@ -356,14 +349,14 @@ namespace ABEngine.ABERuntime
                     }
 
                     //spriteRenderer.Start();
-                    spriteBatcher.Start();
-                    spriteAnim.Start();
-                    camMove.Start();
-                    lightRenderer.Start();
+                    spriteBatchSystem.Start();
+                    spriteAnimSystem.Start();
+                    camMoveSystem.Start();
+                    lightRenderSystem.Start();
                     tweenSystem.Start();
                     particleSystem.Start();
                     if (debug)
-                        colDebug.Start();
+                        colDebugSystem.Start();
 
 
                     foreach (var rendExt in renderExtensions)
@@ -447,9 +440,11 @@ namespace ABEngine.ABERuntime
             // Fixed
             accumulator += elapsed;
             int steps = 0;
-            rbMove.PreFixedUpdate();
             while (TimeStep < accumulator && MAX_STEPS > steps)
             {
+                if(steps == 0)
+                    rbMoveSystem.PreFixedUpdate();
+
                 foreach (var system in userSystems)
                 {
                     system.FixedUpdate(newTime, TimeStep);
@@ -459,8 +454,8 @@ namespace ABEngine.ABERuntime
 
                 steps++;
 
-                rbMove.FixedUpdate(newTime, TimeStep);
-                camMove.FixedUpdate(newTime, TimeStep);
+                rbMoveSystem.FixedUpdate(newTime, TimeStep);
+                camMoveSystem.FixedUpdate(newTime, TimeStep);
 
                 accumulator -= TimeStep;
             }
@@ -559,43 +554,18 @@ namespace ABEngine.ABERuntime
                 _checkCamUpdate = false;
             }
 
-          
-
-            //variableUpdate(delta, accumulator / stepTime);
-
-
-
-            //rbMove.Update(newTime, accumulator / TimeStep);
-            
-
-            //float fixedElapsed = newTime - previousFixedTime;
-            //if (fixedElapsed >= fixedTimeStep)
-            //{
-            //    foreach (var system in userSystems)
-            //    {
-            //        system.FixedUpdate(newTime, fixedElapsed);
-            //    }
-
-            //    PhysicsUpdate();
-            //    previousFixedTime = newTime;
-
-
-            //    rbMove.FixedUpdate(newTime, fixedElapsed);
-            //    camMove.FixedUpdatex(newTime, fixedElapsed);
-            //}
-
             foreach (var system in userSystems)
             {
                 system.Update(newTime, elapsed);
             }
             tweenSystem.Update(newTime, elapsed);
-            spriteAnim.Update(newTime, elapsed);
+            spriteAnimSystem.Update(newTime, elapsed);
             particleSystem.Update(newTime, elapsed);
-            rbMove.Update(newTime, interpolation);
-            spriteBatcher.Update(newTime, elapsed);
-            lightRenderer.Update(newTime, elapsed);
+            rbMoveSystem.Update(newTime, interpolation);
+            spriteBatchSystem.Update(newTime, elapsed);
+            lightRenderSystem.Update(newTime, elapsed);
             if(debug)
-                colDebug.Update(newTime, elapsed);
+                colDebugSystem.Update(newTime, elapsed);
         }
 
         private protected void MainRender()
@@ -617,9 +587,9 @@ namespace ABEngine.ABERuntime
                 _commandList.ClearColorTarget(0, new RgbaFloat(0f, 0f, 0f, 0f));
                 _commandList.ClearDepthStencil(0f);
 
-                spriteBatcher.Render(i);
+                spriteBatchSystem.Render(i);
 
-                lightRenderer.Render(i);
+                lightRenderSystem.Render(i);
 
                 // Composition / No Clear - No depth
                 _commandList.SetFramebuffer(compositeRenderFB);
@@ -635,7 +605,7 @@ namespace ABEngine.ABERuntime
 
             if (debug)
             {
-                colDebug.Render();
+                colDebugSystem.Render();
             }
         }
 
@@ -673,7 +643,6 @@ namespace ABEngine.ABERuntime
                 //pipelineData.Resolution = canvas.canvasSize;
                 //gd.UpdateBuffer(pipelineBuffer,0, pipelineData);
                 gd.MainSwapchain.Resize((uint)window.Width, (uint)window.Height);
-                Console.WriteLine(window.Width);
 
                 onWindowResize?.Invoke();
 
@@ -691,6 +660,7 @@ namespace ABEngine.ABERuntime
             var backend = VeldridStartup.GetPlatformDefaultBackend();
             if (backend != GraphicsBackend.Metal)
                 backend = GraphicsBackend.OpenGL;
+
 
             gd = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions(
                 debug: false,
@@ -794,20 +764,20 @@ namespace ABEngine.ABERuntime
             GameWorld.OnRemove((Sprite sprite) =>
             {
                 if (!sprite.manualBatching)
-                    Game.spriteBatcher.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+                    Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 
             GameWorld.OnRemove((Rigidbody rb) => rb.Destroy());
 
             GameWorld.OnEnable((Entity entity, Sprite sprite) =>
             {
-                Game.spriteBatcher.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+                Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 
 
             GameWorld.OnDisable((Entity entity, Sprite sprite) =>
             {
-                Game.spriteBatcher.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+                Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 
             GameWorld.OnEnable((Entity entity, Rigidbody rb) =>
@@ -843,7 +813,7 @@ namespace ABEngine.ABERuntime
 
         internal static LightRenderSystem GetLightRenderer()
         {
-            return lightRenderer;
+            return lightRenderSystem;
         }
 
         protected void CleanUp()

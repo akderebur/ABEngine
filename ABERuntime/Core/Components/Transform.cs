@@ -296,7 +296,7 @@ namespace ABEngine.ABERuntime
         {
         }
 
-        public JSerializable GetCopy(ref Entity newEntity)
+        public JSerializable GetCopy()
         {
             Transform copyTrans = new Transform()
             {

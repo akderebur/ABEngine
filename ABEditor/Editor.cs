@@ -38,6 +38,9 @@ namespace ABEngine.ABEditor
         List<BaseSystem> editorSystems;
         List<BaseSystem> sharedSystems;
 
+        // Editor state
+        const string EditorSettingsFile = "EditorSettings.abjs";
+
         string gameDir;
         string binaryPath;
         string projPath;
@@ -83,10 +86,26 @@ namespace ABEngine.ABEditor
             return TMColliderGizmo;
         }
 
+        private void LoadEditorSettings()
+        {
+            if (!Directory.Exists(EditorAssetPath))
+                Directory.CreateDirectory(EditorAssetPath);
+
+            string settingsPath = EditorAssetPath + EditorSettingsFile;
+            if(File.Exists(settingsPath))
+            {
+
+            }
+        }
+
         protected override void Init(string windowName)
         {
             gameMode = GameMode.Editor;
 
+            // Editor Resources
+            EditorAssetPath = AssetPath;
+            LoadEditorSettings();
+        
             // ECS and Physics Worlds
             ResetWorld();
             PhysicsManager.InitSettings();
@@ -117,12 +136,12 @@ namespace ABEngine.ABEditor
             // Systems
             // Shared
             //SpriteRenderSystem spriteRenderer = new SpriteRenderSystem();
-            spriteBatcher = new SpriteBatchSystem(null);
-            lightRenderer = new LightRenderSystem(lightPipelineAsset);
+            spriteBatchSystem = new SpriteBatchSystem(null);
+            lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
             particleSystem = new ParticleModuleSystem();
-            colDebug = new ColliderDebugSystem(lineDbgPipelineAsset);
+            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
             TMColliderGizmo = new TilemapColliderGizmo(tmColPipelineAsset);
-            sharedSystems = new List<BaseSystem> { spriteBatcher, lightRenderer };
+            sharedSystems = new List<BaseSystem> { spriteBatchSystem, lightRenderSystem };
             renderExtensions = new List<RenderSystem>();
 
             // Editor
@@ -131,9 +150,6 @@ namespace ABEngine.ABEditor
             editorSystems.Add(new EditorCamMoveSystem());
             //editorSystems.Add(colDebug);
             //AABBGizmoSytem aabbGizmo = new AABBGizmoSytem();
-
-            // Editor Resources
-            EditorAssetPath = AssetPath;
 
             // Editor UI Inits
             SpriteEditor.Init();
@@ -144,7 +160,7 @@ namespace ABEngine.ABEditor
             InputSnapshot snapshot = window.PumpEvents();
             Input.UpdateFrameInput(snapshot);
 
-            colDebug.Start();
+            colDebugSystem.Start();
             TMColliderGizmo.Start();
 
             //aabbGizmo.Start();
@@ -202,7 +218,7 @@ namespace ABEngine.ABEditor
                         {
                             system.Start();
                         }
-                        camMove.Start();
+                        camMoveSystem.Start();
 
                         window.Title = "ABEngine - Play Mode";
                     }
@@ -213,7 +229,7 @@ namespace ABEngine.ABEditor
                         base.LoadScene(tmpJson, userTypes);
                         DepthSearch();
                         //spriteRenderer.Start();
-                        spriteBatcher.Start();
+                        spriteBatchSystem.Start();
                     }
                 }
 
@@ -293,7 +309,7 @@ namespace ABEngine.ABEditor
                 MainRender();
 
                 //_commandList.ClearDepthStencil(0f);
-                colDebug.Render();
+                colDebugSystem.Render();
                 TMColliderGizmo.Render();
                 // TODO Render extensions
 
@@ -344,9 +360,9 @@ namespace ABEngine.ABEditor
             }
 
             particleSystem.Update(newTime, elapsed);
-            spriteBatcher.Update(newTime, elapsed);
-            lightRenderer.Update(newTime, elapsed);
-            colDebug.Update(newTime, elapsed);
+            spriteBatchSystem.Update(newTime, elapsed);
+            lightRenderSystem.Update(newTime, elapsed);
+            colDebugSystem.Update(newTime, elapsed);
             foreach (var editorSystem in editorSystems)
             {
                 editorSystem.Update(newTime, elapsed);
@@ -419,7 +435,7 @@ namespace ABEngine.ABEditor
             GameWorld.OnSet((Entity entity, ref Sprite sprite) =>
             {
                 sprite.SetTransform(entity.transform);
-                Game.spriteBatcher.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+                Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
             GameWorld.OnSet((Entity entity, ref Tilemap tilemap) =>
             {
@@ -441,17 +457,17 @@ namespace ABEngine.ABEditor
                     newBB.sizeSet = true;
                 }
             });
-            GameWorld.OnRemove((Sprite sprite) => Game.spriteBatcher.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID));
+            GameWorld.OnRemove((Sprite sprite) => Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID));
 
             GameWorld.OnEnable((Entity entity, Sprite sprite) =>
             {
-                Game.spriteBatcher.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+                Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 
 
             GameWorld.OnDisable((Entity entity, Sprite sprite) =>
             {
-                Game.spriteBatcher.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+                Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 
             // Systems
@@ -544,8 +560,8 @@ namespace ABEngine.ABEditor
             AnimGraphEditor.Init();
 
             // Sprite renderer
-            spriteBatcher.Start();
-            lightRenderer.Start();
+            spriteBatchSystem.Start();
+            lightRenderSystem.Start();
             particleSystem.Start();
             isGameOpen = true;
         }
@@ -608,7 +624,7 @@ namespace ABEngine.ABEditor
 
             // User types
             userTypes = (from t in GameAssembly.GetTypes()
-                         where t.IsClass && t.IsSubclassOf(typeof(AutoSerializable))
+                         where t.IsClass && t.IsSubclassOf(typeof(JSerializable))
                          select t).ToList();
 
 

@@ -84,6 +84,7 @@ namespace ABEngine.ABERuntime.Components
         Random rnd;
 
         SpriteBatch particleBatch;
+        string batchGuid;
         Transform moduleTrans;
 
         public ParticleModule()
@@ -111,6 +112,7 @@ namespace ABEngine.ABERuntime.Components
                     new AlphaKey(1f, 1f)
                 }
             };
+            batchGuid = Guid.NewGuid().ToString();
         }
 
         public void Init(Transform transform)
@@ -127,8 +129,8 @@ namespace ABEngine.ABERuntime.Components
             Transform trans = new Transform("EditorNotVisible");
             var entity = Game.GameWorld.CreateEntity("P" + particles.Count, Guid.NewGuid(), trans, sprite);
             trans.localPosition = new Vector3(0f, 0f, -10f);
-            Game.spriteBatcher.AddSpriteToBatch(trans, sprite);
-            particleBatch = Game.spriteBatcher.GetBatchFromSprite(trans, sprite);
+            Game.spriteBatchSystem.AddSpriteToBatch(trans, sprite, batchGuid);
+            particleBatch = Game.spriteBatchSystem.GetBatchFromSprite(trans, sprite, batchGuid);
 
             Particle particle = new Particle()
             {
@@ -152,7 +154,7 @@ namespace ABEngine.ABERuntime.Components
             particles.Clear();
 
             particleBatch.DeleteBatch();
-            Game.spriteBatcher.DeleteBatch(particleBatch);
+            Game.spriteBatchSystem.DeleteBatch(particleBatch);
 
             accumulator = 0f;
             isPlaying = false;
@@ -163,6 +165,7 @@ namespace ABEngine.ABERuntime.Components
             if (!isPlaying)
                 return;
 
+            this.moduleTrans = moduleTrans;
             scale = moduleTrans.worldScale.X + 0.00001f;
             float scaledDelta = deltaTime * scale;
             float moveDelta = simulationSpace == SimulationSpace.Local ? deltaTime : scaledDelta;
@@ -358,9 +361,27 @@ namespace ABEngine.ABERuntime.Components
             throw new NotImplementedException();
         }
 
-        public JSerializable GetCopy(ref Entity newEntity)
+        public JSerializable GetCopy()
         {
-            throw new NotImplementedException();
+            ParticleModule pm = new ParticleModule()
+            {
+                maxParticles = this.maxParticles,
+                spawnRange = this.spawnRange,
+                spawnRate = AutoSerializable.GetCopy(this.spawnRate) as FloatRange,
+                startLifetime = AutoSerializable.GetCopy(this.startLifetime) as FloatRange,
+                speed = AutoSerializable.GetCopy(this.speed) as FloatRange,
+                startSize = AutoSerializable.GetCopy(this.startSize) as FloatRange,
+                lifetimeSize = AutoSerializable.GetCopy(this.lifetimeSize) as BezierCurve,
+                lifetimeColor = (ColorGradient)this.lifetimeColor.GetCopy(),
+
+                _particleTexture = this._particleTexture,
+                _particleMaterial = this._particleMaterial,
+
+                simulationSpace = this.simulationSpace,
+                moveDir = this.moveDir
+            };
+
+            return pm;
         }
     }
 

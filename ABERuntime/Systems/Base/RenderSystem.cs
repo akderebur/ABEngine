@@ -46,10 +46,6 @@ namespace ABEngine.ABERuntime
 
         }
 
-        //public virtual void LateRender()
-        //{
-
-        //}
 
         public virtual void UIRender()
         {
@@ -61,11 +57,5 @@ namespace ABEngine.ABERuntime
 
         }
 
-        //internal static void SetGraphics(GraphicsDevice gDevice, CommandList cmdList )
-        //{
-        //    gd = gDevice;
-        //    cl = cmdList;
-        //    rf = gd.ResourceFactory;
-        //}
     }
 }

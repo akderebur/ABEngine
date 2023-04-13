@@ -121,7 +121,7 @@ namespace ABEngine.ABERuntime.Components
             PhysicsManager.DestroyBody(b2dBody);
         }
 
-        public JSerializable GetCopy(ref Entity newEntity)
+        public JSerializable GetCopy()
         {
             Rigidbody rb = new Rigidbody()
             {

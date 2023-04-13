@@ -80,7 +80,7 @@ namespace ABEngine.ABEditor
         {
         }
 
-        public JSerializable GetCopy(ref Entity newEntity)
+        public JSerializable GetCopy()
         {
             throw new NotImplementedException();
         }

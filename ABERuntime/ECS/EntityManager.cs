@@ -17,6 +17,7 @@ namespace ABEngine.ABERuntime
 
             Sprite newSprite = null;
             Rigidbody newRb = null;
+            ParticleModule newPm = null;
 
             for (int i = 0; i < comps.Length; i++)
             {
@@ -25,13 +26,15 @@ namespace ABEngine.ABERuntime
 
                 if (typeof(JSerializable).IsAssignableFrom(type))
                 {
-                    var newComp = ((JSerializable)comp).GetCopy(ref copy);
+                    var newComp = ((JSerializable)comp).GetCopy();
                     copy.Set(type, newComp);
 
                     if (type == typeof(Sprite))
                         newSprite = (Sprite)newComp;
                     else if (type == typeof(Rigidbody))
                         newRb = (Rigidbody)newComp;
+                    else if (type == typeof(ParticleModule))
+                        newPm = (ParticleModule)newComp;
 
                 }
                 else if (type.IsSubclassOf(typeof(AutoSerializable)))
@@ -53,13 +56,12 @@ namespace ABEngine.ABERuntime
             }
 
             if (newRb != null)
-                Game.b2dInit.AddRBRuntime(ref copy);
+                Game.b2dInitSystem.AddRBRuntime(ref copy);
 
             if (entity.enabled)
             {
                 if (newSprite != null)
-                    Game.spriteBatcher.UpdateSpriteBatch(newSprite, newSprite.renderLayerIndex, newSprite.texture, newSprite.sharedMaterial.instanceID);
-
+                    Game.spriteBatchSystem.UpdateSpriteBatch(newSprite, newSprite.renderLayerIndex, newSprite.texture, newSprite.sharedMaterial.instanceID);
             }
 
             CheckSubscribers(in copy, true);

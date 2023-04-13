@@ -76,7 +76,7 @@ namespace ABEngine.ABERuntime.Components
                     int oldLayer = _renderLayerIndex;
                     _renderLayerIndex = value;
 
-                    Game.spriteBatcher.UpdateSpriteBatch(this, oldLayer, texture, _material.instanceID);
+                    Game.spriteBatchSystem.UpdateSpriteBatch(this, oldLayer, texture, _material.instanceID);
                 }
             }
         }
@@ -93,7 +93,7 @@ namespace ABEngine.ABERuntime.Components
                     sharedMaterial = _material;
                     isMatCopy = true;
 
-                    Game.spriteBatcher.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
+                    Game.spriteBatchSystem.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
                 }
 
                 return _material;
@@ -102,7 +102,7 @@ namespace ABEngine.ABERuntime.Components
                 int lastMatInsId = _material.instanceID;
                 _material = value;
                 sharedMaterial = value;
-                Game.spriteBatcher.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
+                Game.spriteBatchSystem.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
             }
         }
 
@@ -112,7 +112,7 @@ namespace ABEngine.ABERuntime.Components
             _material = mat;
             sharedMaterial = mat;
             if(updateBatch)
-                Game.spriteBatcher.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
+                Game.spriteBatchSystem.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
         }
 
         public PipelineMaterial sharedMaterial;
@@ -242,7 +242,7 @@ namespace ABEngine.ABERuntime.Components
             this.sizeSet = true;
 
             if(!manualBatching)
-                Game.spriteBatcher.UpdateSpriteBatch(this, renderLayerIndex, oldTex, _material.instanceID);
+                Game.spriteBatchSystem.UpdateSpriteBatch(this, renderLayerIndex, oldTex, _material.instanceID);
         }
 
         public void SetUVPosScale(Vector2 uvPos, Vector2 uvScale)
@@ -271,7 +271,7 @@ namespace ABEngine.ABERuntime.Components
             this.transform = transform;
         }
 
-        public JSerializable GetCopy(ref Entity newEntity)
+        public JSerializable GetCopy()
         {
             Sprite copySprite = new Sprite()
             {

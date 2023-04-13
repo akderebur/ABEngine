@@ -41,6 +41,13 @@ namespace ABEngine.ABERuntime
             return obj;
         }
 
+        public static object GetCopy(AutoSerializable toCopy)
+        {
+            Type type = toCopy.GetType();
+            string serialized = Serialize(toCopy).Serialize();
+            return Deserialize(serialized, type);
+        }
+
         public static void SetReferences(AutoSerializable obj)
         {
             Halak.JValue data = null;

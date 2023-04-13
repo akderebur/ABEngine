@@ -9,24 +9,13 @@ namespace ABEngine.ABERuntime
     public class LightRenderSystem : RenderSystem
     {
         const uint lightCountLayer = 10;
-
-        //LightInfo[] lightInfos = new LightInfo[lightLimit];
-        //DeviceBuffer lightInfoBuffer;
         ResourceSet textureSet;
 
         uint lightCount = 0;
-
-        //uint renderLayerStep = lightLimit;
-
-        //uint[] layerLightCounts;
-
         public static float GlobalLightIntensity = 1f;
 
         Dictionary<int, DeviceBuffer> layerLightBuffers;
         Dictionary<int, List<LightInfo>> layerLightInfos;
-
-        //lightTestVB = _gd.ResourceFactory.CreateBuffer(new BufferDescription(LightInfo.VertexSize, BufferUsage.VertexBuffer));
-        //_gd.UpdateBuffer(lightTestVB, 0, lightVertTest);
 
         public LightRenderSystem(PipelineAsset asset) : base(asset) { }
 
@@ -134,8 +123,6 @@ namespace ABEngine.ABERuntime
             cl.Draw(6, (uint)lightList.Count + 1, 0, 0);
 
             lightList.Clear();
-
-
         }
     }
 }

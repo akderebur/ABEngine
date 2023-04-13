@@ -125,12 +125,12 @@ namespace ABEngine.ABERuntime
                 batches.Remove(batchKV.Key);
         }
 
-        internal SpriteBatch GetBatchFromSprite(Transform spriteTrans, Sprite sprite)
+        internal SpriteBatch GetBatchFromSprite(Transform spriteTrans, Sprite sprite, string extraKey)
         {
             PipelineMaterial mat = sprite.sharedMaterial;
 
             int staticKey = spriteTrans.isStatic ? 1 : 0;
-            string key = sprite.renderLayerIndex + "_" + sprite.texture.textureID + "_" + mat.instanceID + "_" + staticKey;
+            string key = sprite.renderLayerIndex + "_" + sprite.texture.textureID + "_" + mat.instanceID + "_" + staticKey + extraKey;
 
             if (batches.TryGetValue(key, out SpriteBatch batch))
                 return batch;
@@ -157,7 +157,7 @@ namespace ABEngine.ABERuntime
             AddSpriteToBatch(sprite.transform, sprite);
         }
 
-        public void AddSpriteToBatch(Transform spriteTrans, Sprite sprite)
+        internal void AddSpriteToBatch(Transform spriteTrans, Sprite sprite, string extraKey)
         {
             if (!started)
                 return;
@@ -165,7 +165,7 @@ namespace ABEngine.ABERuntime
             PipelineMaterial mat = sprite.sharedMaterial;
 
             int staticKey = spriteTrans.isStatic ? 1 : 0;
-            string key = sprite.renderLayerIndex + "_" + sprite.texture.textureID + "_" + mat.instanceID + "_" + staticKey;
+            string key = sprite.renderLayerIndex + "_" + sprite.texture.textureID + "_" + mat.instanceID + "_" + staticKey + extraKey;
 
             if (batches.ContainsKey(key))
             {
@@ -185,7 +185,7 @@ namespace ABEngine.ABERuntime
                 {
                     pairList = renderGroups[sprite.renderLayerIndex];
                     AssetBatchPair pair = pairList.FirstOrDefault(p => p.pipelineAsset == sprite.sharedMaterial.pipelineAsset);
-                    if(pair == null)
+                    if (pair == null)
                     {
                         pair = new AssetBatchPair()
                         {
@@ -205,16 +205,23 @@ namespace ABEngine.ABERuntime
                     pairList = new List<AssetBatchPair>();
                     renderGroups.Add(sprite.renderLayerIndex, pairList);
 
-                    AssetBatchPair pair = new AssetBatchPair() { pipelineAsset = sprite.sharedMaterial.pipelineAsset,
-                                                                 layerIndex = sprite.renderLayerIndex };
+                    AssetBatchPair pair = new AssetBatchPair()
+                    {
+                        pipelineAsset = sprite.sharedMaterial.pipelineAsset,
+                        layerIndex = sprite.renderLayerIndex
+                    };
                     pairList.Add(pair);
 
                     pair.batches.Add(sb);
                     pair.onDelete += AssetPair_onDelete;
                     sb.onDelete += pair.OnBatchDelete;
                 }
-
             }
+        }
+
+        internal void AddSpriteToBatch(Transform spriteTrans, Sprite sprite)
+        {
+            AddSpriteToBatch(spriteTrans, sprite, "");
         }
 
         IEnumerable<IGrouping<int, IGrouping<PipelineAsset, KeyValuePair<string, SpriteBatch>>>> renderOrder;

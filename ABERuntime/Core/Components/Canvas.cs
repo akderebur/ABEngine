@@ -76,7 +76,7 @@ namespace ABEngine.ABERuntime.Components
         {
         }
 
-        public JSerializable GetCopy(ref Entity newEntity)
+        public JSerializable GetCopy()
         {
             throw new NotImplementedException();
         }

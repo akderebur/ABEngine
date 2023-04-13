@@ -45,7 +45,7 @@ namespace ABEngine.ABEditor.Assets.Meta
         }
 
         public abstract Asset CreateAssetBinding();
-        public abstract JSerializable GetCopy(ref Entity newEntity);
+        public abstract JSerializable GetCopy();
         public abstract void SetReferences();
         public abstract void DrawMeta();
 

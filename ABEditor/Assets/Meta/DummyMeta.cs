@@ -21,7 +21,7 @@ namespace ABEngine.ABEditor.Assets.Meta
             throw new NotImplementedException();
         }
 
-        public override JSerializable GetCopy(ref Entity newEntity)
+        public override JSerializable GetCopy()
         {
             throw new NotImplementedException();
         }

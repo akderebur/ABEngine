@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using ABEngine.ABERuntime.ECS;
+using Halak;
 using Veldrid;
 
 namespace ABEngine.ABERuntime
 {
-	public class ColorGradient
+	public class ColorGradient : JSerializable
 	{
         //public SortedDictionary<float, Vector3> colors = new SortedDictionary<float, Vector3>();
         //      public SortedDictionary<float, float> alphas = new SortedDictionary<float, float>();
@@ -14,10 +16,8 @@ namespace ABEngine.ABERuntime
         public List<ColorKey> colorKeys = new List<ColorKey>();
         public List<AlphaKey> alphaKeys = new List<AlphaKey>();
 
-
         public ColorGradient()
 		{
-
 		}
 
         public Vector4 Evaluate(float x)
@@ -28,6 +28,9 @@ namespace ABEngine.ABERuntime
 
         public Vector3 GetColor(float normalizedLifetime)
         {
+            if (colorKeys.Count < 1)
+                return Vector3.One;
+
             if (normalizedLifetime <= colorKeys[0].Time)
             {
                 return colorKeys[0].Color;
@@ -57,6 +60,9 @@ namespace ABEngine.ABERuntime
 
         public float GetAlpha(float normalizedLifetime)
         {
+            if (alphaKeys.Count < 1)
+                return 1f;
+
             if (normalizedLifetime <= alphaKeys[0].Time)
             {
                 return alphaKeys[0].Alpha;
@@ -82,6 +88,40 @@ namespace ABEngine.ABERuntime
 
             float t = (normalizedLifetime - lowerKey.Time) / (upperKey.Time - lowerKey.Time);
             return upperKey.Alpha * t + lowerKey.Alpha * (1.0f - t);
+        }
+
+        public JValue Serialize()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Deserialize(string json)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetReferences()
+        {
+            throw new NotImplementedException();
+        }
+
+        public JSerializable GetCopy()
+        {
+            List<ColorKey> colorCopy = new List<ColorKey>();
+            List<AlphaKey> alphaCopy = new List<AlphaKey>();
+
+            foreach (var colorKey in colorKeys)
+                colorCopy.Add(new ColorKey(colorKey.Time, colorKey.Color));
+
+            foreach (var alphaKey in alphaKeys)
+                alphaCopy.Add(new AlphaKey(alphaKey.Time, alphaKey.Alpha));
+
+
+            return new ColorGradient()
+            {
+                colorKeys = colorCopy,
+                alphaKeys = alphaCopy
+            };
         }
 
         //private Vector3 GetColor(float x)
@@ -153,7 +193,7 @@ namespace ABEngine.ABERuntime
         //}
     }
 
-    public class ColorKey
+    public class ColorKey : AutoSerializable
     {
         public float Time { get; set; }
         public Vector3 Color { get; set; }
@@ -165,7 +205,7 @@ namespace ABEngine.ABERuntime
         }
     }
 
-    public class AlphaKey
+    public class AlphaKey : AutoSerializable
     {
         public float Time { get; set; }
         public float Alpha { get; set; }

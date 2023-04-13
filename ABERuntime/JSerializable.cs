@@ -9,7 +9,7 @@ namespace ABEngine.ABERuntime
         public JValue Serialize();
         public void Deserialize(string json);
         public void SetReferences();
-        public JSerializable GetCopy(ref Entity newEntity);
+        public JSerializable GetCopy();
        // public static T AA();
     }
 }

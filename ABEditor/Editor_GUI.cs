@@ -636,7 +636,7 @@ namespace ABEngine.ABEditor
                 Type type = types[i];
                 var comp = comps[i];
 
-                if (type.IsSubclassOf(typeof(AutoSerializable)))
+                if (type.IsSubclassOf(typeof(JSerializable)))
                 {
                     ImGui.GetStateStorage().SetInt(ImGui.GetID(type.Name), 1);
 
