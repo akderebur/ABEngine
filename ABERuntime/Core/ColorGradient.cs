@@ -92,12 +92,37 @@ namespace ABEngine.ABERuntime
 
         public JValue Serialize()
         {
-            throw new NotImplementedException();
+            JsonObjectBuilder jObj = new JsonObjectBuilder(500);
+            jObj.Put("type", GetType().ToString());
+
+            JsonArrayBuilder colorArr = new JsonArrayBuilder(200);
+            foreach (var colorKey in colorKeys)
+                colorArr.Push(AutoSerializable.Serialize(colorKey));
+
+            JsonArrayBuilder alphaArr = new JsonArrayBuilder(200);
+            foreach (var alphaKey in alphaKeys)
+                alphaArr.Push(AutoSerializable.Serialize(alphaKey));
+
+            jObj.Put("Colors", colorArr.Build());
+            jObj.Put("Alphas", alphaArr.Build());
+
+            return jObj.Build();
         }
 
         public void Deserialize(string json)
         {
-            throw new NotImplementedException();
+            JValue data = JValue.Parse(json);
+            foreach (var colorEnt in data["Colors"].Array())
+            {
+                var colorKey = AutoSerializable.Deserialize(colorEnt.ToString(), typeof(ColorKey)) as ColorKey;
+                colorKeys.Add(colorKey);
+            }
+
+            foreach (var alphaEnt in data["Alphas"].Array())
+            {
+                var alphaKey = AutoSerializable.Deserialize(alphaEnt.ToString(), typeof(AlphaKey)) as AlphaKey;
+                alphaKeys.Add(alphaKey);
+            }
         }
 
         public void SetReferences()

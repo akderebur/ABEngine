@@ -23,6 +23,7 @@ namespace ABEngine.ABERuntime.Rendering
 
         public uint instanceCount;
         public bool isStatic { get; set; }
+        internal bool manualBatch;
 
         TextureView view = null;
         //string imgPath;
@@ -60,6 +61,16 @@ namespace ABEngine.ABERuntime.Rendering
             this.material = pipelineMaterial;
             this.renderLayerIndex = renderLayerIndex;
             this.isStatic = isStatic;
+
+            pipelineMaterial.onPipelineChanged += PipelineMaterial_onPipelineChanged;
+        }
+
+        private void PipelineMaterial_onPipelineChanged(PipelineAsset pipeline)
+        {
+            // Signal remove from  Pipeline Asset Pairs
+            onDelete?.Invoke(this);
+
+            Game.spriteBatchSystem.UpdateBatchPipeline(this);
         }
 
         public void AddSpriteEntity(Transform trans, Sprite spriteData)

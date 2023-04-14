@@ -318,8 +318,11 @@ namespace ABEngine.ABEditor.Assets
 			MaterialMeta matMeta = assetMeta as MaterialMeta;
 			if (sceneAssets.ContainsKey(matMeta))
 			{
-				PipelineMaterial mat = sceneAssets[matMeta] as PipelineMaterial; 
-				mat.SetVector4(matMeta.changedPropName, matMeta.changedData);
+				PipelineMaterial mat = sceneAssets[matMeta] as PipelineMaterial;
+				if(matMeta.changedPropName != null)
+					mat.SetVector4(matMeta.changedPropName, matMeta.changedData);
+				if (matMeta.changedPipeline != null)
+					mat.ChangePipeline(matMeta.changedPipeline);
 			}
 		}
 

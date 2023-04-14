@@ -35,6 +35,8 @@ namespace ABEngine.ABERuntime
 
         private byte[] shaderPropData;
 
+        internal event Action<PipelineAsset> onPipelineChanged;
+
         public PipelineMaterial(uint hash, PipelineAsset pipelineAsset, ResourceLayout propLayout, ResourceLayout texLayout)
         {
             this.pipelineAsset = pipelineAsset;
@@ -141,6 +143,25 @@ namespace ABEngine.ABERuntime
             matCopy.SetShaderTextureResources(this.pipelineAsset.GetTextureNames());
 
             return matCopy;
+        }
+
+        public void ChangePipeline(PipelineAsset pipeline)
+        {
+            propBuffer.Dispose();
+            foreach (var resourceSet in bindableSets.Values)
+                resourceSet.Dispose();
+            bindableSets.Clear();
+
+            var refMat = pipeline.refMaterial;
+
+            this.pipelineAsset = pipeline;
+            this.propLayout = refMat.propLayout;
+            this.texLayout = refMat.texLayout;
+
+            this.SetShaderPropBuffer(refMat.shaderProps.ToList(), refMat.shaderPropBufferSize);
+            this.SetShaderTextureResources(pipeline.GetTextureNames());
+
+            onPipelineChanged?.Invoke(pipeline);
         }
 
         public void SetFloat(string propName, float value)

@@ -52,17 +52,10 @@ namespace ABEngine.ABERuntime
 
         public static List<PipelineMaterial> pipelineMaterials = new List<PipelineMaterial>();
         //private static List<Pipeline> pipelines = new List<Pipeline>();
-        private static Dictionary<string, PipelineAsset> pipelineAssets = new Dictionary<string, PipelineAsset>();
+        internal static Dictionary<string, PipelineAsset> pipelineAssets = new Dictionary<string, PipelineAsset>();
 
         public static DeviceBuffer fullScreenVB;
         public static DeviceBuffer fullScreenIB;
-
-
-
-        //public static Pipeline GetPipelineFromID(int id)
-        //{
-        //    return pipelines[id];
-        //}
 
 
         public static PipelineMaterial GetUberMaterial()

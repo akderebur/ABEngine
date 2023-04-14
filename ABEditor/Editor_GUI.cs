@@ -206,7 +206,6 @@ namespace ABEngine.ABEditor
                     }
                     else if (metaType.Equals(typeof(MaterialMeta)))
                     {
-                        bool changed = false;
 
                         MaterialMeta matMeta = meta as MaterialMeta;
                         if (editMatPath != selectedAsset)
@@ -216,9 +215,34 @@ namespace ABEngine.ABEditor
                             editMat.name = Path.GetFileNameWithoutExtension(selectedAsset);
                         }
 
+                        // Reset vals
+                        bool changed = false;
+                        matMeta.changedPropName = null;
+                        matMeta.changedPipeline = null;
+
                         ImGui.Begin("Details");
 
                         ImGui.Text(matMeta.pipelineAsset.ToString());
+
+                        ImGui.Text("Pipeline Asset");
+                        ImGui.SameLine();
+                        if (ImGui.BeginCombo("##Pipeline", matMeta.pipelineAsset.ToString()))
+                        {
+                            foreach (var pipelineKV in GraphicsManager.pipelineAssets)
+                            {
+                                bool is_selected = matMeta.pipelineAsset == pipelineKV.Value;
+                                if (ImGui.Selectable(pipelineKV.Value.ToString(), is_selected))
+                                {
+                                    matMeta.pipelineAsset = pipelineKV.Value;
+                                    matMeta.changedPipeline = pipelineKV.Value;
+                                    changed = true;
+                                }
+                                if (is_selected)
+                                    ImGui.SetItemDefaultFocus();
+                            }
+
+                            ImGui.EndCombo();
+                        }
 
                         ImGui.Spacing();
                         ImGui.Text("Properties");

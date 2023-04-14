@@ -18,6 +18,7 @@ namespace ABEngine.ABEditor.Assets.Meta
 
         internal string changedPropName;
         internal Vector4 changedData;
+        internal PipelineAsset changedPipeline;
 
         public MaterialMeta() : base()
 		{
@@ -64,7 +65,7 @@ namespace ABEngine.ABEditor.Assets.Meta
             mat.fPathHash = fileHash;
 
             File.WriteAllBytes(savePath, MaterialToRAW(mat));
-            AssetCache.AddMaterial(mat, fileHash, assetPath);
+            AssetCache.AddMaterial(mat, assetPath);
         }
 
 

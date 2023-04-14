@@ -131,6 +131,7 @@ namespace ABEngine.ABERuntime.Components
             trans.localPosition = new Vector3(0f, 0f, -10f);
             Game.spriteBatchSystem.AddSpriteToBatch(trans, sprite, batchGuid);
             particleBatch = Game.spriteBatchSystem.GetBatchFromSprite(trans, sprite, batchGuid);
+            particleBatch.manualBatch = true;
 
             Particle particle = new Particle()
             {
@@ -348,17 +349,61 @@ namespace ABEngine.ABERuntime.Components
 
         public JValue Serialize()
         {
-            throw new NotImplementedException();
+            JsonObjectBuilder jObj = new JsonObjectBuilder(500);
+            jObj.Put("type", GetType().ToString());
+            jObj.Put("Texture", AssetCache.GetAssetSceneIndex(this._particleTexture.fPathHash));
+            jObj.Put("Material", AssetCache.GetAssetSceneIndex(this._particleMaterial.fPathHash));
+            jObj.Put("MaxParticles", maxParticles);
+            jObj.Put("SpawnRange", spawnRange);
+            jObj.Put("SpawnRate", AutoSerializable.Serialize(spawnRate));
+            jObj.Put("StartLifetime", AutoSerializable.Serialize(startLifetime));
+            jObj.Put("Speed", AutoSerializable.Serialize(speed));
+            jObj.Put("StartSize", AutoSerializable.Serialize(startSize));
+            jObj.Put("SimulationSpace", (int)simulationSpace);
+            jObj.Put("MoveDir", moveDir);
+
+            jObj.Put("LifetimeSize", AutoSerializable.Serialize(lifetimeSize));
+            jObj.Put("LifetimeColor", lifetimeColor.Serialize()); ;
+
+
+            return jObj.Build();
         }
 
         public void Deserialize(string json)
         {
-            throw new NotImplementedException();
+            JValue data = JValue.Parse(json);
+
+            int texSceneIndex = data["Texture"];
+            int matSceneIndex = data["Material"];
+
+            var tex2d = AssetCache.GetAssetFromSceneIndex(texSceneIndex) as Texture2D;
+            var material = AssetCache.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
+
+            this._particleTexture = tex2d;
+            this._particleMaterial = material;
+
+            maxParticles = data["MaxParticles"];
+            spawnRange = data["SpawnRange"];
+            spawnRate = AutoSerializable.Deserialize(data["SpawnRate"].ToString(), typeof(FloatRange)) as FloatRange;
+            startLifetime = AutoSerializable.Deserialize(data["StartLifetime"].ToString(), typeof(FloatRange)) as FloatRange;
+            speed = AutoSerializable.Deserialize(data["Speed"].ToString(), typeof(FloatRange)) as FloatRange;
+            startSize = AutoSerializable.Deserialize(data["StartSize"].ToString(), typeof(FloatRange)) as FloatRange;
+            int simSpaceInd = data["SimulationSpace"];
+            simulationSpace = (SimulationSpace)simSpaceInd;
+            moveDir = data["MoveDir"];
+
+            lifetimeSize = AutoSerializable.Deserialize(data["LifetimeSize"].ToString(), typeof(BezierCurve)) as BezierCurve;
+
+            ColorGradient colorGradient = new ColorGradient();
+            colorGradient.Deserialize(data["LifetimeColor"].ToString());
+            lifetimeColor = colorGradient;
+
+            maxParticles = data["MaxParticles"];
         }
 
         public void SetReferences()
         {
-            throw new NotImplementedException();
+            
         }
 
         public JSerializable GetCopy()

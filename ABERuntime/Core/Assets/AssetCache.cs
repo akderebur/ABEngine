@@ -422,8 +422,9 @@ namespace ABEngine.ABERuntime
         }
 
         // Editor ONLY remove later
-        internal static void AddMaterial(PipelineMaterial mat, uint hash, string file)
+        internal static void AddMaterial(PipelineMaterial mat, string file)
         {
+            uint hash = mat.fPathHash;
             hashToFName.Add(hash, file);
             s_materials.Add(mat);
             if (assetDict.ContainsKey(hash))
@@ -680,7 +681,7 @@ namespace ABEngine.ABERuntime
             s_materials.Add(additiveMat);
 
             assetDict.Add(uberMat.fPathHash, uberMat);
-            assetDict.Add(additiveMat.fPathHash, uberMat);
+            assetDict.Add(additiveMat.fPathHash, additiveMat);
         }
 
         private static Texture2D DeserializeTexture(JValue texAsset, uint hash)

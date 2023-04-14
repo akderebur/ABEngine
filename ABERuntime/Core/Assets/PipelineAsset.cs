@@ -127,18 +127,23 @@ namespace ABEngine.ABERuntime
                                 {
                                     case "float":
                                         uniformElements.Add(UniformElement.Float1);
+                                        uniformElementNames.Add(name);
                                         break;
                                     case "vec2":
                                         uniformElements.Add(UniformElement.Float2);
+                                        uniformElementNames.Add(name);
                                         break;
                                     case "vec3":
                                         uniformElements.Add(UniformElement.Float3);
+                                        uniformElementNames.Add(name);
                                         break;
                                     case "vec4":
                                         uniformElements.Add(UniformElement.Float4);
+                                        uniformElementNames.Add(name);
                                         break;
                                     case "mat4":
                                         uniformElements.Add(UniformElement.Matrix4x4);
+                                        uniformElementNames.Add(name);
                                         break;
                                     case "texture2d":
                                         textureNames.Add(name);
@@ -146,9 +151,6 @@ namespace ABEngine.ABERuntime
                                     default:
                                         continue;
                                 }
-
-                                dest.propNames.Add(name, uniformElementNames.Count);
-                                uniformElementNames.Add(name);
                             }
                             else if (sectionIndex == 1)
                             {
@@ -246,15 +248,11 @@ namespace ABEngine.ABERuntime
                         vertBufferSize += 16;
                         prop.SetValue(Vector4.One);
                         break;
-                    //case UniformElement.Matrix4x4:
-                    //    prop.SizeInBytes = 64;
-                    //    vertBufferSize += 64;
-                    //    prop.SetValue(Matrix4x4.Identity);
-                    //    break;
                     default:
                         break;
                 }
 
+                dest.propNames.Add(uniformElementNames[shaderVals.Count], shaderVals.Count);
                 shaderVals.Add(prop);
             }
 

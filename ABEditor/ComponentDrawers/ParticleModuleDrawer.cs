@@ -122,6 +122,22 @@ namespace ABEngine.ABEditor.ComponentDrawers
             if (ImGui.InputInt("Max Particles", ref maxParticles))
                 pm.maxParticles = maxParticles;
 
+            ImGui.Text("Simulation Space");
+            ImGui.SameLine();
+            if (ImGui.BeginCombo("##SimSpace", pm.simulationSpace.ToString()))
+            {
+                for (int ss = 0; ss < 2; ss++)
+                {
+                    bool is_selected = (int)pm.simulationSpace == ss;
+                    if (ImGui.Selectable(((SimulationSpace)ss).ToString(), is_selected))
+                        pm.simulationSpace = (SimulationSpace)ss;
+                    if (is_selected)
+                        ImGui.SetItemDefaultFocus();
+                }
+
+                ImGui.EndCombo();
+            }
+
 
             if (ImGui.CollapsingHeader("Lifetime Size"))
             {
@@ -166,28 +182,9 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 CheckTextureDrop(pm);
 
 
-                ImGui.Text("Render Mode");
-                ImGui.SameLine();
-                string renderType = "Custom";
-                PipelineMaterial mat = pm.particleMaterial;
-                if (mat == GraphicsManager.GetUberMaterial())
-                    renderType = "Alpha Blend";
-                else if (mat == GraphicsManager.GetUberAdditiveMaterial())
-                    renderType = "Additive";
-
-                if (ImGui.BeginCombo("##RenderMode", renderType))
-                {
-                    for (int rt = 0; rt < 2; rt++)
-                    {
-                        bool is_selected = GraphicsManager.pipelineMaterials[rt]  == mat;
-                        if (ImGui.Selectable(renderTypes[rt], is_selected))
-                            pm.particleMaterial = GraphicsManager.pipelineMaterials[rt];
-                        if (is_selected)
-                            ImGui.SetItemDefaultFocus();
-                    }
-
-                    ImGui.EndCombo();
-                }
+                ImGui.Text("Material");
+                ImGui.InputText("##matName", ref pm.particleMaterial.name, 100, ImGuiInputTextFlags.ReadOnly);
+                CheckMaterialDropParticle(pm);
             }
         }
 
@@ -231,6 +228,27 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;
                     pm.particleTexture = AssetHandler.GetAssetBinding(texMeta, spriteFilePath) as Texture2D;
                     imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, pm.particleTexture.texture);
+                }
+
+                ImGui.EndDragDropTarget();
+            }
+        }
+
+        static unsafe void CheckMaterialDropParticle(ParticleModule pm)
+        {
+            if (ImGui.BeginDragDropTarget())
+            {
+                var payload = ImGui.AcceptDragDropPayload("MaterialFileInd");
+                if (payload.NativePtr != null)
+                {
+                    var dataPtr = (int*)payload.Data;
+                    int srcIndex = dataPtr[0];
+
+                    var materialFilePath = AssetsFolderView.files[srcIndex];
+                    MaterialMeta matMeta = AssetHandler.GetMeta(materialFilePath) as MaterialMeta;
+                    PipelineMaterial mat = AssetHandler.GetAssetBinding(matMeta, materialFilePath) as PipelineMaterial;
+
+                    pm.particleMaterial = mat;
                 }
 
                 ImGui.EndDragDropTarget();
