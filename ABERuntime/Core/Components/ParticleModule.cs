@@ -131,7 +131,6 @@ namespace ABEngine.ABERuntime.Components
             trans.localPosition = new Vector3(0f, 0f, -10f);
             Game.spriteBatchSystem.AddSpriteToBatch(trans, sprite, batchGuid);
             particleBatch = Game.spriteBatchSystem.GetBatchFromSprite(trans, sprite, batchGuid);
-            particleBatch.manualBatch = true;
 
             Particle particle = new Particle()
             {

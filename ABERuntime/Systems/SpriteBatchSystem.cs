@@ -146,7 +146,7 @@ namespace ABEngine.ABERuntime
             int staticKey = sprite.transform.isStatic ? 1 : 0;
             string key = oldRenderLayerID + "_" + oldTex.textureID + "_" + oldMatInsId + "_" + staticKey;
 
-            if (batches.TryGetValue(key, out SpriteBatch batch) && !batch.manualBatch)
+            if (batches.TryGetValue(key, out SpriteBatch batch))
             {
                 //SpriteBatch batch = batches[key];
                 int remCount = batch.RemoveSpriteEntity(sprite);
@@ -155,6 +155,11 @@ namespace ABEngine.ABERuntime
             }
 
             AddSpriteToBatch(sprite.transform, sprite);
+        }
+
+        internal int DEBUG_GetBatchCount()
+        {
+            return batches.Count;
         }
 
         internal void AddSpriteToBatch(Transform spriteTrans, Sprite sprite, string extraKey)
@@ -167,7 +172,7 @@ namespace ABEngine.ABERuntime
             int staticKey = spriteTrans.isStatic ? 1 : 0;
             string key = sprite.renderLayerIndex + "_" + sprite.texture.textureID + "_" + mat.instanceID + "_" + staticKey + extraKey;
 
-            if (batches.TryGetValue(key, out SpriteBatch batch) && !batch.manualBatch)
+            if (batches.TryGetValue(key, out SpriteBatch batch))
             {
                 batch.AddSpriteEntity(spriteTrans, sprite);
                 batch.InitBatch();

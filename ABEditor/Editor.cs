@@ -435,7 +435,8 @@ namespace ABEngine.ABEditor
             GameWorld.OnSet((Entity entity, ref Sprite sprite) =>
             {
                 sprite.SetTransform(entity.transform);
-                Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+                if(!sprite.manualBatching)
+                    Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
             GameWorld.OnSet((Entity entity, ref Tilemap tilemap) =>
             {

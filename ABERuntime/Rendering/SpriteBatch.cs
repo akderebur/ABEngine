@@ -23,7 +23,6 @@ namespace ABEngine.ABERuntime.Rendering
 
         public uint instanceCount;
         public bool isStatic { get; set; }
-        internal bool manualBatch;
 
         TextureView view = null;
         //string imgPath;
@@ -101,6 +100,7 @@ namespace ABEngine.ABERuntime.Rendering
                     texSet.Dispose();
                     view.Dispose();
                     onDelete?.Invoke(this);
+                    material.onPipelineChanged -= PipelineMaterial_onPipelineChanged;
                     return 0;
                 }
 
@@ -119,6 +119,7 @@ namespace ABEngine.ABERuntime.Rendering
             texSet.Dispose();
             view.Dispose();
             onDelete?.Invoke(this);
+            material.onPipelineChanged -= PipelineMaterial_onPipelineChanged;
         }
 
         public void InitBatch()
