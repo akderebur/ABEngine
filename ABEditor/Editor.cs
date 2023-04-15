@@ -18,6 +18,7 @@ using ABEngine.ABERuntime.Tweening;
 using ABEngine.ABERuntime.Components;
 using ABEditor.Debug;
 using ABEngine.ABEditor.ImGuiPlugins;
+using Halak;
 
 namespace ABEngine.ABEditor
 {
@@ -94,8 +95,28 @@ namespace ABEngine.ABEditor
             string settingsPath = EditorAssetPath + EditorSettingsFile;
             if(File.Exists(settingsPath))
             {
-
+                var jSettings = JValue.Parse(File.ReadAllText(settingsPath));
+                foreach (string recent in jSettings["Recents"].Array())
+                {
+                    FilePicker.recentPaths.Add(recent);
+                }
             }
+        }
+
+        private void SaveEditorSettings()
+        {
+            if (!Directory.Exists(EditorAssetPath))
+                Directory.CreateDirectory(EditorAssetPath);
+
+            string settingsPath = EditorAssetPath + EditorSettingsFile;
+
+            // Save Settings
+            JsonObjectBuilder settingsJObj = new JsonObjectBuilder(500);
+            JsonArrayBuilder recentsJArr = new JsonArrayBuilder(200);
+            foreach (var recent in FilePicker.recentPaths)
+                recentsJArr.Push(recent);
+            settingsJObj.Put("Recents", recentsJArr.Build());
+            File.WriteAllText(settingsPath, settingsJObj.Build().Serialize());
         }
 
         protected override void Init(string windowName)
@@ -332,7 +353,9 @@ namespace ABEngine.ABEditor
             // Clean up Veldrid resources
             CleanUp();
             imguiRenderer.Dispose();
-            
+
+            SaveEditorSettings();
+
             //_commandList.Dispose();
             //gd.Dispose();
 

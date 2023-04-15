@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Intrinsics.X86;
 using ImGuiNET;
 using Veldrid;
 using Num = System.Numerics;
@@ -17,6 +18,7 @@ namespace ABEngine.ABEditor
 		public List<string> AllowedExtensions;
 		public bool OnlyAllowFolders;
 		static Num.Vector4 yelloColor = new Num.Vector4(1, 1, 0, 1);
+		public static List<string> recentPaths = new List<string>();
 
         public bool SaveFile;
         public string SaveFileName = "Scene.abscene";
@@ -72,106 +74,168 @@ namespace ABEngine.ABEditor
 
 		public int Draw()
 		{
-			ImGui.Text("Current Folder: " + CurrentFolder);
-			int result = -1;
-
-			if (SaveFile)
+            int result = -1;
+            if (ImGui.BeginTabBar("FilePickerTabs"))
 			{
-				ImGui.Text("File Name:");
-				ImGui.SameLine();
-				ImGui.InputText("##SaveFileName", ref SaveFileName, 300);
-			}
-
-			if (ImGui.BeginChildFrame(1, new Num.Vector2(400, 400)))
-			{
-				var di = new DirectoryInfo(CurrentFolder);
-				if (di.Exists)
+				string tabText = OnlyAllowFolders ? "Select Folder" : "Select File";
+				if (ImGui.BeginTabItem(tabText))
 				{
-					if (di.Parent != null && CurrentFolder != RootFolder)
-					{
-						
-						ImGui.PushStyleColor(ImGuiCol.Text, yelloColor);
-						if (ImGui.Selectable("../", false, ImGuiSelectableFlags.DontClosePopups))
-							CurrentFolder = di.Parent.FullName;
 
-						ImGui.PopStyleColor();
+					ImGui.Text("Current Folder: " + CurrentFolder);
+
+
+					if (SaveFile)
+					{
+						ImGui.Text("File Name:");
+						ImGui.SameLine();
+						ImGui.InputText("##SaveFileName", ref SaveFileName, 300);
 					}
 
-					var fileSystemEntries = GetFileSystemEntries(di.FullName);
-					foreach (var fse in fileSystemEntries)
+					if (ImGui.BeginChildFrame(1, new Num.Vector2(400, 400)))
 					{
-						if (Directory.Exists(fse))
+						var di = new DirectoryInfo(CurrentFolder);
+						if (di.Exists)
 						{
-							var name = Path.GetFileName(fse);
-							ImGui.PushStyleColor(ImGuiCol.Text, yelloColor);
-							if (ImGui.Selectable(name + "/", false, ImGuiSelectableFlags.DontClosePopups))
-								CurrentFolder = fse;
-							ImGui.PopStyleColor();
-						}
-						else
-						{
-							var name = Path.GetFileName(fse);
-							bool isSelected = SelectedFile == fse;
-							if (ImGui.Selectable(name, isSelected, ImGuiSelectableFlags.DontClosePopups))
+							if (di.Parent != null && CurrentFolder != RootFolder)
 							{
-								SelectedFile = fse;
-								SaveFileName = name;
+
+								ImGui.PushStyleColor(ImGuiCol.Text, yelloColor);
+								if (ImGui.Selectable("../", false, ImGuiSelectableFlags.DontClosePopups))
+									CurrentFolder = di.Parent.FullName;
+
+								ImGui.PopStyleColor();
+							}
+
+							var fileSystemEntries = GetFileSystemEntries(di.FullName);
+							foreach (var fse in fileSystemEntries)
+							{
+								if (Directory.Exists(fse))
+								{
+									var name = Path.GetFileName(fse);
+									ImGui.PushStyleColor(ImGuiCol.Text, yelloColor);
+									if (ImGui.Selectable(name + "/", false, ImGuiSelectableFlags.DontClosePopups))
+										CurrentFolder = fse;
+									ImGui.PopStyleColor();
+								}
+								else
+								{
+									var name = Path.GetFileName(fse);
+									bool isSelected = SelectedFile == fse;
+									if (ImGui.Selectable(name, isSelected, ImGuiSelectableFlags.DontClosePopups))
+									{
+										SelectedFile = fse;
+										SaveFileName = name;
+									}
+
+									if (ImGui.IsMouseDoubleClicked(0))
+									{
+										result = 1;
+										ImGui.CloseCurrentPopup();
+									}
+								}
+							}
+						}
+
+                        ImGui.EndChildFrame();
+                    }
+
+
+                    if (ImGui.Button("Cancel"))
+					{
+						result = 0;
+						ImGui.CloseCurrentPopup();
+					}
+
+
+					if (OnlyAllowFolders)
+					{
+						ImGui.SameLine();
+
+						if (ImGui.Button("Open"))
+						{
+							result = 1;
+							SelectedFile = CurrentFolder;
+							recentPaths.Insert(0, SelectedFile);
+							ImGui.CloseCurrentPopup();
+						}
+
+					}
+					else if (SaveFile)
+					{
+						ImGui.SameLine();
+
+						if (ImGui.Button("Save"))
+						{
+							result = 1;
+							SelectedFile = CurrentFolder + "/" + SaveFileName;
+							ImGui.CloseCurrentPopup();
+						}
+					}
+					else if (SelectedFile != null)
+					{
+						ImGui.SameLine();
+
+						if (ImGui.Button("Open"))
+						{
+							result = 1;
+							ImGui.CloseCurrentPopup();
+						}
+					}
+
+					ImGui.EndTabItem();
+				}
+
+				if (OnlyAllowFolders && ImGui.BeginTabItem("Recents"))
+				{
+					if (ImGui.BeginChildFrame(2, new Num.Vector2(400, 400)))
+					{
+						foreach (var recent in recentPaths)
+						{
+							string displayName = Path.GetFileName(recent);
+							bool isSelected = SelectedFile == recent;
+							if (ImGui.Selectable(displayName, isSelected, ImGuiSelectableFlags.DontClosePopups))
+							{
+								SelectedFile = recent;
 							}
 
 							if (ImGui.IsMouseDoubleClicked(0))
 							{
 								result = 1;
-								ImGui.CloseCurrentPopup();
+                                ImGui.CloseCurrentPopup();
 							}
 						}
+
+                        ImGui.EndChildFrame();
+                    }
+
+                    if (ImGui.Button("Cancel"))
+					{
+						result = 0;
+						ImGui.CloseCurrentPopup();
 					}
-				}
-			}
-			ImGui.EndChildFrame();
 
+					ImGui.SameLine();
 
-			if (ImGui.Button("Cancel"))
-			{
-				result = 0;
-				ImGui.CloseCurrentPopup();
-			}
+					if (ImGui.Button("Open"))
+					{
+						result = 1;
+						ImGui.CloseCurrentPopup();
+					}
 
+					if(result == 1)
+					{
+                        if (recentPaths.Contains(SelectedFile))
+                            recentPaths.Remove(SelectedFile);
+                        recentPaths.Insert(0, SelectedFile);
+                    }
 
-			if (OnlyAllowFolders)
-			{
-				ImGui.SameLine();
-
-				if (ImGui.Button("Open"))
-				{
-					result = 1;
-					SelectedFile = CurrentFolder;
-					ImGui.CloseCurrentPopup();
+					ImGui.EndTabItem();
 				}
 
-			}
-			else if (SaveFile)
-			{
-				ImGui.SameLine();
-
-				if (ImGui.Button("Save"))
-				{
-					result = 1;
-					SelectedFile = CurrentFolder + "/" + SaveFileName;
-					ImGui.CloseCurrentPopup();
-				}
-			}
-			else if (SelectedFile != null)
-			{
-				ImGui.SameLine();
-
-				if (ImGui.Button("Open"))
-				{
-					result = 1;
-					ImGui.CloseCurrentPopup();
-				}
+				ImGui.EndTabBar();
 			}
 
-			return result;
+            return result;
 		}
 
 		bool TryGetFileInfo(string fileName, out FileInfo realFile)
