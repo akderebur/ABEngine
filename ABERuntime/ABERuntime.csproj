@@ -10,7 +10,7 @@
   <InternalsVisibleTo Include="ABEditor" /> 
 </ItemGroup>
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <LangVersion>10.0</LangVersion>
     <RootNamespace>ABEngine.ABERuntime</RootNamespace>
     <PackOnBuild>true</PackOnBuild>
@@ -55,12 +55,9 @@
     <None Remove="Core\Math\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="Crc32.NET" Version="1.2.0" />
-    <PackageReference Include="Veldrid" Version="4.9.0-beta2" />
-    <PackageReference Include="Veldrid.ImageSharp" Version="4.9.0-beta2" />
-    <PackageReference Include="Veldrid.StartupUtilities" Version="4.9.0-beta2" />
+    <PackageReference Include="ppy.Veldrid.SPIRV" Version="1.0.15-gc5e8498253" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Tweening\" />
@@ -77,5 +74,9 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Box2D\Box2D.NetStandard.csproj" />
+    <ProjectReference Include="..\veldrid\src\Veldrid\Veldrid.csproj" />
+    <ProjectReference Include="..\veldrid\src\Veldrid.ImageSharp\Veldrid.ImageSharp.csproj" />
+    <ProjectReference Include="..\veldrid\src\Veldrid.StartupUtilities\Veldrid.StartupUtilities.csproj" />
+    <ProjectReference Include="..\veldrid\src\Veldrid.SDL2\Veldrid.SDL2.csproj" />
   </ItemGroup>
 </Project>

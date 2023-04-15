@@ -127,7 +127,7 @@ namespace ABEngine.ABEUI
             }
 
             ImGui.SetCursorPos(endPos);
-            if (ImGui.ImageButton(uiImgBtn.imgPtr, uiImgBtn.size, Vector2.Zero, Vector2.One, 0, Vector4.Zero, uiImgBtn.curColor))
+            if (ImGui.ImageButton(uiImgBtn.GetHashCode().ToString(), uiImgBtn.imgPtr, uiImgBtn.size, Vector2.Zero, Vector2.One, Vector4.Zero, uiImgBtn.curColor))
             {
                 uiImgBtn.ButtonClickEvent();
             }

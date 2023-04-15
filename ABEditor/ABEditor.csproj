@@ -19,11 +19,6 @@
     <Copy SourceFiles="libSDL2.dylib" DestinationFolder="$(OutDir)/runtimes/osx-x64/native" />
   </Target>
   <ItemGroup>
-    <None Remove="Veldrid" />
-    <None Remove="Veldrid.SPIRV" />
-    <None Remove="Veldrid.ImageSharp" />
-    <None Remove="Veldrid.SDL2" />
-    <None Remove="Veldrid.StartupUtilities" />
     <None Remove="Veldrid.ImGui" />
     <None Remove="ABERuntime" />
     <None Remove="Newtonsoft.Json" />
@@ -38,16 +33,7 @@
     <None Remove="PropertyDrawers\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-    <PackageReference Include="Veldrid.ImGui" Version="5.87.0-g181a86f652" />
-    <PackageReference Include="Veldrid" Version="4.9.0-beta2" />
-    <PackageReference Include="Veldrid.ImageSharp" Version="4.9.0-beta2" />
-    <PackageReference Include="Veldrid.StartupUtilities" Version="4.9.0-beta2" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />
-    <ProjectReference Include="..\Box2D\Box2D.NetStandard.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\" />
@@ -55,5 +41,10 @@
     <Folder Include="ComponentDrawers\" />
     <Folder Include="ImGuiPlugins\" />
     <Folder Include="PropertyDrawers\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />
+    <ProjectReference Include="..\veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj" />
+    <ProjectReference Include="..\veldrid\src\Veldrid.ImageSharp\Veldrid.ImageSharp.csproj" />
   </ItemGroup>
 </Project>

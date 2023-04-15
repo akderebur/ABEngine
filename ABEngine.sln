@@ -13,6 +13,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ABEUI", "ABEUI\ABEUI.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Box2D.NetStandard", "Box2D\Box2D.NetStandard.csproj", "{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Veldrid", "veldrid\src\Veldrid\Veldrid.csproj", "{DC87E4CD-7EF5-4198-9C04-0C3E06B6B370}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Veldrid.ImageSharp", "veldrid\src\Veldrid.ImageSharp\Veldrid.ImageSharp.csproj", "{0FB1AC7C-22EA-4AD9-ACF7-AA10E455715A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Veldrid.StartupUtilities", "veldrid\src\Veldrid.StartupUtilities\Veldrid.StartupUtilities.csproj", "{1B8DC1F1-86B6-4CAB-9950-27F027515337}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Veldrid.ImGui", "veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj", "{E7D5F811-77CE-4FB4-BC2F-55D5FB37EB6E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Veldrid.SDL2", "veldrid\src\Veldrid.SDL2\Veldrid.SDL2.csproj", "{7E5F3887-178D-43D1-8D11-65AA886B0089}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +49,26 @@ Global
 		{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC87E4CD-7EF5-4198-9C04-0C3E06B6B370}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC87E4CD-7EF5-4198-9C04-0C3E06B6B370}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC87E4CD-7EF5-4198-9C04-0C3E06B6B370}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC87E4CD-7EF5-4198-9C04-0C3E06B6B370}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FB1AC7C-22EA-4AD9-ACF7-AA10E455715A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FB1AC7C-22EA-4AD9-ACF7-AA10E455715A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FB1AC7C-22EA-4AD9-ACF7-AA10E455715A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FB1AC7C-22EA-4AD9-ACF7-AA10E455715A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B8DC1F1-86B6-4CAB-9950-27F027515337}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B8DC1F1-86B6-4CAB-9950-27F027515337}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B8DC1F1-86B6-4CAB-9950-27F027515337}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B8DC1F1-86B6-4CAB-9950-27F027515337}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7D5F811-77CE-4FB4-BC2F-55D5FB37EB6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7D5F811-77CE-4FB4-BC2F-55D5FB37EB6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7D5F811-77CE-4FB4-BC2F-55D5FB37EB6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7D5F811-77CE-4FB4-BC2F-55D5FB37EB6E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E5F3887-178D-43D1-8D11-65AA886B0089}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E5F3887-178D-43D1-8D11-65AA886B0089}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E5F3887-178D-43D1-8D11-65AA886B0089}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E5F3887-178D-43D1-8D11-65AA886B0089}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
