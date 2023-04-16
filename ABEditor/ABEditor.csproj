@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -16,7 +16,8 @@
     <LangVersion>10.0</LangVersion>
   </PropertyGroup>
   <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
-    <Copy SourceFiles="libSDL2.dylib" DestinationFolder="$(OutDir)/runtimes/osx-x64/native" />
+    <Copy SourceFiles="libSDL2.dylib" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
+    <Copy SourceFiles="$(OutDir)/native/win-x64/SDL2.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   </Target>
   <ItemGroup>
     <None Remove="Veldrid.ImGui" />
