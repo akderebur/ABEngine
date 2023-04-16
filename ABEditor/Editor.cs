@@ -122,6 +122,7 @@ namespace ABEngine.ABEditor
         protected override void Init(string windowName)
         {
             gameMode = GameMode.Editor;
+            userTypes = new List<Type>();
 
             // Editor Resources
             EditorAssetPath = AssetPath;

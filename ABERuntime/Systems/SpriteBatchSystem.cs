@@ -32,8 +32,6 @@ namespace ABEngine.ABERuntime
 
             // Create batch groups
             var spriteQuery = Game.GameWorld.CreateQuery().Has<Sprite>();
-            Console.WriteLine(spriteQuery.GetEntities().Count());
-            Console.WriteLine(spriteQuery.GetEntities().Where(e => e.enabled).Count());
             var layerGroups = spriteQuery.GetEntities().Where(e => e.enabled).GroupBy(s => s.Get<Sprite>().renderLayerIndex);
 
             foreach (var layerGroup in layerGroups)

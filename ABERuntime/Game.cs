@@ -658,8 +658,6 @@ namespace ABEngine.ABERuntime
             //gd = VeldridStartup.CreateGraphicsDevice(window, options);
 
             var backend = VeldridStartup.GetPlatformDefaultBackend();
-            if (backend != GraphicsBackend.Metal)
-                backend = GraphicsBackend.OpenGL;
 
 
             gd = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions(

@@ -24,7 +24,7 @@ namespace ABEngine.ABERuntime.Rendering
         public uint instanceCount;
         public bool isStatic { get; set; }
 
-        TextureView view = null;
+        //TextureView view = null;
         //string imgPath;
 
         Texture2D texture2d;
@@ -98,7 +98,6 @@ namespace ABEngine.ABERuntime.Rendering
                 {
                     vertexBuffer.Dispose();
                     texSet.Dispose();
-                    view.Dispose();
                     onDelete?.Invoke(this);
                     material.onPipelineChanged -= PipelineMaterial_onPipelineChanged;
                     return 0;
@@ -117,7 +116,6 @@ namespace ABEngine.ABERuntime.Rendering
 
             vertexBuffer.Dispose();
             texSet.Dispose();
-            view.Dispose();
             onDelete?.Invoke(this);
             material.onPipelineChanged -= PipelineMaterial_onPipelineChanged;
         }
@@ -129,12 +127,12 @@ namespace ABEngine.ABERuntime.Rendering
             //indices = indicesList.ToArray();
 
             // Texture
-            if (texture2d.fPathHash != 0 && view == null)
+            if (texture2d.fPathHash != 0 && texSet == null)
             {
-                view = AssetCache.GetTextureView(texture2d.texture);
+                //view = AssetCache.GetTextureView(texture2d.texture);
                 texSet = rsFactory.CreateResourceSet(new ResourceSetDescription(
                     GraphicsManager.sharedTextureLayout,
-                    view,
+                    texture2d.texture,
                     texture2d.textureSampler));
 
                 //defSize = new Vector2(texData.Width, texData.Height);
