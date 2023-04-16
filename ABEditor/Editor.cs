@@ -498,6 +498,32 @@ namespace ABEngine.ABEditor
             BaseSystem.SetECSWorld(GameWorld);
         }
 
+        void OpenGameDummy(string path)
+        {
+            gameDir = path;
+            projName = Path.GetFileNameWithoutExtension(path);
+
+            // AppPath
+            AppPath = path.Replace("\\", "/");
+            if (!AppPath.EndsWith("/"))
+                AppPath += "/";
+            AssetPath = AppPath + "Assets/";
+
+            if (!Directory.Exists(AssetPath))
+                Directory.CreateDirectory(AssetPath);
+
+            AssetCache.InitAssetCache();
+            AssetsFolderView.SetAssetsFolder(AssetPath);
+
+            AnimGraphEditor.Init();
+
+            // Sprite renderer
+            spriteBatchSystem.Start();
+            lightRenderSystem.Start();
+            particleSystem.Start();
+            isGameOpen = true;
+        }
+
    
         void OpenGame(string setDir)
         {

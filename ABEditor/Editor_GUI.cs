@@ -566,7 +566,7 @@ namespace ABEngine.ABEditor
                 {
                     gameDir = picker.SelectedFile;
                     fileDialogType = FileDialogType.None;
-                    OpenGame(gameDir);
+                    OpenGameDummy(gameDir);
                 }
                 else if (result == 0)
                     fileDialogType = FileDialogType.None;
