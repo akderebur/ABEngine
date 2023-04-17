@@ -44,7 +44,6 @@
     <None Remove="Rendering\" />
     <None Remove="Systems\" />
     <None Remove="Core\" />
-    <None Remove="Debug\" />
     <None Remove="Core\Managers\" />
     <None Remove="Core\Animation\" />
     <None Remove="Core\Components\" />
@@ -64,7 +63,6 @@
     <Folder Include="Physics\" />
     <Folder Include="Systems\" />
     <Folder Include="Core\" />
-    <Folder Include="Debug\" />
     <Folder Include="Core\Managers\" />
     <Folder Include="Core\Animation\" />
     <Folder Include="Core\Components\" />
