@@ -16,9 +16,7 @@
     <LangVersion>10.0</LangVersion>
   </PropertyGroup>
   <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
-    <Copy SourceFiles="libcimgui.dylib" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
-    <Copy SourceFiles="libSDL2.dylib" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
-    <Copy SourceFiles="$(OutDir)/native/win-x64/SDL2.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+    <Copy SourceFiles="libSDL2.dylib" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="$([MSBuild]::IsOSPlatform('OSX')) AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'" />
   </Target>
   <ItemGroup>
     <None Remove="Veldrid.ImGui" />
