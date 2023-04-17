@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Veldrid.ImageSharp", "veldr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Veldrid.ImGui", "veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj", "{E965A48B-E8AD-4027-BA42-C64B1CB55D87}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Veldrid.SDL2", "veldrid\src\Veldrid.SDL2\Veldrid.SDL2.csproj", "{2A53EE21-026C-4DDB-8A62-C218295A9020}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -65,6 +67,10 @@ Global
 		{E965A48B-E8AD-4027-BA42-C64B1CB55D87}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E965A48B-E8AD-4027-BA42-C64B1CB55D87}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E965A48B-E8AD-4027-BA42-C64B1CB55D87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A53EE21-026C-4DDB-8A62-C218295A9020}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A53EE21-026C-4DDB-8A62-C218295A9020}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A53EE21-026C-4DDB-8A62-C218295A9020}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A53EE21-026C-4DDB-8A62-C218295A9020}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -74,6 +80,7 @@ Global
 		{5D2EBB4F-2273-4B1D-BDE5-BC58F60D0891} = {775997D5-2D57-419F-AD3D-BD2BB595EC97}
 		{437FCAC9-8A20-4BB1-84A1-30AD2E518FE8} = {775997D5-2D57-419F-AD3D-BD2BB595EC97}
 		{E965A48B-E8AD-4027-BA42-C64B1CB55D87} = {775997D5-2D57-419F-AD3D-BD2BB595EC97}
+		{2A53EE21-026C-4DDB-8A62-C218295A9020} = {775997D5-2D57-419F-AD3D-BD2BB595EC97}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6DF75023-D7BC-43A6-BEC9-A399B774D0F2}
