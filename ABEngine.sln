@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33502.453
@@ -12,18 +12,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ABEUI", "ABEUI\ABEUI.csproj", "{72E15428-8ECA-4401-AF2B-735939D66389}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Box2D.NetStandard", "Box2D\Box2D.NetStandard.csproj", "{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "veldrid_projs", "veldrid_projs", "{775997D5-2D57-419F-AD3D-BD2BB595EC97}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Veldrid", "veldrid\src\Veldrid\Veldrid.csproj", "{192420DD-1450-431B-AD7D-D92CD2C8A44C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Veldrid.StartupUtilities", "veldrid\src\Veldrid.StartupUtilities\Veldrid.StartupUtilities.csproj", "{5D2EBB4F-2273-4B1D-BDE5-BC58F60D0891}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Veldrid.ImageSharp", "veldrid\src\Veldrid.ImageSharp\Veldrid.ImageSharp.csproj", "{437FCAC9-8A20-4BB1-84A1-30AD2E518FE8}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Veldrid.ImGui", "veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj", "{E965A48B-E8AD-4027-BA42-C64B1CB55D87}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Veldrid.SDL2", "veldrid\src\Veldrid.SDL2\Veldrid.SDL2.csproj", "{2A53EE21-026C-4DDB-8A62-C218295A9020}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,36 +39,11 @@ Global
 		{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F61993E0-EF59-4DA5-A02B-6BDEDD6A26E1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{192420DD-1450-431B-AD7D-D92CD2C8A44C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{192420DD-1450-431B-AD7D-D92CD2C8A44C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{192420DD-1450-431B-AD7D-D92CD2C8A44C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{192420DD-1450-431B-AD7D-D92CD2C8A44C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5D2EBB4F-2273-4B1D-BDE5-BC58F60D0891}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5D2EBB4F-2273-4B1D-BDE5-BC58F60D0891}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5D2EBB4F-2273-4B1D-BDE5-BC58F60D0891}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5D2EBB4F-2273-4B1D-BDE5-BC58F60D0891}.Release|Any CPU.Build.0 = Release|Any CPU
-		{437FCAC9-8A20-4BB1-84A1-30AD2E518FE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{437FCAC9-8A20-4BB1-84A1-30AD2E518FE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{437FCAC9-8A20-4BB1-84A1-30AD2E518FE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{437FCAC9-8A20-4BB1-84A1-30AD2E518FE8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E965A48B-E8AD-4027-BA42-C64B1CB55D87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E965A48B-E8AD-4027-BA42-C64B1CB55D87}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E965A48B-E8AD-4027-BA42-C64B1CB55D87}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E965A48B-E8AD-4027-BA42-C64B1CB55D87}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2A53EE21-026C-4DDB-8A62-C218295A9020}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2A53EE21-026C-4DDB-8A62-C218295A9020}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2A53EE21-026C-4DDB-8A62-C218295A9020}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2A53EE21-026C-4DDB-8A62-C218295A9020}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{192420DD-1450-431B-AD7D-D92CD2C8A44C} = {775997D5-2D57-419F-AD3D-BD2BB595EC97}
-		{5D2EBB4F-2273-4B1D-BDE5-BC58F60D0891} = {775997D5-2D57-419F-AD3D-BD2BB595EC97}
-		{437FCAC9-8A20-4BB1-84A1-30AD2E518FE8} = {775997D5-2D57-419F-AD3D-BD2BB595EC97}
-		{E965A48B-E8AD-4027-BA42-C64B1CB55D87} = {775997D5-2D57-419F-AD3D-BD2BB595EC97}
-		{2A53EE21-026C-4DDB-8A62-C218295A9020} = {775997D5-2D57-419F-AD3D-BD2BB595EC97}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6DF75023-D7BC-43A6-BEC9-A399B774D0F2}

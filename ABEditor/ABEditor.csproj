@@ -36,6 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="ABEngine.Veldrid.ImGui" Version="5.89.2-g6c85a5e906" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\" />
@@ -46,6 +47,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />
-    <ProjectReference Include="..\veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj" />
   </ItemGroup>
 </Project>
