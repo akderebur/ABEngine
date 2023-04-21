@@ -15,9 +15,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>10.0</LangVersion>
   </PropertyGroup>
-  <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
+<!--  <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
     <Copy SourceFiles="libSDL2.dylib" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="$([MSBuild]::IsOSPlatform('OSX')) AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'" />
-  </Target>
+  </Target>-->
   <ItemGroup>
     <None Remove="Veldrid.ImGui" />
     <None Remove="ABERuntime" />
@@ -34,7 +34,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-    <PackageReference Include="ABEngine.Veldrid.ImGui" Version="5.89.2-g6c85a5e906" />
+    <PackageReference Include="ABEngine.Veldrid.ImGui" Version="5.89.2-gbbf42da1e4" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\" />

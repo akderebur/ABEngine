@@ -56,9 +56,9 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="Crc32.NET" Version="1.2.0" />
-    <PackageReference Include="ABEngine.Veldrid" Version="4.9.1-g6c85a5e906" />
-    <PackageReference Include="ABEngine.Veldrid.StartupUtilities" Version="4.9.1-g6c85a5e906" />
-    <PackageReference Include="ABEngine.Veldrid.ImageSharp" Version="4.9.1-g6c85a5e906" />
+    <PackageReference Include="ABEngine.Veldrid" Version="4.9.2-gbbf42da1e4" />
+    <PackageReference Include="ABEngine.Veldrid.StartupUtilities" Version="4.9.2-gbbf42da1e4" />
+    <PackageReference Include="ABEngine.Veldrid.ImageSharp" Version="4.9.2-gbbf42da1e4" />
     <PackageReference Include="ABEngine.Veldrid.SPIRV" Version="1.0.16-g26fbe2a87f" />
   </ItemGroup>
   <ItemGroup>
