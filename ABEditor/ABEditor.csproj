@@ -34,7 +34,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-    <PackageReference Include="ABEngine.Veldrid.ImGui" Version="5.89.2-gbbf42da1e4" />
+    <PackageReference Include="ABEngine.Veldrid.ImGui" Version="5.89.22-g548560b577" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\" />

@@ -17,6 +17,9 @@ namespace ABEngine.ABERuntime
         public static Vector2 MousePosition;
         public static InputSnapshot FrameSnapshot { get; private set; }
 
+        public static float XAxis;
+        public static float YAxis;
+
         public static Vector2 GetMousePosition()
         {
             return new Vector2(MousePosition.X, Game.screenSize.Y - MousePosition.Y);
@@ -80,7 +83,9 @@ namespace ABEngine.ABERuntime
                 }
             }
 
-            
+            if (XAxis != snapshot.XAxis && snapshot.XAxis != 0)
+                XAxis = snapshot.XAxis;
+
         }
 
         private static void MouseUp(MouseButton mouseButton)

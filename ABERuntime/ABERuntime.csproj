@@ -56,10 +56,11 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="Crc32.NET" Version="1.2.0" />
-    <PackageReference Include="ABEngine.Veldrid" Version="4.9.2-gbbf42da1e4" />
-    <PackageReference Include="ABEngine.Veldrid.StartupUtilities" Version="4.9.2-gbbf42da1e4" />
-    <PackageReference Include="ABEngine.Veldrid.ImageSharp" Version="4.9.2-gbbf42da1e4" />
+    <PackageReference Include="ABEngine.Veldrid" Version="4.9.22-g548560b577" />
+    <PackageReference Include="ABEngine.Veldrid.StartupUtilities" Version="4.9.22-g548560b577" />
+    <PackageReference Include="ABEngine.Veldrid.ImageSharp" Version="4.9.22-g548560b577" />
     <PackageReference Include="ABEngine.Veldrid.SPIRV" Version="1.0.16-g26fbe2a87f" />
+    <PackageReference Include="ABEngine.Veldrid.SDL2" Version="4.9.23-g548560b577" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Tweening\" />
