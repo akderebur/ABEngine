@@ -229,6 +229,18 @@ namespace ABEngine.ABEUI
                   new ResourceLayoutElementDescription("SliderInfo", ResourceKind.UniformBuffer, ShaderStages.Fragment)));
 
         }
+
+        internal static void DisposeResources()
+        {
+            foreach (var shader in _shaders)
+            {
+                shader.Dispose();
+            }
+
+            sliderVB.Dispose();
+            sliderIB.Dispose();
+            sliderInfoLayout.Dispose();
+        }
 	}
 }
 

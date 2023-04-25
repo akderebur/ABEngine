@@ -48,5 +48,11 @@ namespace ABEngine.ABERuntime
         {
 
         }
+
+        public virtual void CleanUp(bool reload)
+        {
+
+        }
+
     }
 }

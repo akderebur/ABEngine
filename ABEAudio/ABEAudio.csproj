@@ -1,21 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <PackageVersion>0.1</PackageVersion>
     <Authors>Burak Akdere</Authors>
     <Copyright>Burak Akdere</Copyright>
     <Owners>Burak Akdere</Owners>
-    <Description>Audio module for ABEngine</Description>
-    <PackageId>AbeAudioTest</PackageId>
+<!--    <Description>Audio module for ABEngine</Description>
+    <PackageId>ABEAudio</PackageId>
     <DevelopmentDependency>true</DevelopmentDependency>
-    <RootNamespace>ABEngine.ABEAudio</RootNamespace>
+    <RootNamespace>ABEngine.ABEAudio</RootNamespace>-->
+    <UserSecretsId>237734dd-ae3b-425f-91c0-108c85b09b26</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="NetCoreAudio" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NetCoreAudio" Version="1.7.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="5.0.0" />
+    <PackageReference Include="ppy.SDL2-CS" Version="1.0.652-alpha" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />
   </ItemGroup>
 </Project>

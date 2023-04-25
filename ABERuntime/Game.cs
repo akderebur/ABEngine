@@ -233,13 +233,21 @@ namespace ABEngine.ABERuntime
 
                     gd.WaitForIdle();
 
+                    // Clean extensions
+                    foreach (var rendExt in renderExtensions)
+                    {
+                        rendExt.CleanUp(true);
+                    }
+
+                    // Clean systems
+                    foreach (var system in userSystems)
+                    {
+                        system.CleanUp(true);
+                    }
+
                     AssetCache.DisposeResources();
                     rf.DisposeCollector.DisposeAll();
 
-                    foreach (var rendExt in renderExtensions)
-                    {
-                        rendExt.CleanUp();
-                    }
 
                     if(resize)
                     {
@@ -816,8 +824,22 @@ namespace ABEngine.ABERuntime
 
         protected void CleanUp()
         {
-            // Clean up Veldrid resources
             gd.WaitForIdle();
+
+            // Clean extensions
+            foreach (var rendExt in renderExtensions)
+            {
+                rendExt.CleanUp(false);
+            }
+
+            // Clean systems
+            foreach (var system in userSystems)
+            {
+                system.CleanUp(false);
+            }
+
+
+            // Clean up Veldrid resources
             rf.DisposeCollector.DisposeAll();
             GraphicsManager.DisposeResources();
             AssetCache.DisposeResources();

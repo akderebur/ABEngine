@@ -95,10 +95,20 @@ namespace ABEngine.ABEUI
             fonts.Add("0", defaultFont);
         }
 
-        public override void CleanUp()
+        public override void CleanUp(bool reload)
         {
-            //Game.onWindowResize -= Game_onWindowResize;
-            //Game.onSceneLoad -= Game_onSceneLoad;
+            // Dispose in the end
+            if (!reload)
+            {
+                Game.onWindowResize -= Game_onWindowResize;
+                Game.onSceneLoad -= Game_onSceneLoad;
+
+                imguiRenderer.ClearCachedImageResources();
+                imguiRenderer.DestroyDeviceObjects();
+                imguiRenderer.Dispose();
+
+                UISliderImage.DisposeResources();
+            }
         }
 
         private static void Game_onSceneLoad()

@@ -60,7 +60,7 @@
     <PackageReference Include="ABEngine.Veldrid.StartupUtilities" Version="4.9.22-g548560b577" />
     <PackageReference Include="ABEngine.Veldrid.ImageSharp" Version="4.9.22-g548560b577" />
     <PackageReference Include="ABEngine.Veldrid.SPIRV" Version="1.0.16-g26fbe2a87f" />
-    <PackageReference Include="ABEngine.Veldrid.SDL2" Version="4.9.23-g548560b577" />
+    <PackageReference Include="ABEngine.Veldrid.SDL2" Version="4.9.24-g39a823dba6" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Tweening\" />

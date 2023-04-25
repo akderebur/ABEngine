@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Veldrid;
 
@@ -19,6 +20,8 @@ namespace ABEngine.ABERuntime
 
         public static float XAxis;
         public static float YAxis;
+
+        public static float AxisDeadzone = 0.1f;
 
         public static Vector2 GetMousePosition()
         {
@@ -83,9 +86,18 @@ namespace ABEngine.ABERuntime
                 }
             }
 
-            if (XAxis != snapshot.XAxis && snapshot.XAxis != 0)
-                XAxis = snapshot.XAxis;
+            XAxis = NormalizeAxis(snapshot.XAxis);
+            YAxis = NormalizeAxis(snapshot.YAxis);
+        }
 
+        private static float NormalizeAxis(float value)
+        {
+            float absVal = MathF.Abs(value);
+            float sign = MathF.Sign(value);
+
+            float normValue = Math.Clamp(absVal / 32767f - AxisDeadzone, 0f, 1f);
+            return sign * (normValue / (1f - AxisDeadzone));
+            
         }
 
         private static void MouseUp(MouseButton mouseButton)
