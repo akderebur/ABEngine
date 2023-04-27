@@ -440,6 +440,9 @@ namespace ABEngine.ABERuntime
 
             // Resource clean up
             CleanUp();
+
+            SDL2.SDL.SDL_VideoQuit();
+            SDL2.SDL.SDL_Quit();
         }
 
 

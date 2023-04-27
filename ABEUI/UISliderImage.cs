@@ -113,7 +113,7 @@ namespace ABEngine.ABEUI
             }
 
             ImGui.SetCursorPos(endPos);
-            ImGui.Image(uiSliderImage.imgPtr, uiSliderImage.size * imgTrans.localScale.ToVector2() * UIRenderer.screenScale);
+            ImGui.Image(uiSliderImage.imgPtr, uiSliderImage.size * imgTrans.localScale.ToVector2() * UIRenderer.Instance.screenScale);
         }
 
 

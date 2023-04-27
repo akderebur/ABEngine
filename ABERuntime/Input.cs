@@ -9,19 +9,75 @@ namespace ABEngine.ABERuntime
     {
         private static HashSet<Key> _currentlyPressedKeys = new HashSet<Key>();
         private static HashSet<Key> _newKeysThisFrame = new HashSet<Key>();
+        private static HashSet<Key> _keyUpThisFrame = new HashSet<Key>();
 
         private static HashSet<MouseButton> _currentlyPressedMouseButtons = new HashSet<MouseButton>();
         private static HashSet<MouseButton> _newMouseButtonsThisFrame = new HashSet<MouseButton>();
         private static HashSet<MouseButton> _mouseUpThisFrame = new HashSet<MouseButton>();
 
+        private static Dictionary<string, List<Key>> buttonsMappings = new Dictionary<string, List<Key>>();
+        private static Dictionary<string, List<AxisMapping>> axisMappings = new Dictionary<string, List<AxisMapping>>();
 
         public static Vector2 MousePosition;
         public static InputSnapshot FrameSnapshot { get; private set; }
 
-        public static float XAxis;
-        public static float YAxis;
+        private static float _XAxis;
+        private static float _YAxis;
+
+        public static float XAxis
+        { get
+            {
+                foreach (var axisMap in axisMappings["XAxis"])
+                {
+                    if (GetKey(axisMap.key))
+                    {
+                        _XAxis += axisMap.axisWeight;
+                    }
+                }
+
+                return _XAxis;
+            }
+        }
+
+        public static float YAxis
+        {
+            get
+            {
+                foreach (var axisMap in axisMappings["YAxis"])
+                {
+                    if (GetKey(axisMap.key))
+                    {
+                        _YAxis += axisMap.axisWeight;
+                    }
+                }
+
+                return _YAxis;
+            }
+        }
 
         public static float AxisDeadzone = 0.1f;
+
+        static Input()
+        {
+            List<AxisMapping> xMappings = new List<AxisMapping>()
+            {
+                new AxisMapping() { key = Key.D, axisWeight = 1 },
+                new AxisMapping() { key = Key.Right, axisWeight = 1 },
+                new AxisMapping() { key = Key.A, axisWeight = -1 },
+                new AxisMapping() { key = Key.Left, axisWeight = -1 }
+            };
+
+            List<AxisMapping> yMappings = new List<AxisMapping>()
+            {
+                new AxisMapping() { key = Key.W, axisWeight = 1 },
+                new AxisMapping() { key = Key.Up, axisWeight = 1 },
+                new AxisMapping() { key = Key.S, axisWeight = -1 },
+                new AxisMapping() { key = Key.Down, axisWeight = -1 }
+            };
+
+            axisMappings.Add("XAxis", xMappings);
+            axisMappings.Add("YAxis", yMappings);
+        }
 
         public static Vector2 GetMousePosition()
         {
@@ -36,6 +92,11 @@ namespace ABEngine.ABERuntime
         public static bool GetKeyDown(Key key)
         {
             return _newKeysThisFrame.Contains(key);
+        }
+
+        public static bool GetKeyUp(Key key)
+        {
+            return _keyUpThisFrame.Contains(key);
         }
 
         public static bool GetMouseButton(MouseButton button)
@@ -53,12 +114,45 @@ namespace ABEngine.ABERuntime
             return _mouseUpThisFrame.Contains(button);
         }
 
+        public static bool GetButton(string button)
+        {
+            if (buttonsMappings.TryGetValue(button, out List<Key> keys))
+                foreach (var key in keys)
+                    if (GetKey(key))
+                        return true;
+
+            return false;
+        }
+
+        public static bool GetButtonDown(string button)
+        {
+            if (buttonsMappings.TryGetValue(button, out List<Key> keys))
+                foreach (var key in keys)
+                    if (GetKeyDown(key))
+                        return true;
+
+            return false;
+        }
+
+
+        public static bool GetButtonUp(string button)
+        {
+            if (buttonsMappings.TryGetValue(button, out List<Key> keys))
+                foreach (var key in keys)
+                    if (GetKeyUp(key))
+                        return true;
+
+            return false;
+        }
+
+
         public static void UpdateFrameInput(InputSnapshot snapshot)
         {
             FrameSnapshot = snapshot;
             _newKeysThisFrame.Clear();
             _newMouseButtonsThisFrame.Clear();
             _mouseUpThisFrame.Clear();
+            _keyUpThisFrame.Clear();
 
             MousePosition = snapshot.MousePosition;
             for (int i = 0; i < snapshot.KeyEvents.Count; i++)
@@ -86,8 +180,8 @@ namespace ABEngine.ABERuntime
                 }
             }
 
-            XAxis = NormalizeAxis(snapshot.XAxis);
-            YAxis = NormalizeAxis(snapshot.YAxis);
+            _XAxis = NormalizeAxis(snapshot.XAxis);
+            _YAxis = NormalizeAxis(snapshot.YAxis);
         }
 
         private static float NormalizeAxis(float value)
@@ -119,6 +213,7 @@ namespace ABEngine.ABERuntime
         {
             _currentlyPressedKeys.Remove(key);
             _newKeysThisFrame.Remove(key);
+            _keyUpThisFrame.Add(key);
         }
 
         private static void KeyDown(Key key)
@@ -128,5 +223,11 @@ namespace ABEngine.ABERuntime
                 _newKeysThisFrame.Add(key);
             }
         }
+    }
+
+    public class AxisMapping
+    {
+        public Key key { get; set; }
+        public float axisWeight { get; set; }
     }
 }

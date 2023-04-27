@@ -18,7 +18,6 @@ namespace ABEngine.ABEAudio
 
         private static ChannelFinishedDelegate channelFinishedCallback;
 
-
         private AudioManager()
         {
             if (SDL.SDL_Init(SDL.SDL_INIT_AUDIO) < 0)
@@ -73,8 +72,29 @@ namespace ABEngine.ABEAudio
 
         public override void CleanUp(bool reload)
         {
-            if(!reload)
+            Mix_HaltMusic();
+
+            foreach (var key in _audioPlayers.Keys)
+            {
+                _audioPlayers[key].Dispose();
+                _audioPlayers.Remove(key);
+            }
+
+            foreach (var track in AudioPlayer.trackCache)
+            {
+                if (track.Value != IntPtr.Zero)
+                {
+                    Mix_FreeChunk(track.Value);
+                }
+            }
+            AudioPlayer.trackCache.Clear();
+
+            if (!reload)
+            {
                 Mix_CloseAudio();
+                Mix_Quit();
+                SDL2.SDL.SDL_AudioQuit();
+            }
         }
     }
 }
