@@ -104,7 +104,7 @@ namespace ABEngine.ABERuntime
         public static DeviceBuffer pipelineBuffer;
         public static ResourceSet pipelineSet;
 
-        bool reload = false;
+        static bool reload = false;
         bool resize = false;
 
         internal static bool debug = false;
@@ -121,9 +121,18 @@ namespace ABEngine.ABERuntime
             Init(windowName);
         }
 
+        internal static void ReloadGame()
+        {
+            reload = true;
+        }
+
+        protected virtual void InitGame()
+        {
+
+        }
 
         float accumulator;
-        protected virtual void Init(string windowName)
+        protected private virtual void Init(string windowName)
         {
             // ECS and Physics Worlds
             CreateWorlds();
@@ -131,7 +140,6 @@ namespace ABEngine.ABERuntime
             // Init
             PhysicsManager.InitSettings();
             GraphicsManager.InitSettings();
-
 
             // Veldrid 
             SetupGraphics(windowName);
@@ -152,6 +160,9 @@ namespace ABEngine.ABERuntime
             tweenSystem = new Tweening.TweenSystem();
             colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
             particleSystem = new ParticleModuleSystem();
+
+            // Once in game lifetime
+            InitGame();
 
             // User systems _ Reflection
             RegisterSystems();
@@ -331,10 +342,26 @@ namespace ABEngine.ABERuntime
                     if (debug)
                         colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
 
-                    renderExtensions = new List<RenderSystem>();
 
-                    userSystems = new List<BaseSystem>();
-                    userSystemTypes = new List<Type>();
+                    for (int i = renderExtensions.Count - 1; i >= 0; i--)
+                    {
+                        BaseSystem system = renderExtensions[i];
+                        if (!system.dontDestroyOnLoad)
+                        {
+                            renderExtensions.RemoveAt(i);
+                        }
+                    }
+
+                    for (int i = userSystems.Count - 1; i >= 0; i--)
+                    {
+                        BaseSystem system = userSystems[i];
+                        if(!system.dontDestroyOnLoad)
+                        {
+                            userSystems.RemoveAt(i);
+                            userSystemTypes.RemoveAt(i);
+                        }
+                    }
+
                     notifySystems.Clear();
                     notifyAnySystems.Clear();
 

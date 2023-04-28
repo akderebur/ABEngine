@@ -9,6 +9,7 @@ namespace ABEngine.ABERuntime
         protected Archetype archetype;
 
         protected bool started;
+        public bool dontDestroyOnLoad { get; private set; }
 
         public static void SetECSWorld(World world)
         {
@@ -17,6 +18,11 @@ namespace ABEngine.ABERuntime
 
         public BaseSystem()
         {
+        }
+
+        public BaseSystem(bool dontDestroyOnLoad)
+        {
+            this.dontDestroyOnLoad = dontDestroyOnLoad;
         }
 
         public virtual void Awake()

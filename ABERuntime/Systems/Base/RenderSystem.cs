@@ -18,6 +18,12 @@ namespace ABEngine.ABERuntime
             SetGraphics();
         }
 
+        public RenderSystem(bool dontDestroyOnLoad) : base(dontDestroyOnLoad)
+        {
+            this.pipelineAsset = null;
+            SetGraphics();
+        }
+
         public RenderSystem(PipelineAsset pipelineAsset)
         {
             this.pipelineAsset = pipelineAsset;

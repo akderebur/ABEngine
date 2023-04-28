@@ -18,7 +18,7 @@ namespace ABEngine.ABEAudio
 
         private static ChannelFinishedDelegate channelFinishedCallback;
 
-        private AudioManager()
+        private AudioManager() : base(true)
         {
             if (SDL.SDL_Init(SDL.SDL_INIT_AUDIO) < 0)
                 throw new Exception($"Unable to initialize SDL2 audio subsystem: {SDL.SDL_GetError()}");

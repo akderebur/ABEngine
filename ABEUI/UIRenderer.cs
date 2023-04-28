@@ -46,7 +46,7 @@ namespace ABEngine.ABEUI
             }
         }
 
-        private UIRenderer()
+        private UIRenderer() : base(true)
         {
             LoadDefaultFontData();
 

@@ -119,7 +119,7 @@ namespace ABEngine.ABEditor
             File.WriteAllText(settingsPath, settingsJObj.Build().Serialize());
         }
 
-        protected override void Init(string windowName)
+        protected private override void Init(string windowName)
         {
             gameMode = GameMode.Editor;
             userTypes = new List<Type>();
