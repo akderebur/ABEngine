@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace ABEngine.ABERuntime.Core.Math
 {
-	public class FloatRange : AutoSerializable
+	public class FloatRange : ABComponent
 	{
 		public bool isConstant { get; set; }
 		public float value { get; set; }

@@ -26,7 +26,8 @@ namespace ABEngine.ABEditor.Assets
 		static HashSet<string> assetExts = new HashSet<string>()
 		{
 			".png",
-			".abmat"
+			".abmat",
+			".abprefab"
 		};
 
 		static int guidMagic = 1230324289; // ABUI
@@ -78,7 +79,7 @@ namespace ABEngine.ABEditor.Assets
 						AssetMeta meta = new DummyMeta();
 						meta.Deserialize(File.ReadAllText(assetsPath + oldMetaAssetPath));
 
-						if (meta.fPath.Equals(fileAssetPath))
+						if (meta.fPath.Equals(fileAssetPath)) // File exists without change
 						{
 						    meta = CreateMetaFromExtension(ext);
 							meta.metaAssetPath = metaAssetPath;
@@ -157,7 +158,11 @@ namespace ABEngine.ABEditor.Assets
 				case ".abmat":
                     meta = new MaterialMeta();
                     meta.refreshEvent += RefreshMaterialAsset;
-                    break;
+					break;
+				case ".abprefab":
+					meta = new PrefabMeta();
+					//meta.refreshEvent +=
+					break;
             }
 
 			return meta;
@@ -227,6 +232,8 @@ namespace ABEngine.ABEditor.Assets
 			metaDict.Add(fileAssetPath, meta);
 			guidToMeta.Add(meta.uniqueID, metaAssetPath);
 			loadedGuids.Add(meta.uniqueID);
+
+			meta.MetaCreated();
         }
 
         private static void HandleMovedFile(string oldMetaAssetPath, string oldFileAssetPath, string newFileAssetPath)
@@ -305,8 +312,6 @@ namespace ABEngine.ABEditor.Assets
 				return asset;
 			}
 		}
-
-		
 
         public static void SaveMeta(AssetMeta meta)
 		{

@@ -100,6 +100,7 @@ namespace ABEngine.ABEditor
         static CategoryDirectory clipCatDir;
         static CategoryDirectory animGraphCatDir;
         static CategoryDirectory materialCatDir;
+        static CategoryDirectory prefabCatDir;
 
         public static void SetAssetsFolder(string path)
         {
@@ -145,6 +146,14 @@ namespace ABEngine.ABEditor
             };
             materialCatDir.payloadName = "MaterialFileInd";
             materialCatDir.canDragDrop = true;
+
+
+            prefabCatDir = new CategoryDirectory("", ".abprefab", "Prefabs", () =>
+            {
+
+            });
+            prefabCatDir.payloadName = "PrefabFileInd";
+            prefabCatDir.canDragDrop = true;
 
             animGraphCatDir = new CategoryDirectory("", ".abanimgraph", "Anim Graphs", () =>
             {
@@ -227,6 +236,7 @@ namespace ABEngine.ABEditor
             clipCatDir.curDir = clipCatDir.curDir;
             imgCatDir.curDir = imgCatDir.curDir;
             materialCatDir.curDir = materialCatDir.curDir;
+            prefabCatDir.curDir = prefabCatDir.curDir;
         }
 
         static unsafe void DrawAssetTab(CategoryDirectory catDir)
@@ -370,7 +380,8 @@ namespace ABEngine.ABEditor
                 DrawAssetTab(imgCatDir);
                 DrawAssetTab(clipCatDir);
                 DrawAssetTab(materialCatDir);
-                DrawAssetTab(animGraphCatDir);
+                //DrawAssetTab(animGraphCatDir);
+                DrawAssetTab(prefabCatDir);
 
                 ImGui.EndTabBar();
             }

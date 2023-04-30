@@ -3,17 +3,49 @@ using Microsoft.DotNet.PlatformAbstractions;
 using System.Numerics;
 using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Components;
+using System.Linq;
+using System.Collections.Generic;
+using Halak;
 
 namespace ABEngine.ABERuntime
 {
     public static class EntityManager
     {
-        public static Entity Instantiate(in Entity entity)
+        // Instantiate scene objects
+        public static Entity Instantiate(in Entity entity, Transform parent = null)
         {
-            Entity copy = Game.GameWorld.CreateEntity();
+            return InstantiateCore(entity, parent, new Dictionary<Transform, Transform>());
+        }
+
+        // Instantiate prefabs
+        public static Entity Instantiate(string prefabName, Transform parent = null)
+        {
+            Transform prefabTrans = PrefabManager.GetPrefabTransform(prefabName);
+
+            if(prefabTrans != null)
+                return InstantiateCore(prefabTrans.entity, parent, new Dictionary<Transform, Transform>());
+
+            return default(Entity);
+        }
+
+        internal static Entity InstantiateCore(in Entity entity, Transform parent, Dictionary<Transform, Transform> referenceMap, bool prefab = false)
+        {
+            Entity copy;
+            if (prefab)
+                copy = Game.PrefabWorld.CreateEntity();
+            else
+                copy = Game.GameWorld.CreateEntity();
 
             var comps = entity.GetAllComponents();
             var types = entity.GetAllComponentTypes();
+
+            int transformIndex = Array.IndexOf(types, typeof(Transform));
+            if (transformIndex < 0)
+                return default(Entity);
+
+            // Set transform
+            var transComp = ((JSerializable)comps[transformIndex]).GetCopy();
+            copy.Set(types[transformIndex], transComp);
 
             Sprite newSprite = null;
             Rigidbody newRb = null;
@@ -21,6 +53,9 @@ namespace ABEngine.ABERuntime
 
             for (int i = 0; i < comps.Length; i++)
             {
+                if (i == transformIndex)
+                    continue;
+
                 var comp = comps[i];
                 var type = types[i];
 
@@ -37,11 +72,11 @@ namespace ABEngine.ABERuntime
                         newPm = (ParticleModule)newComp;
 
                 }
-                else if (type.IsSubclassOf(typeof(AutoSerializable)))
+                else if (type.IsSubclassOf(typeof(ABComponent)))
                 {
-                    var serialized = AutoSerializable.Serialize((AutoSerializable)comps[i]);
-                    var newComp = AutoSerializable.Deserialize(serialized.Serialize(), type);
-                    AutoSerializable.SetReferences(((AutoSerializable)newComp));
+                    var serialized = ABComponent.Serialize((ABComponent)comps[i]);
+                    var newComp = ABComponent.Deserialize(serialized.Serialize(), type);
+                    ABComponent.SetReferences(((ABComponent)newComp));
 
                     copy.Set(type, newComp);
                 }
@@ -55,22 +90,92 @@ namespace ABEngine.ABERuntime
                 }
             }
 
-            if (newRb != null)
-                Game.b2dInitSystem.AddRBRuntime(ref copy);
+            copy.transform.SetParent(parent, false);
 
-            if (entity.enabled)
+            if (!prefab)
             {
-                if (newSprite != null)
-                    Game.spriteBatchSystem.UpdateSpriteBatch(newSprite, newSprite.renderLayerIndex, newSprite.texture, newSprite.sharedMaterial.instanceID);
+                if (newRb != null)
+                    Game.b2dInitSystem.AddRBRuntime(ref copy);
+
+                if (entity.enabled)
+                {
+                    if (newSprite != null)
+                        Game.spriteBatchSystem.UpdateSpriteBatch(newSprite, newSprite.renderLayerIndex, newSprite.texture, newSprite.sharedMaterial.instanceID);
+                }
+
+                CheckSubscribers(in copy, true);
             }
 
-            CheckSubscribers(in copy, true);
+            foreach (var child in entity.transform.children.ToList())
+            {
+                InstantiateCore(child.entity, copy.transform, referenceMap, prefab);
+            }
 
             return copy;
         }
 
+        internal static Transform LoadSerializedPrefab(PrefabAsset prefabAsset)
+        {
+            JValue prefab = JValue.Parse(prefabAsset.serializedData);
+
+            List<Transform> newEntities = new List<Transform>();
+            foreach (var entity in prefab["Entities"].Array())
+            {
+                string entName = entity["Name"];
+                string guid = entity["GUID"];
+                Entity newEnt = Game.PrefabWorld.CreateEntity(entName, Guid.Parse(guid));
+
+                foreach (var component in entity["Components"].Array())
+                {
+                    Type type = Type.GetType(component["type"]);
+
+                    if (type == null)
+                        type = Game.UserTypes.FirstOrDefault(t => t.ToString().Equals(component["type"]));
+
+                    if (type == null)
+                        continue;
+
+                    if (typeof(JSerializable).IsAssignableFrom(type))
+                    {
+                        var serializedComponent = (JSerializable)Activator.CreateInstance(type);
+                        serializedComponent.Deserialize(component.ToString());
+                        newEnt.Set(type, serializedComponent);
+                    }
+                    else if (type.IsSubclassOf(typeof(ABComponent)))
+                    {
+                        var comp = ABComponent.Deserialize(component.ToString(), type);
+                        newEnt.Set(type, comp);
+                    }
+                }
+
+                newEntities.Add(newEnt.transform);
+            }
+
+            var rootEnt = newEntities.First();
+
+            // Parenting
+
+            foreach (var entity in newEntities)
+            {
+                if (entity == rootEnt)
+                    continue;
+
+                if (!string.IsNullOrEmpty(entity.parentGuidStr))
+                {
+                    Guid parGuid = Guid.Parse(entity.parentGuidStr);
+                    entity.SetParent(Game.PrefabWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(parGuid)).Get<Transform>(), false);
+                }
+            }
+
+            rootEnt.entity.Set<Guid>(prefabAsset.prefabGuid);
+            return rootEnt;
+        }
+
         private static void CheckSubscribers(in Entity ent, bool create)
         {
+            if (Game.notifySystems == null)
+                return;
+
             TypeSignature typeSig = ent.archetype.GetTypeSignature();
             foreach (var notifyKP in Game.notifySystems)
             {

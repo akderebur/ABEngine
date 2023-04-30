@@ -97,11 +97,11 @@ namespace ABEngine.ABERuntime
 
             JsonArrayBuilder colorArr = new JsonArrayBuilder(200);
             foreach (var colorKey in colorKeys)
-                colorArr.Push(AutoSerializable.Serialize(colorKey));
+                colorArr.Push(ABComponent.Serialize(colorKey));
 
             JsonArrayBuilder alphaArr = new JsonArrayBuilder(200);
             foreach (var alphaKey in alphaKeys)
-                alphaArr.Push(AutoSerializable.Serialize(alphaKey));
+                alphaArr.Push(ABComponent.Serialize(alphaKey));
 
             jObj.Put("Colors", colorArr.Build());
             jObj.Put("Alphas", alphaArr.Build());
@@ -114,13 +114,13 @@ namespace ABEngine.ABERuntime
             JValue data = JValue.Parse(json);
             foreach (var colorEnt in data["Colors"].Array())
             {
-                var colorKey = AutoSerializable.Deserialize(colorEnt.ToString(), typeof(ColorKey)) as ColorKey;
+                var colorKey = ABComponent.Deserialize(colorEnt.ToString(), typeof(ColorKey)) as ColorKey;
                 colorKeys.Add(colorKey);
             }
 
             foreach (var alphaEnt in data["Alphas"].Array())
             {
-                var alphaKey = AutoSerializable.Deserialize(alphaEnt.ToString(), typeof(AlphaKey)) as AlphaKey;
+                var alphaKey = ABComponent.Deserialize(alphaEnt.ToString(), typeof(AlphaKey)) as AlphaKey;
                 alphaKeys.Add(alphaKey);
             }
         }
@@ -218,7 +218,7 @@ namespace ABEngine.ABERuntime
         //}
     }
 
-    public class ColorKey : AutoSerializable
+    public class ColorKey : ABComponent
     {
         public float Time { get; set; }
         public Vector3 Color { get; set; }
@@ -230,7 +230,7 @@ namespace ABEngine.ABERuntime
         }
     }
 
-    public class AlphaKey : AutoSerializable
+    public class AlphaKey : ABComponent
     {
         public float Time { get; set; }
         public float Alpha { get; set; }

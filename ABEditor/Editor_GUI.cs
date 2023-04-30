@@ -144,6 +144,11 @@ namespace ABEngine.ABEditor
 
                     DetailsAddComponentMenu(selectedEntity);
 
+                    ImGui.Separator();
+                    ImGui.Spacing();
+
+                    DetailMakePrefabMenu(selectedEntity);
+
                     ImGui.Spacing();
                     //ImGui.Separator();
                     //ImGui.Spacing();
@@ -588,7 +593,7 @@ namespace ABEngine.ABEditor
                     AssetCache.ClearSceneCache();
 
                     TMColliderGizmo.ResetGizmo();
-                    LoadScene(File.ReadAllText(sceneFile), userTypes);
+                    LoadScene(File.ReadAllText(sceneFile));
 
                     RemakeGrid();
                     DepthSearch();
@@ -620,7 +625,7 @@ namespace ABEngine.ABEditor
 
         Transform lastDetailsView;
         bool firstGradientOpen = false;
-        void DetailsView(Entity selectedEntity)
+        void DetailsView(in Entity selectedEntity)
         {
             string entName = selectedEntity.Get<string>();
             ImGui.InputText("Name", ref entName, 200);
@@ -660,7 +665,7 @@ namespace ABEngine.ABEditor
                 Type type = types[i];
                 var comp = comps[i];
 
-                if (type.IsSubclassOf(typeof(AutoSerializable)))
+                if (type.IsSubclassOf(typeof(ABComponent)))
                 {
                     ImGui.GetStateStorage().SetInt(ImGui.GetID(type.Name), 1);
 
@@ -789,7 +794,7 @@ namespace ABEngine.ABEditor
             }
         }
 
-        private void DetailsAddComponentMenu(Entity selectedEntity)
+        private void DetailsAddComponentMenu(in Entity selectedEntity)
         {
             if (ImGui.Button("Add Component"))
             {
@@ -836,6 +841,47 @@ namespace ABEngine.ABEditor
             }
         }
 
+        private void DetailMakePrefabMenu(in Entity selectedEntity)
+        {
+            if(!selectedEntity.Has<Prefab>())
+            {
+                Transform transform = selectedEntity.transform;
+                if (transform.parent != null)
+                    return;
+
+                if (ImGui.Button("Make Prefab"))
+                {
+                    int elementIndex = 0;
+                    RecursePrefab(transform, ref elementIndex);
+
+                    string entityName = selectedEntity.Get<String>();
+                    if (string.IsNullOrEmpty(entityName))
+                        entityName = "EntityPrefab";
+                    string savePath = Editor.AssetPath + entityName + ".abprefab";
+
+                    int dupeInd = 0;
+                    while (File.Exists(savePath))
+                        savePath = savePath.Replace(".abprefab", ++dupeInd + ".abprefab");
+
+                    PrefabMeta.CreatePrefabAsset(savePath, selectedEntity);
+                }
+            }
+        }
+
+        private void RecursePrefab(Transform transform, ref int index, bool first = true)
+        {
+            if (first)
+                transform.entity.Set<Prefab>(new Prefab());
+            else
+                transform.entity.Set<PrefabElement>(new PrefabElement(index++));
+
+            foreach (var child in transform.children)
+            {
+                RecursePrefab(child, ref index, false);
+            }
+        }
+
+
         private void DeleteRecursive(Transform transform)
         {
             foreach (var child in transform.children)
@@ -847,7 +893,7 @@ namespace ABEngine.ABEditor
             transform.entity.Destroy();
         }
 
-        private void DeleteEntityButton(Entity entity)
+        private void DeleteEntityButton(in Entity entity)
         {
             if (ImGui.Button("Delete Entity"))
             {
@@ -937,6 +983,26 @@ namespace ABEngine.ABEditor
 
                     var srcItem = hierList[srcIndex];
                     srcItem.parent = null;
+                }
+
+                payload = ImGui.AcceptDragDropPayload("PrefabFileInd");
+                if (payload.NativePtr != null)
+                {
+                    var dataPtr = (int*)payload.Data;
+                    int srcIndex = dataPtr[0];
+
+                    var prefabFilePath = AssetsFolderView.files[srcIndex];
+                    PrefabMeta prefabMeta = AssetHandler.GetMeta(prefabFilePath) as PrefabMeta;
+
+                    var prefabTransform = PrefabManager.GetPrefabTransform(prefabMeta.fPathHash);
+                    if (prefabTransform == null)
+                    {
+                        PrefabAsset prefabAsset = AssetHandler.GetAssetBinding(prefabMeta, prefabFilePath) as PrefabAsset;
+                        prefabTransform = EntityManager.LoadSerializedPrefab(prefabAsset);
+                    }
+
+                    var entity = EntityManager.Instantiate(prefabTransform.entity);
+                    hierList.Add(entity.transform);
                 }
 
 

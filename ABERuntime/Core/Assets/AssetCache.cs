@@ -29,6 +29,8 @@ namespace ABEngine.ABERuntime
 
     public static class AssetCache
     {
+        static int guidMagic = 1230324289; // ABUI
+
         // Debug - Raw
         private static readonly Dictionary<string, ImageSharpTexture> s_images_debug = new Dictionary<string, ImageSharpTexture>();
         private static readonly Dictionary<ImageSharpTexture, Texture> s_textures_debug = new Dictionary<ImageSharpTexture, Texture>();
@@ -43,6 +45,7 @@ namespace ABEngine.ABERuntime
         // ABE Types
         private static readonly List<Texture2D> s_texture2ds = new List<Texture2D>();
         private static readonly List<PipelineMaterial> s_materials = new List<PipelineMaterial>();
+        private static readonly List<PrefabAsset> s_prefabAssets = new List<PrefabAsset>();
         private static readonly List<SpriteClip> s_clips = new List<SpriteClip>();
 
         private static Texture2D defTexture = null;
@@ -240,6 +243,13 @@ namespace ABEngine.ABERuntime
             return newMat;
         }
 
+        public static PrefabAsset CreatePrefabAsset(string prefabAssetPath)
+        {
+            var newPrefab = GetOrCreatePrefabAsset(prefabAssetPath);
+            return newPrefab;
+        }
+
+
         public static SpriteClip CreateSpriteClip(string clipAssetPath)
         {
             var exClip = FindExistingSpriteClip(clipAssetPath);
@@ -421,6 +431,35 @@ namespace ABEngine.ABERuntime
             return mat;
         }
 
+        private static PrefabAsset GetOrCreatePrefabAsset(string prefabPath, uint preHash = 0)
+        {
+            uint hash = preHash;
+            if (hash == 0)
+                hash = prefabPath.ToHash32();
+
+            PrefabAsset prefabAsset = s_prefabAssets.FirstOrDefault(t => t.fPathHash == hash);
+            if (prefabAsset != null)
+                return prefabAsset;
+
+            if (!Game.debug)
+            {
+                //prefabAsset = GetMaterialFromPK(hash);
+            }
+            else
+            {
+                if (preHash != 0)
+                    prefabPath = hashToFName[preHash];
+                prefabAsset = LoadPrefabAssetRAW(hash, File.ReadAllBytes(Game.AssetPath + prefabPath));
+            }
+
+            s_prefabAssets.Add(prefabAsset);
+            if (assetDict.ContainsKey(hash))
+                assetDict[hash] = prefabAsset;
+            else
+                assetDict.Add(hash, prefabAsset);
+            return prefabAsset;
+        }
+
         // Editor ONLY remove later
         internal static void AddMaterial(PipelineMaterial mat, string file)
         {
@@ -431,6 +470,18 @@ namespace ABEngine.ABERuntime
                 assetDict[hash] = mat;
             else
                 assetDict.Add(hash, mat);
+        }
+
+        // Editor ONLY remove later
+        internal static void AddPrefab(PrefabAsset prefabAsset, string file)
+        {
+            uint hash = prefabAsset.fPathHash;
+            hashToFName.Add(hash, file);
+            s_prefabAssets.Add(prefabAsset);
+            if (assetDict.ContainsKey(hash))
+                assetDict[hash] = prefabAsset;
+            else
+                assetDict.Add(hash, prefabAsset);
         }
 
         internal static void UpdateAsset(uint oldHash, uint hash, string file)
@@ -589,6 +640,20 @@ namespace ABEngine.ABERuntime
             }
         }
 
+        internal static PrefabAsset LoadPrefabAssetRAW(uint hash, byte[] data)
+        {
+            using (MemoryStream ms = new MemoryStream(data))
+            using (BinaryReader br = new BinaryReader(ms))
+            {
+                PrefabAsset prefabAsset = new PrefabAsset(hash);
+                prefabAsset.serializedData = br.ReadString();
+                if(ms.Position + 20 <= ms.Length && br.ReadInt32() == guidMagic)
+                    prefabAsset.prefabGuid = new Guid(br.ReadBytes(16));
+
+                return prefabAsset;
+            }
+        }
+
         // Serialization - For scene
         internal static JValue SerializeAssets()
         {
@@ -658,6 +723,11 @@ namespace ABEngine.ABERuntime
             if (index < 0 || index >= sceneAssets.Count)
                 return null;
             return sceneAssets[index];
+        }
+
+        internal static Asset GetAssetFromHash(uint hash)
+        {
+            return null;
         }
 
         internal static void ClearSceneCache()

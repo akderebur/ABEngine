@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace ABEngine.ABERuntime.Components
 {
-	public class PolygonCollider : AutoSerializable
+	public class PolygonCollider : ABComponent
 	{
         List<Vector2> points;
 

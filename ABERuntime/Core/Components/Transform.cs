@@ -37,7 +37,6 @@ namespace ABEngine.ABERuntime
         public string tag { get; set; }
 
         bool keepWorldPos = true;
-        internal bool manualTRS = false;
 
         public Transform()
         {
@@ -92,17 +91,9 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        internal void ForceTRS()
-        {
-            manualTRS = false;
-            RecalculateTRS();
-            manualTRS = true;
-        }
 
         private void RecalculateTRS()
         {
-            if (manualTRS)
-                return;
 
             localMatrix = Matrix4x4.CreateScale(_localScale) * Matrix4x4.CreateFromQuaternion(_localRotation) * Matrix4x4.CreateTranslation(_localPosition);
             Matrix4x4 worldMat = localMatrix;
@@ -164,12 +155,13 @@ namespace ABEngine.ABERuntime
             tag = data["Tag"];
             isStatic = data["Static"];
             _localRotation = Quaternion.Identity;
-            _localPosition = new Vector3((float)data["PosX"], (float)data["PosY"], (float)data["PosZ"]);
-            _localScale = new Vector3((float)data["ScaX"], (float)data["ScaY"], (float)data["ScaZ"]);
+            _localPosition = new Vector3(data["PosX"], data["PosY"], data["PosZ"]);
+            _localScale = new Vector3(data["ScaX"], data["ScaY"], data["ScaZ"]);
 
             parentGuidStr = data["ParentGuid"];
          
             RecalculateTRS();
+
         }
 
         protected void AddChild(Transform child)
@@ -309,6 +301,7 @@ namespace ABEngine.ABERuntime
                 enabled = this.enabled
             };
             copyTrans.SetParent(this._parent, false);
+            copyTrans.RecalculateTRS();
 
             return copyTrans;
         }

@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace ABEngine.ABERuntime.Components
 {
-    public class AABB : AutoSerializable
+    public class AABB : ABComponent
     {
         public Vector2 size { get; set; }
         public Vector2 center { get; set; }

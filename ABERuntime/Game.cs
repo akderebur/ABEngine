@@ -37,6 +37,7 @@ namespace ABEngine.ABERuntime
 
         // Worlds and Systems
         public static World GameWorld;
+        internal static World PrefabWorld;
         public static Box2D.NetStandard.Dynamics.World.World B2DWorld;
         private List<Type> userSystemTypes;
         private protected List<BaseSystem> userSystems;
@@ -52,6 +53,7 @@ namespace ABEngine.ABERuntime
         public static Vector2 screenSize;
         public static Matrix4x4 projectionMatrix;
         public static float Time;
+        internal static List<Type> UserTypes;
 
         // Events
         public static event Action onWindowResize;
@@ -109,8 +111,9 @@ namespace ABEngine.ABERuntime
 
         internal static bool debug = false;
 
-        public Game(string windowName, bool debug)
+        public Game(string windowName, bool debug, List<Type> userTypes)
         {
+            UserTypes = userTypes;
             userSystems = new List<BaseSystem>();
             userSystemTypes = new List<Type>();
             AppPath = System.IO.Directory.GetCurrentDirectory() + "/";
@@ -126,7 +129,12 @@ namespace ABEngine.ABERuntime
             reload = true;
         }
 
-        protected virtual void InitGame()
+        protected virtual void Game_Init()
+        {
+
+        }
+
+        protected virtual void Scene_CreatePrefabs()
         {
 
         }
@@ -162,13 +170,16 @@ namespace ABEngine.ABERuntime
             particleSystem = new ParticleModuleSystem();
 
             // Once in game lifetime
-            InitGame();
+            Game_Init();
+            PrefabManager.Init(); // For shared prefabs
+
+            Scene_CreatePrefabs();
 
             // User systems _ Reflection
-            RegisterSystems();
+            Scene_RegisterSystems();
             SubscribeSystems();
 
-            SceneSetup();
+            Scene_Setup();
             onSceneLoad?.Invoke();
 
             InputSnapshot snapshot = window.PumpEvents();
@@ -180,7 +191,7 @@ namespace ABEngine.ABERuntime
 
             // Start Events
             b2dInitSystem.Start();
-            //rbMove.ResetSmoothStates();
+            rbMoveSystem.ResetSmoothStates();
             foreach (var system in userSystems)
             {
                 system.Start();
@@ -240,7 +251,9 @@ namespace ABEngine.ABERuntime
                     CoroutineManager.StopAllCoroutines();
 
                     GameWorld.Destroy();
+                    PrefabWorld.Destroy();
                     CreateWorlds();
+                    PrefabManager.Init();
 
                     gd.WaitForIdle();
 
@@ -366,10 +379,10 @@ namespace ABEngine.ABERuntime
                     notifyAnySystems.Clear();
 
                     // User systems _ Reflection
-                    RegisterSystems();
+                    Scene_RegisterSystems();
                     SubscribeSystems();
 
-                    SceneSetup();
+                    Scene_Setup();
                     onSceneLoad?.Invoke();
 
                     snapshot = window.PumpEvents();
@@ -477,6 +490,7 @@ namespace ABEngine.ABERuntime
         {
             // Fixed
             accumulator += elapsed;
+
             int steps = 0;
             while (TimeStep < accumulator && MAX_STEPS > steps)
             {
@@ -487,6 +501,8 @@ namespace ABEngine.ABERuntime
                 {
                     system.FixedUpdate(newTime, TimeStep);
                 }
+
+                rbMoveSystem.ResetSmoothStates();
 
                 B2DWorld?.Step(TimeStep, VelocityIterations, PositionIterations);
 
@@ -504,7 +520,7 @@ namespace ABEngine.ABERuntime
         internal static Dictionary<TypeSignature, List<BaseSystem>> notifyAnySystems;
 
 
-        protected virtual void RegisterSystems() { }
+        protected virtual void Scene_RegisterSystems() { }
 
         protected void RegisterSystem(BaseSystem system)
         {
@@ -600,6 +616,7 @@ namespace ABEngine.ABERuntime
             spriteAnimSystem.Update(newTime, elapsed);
             particleSystem.Update(newTime, elapsed);
             rbMoveSystem.Update(newTime, interpolation);
+            camMoveSystem.Update(newTime, elapsed);
             spriteBatchSystem.Update(newTime, elapsed);
             lightRenderSystem.Update(newTime, elapsed);
             if(debug)
@@ -838,6 +855,9 @@ namespace ABEngine.ABERuntime
                 tweener.Pause(true);
             });
 
+            // Prefab container world
+            PrefabWorld = World.Create();
+
             // Systems
             BaseSystem.SetECSWorld(GameWorld);
         }
@@ -920,7 +940,7 @@ namespace ABEngine.ABERuntime
             renderExtensions.Add(renderSystem);
         }
    
-        protected virtual void SceneSetup()
+        protected virtual void Scene_Setup()
         {
 
         }
@@ -969,10 +989,10 @@ namespace ABEngine.ABERuntime
                     {
                         compArr.Push(((JSerializable)comps[i]).Serialize());
                     }
-                    else if(types[i].IsSubclassOf(typeof(AutoSerializable)))
+                    else if(types[i].IsSubclassOf(typeof(ABComponent)))
                     {
                         //ompArr.Push(((AutoSerializable)comps[i]).Serialize());
-                        compArr.Push(AutoSerializable.Serialize((AutoSerializable)comps[i]));
+                        compArr.Push(ABComponent.Serialize((ABComponent)comps[i]));
 
                     }
                 }
@@ -989,7 +1009,7 @@ namespace ABEngine.ABERuntime
             return scene.Build().ToString();
         }
 
-        protected void LoadScene(string json, List<Type> userTypes)
+        protected void LoadScene(string json)
         {
             JValue scene = JValue.Parse(json);
 
@@ -1021,7 +1041,7 @@ namespace ABEngine.ABERuntime
                     Type type = Type.GetType(component["type"]);
 
                     if (type == null)
-                        type = userTypes.FirstOrDefault(t => t.ToString().Equals(component["type"]));
+                        type = UserTypes.FirstOrDefault(t => t.ToString().Equals(component["type"]));
 
                     if (type == null)
                         continue;
@@ -1035,9 +1055,9 @@ namespace ABEngine.ABERuntime
                         serializedComponent.Deserialize(component.ToString());
                         newEnt.Set(type, serializedComponent);
                     }
-                    else if (type.IsSubclassOf(typeof(AutoSerializable)))
+                    else if (type.IsSubclassOf(typeof(ABComponent)))
                     {
-                        var comp = AutoSerializable.Deserialize(component.ToString(), type);
+                        var comp = ABComponent.Deserialize(component.ToString(), type);
                         newEnt.Set(type, comp);
                     }
                     
@@ -1073,9 +1093,9 @@ namespace ABEngine.ABERuntime
                     {
                         ((JSerializable)comps[i]).SetReferences();
                     }
-                    else if (types[i].IsSubclassOf(typeof(AutoSerializable)))
+                    else if (types[i].IsSubclassOf(typeof(ABComponent)))
                     {
-                        AutoSerializable.SetReferences(((AutoSerializable)comps[i]));
+                        ABComponent.SetReferences(((ABComponent)comps[i]));
                     }
                 }
             }

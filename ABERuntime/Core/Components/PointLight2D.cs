@@ -5,7 +5,7 @@ using Veldrid;
 
 namespace ABEngine.ABERuntime.Components
 {
-    public class PointLight2D : AutoSerializable
+    public class PointLight2D : ABComponent
     {
         public Vector4 color { get; set; }
         public float radius { get; set; }

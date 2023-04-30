@@ -9,11 +9,11 @@ using System.Linq;
 
 namespace ABEngine.ABERuntime
 {
-    public abstract class AutoSerializable
+    public abstract class ABComponent
     {
         protected string savedJson;
 
-        public static Halak.JValue Serialize(AutoSerializable toSerialize)
+        public static Halak.JValue Serialize(ABComponent toSerialize)
         {
             JObject jo = JObject.FromObject(toSerialize, UtilityExtensions.jsonSerializer);
             jo.Add("type", toSerialize.GetType().ToString());
@@ -37,18 +37,18 @@ namespace ABEngine.ABERuntime
         public static object Deserialize(string json, Type type)
         {
             var obj = JsonConvert.DeserializeObject(json, type, UtilityExtensions.jsonSettings);
-            ((AutoSerializable)obj).savedJson = json;
+            ((ABComponent)obj).savedJson = json;
             return obj;
         }
 
-        public static object GetCopy(AutoSerializable toCopy)
+        public static object GetCopy(ABComponent toCopy)
         {
             Type type = toCopy.GetType();
             string serialized = Serialize(toCopy).Serialize();
             return Deserialize(serialized, type);
         }
 
-        public static void SetReferences(AutoSerializable obj)
+        public static void SetReferences(ABComponent obj)
         {
             Halak.JValue data = null;
 

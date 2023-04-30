@@ -29,10 +29,9 @@ namespace ABEngine.ABEditor
                 {
                     compArr.Push(((JSerializable)comps[i]).Serialize());
                 }
-                else if (types[i].IsSubclassOf(typeof(AutoSerializable)))
+                else if (types[i].IsSubclassOf(typeof(ABComponent)))
                 {
-                    compArr.Push(AutoSerializable.Serialize((AutoSerializable)comps[i]));
-
+                    compArr.Push(ABComponent.Serialize((ABComponent)comps[i]));
                 }
             }
 
@@ -68,9 +67,9 @@ namespace ABEngine.ABEditor
                     newEnt.Set(type, serializedComponent);
                 }
 
-                else if (type.IsSubclassOf(typeof(AutoSerializable)))
+                else if (type.IsSubclassOf(typeof(ABComponent)))
                 {
-                    var comp = AutoSerializable.Deserialize(component.ToString(), type);
+                    var comp = ABComponent.Deserialize(component.ToString(), type);
                     newEnt.Set(type, comp);
                 }
             }

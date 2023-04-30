@@ -7,7 +7,7 @@ using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABERuntime.Components
 {
-    public class Camera : AutoSerializable
+    public class Camera : ABComponent
     {
         //private Transform _followTarget;
         //private string _followEntGuid;

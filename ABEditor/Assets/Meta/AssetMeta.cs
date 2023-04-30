@@ -44,6 +44,11 @@ namespace ABEngine.ABEditor.Assets.Meta
             fPath = data["FilePath"];
         }
 
+        public virtual void MetaCreated()
+        {
+
+        }
+
         public abstract Asset CreateAssetBinding();
         public abstract JSerializable GetCopy();
         public abstract void SetReferences();

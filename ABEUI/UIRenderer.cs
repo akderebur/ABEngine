@@ -14,7 +14,7 @@ using System.IO;
 
 namespace ABEngine.ABEUI
 {
-    [SubscribeAny(typeof(UIText), typeof(UIImageButton))]
+    [SubscribeAny(typeof(UIText), typeof(UIImageButton), typeof(UISliderImage))]
     public class UIRenderer : RenderSystem
     {
         private ImGuiRenderer imguiRenderer;

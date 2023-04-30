@@ -73,7 +73,7 @@ namespace ABEngine.ABEditor
             return imguiRenderer.GetOrCreateImGuiBinding(GraphicsManager.rf, texture);
         }
 
-        public Editor(string windowName) : base(windowName, true)
+        public Editor(string windowName) : base(windowName, true, new List<Type>())
         {
         }
 
@@ -248,7 +248,7 @@ namespace ABEngine.ABEditor
                     {
                         window.Title = "ABEngine - Editor";
                         ResetWorld();
-                        base.LoadScene(tmpJson, userTypes);
+                        base.LoadScene(tmpJson);
                         DepthSearch();
                         //spriteRenderer.Start();
                         spriteBatchSystem.Start();
@@ -494,6 +494,10 @@ namespace ABEngine.ABEditor
             {
                 Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
+
+            PrefabWorld = World.Create();
+            PrefabWorld.OnSet((Entity entity, ref Transform newTrans) => newTrans.SetEntity(entity));
+
 
             // Systems
             BaseSystem.SetECSWorld(GameWorld);

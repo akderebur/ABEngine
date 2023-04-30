@@ -354,14 +354,14 @@ namespace ABEngine.ABERuntime.Components
             jObj.Put("Material", AssetCache.GetAssetSceneIndex(this._particleMaterial.fPathHash));
             jObj.Put("MaxParticles", maxParticles);
             jObj.Put("SpawnRange", spawnRange);
-            jObj.Put("SpawnRate", AutoSerializable.Serialize(spawnRate));
-            jObj.Put("StartLifetime", AutoSerializable.Serialize(startLifetime));
-            jObj.Put("Speed", AutoSerializable.Serialize(speed));
-            jObj.Put("StartSize", AutoSerializable.Serialize(startSize));
+            jObj.Put("SpawnRate", ABComponent.Serialize(spawnRate));
+            jObj.Put("StartLifetime", ABComponent.Serialize(startLifetime));
+            jObj.Put("Speed", ABComponent.Serialize(speed));
+            jObj.Put("StartSize", ABComponent.Serialize(startSize));
             jObj.Put("SimulationSpace", (int)simulationSpace);
             jObj.Put("MoveDir", moveDir);
 
-            jObj.Put("LifetimeSize", AutoSerializable.Serialize(lifetimeSize));
+            jObj.Put("LifetimeSize", ABComponent.Serialize(lifetimeSize));
             jObj.Put("LifetimeColor", lifetimeColor.Serialize()); ;
 
 
@@ -383,15 +383,15 @@ namespace ABEngine.ABERuntime.Components
 
             maxParticles = data["MaxParticles"];
             spawnRange = data["SpawnRange"];
-            spawnRate = AutoSerializable.Deserialize(data["SpawnRate"].ToString(), typeof(FloatRange)) as FloatRange;
-            startLifetime = AutoSerializable.Deserialize(data["StartLifetime"].ToString(), typeof(FloatRange)) as FloatRange;
-            speed = AutoSerializable.Deserialize(data["Speed"].ToString(), typeof(FloatRange)) as FloatRange;
-            startSize = AutoSerializable.Deserialize(data["StartSize"].ToString(), typeof(FloatRange)) as FloatRange;
+            spawnRate = ABComponent.Deserialize(data["SpawnRate"].ToString(), typeof(FloatRange)) as FloatRange;
+            startLifetime = ABComponent.Deserialize(data["StartLifetime"].ToString(), typeof(FloatRange)) as FloatRange;
+            speed = ABComponent.Deserialize(data["Speed"].ToString(), typeof(FloatRange)) as FloatRange;
+            startSize = ABComponent.Deserialize(data["StartSize"].ToString(), typeof(FloatRange)) as FloatRange;
             int simSpaceInd = data["SimulationSpace"];
             simulationSpace = (SimulationSpace)simSpaceInd;
             moveDir = data["MoveDir"];
 
-            lifetimeSize = AutoSerializable.Deserialize(data["LifetimeSize"].ToString(), typeof(BezierCurve)) as BezierCurve;
+            lifetimeSize = ABComponent.Deserialize(data["LifetimeSize"].ToString(), typeof(BezierCurve)) as BezierCurve;
 
             ColorGradient colorGradient = new ColorGradient();
             colorGradient.Deserialize(data["LifetimeColor"].ToString());
@@ -411,11 +411,11 @@ namespace ABEngine.ABERuntime.Components
             {
                 maxParticles = this.maxParticles,
                 spawnRange = this.spawnRange,
-                spawnRate = AutoSerializable.GetCopy(this.spawnRate) as FloatRange,
-                startLifetime = AutoSerializable.GetCopy(this.startLifetime) as FloatRange,
-                speed = AutoSerializable.GetCopy(this.speed) as FloatRange,
-                startSize = AutoSerializable.GetCopy(this.startSize) as FloatRange,
-                lifetimeSize = AutoSerializable.GetCopy(this.lifetimeSize) as BezierCurve,
+                spawnRate = ABComponent.GetCopy(this.spawnRate) as FloatRange,
+                startLifetime = ABComponent.GetCopy(this.startLifetime) as FloatRange,
+                speed = ABComponent.GetCopy(this.speed) as FloatRange,
+                startSize = ABComponent.GetCopy(this.startSize) as FloatRange,
+                lifetimeSize = ABComponent.GetCopy(this.lifetimeSize) as BezierCurve,
                 lifetimeColor = (ColorGradient)this.lifetimeColor.GetCopy(),
 
                 _particleTexture = this._particleTexture,
