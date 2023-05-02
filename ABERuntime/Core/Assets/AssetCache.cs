@@ -56,8 +56,7 @@ namespace ABEngine.ABERuntime
         static Dictionary<uint, Asset> assetDict;
 
         // Scene specific serialize
-        static HashSet<Asset> sceneAssets = new HashSet<Asset>();
-         
+        static List<Asset> sceneAssets = new List<Asset>();
 
         static List<BinaryReader> pkReaders; 
         public static void InitAssetCache()
@@ -674,7 +673,7 @@ namespace ABEngine.ABERuntime
 
         internal static void DeserializeAssets(JValue assets)
         {
-            sceneAssets = new HashSet<Asset>();
+            sceneAssets = new List<Asset>();
             int assetC = assets["Count"];
            
             foreach (var asset in assets["Entries"].Array())
@@ -702,21 +701,21 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        //internal static int GetAssetSceneIndex(uint hash)
-        //{
-        //    if (!assetDict.ContainsKey(hash))
-        //        return -1;
+        internal static int GetAssetSceneIndex(uint hash)
+        {
+            if (!assetDict.ContainsKey(hash))
+                return -1;
 
-        //    Asset asset = assetDict[hash];
-        //    int assetIndex = sceneAssets.IndexOf(asset);
-        //    if(assetIndex == -1) // Not in the list
-        //    {
-        //        sceneAssets.Add(asset);
-        //        return sceneAssets.Count - 1;
-        //    }
+            Asset asset = assetDict[hash];
+            int assetIndex = sceneAssets.IndexOf(asset);
+            if (assetIndex == -1) // Not in the list
+            {
+                sceneAssets.Add(asset);
+                return sceneAssets.Count - 1;
+            }
 
-        //    return assetIndex;
-        //}
+            return assetIndex;
+        }
 
         internal static void ClearSerializeDependencies()
         {
@@ -738,12 +737,12 @@ namespace ABEngine.ABERuntime
         }
 
 
-        //internal static Asset GetAssetFromSceneIndex(int index)
-        //{
-        //    if (index < 0 || index >= sceneAssets.Count)
-        //        return null;
-        //    return sceneAssets[index];
-        //}
+        internal static Asset GetAssetFromSceneIndex(int index)
+        {
+            if (index < 0 || index >= sceneAssets.Count)
+                return null;
+            return sceneAssets[index];
+        }
 
         internal static Asset GetAssetFromHash(uint hash)
         {

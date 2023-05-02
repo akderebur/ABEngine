@@ -350,8 +350,8 @@ namespace ABEngine.ABERuntime.Components
         {
             JsonObjectBuilder jObj = new JsonObjectBuilder(500);
             jObj.Put("type", GetType().ToString());
-            jObj.Put("Texture", AssetCache.AddAssetDependency(this._particleTexture.fPathHash));
-            jObj.Put("Material", AssetCache.AddAssetDependency(this._particleMaterial.fPathHash));
+            jObj.Put("Texture", AssetCache.GetAssetSceneIndex(this._particleTexture.fPathHash));
+            jObj.Put("Material", AssetCache.GetAssetSceneIndex(this._particleMaterial.fPathHash));
             jObj.Put("MaxParticles", maxParticles);
             jObj.Put("SpawnRange", spawnRange);
             jObj.Put("SpawnRate", ABComponent.Serialize(spawnRate));
@@ -372,11 +372,11 @@ namespace ABEngine.ABERuntime.Components
         {
             JValue data = JValue.Parse(json);
 
-            uint texHash = (uint)(long)data["Texture"];
-            uint matHash = (uint)(long)data["Material"];
+            int texSceneIndex = data["Texture"];
+            int matSceneIndex = data["Material"];
 
-            var tex2d = AssetCache.GetAssetFromHash(texHash) as Texture2D;
-            var material = AssetCache.GetAssetFromHash(matHash) as PipelineMaterial;
+            var tex2d = AssetCache.GetAssetFromSceneIndex(texSceneIndex) as Texture2D;
+            var material = AssetCache.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
 
             this._particleTexture = tex2d;
             this._particleMaterial = material;

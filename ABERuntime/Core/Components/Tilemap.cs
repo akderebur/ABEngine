@@ -774,7 +774,7 @@ namespace ABEngine.ABERuntime.Components
             JsonObjectBuilder jObj = new JsonObjectBuilder(20000);
             jObj.Put("type", GetType().ToString());
             //jObj.Put("TransformGuid", transform.entity.Get<Guid>().ToString());
-            jObj.Put("TileImage", AssetCache.AddAssetDependency(this.tileImage.fPathHash));
+            jObj.Put("TileImage", AssetCache.GetAssetSceneIndex(this.tileImage.fPathHash));
 
             JsonArrayBuilder tilesArr = new JsonArrayBuilder(10000);
 			foreach (var tile in tiles.Values)
@@ -813,10 +813,10 @@ namespace ABEngine.ABERuntime.Components
         {
             JValue data = JValue.Parse(json);
 
-			//transformGuidStr = data["TransformGuid"];
+            //transformGuidStr = data["TransformGuid"];
 
-			uint textureHash = (uint)(long)data["TileImage"];
-			tileImage = AssetCache.GetAssetFromHash(textureHash) as Texture2D;
+            int assetSceneIndex = data["TileImage"];
+            tileImage = AssetCache.GetAssetFromSceneIndex(assetSceneIndex) as Texture2D;
 
             foreach (var jTile in data["Tiles"].Array())
             {

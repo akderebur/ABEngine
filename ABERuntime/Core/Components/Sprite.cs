@@ -161,8 +161,8 @@ namespace ABEngine.ABERuntime.Components
         {
             JsonObjectBuilder jObj = new JsonObjectBuilder(200);
             jObj.Put("type", GetType().ToString());
-            jObj.Put("Texture", AssetCache.AddAssetDependency(this.texture.fPathHash));
-            jObj.Put("Material", AssetCache.AddAssetDependency(this.sharedMaterial.fPathHash));
+            jObj.Put("Texture", AssetCache.GetAssetSceneIndex(this.texture.fPathHash));
+            jObj.Put("Material", AssetCache.GetAssetSceneIndex(this.sharedMaterial.fPathHash));
             jObj.Put("RenderLayerIndex", renderLayerIndex);
             jObj.Put("FlipX", flipX);
             jObj.Put("FlipY", flipY);
@@ -181,11 +181,11 @@ namespace ABEngine.ABERuntime.Components
             flipY = data["FlipY"];
             _renderLayerIndex = data["RenderLayerIndex"];
 
-            uint texHash = (uint)(long)data["Texture"];
-            uint matHash = (uint)(long)data["Material"];
+            int texSceneIndex = data["Texture"];
+            int matSceneIndex = data["Material"];
 
-            var tex2d = AssetCache.GetAssetFromHash(texHash) as Texture2D;
-            var material = AssetCache.GetAssetFromHash(matHash) as PipelineMaterial;
+            var tex2d = AssetCache.GetAssetFromSceneIndex(texSceneIndex) as Texture2D;
+            var material = AssetCache.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
 
             if (tex2d != null)
             {

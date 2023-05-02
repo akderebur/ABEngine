@@ -947,6 +947,8 @@ namespace ABEngine.ABERuntime
 
         protected virtual string SaveScene()
         {
+            AssetCache.ClearSerializeDependencies();
+
             JsonObjectBuilder scene = new JsonObjectBuilder(10000);
             scene.Put("SceneName", "Test");
 
