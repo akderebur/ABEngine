@@ -48,9 +48,15 @@ namespace ABEngine.ABEditor.Assets.Meta
             JsonObjectBuilder jPrefab = new JsonObjectBuilder(10000);
             JsonArrayBuilder entArr = new JsonArrayBuilder(10000);
 
+            // Clear assets references
+            AssetCache.ClearSerializeDependencies();
+
             RecurseEntity(entity.transform, entArr);
 
+            // Save assets
+            jPrefab.Put("Assets", AssetCache.SerializeAssets());
             jPrefab.Put("Entities", entArr.Build());
+
             prefabAsset.serializedData = jPrefab.Build().Serialize();
 
             File.WriteAllBytes(savePath, PrefabToRAW(prefabAsset));

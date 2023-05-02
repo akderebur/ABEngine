@@ -57,7 +57,7 @@ namespace ABEngine.ABEditor.Assets
                 if (assetExts.Contains(ext.ToLower())) // Viable asset file
 				{
                     string fileAssetPath = file.ToCommonPath().Replace(AssetsPath, "");
-                    string metaAssetPath = fileAssetPath.Replace(ext, ".abmeta");
+					string metaAssetPath = fileAssetPath + ".abmeta";
 
                     Guid assetGuid = Guid.Empty;
 
@@ -187,6 +187,15 @@ namespace ABEngine.ABEditor.Assets
             HandleMovedFile(oldMetaAssetPath, oldFileAssetPath, newFileAssetPath);
         }
 
+        public static void FileDeleted(string fileAssetPath)
+        {
+            string ext = Path.GetExtension(fileAssetPath);
+            if (!assetExts.Contains(ext.ToLower()))
+                return;
+
+            if(metaDict.ContainsKey(fileAssetPath))
+				metaDict.Remove(fileAssetPath);
+        }
 
         private static void HandleNewFile(string fileAssetPath)
 		{
@@ -195,7 +204,7 @@ namespace ABEngine.ABEditor.Assets
 				return;
 
 			string ext = Path.GetExtension(fileAssetPath);
-            string metaAssetPath = fileAssetPath.Replace(ext, ".abmeta");
+			string metaAssetPath = fileAssetPath + ".abmeta";
 
             AssetMeta meta = CreateMetaFromExtension(ext);
 			meta.fPath = fileAssetPath;
@@ -240,13 +249,13 @@ namespace ABEngine.ABEditor.Assets
 		{
             string ext = Path.GetExtension(oldFileAssetPath);
 
-			string metaAssetPath = newFileAssetPath.Replace(ext, ".abmeta");
+			string metaAssetPath = newFileAssetPath + ".abmeta";
 
             string oldFullPath = AssetsPath + oldFileAssetPath;
 			string oldMetaFullPath = AssetsPath + oldMetaAssetPath;
 
 			string newFullPath = AssetsPath + newFileAssetPath;
-			string newMetaFullPath = newFullPath.Replace(ext, ".abmeta");
+			string newMetaFullPath = newFullPath + ".abmeta";
 
 			uint oldHash = oldFileAssetPath.ToHash32();
 			uint newHash = newFileAssetPath.ToHash32();
@@ -274,7 +283,10 @@ namespace ABEngine.ABEditor.Assets
 			if (guidToMeta.ContainsKey(meta.uniqueID))
 				guidToMeta.Remove(meta.uniqueID);
 
-            metaDict.Add(newFileAssetPath, meta);
+			if (metaDict.ContainsKey(newFileAssetPath)) // Ideally shouldn't happen. Deleted file not removed?
+				metaDict[newFileAssetPath] = meta;
+			else
+				metaDict.Add(newFileAssetPath, meta);
 
             if (File.Exists(oldMetaFullPath))
 				File.Move(oldMetaFullPath, newMetaFullPath);

@@ -204,9 +204,11 @@ namespace ABEngine.ABEditor
 
         private static void FileMoved(object sender, RenamedEventArgs e)
         {
+            if (!File.Exists(e.FullPath))
+                return;
+
             string oldAssetPath = e.OldFullPath.ToCommonPath().Replace(assetsPath, "");
-            string ext = Path.GetExtension(oldAssetPath);
-            string oldMetaPath = oldAssetPath.Replace(ext, ".abmeta");
+            string oldMetaPath = oldAssetPath + ".abmeta";
             string newAssetPath = e.FullPath.ToCommonPath().Replace(assetsPath, "");
 
             AssetHandler.FileMoved(oldMetaPath, oldAssetPath, newAssetPath);
@@ -215,12 +217,18 @@ namespace ABEngine.ABEditor
 
         private static void CreatedFile(object sender, FileSystemEventArgs e)
         {
+            if (!File.Exists(e.FullPath))
+                return;
+
             AssetHandler.NewFileCreated(e.FullPath.ToCommonPath().Replace(assetsPath, ""));
             LoadFiles();
         }
 
         private static void ReloadFiles(object sender, FileSystemEventArgs e)
         {
+            if (Path.HasExtension(e.FullPath)) // Assume file
+                AssetHandler.FileDeleted(e.FullPath.ToCommonPath().Replace(assetsPath, ""));
+
             LoadFiles();
         }
 

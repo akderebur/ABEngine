@@ -509,7 +509,7 @@ namespace ABEngine.ABEditor
             projName = Path.GetFileNameWithoutExtension(path);
 
             // AppPath
-            AppPath = path.Replace("\\", "/");
+            AppPath = path.ToCommonPath();
             if (!AppPath.EndsWith("/"))
                 AppPath += "/";
             AssetPath = AppPath + "Assets/";
@@ -561,7 +561,7 @@ namespace ABEngine.ABEditor
             //scenePath = gameDir + "/ABEGameTest/bin/Debug/net6.0";
 
             // AppPath
-            AppPath = binaryPath.Replace("\\", "/") + "/";
+            AppPath = binaryPath.ToCommonPath() + "/";
             AssetPath = AppPath + "Assets/";
             AssetCache.InitAssetCache();
             AssetsFolderView.SetAssetsFolder(AssetPath);
@@ -571,7 +571,7 @@ namespace ABEngine.ABEditor
 
             foreach (var imgFile in imgFiles)
             {
-                string imgFileRep = imgFile.Replace("\\", "/");
+                string imgFileRep = imgFile.ToCommonPath();
                 //string fName = Path.GetFileName(imgFileRep);
                 //string strip = imgFile.Replace("/" + fName, "");
                 //string strip = Path.GetDirectoryName(imgFile);

@@ -118,6 +118,10 @@ namespace ABEngine.ABERuntime
         {
             JValue prefab = JValue.Parse(prefabAsset.serializedData);
 
+            // Assets
+            var jAssets = prefab["Assets"];
+            AssetCache.DeserializeAssets(jAssets);
+
             List<Transform> newEntities = new List<Transform>();
             foreach (var entity in prefab["Entities"].Array())
             {
