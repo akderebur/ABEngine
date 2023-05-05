@@ -647,13 +647,16 @@ namespace ABEngine.ABEditor
                 Vector3 eulRot = transform.localEulerAngles * (360f / (MathF.PI * 2f));
                 Vector3 sca = transform.localScale;
 
-                ImGui.InputFloat3("Position", ref pos);
-                ImGui.InputFloat3("Rotation", ref eulRot);
-                ImGui.InputFloat3("Scale", ref sca);
+                if (ImGui.InputFloat3("Position", ref pos))
+                    EditorActions.UpdateProperty(transform.localPosition, pos, transform, nameof(transform.localPosition));
+                if (ImGui.InputFloat3("Rotation", ref eulRot))
+                {
+                    Vector3 radians = eulRot * ((MathF.PI * 2f) / 360f);
+                    EditorActions.UpdateProperty(transform.localEulerAngles, radians, transform, nameof(transform.localEulerAngles));
+                }
 
-                transform.localPosition = pos;
-                transform.localEulerAngles = eulRot * ((MathF.PI * 2f) / 360f);
-                transform.localScale = sca;
+                if(ImGui.InputFloat3("Scale", ref sca))
+                    EditorActions.UpdateProperty(transform.localScale, sca, transform, nameof(transform.localScale));
             }
 
             bool hasTilemap = false;
@@ -948,7 +951,6 @@ namespace ABEngine.ABEditor
                 foreach (var transform in roots)
                 {
                     RenderTreeRec(transform);
-
                 }
             }
 

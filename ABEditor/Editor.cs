@@ -32,7 +32,9 @@ namespace ABEngine.ABEditor
         // Imgui
         static ImGuiRenderer imguiRenderer;
 
+        // Editor tools
         protected private static TilemapColliderGizmo TMColliderGizmo;
+        internal static EditorActionStack EditorActions;
         private static bool isPlaying;
 
         static List<Type> userTypes;
@@ -255,7 +257,6 @@ namespace ABEngine.ABEditor
                     }
                 }
 
-                
 
                 // TODO Render extensions
 
@@ -301,9 +302,13 @@ namespace ABEngine.ABEditor
                             fileDialogType = FileDialogType.SaveFile;
                         }
                     }
-                    else if (Input.GetKeyDown(Key.B))
+                    else if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.Z))
                     {
-                        //AnimGraphEditor.isActive = !AnimGraphEditor.isActive;
+                        EditorActions.Undo();
+                    }
+                    else if(Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.Y))
+                    {
+                        EditorActions.Redo();
                     }
                     else if(Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.BackSpace))
                     {
@@ -527,9 +532,11 @@ namespace ABEngine.ABEditor
             lightRenderSystem.Start();
             particleSystem.Start();
             isGameOpen = true;
+
+            EditorActions = new EditorActionStack();
         }
 
-   
+
         void OpenGame(string setDir)
         {
             //gameDir = @"/Users/akderebur/Projects/ABEGameTest";
@@ -619,6 +626,8 @@ namespace ABEngine.ABEditor
             lightRenderSystem.Start();
             particleSystem.Start();
             isGameOpen = true;
+
+            EditorActions = new EditorActionStack();
         }
 
         #region GameAssembly

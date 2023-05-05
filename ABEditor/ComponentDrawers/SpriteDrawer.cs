@@ -25,20 +25,21 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
             CheckSpriteDrop(sprite);
 
+            Vector4 tint = sprite.tintColor;
             bool flipX = sprite.flipX;
             bool flipY = sprite.flipY;
             Vector2 spriteSize = sprite.size * 100f;
             int spriteID = sprite.GetSpriteID();
 
-            ImGui.ColorEdit4("Tint", ref sprite.tintColor);
+            if(ImGui.ColorEdit4("Tint", ref tint))
+                Editor.EditorActions.UpdateProperty(sprite.tintColor, tint, sprite, nameof(sprite.tintColor));
+
             if (ImGui.Checkbox("FlipX", ref flipX))
-                sprite.flipX = flipX;
+                Editor.EditorActions.UpdateProperty(sprite.flipX, flipX, sprite, nameof(sprite.flipX));
             if (ImGui.Checkbox("FlipY", ref flipY))
-                sprite.flipY = flipY;
+                Editor.EditorActions.UpdateProperty(sprite.flipY, flipY, sprite, nameof(sprite.flipY));
             if (ImGui.InputInt("Sprite ID", ref spriteID))
-            {
                 sprite.SetSpriteID(spriteID);
-            }
 
             ImGui.Text("Material");
             ImGui.InputText("##matName", ref sprite.sharedMaterial.name, 100, ImGuiInputTextFlags.ReadOnly);
@@ -60,8 +61,9 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;
                     Texture2D texture = AssetHandler.GetAssetBinding(texMeta, spriteFilePath) as Texture2D;
 
-                    sourceSprite.SetTexture(texture);
+                    Editor.EditorActions.UpdateProperty(sourceSprite.texture, texture, sourceSprite, nameof(sourceSprite.texture), value => sourceSprite.SetTexture(value));
 
+                    //sourceSprite.SetTexture(texture);
                 }
 
                 ImGui.EndDragDropTarget();
@@ -82,7 +84,9 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     MaterialMeta matMeta = AssetHandler.GetMeta(materialFilePath) as MaterialMeta;
                     PipelineMaterial mat = AssetHandler.GetAssetBinding(matMeta, materialFilePath) as PipelineMaterial;
 
-                    sprite.SetMaterial(mat);
+                    Editor.EditorActions.UpdateProperty(sprite.material, mat, sprite, nameof(sprite.material), value => sprite.SetMaterial(value));
+
+                    //sprite.SetMaterial(mat);
                 }
 
                 ImGui.EndDragDropTarget();
