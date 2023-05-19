@@ -49,7 +49,7 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
-        public PipelineMaterial _particleMaterial;
+        private PipelineMaterial _particleMaterial;
         public PipelineMaterial particleMaterial
         {
             get { return _particleMaterial; }

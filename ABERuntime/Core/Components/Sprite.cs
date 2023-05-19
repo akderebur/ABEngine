@@ -55,7 +55,8 @@ namespace ABEngine.ABERuntime.Components
             set { _flipY = value; flipScale.Y = value ? -1 : 1;  }
         }
 
-        public Vector4 tintColor = Vector4.One;
+        [JSerialize]
+        public Vector4 tintColor { get; set; }
         public Vector2 size { get; set; }
         internal bool sizeSet = false;
 
@@ -124,6 +125,7 @@ namespace ABEngine.ABERuntime.Components
         {
             sharedMaterial = GraphicsManager.GetUberMaterial();
             _material = sharedMaterial;
+            tintColor = Vector4.One;
             this.texture = AssetCache.GetDefaultTexture();
         }
 
@@ -133,6 +135,7 @@ namespace ABEngine.ABERuntime.Components
             Resize(texture.imageSize);
             sharedMaterial = GraphicsManager.GetUberMaterial();
             _material = sharedMaterial;
+            tintColor = Vector4.One;
         }
 
 
@@ -144,6 +147,7 @@ namespace ABEngine.ABERuntime.Components
             sizeSet = true;
             sharedMaterial = GraphicsManager.GetUberMaterial();
             _material = sharedMaterial;
+            tintColor = Vector4.One;
         }
 
 
@@ -155,6 +159,7 @@ namespace ABEngine.ABERuntime.Components
             sizeSet = true;
             sharedMaterial = GraphicsManager.GetUberMaterial();
             _material = sharedMaterial;
+            tintColor = Vector4.One;
         }
 
         public JValue Serialize()

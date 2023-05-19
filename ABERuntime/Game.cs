@@ -17,6 +17,8 @@ using System.Reflection;
 using System.Xml.Linq;
 using ABEngine.ABERuntime.Tweening;
 using ABEngine.ABERuntime.Components;
+using System.Runtime.InteropServices;
+using System.Text.Json.Nodes;
 
 namespace ABEngine.ABERuntime
 {
@@ -991,7 +993,7 @@ namespace ABEngine.ABERuntime
                     {
                         compArr.Push(((JSerializable)comps[i]).Serialize());
                     }
-                    else if(types[i].IsSubclassOf(typeof(ABComponent)))
+                    else if (types[i].IsSubclassOf(typeof(ABComponent)))
                     {
                         //ompArr.Push(((AutoSerializable)comps[i]).Serialize());
                         compArr.Push(ABComponent.Serialize((ABComponent)comps[i]));
@@ -1017,6 +1019,7 @@ namespace ABEngine.ABERuntime
 
             // Assets
             var jAssets = scene["Assets"];
+            AssetCache.ClearSerializeDependencies();
             AssetCache.DeserializeAssets(jAssets);
 
             //canvas.Deserialize(scene["Canvas"].ToString());
@@ -1062,7 +1065,7 @@ namespace ABEngine.ABERuntime
                         var comp = ABComponent.Deserialize(component.ToString(), type);
                         newEnt.Set(type, comp);
                     }
-                    
+
                 }
 
                 if (isCanvasEnt)
@@ -1073,7 +1076,7 @@ namespace ABEngine.ABERuntime
             }
 
             // Parenting
-            
+
             foreach (var entity in GameWorld.GetEntities())
             {
                 Transform trans = entity.Get<Transform>();

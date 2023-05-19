@@ -494,6 +494,9 @@ namespace ABEngine.ABERuntime
                 return;
 
             var asset = assetDict[oldHash];
+            if (s_prefabAssets.Contains(asset))
+                PrefabManager.UpdatePrefab(oldHash, hash);
+
             asset.fPathHash = hash;
             assetDict.Remove(oldHash);
             assetDict.Add(hash, asset);
@@ -673,7 +676,6 @@ namespace ABEngine.ABERuntime
 
         internal static void DeserializeAssets(JValue assets)
         {
-            sceneAssets = new List<Asset>();
             int assetC = assets["Count"];
            
             foreach (var asset in assets["Entries"].Array())
@@ -692,6 +694,9 @@ namespace ABEngine.ABERuntime
                         break;
                     case 1: // Material
                         curAsset = GetOrCreateMaterial(null, hash);
+                        break;
+                    case 2: // Prefab
+                        curAsset = GetOrCreatePrefabAsset(null, hash);
                         break;
                     default:
                         break;

@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Numerics;
 using Halak;
+using System.Collections.Generic;
 
 namespace ABEngine.ABERuntime.Components
 {
 	public class Prefab : JSerializable
 	{
-		public uint prefabHash { get; set; }
+		//public PrefabAsset prefabAsset { get; set; }
 
-		public Prefab()
+        public Prefab()
 		{
 		}
 
@@ -16,7 +17,7 @@ namespace ABEngine.ABERuntime.Components
         {
             JsonObjectBuilder jObj = new JsonObjectBuilder(500);
             jObj.Put("type", GetType().ToString());
-            jObj.Put("PrefabHash", (long)prefabHash);
+            //jObj.Put("PrefabAsset", AssetCache.GetAssetSceneIndex(this.prefabAsset.fPathHash));
 
             return jObj.Build();
         }
@@ -24,8 +25,7 @@ namespace ABEngine.ABERuntime.Components
         public void Deserialize(string json)
         {
             JValue data = JValue.Parse(json);
-            long hash = data["PrefabHash"];
-            prefabHash = (uint)hash;
+            //prefabAsset = AssetCache.GetAssetFromSceneIndex(data["PrefabAsset"]) as PrefabAsset;
         }
 
         public void SetReferences()
@@ -36,7 +36,7 @@ namespace ABEngine.ABERuntime.Components
         {
             return new Prefab()
             {
-                prefabHash = prefabHash
+                //prefabAsset = this.prefabAsset
             };
         }
     }

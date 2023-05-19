@@ -14,7 +14,7 @@ namespace ABEngine.ABERuntime
         // Instantiate scene objects
         public static Entity Instantiate(in Entity entity, Transform parent = null)
         {
-            return InstantiateCore(entity, parent, new Dictionary<Transform, Transform>());
+            return InstantiateCore(entity, parent);
         }
 
         // Instantiate prefabs
@@ -23,18 +23,14 @@ namespace ABEngine.ABERuntime
             Transform prefabTrans = PrefabManager.GetPrefabTransform(prefabName);
 
             if(prefabTrans != null)
-                return InstantiateCore(prefabTrans.entity, parent, new Dictionary<Transform, Transform>());
+                return InstantiateCore(prefabTrans.entity, parent);
 
             return default(Entity);
         }
 
-        internal static Entity InstantiateCore(in Entity entity, Transform parent, Dictionary<Transform, Transform> referenceMap, bool prefab = false)
+        internal static Entity InstantiateCore(in Entity entity, Transform parent)
         {
-            Entity copy;
-            if (prefab)
-                copy = Game.PrefabWorld.CreateEntity();
-            else
-                copy = Game.GameWorld.CreateEntity();
+            Entity copy = Game.GameWorld.CreateEntity();
 
             var comps = entity.GetAllComponents();
             var types = entity.GetAllComponentTypes();
@@ -80,11 +76,11 @@ namespace ABEngine.ABERuntime
 
                     copy.Set(type, newComp);
                 }
-                else if(type == typeof(Guid))
+                else if (type == typeof(Guid))
                 {
                     copy.Set(type, Guid.NewGuid());
                 }
-                else if(type.IsValueType || type == typeof(string))
+                else if (type.IsValueType || type == typeof(string))
                 {
                     copy.Set(type, comp);
                 }
@@ -92,23 +88,22 @@ namespace ABEngine.ABERuntime
 
             copy.transform.SetParent(parent, false);
 
-            if (!prefab)
+
+            if (newRb != null)
+                Game.b2dInitSystem.AddRBRuntime(ref copy);
+
+            if (entity.enabled)
             {
-                if (newRb != null)
-                    Game.b2dInitSystem.AddRBRuntime(ref copy);
-
-                if (entity.enabled)
-                {
-                    if (newSprite != null)
-                        Game.spriteBatchSystem.UpdateSpriteBatch(newSprite, newSprite.renderLayerIndex, newSprite.texture, newSprite.sharedMaterial.instanceID);
-                }
-
-                CheckSubscribers(in copy, true);
+                if (newSprite != null)
+                    Game.spriteBatchSystem.UpdateSpriteBatch(newSprite, newSprite.renderLayerIndex, newSprite.texture, newSprite.sharedMaterial.instanceID);
             }
+
+            CheckSubscribers(in copy, true);
+
 
             foreach (var child in entity.transform.children.ToList())
             {
-                InstantiateCore(child.entity, copy.transform, referenceMap, prefab);
+                InstantiateCore(child.entity, copy.transform);
             }
 
             return copy;
@@ -120,6 +115,7 @@ namespace ABEngine.ABERuntime
 
             // Assets
             var jAssets = prefab["Assets"];
+            AssetCache.ClearSerializeDependencies();
             AssetCache.DeserializeAssets(jAssets);
 
             List<Transform> newEntities = new List<Transform>();

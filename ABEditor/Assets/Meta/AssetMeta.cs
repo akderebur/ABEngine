@@ -40,7 +40,7 @@ namespace ABEngine.ABEditor.Assets.Meta
             data = JValue.Parse(json);
             uniqueID = Guid.Parse(data["GUID"]);
             long fPathHash = data["FileHash"];
-            fPathHash = (uint)fPathHash;
+            this.fPathHash = (uint)fPathHash;
             fPath = data["FilePath"];
         }
 

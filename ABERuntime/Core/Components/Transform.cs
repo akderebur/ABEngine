@@ -29,11 +29,14 @@ namespace ABEngine.ABERuntime
 
         public List<Transform> children { get; private set; }
         public string name { get { return entity.Get<string>(); } }
-        public bool isStatic { get; private set; }
+
+        [JSerialize]
+        public bool isStatic { get; internal set; }
         public Entity entity { get; private set; }
         internal bool transformMove { get; set; }
         internal string parentGuidStr { get; private set; }
 
+        [JSerialize]
         public string tag { get; set; }
 
         bool keepWorldPos = true;
@@ -178,18 +181,21 @@ namespace ABEngine.ABERuntime
         }
 
         #region Properties
+        [JSerialize]
         public Vector3 localPosition
         {
             get { return _localPosition; }
             set { _localPosition = value; RecalculateTRS(); }
         }
 
+        [JSerialize]
         public Vector3 localScale
         {
             get { return _localScale; }
             set { _localScale = value; RecalculateTRS(); }
         }
 
+        [JSerialize]
         public Quaternion localRotation
         {
             get { return _localRotation; }
@@ -217,12 +223,10 @@ namespace ABEngine.ABERuntime
             get { return _worldPosition; }
         }
 
-
         public Quaternion worldRotation
         {
             get { return _worldRotation; }
         }
-
 
         public Vector3 worldScale
         {
@@ -286,6 +290,16 @@ namespace ABEngine.ABERuntime
 
         public void SetReferences()
         {
+        }
+
+        internal void CopyFrom(Transform other)
+        {
+            _localPosition = other.localPosition;
+            _localRotation = other.localRotation;
+            _localEulerAngles = other._localEulerAngles;
+            _localScale = other.localScale;
+
+            RecalculateTRS();
         }
 
         public JSerializable GetCopy()

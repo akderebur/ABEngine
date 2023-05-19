@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using ABEngine.ABERuntime.Components;
+using System.Linq;
 using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABERuntime
@@ -8,6 +10,63 @@ namespace ABEngine.ABERuntime
 	{
 		static Dictionary<uint, Transform> prefabMap = new Dictionary<uint, Transform>();
         static Dictionary<uint, Transform> sharedPrefabMap = new Dictionary<uint, Transform>();
+
+        internal static Entity EntityToPrefab(in Entity entity, Transform parent)
+        {
+            Entity copy = Game.PrefabWorld.CreateEntity();
+
+            var comps = entity.GetAllComponents();
+            var types = entity.GetAllComponentTypes();
+
+            int transformIndex = Array.IndexOf(types, typeof(Transform));
+            if (transformIndex < 0)
+                return default(Entity);
+
+            // Set transform
+            var transComp = ((JSerializable)comps[transformIndex]).GetCopy();
+            copy.Set(types[transformIndex], transComp);
+
+            for (int i = 0; i < comps.Length; i++)
+            {
+                if (i == transformIndex)
+                    continue;
+
+                var comp = comps[i];
+                var type = types[i];
+
+                if (typeof(JSerializable).IsAssignableFrom(type))
+                {
+                    var newComp = ((JSerializable)comp).GetCopy();
+                    copy.Set(type, newComp);
+                }
+                else if (type.IsSubclassOf(typeof(ABComponent)))
+                {
+                    var serialized = ABComponent.Serialize((ABComponent)comps[i]);
+                    var newComp = ABComponent.Deserialize(serialized.Serialize(), type);
+                    ABComponent.SetReferences(((ABComponent)newComp));
+
+                    copy.Set(type, newComp);
+                }
+                else if (type == typeof(Guid))
+                {
+                    copy.Set(type, comp);
+                }
+                else if (type.IsValueType || type == typeof(string))
+                {
+                    copy.Set(type, comp);
+                }
+            }
+
+            copy.transform.SetParent(parent, false);
+
+           
+            foreach (var child in entity.transform.children.ToList())
+            {
+                EntityToPrefab(child.entity, copy.transform);
+            }
+
+            return copy;
+        }
 
         internal static void AddPrefabEntity(in Entity entity, uint hash)
         {
@@ -47,6 +106,21 @@ namespace ABEngine.ABERuntime
 				prefabMap.Add(sharedPrefab.Key, sharedPrefab.Value);
 			}
 		}
+
+		internal static void UpdatePrefab(uint oldHash, uint newHash)
+		{
+			if(prefabMap.TryGetValue(oldHash, out Transform prefabTrans))
+			{
+				prefabMap.Remove(oldHash);
+				prefabMap.Add(newHash, prefabTrans);
+			}
+
+            if (sharedPrefabMap.TryGetValue(oldHash, out Transform prefabTransShared))
+            {
+                sharedPrefabMap.Remove(oldHash);
+                sharedPrefabMap.Add(newHash, prefabTransShared);
+            }
+        }
 
 		public static void ClearPrefabs()
 		{

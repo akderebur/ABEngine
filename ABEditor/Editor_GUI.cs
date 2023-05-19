@@ -871,16 +871,23 @@ namespace ABEngine.ABEditor
             }
         }
 
-        private void RecursePrefab(Transform transform, ref int index, bool first = true)
+        private void RecursePrefab(Transform transform, ref int index, Prefab root = null)
         {
-            if (first)
-                transform.entity.Set<Prefab>(new Prefab());
+            Prefab prefab = root;
+            if (prefab == null)
+            {
+                prefab = new Prefab();
+                transform.entity.Set<Prefab>(prefab);
+            }
             else
+            {
+                //prefab.prefabToSceneRemap.Add(transform.entity.Get<Guid>(), Guid.Empty);
                 transform.entity.Set<PrefabElement>(new PrefabElement(index++));
+            }
 
             foreach (var child in transform.children)
             {
-                RecursePrefab(child, ref index, false);
+                RecursePrefab(child, ref index, prefab);
             }
         }
 
@@ -1001,6 +1008,8 @@ namespace ABEngine.ABEditor
                     {
                         PrefabAsset prefabAsset = AssetHandler.GetAssetBinding(prefabMeta, prefabFilePath) as PrefabAsset;
                         prefabTransform = EntityManager.LoadSerializedPrefab(prefabAsset);
+                        //prefabTransform.entity.Get<Prefab>().prefabAsset = prefabAsset;
+                        PrefabManager.AddPrefabEntity(prefabTransform.entity, prefabAsset.fPathHash);
                     }
 
                     var entity = EntityManager.Instantiate(prefabTransform.entity);

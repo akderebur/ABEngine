@@ -817,6 +817,9 @@ namespace ABEngine.ABERuntime.Components
 
             int assetSceneIndex = data["TileImage"];
             tileImage = AssetCache.GetAssetFromSceneIndex(assetSceneIndex) as Texture2D;
+            if (tileImage == null)
+                tileImage = AssetCache.GetDefaultTexture();
+
 
             foreach (var jTile in data["Tiles"].Array())
             {

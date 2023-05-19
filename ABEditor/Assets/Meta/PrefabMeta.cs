@@ -38,9 +38,7 @@ namespace ABEngine.ABEditor.Assets.Meta
             string assetPath = savePath.Replace(Game.AssetPath, "");
             uint fileHash = assetPath.ToHash32();
 
-            entity.Get<Prefab>().prefabHash = fileHash;
-
-            var prefabEntity = EntityManager.InstantiateCore(entity, null, new System.Collections.Generic.Dictionary<Transform, Transform>(), true);
+            var prefabEntity = PrefabManager.EntityToPrefab(entity, null);
             PrefabManager.AddPrefabEntity(prefabEntity, fileHash);
 
             PrefabAsset prefabAsset = new PrefabAsset(fileHash);
@@ -58,6 +56,7 @@ namespace ABEngine.ABEditor.Assets.Meta
             jPrefab.Put("Entities", entArr.Build());
 
             prefabAsset.serializedData = jPrefab.Build().Serialize();
+            //entity.Get<Prefab>().prefabAsset = prefabAsset;
 
             File.WriteAllBytes(savePath, PrefabToRAW(prefabAsset));
             AssetCache.AddPrefab(prefabAsset, assetPath);
