@@ -23,7 +23,7 @@ namespace ABEngine.ABEditor
                     if (bbox.CheckCollisionMouse(transform, Input.GetMousePosition()))
                     {
                         selectedTransform = transform;
-                        dragDelta = selectedTransform.localPosition - new Vector3(Input.GetMousePosition().PixelToWorld(), 0f);
+                        dragDelta = selectedTransform.localPosition - new Vector3(Input.GetMousePosition().PixelToWorld() * Game.zoomFactor, 0f);
                         _world.SetData(entity);
 
                         break;
@@ -34,7 +34,7 @@ namespace ABEngine.ABEditor
             {
                 if (selectedTransform != null)
                 {
-                    selectedTransform.localPosition = new System.Numerics.Vector3(Input.GetMousePosition().PixelToWorld(), 0f) + dragDelta;
+                    selectedTransform.localPosition = new System.Numerics.Vector3(Input.GetMousePosition().PixelToWorld() * Game.zoomFactor, 0f) + dragDelta;
                 }
             }
             else

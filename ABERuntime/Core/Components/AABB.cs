@@ -52,12 +52,20 @@ namespace ABEngine.ABERuntime.Components
             float extentX = size.X / 2f * transform.worldScale.X * resScale.X;
             float extentY = size.Y / 2f * transform.worldScale.Y * resScale.Y;
 
-            bool isClicked = mousePos.X > camRelPos.X - extentX &&
-                    mousePos.X < camRelPos.X + extentX &&
-                    mousePos.Y > camRelPos.Y - extentY &&
-                    mousePos.Y < camRelPos.Y + extentY;
+            // Adjust mouse position according to zoom
+            Vector2 zoomedMousePos = mousePos.MouseToZoomed();
 
-          
+            bool isClicked = zoomedMousePos.X > camRelPos.X - extentX &&
+                             zoomedMousePos.X < camRelPos.X + extentX &&
+                             zoomedMousePos.Y > camRelPos.Y - extentY &&
+                             zoomedMousePos.Y < camRelPos.Y + extentY;
+
+            //bool isClicked = mousePos.X > camRelPos.X - extentX &&
+            //        mousePos.X < camRelPos.X + extentX &&
+            //        mousePos.Y > camRelPos.Y - extentY &&
+            //        mousePos.Y < camRelPos.Y + extentY;
+
+
 
             return isClicked; 
         }

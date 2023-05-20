@@ -74,6 +74,12 @@ namespace ABEngine.ABERuntime
             return new Vector2(vec.X, vec.Y) / 100f;
         }
 
+        public static Vector2 MouseToZoomed(this Vector2 mousePos)
+        {
+            return new Vector2((mousePos.X - Game.screenSize.X / 2f) * Game.zoomFactor + Game.screenSize.X / 2f,
+                               (mousePos.Y - Game.screenSize.Y / 2f) * Game.zoomFactor + Game.screenSize.Y / 2f);
+        }
+
         public static Vector2 RoundTo2Dec(this Vector2 vec)
         {
             vec.X = (float)MathF.Round(vec.X * 100f) / 100f;

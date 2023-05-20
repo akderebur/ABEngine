@@ -320,7 +320,7 @@ namespace ABEngine.ABEditor
                 lastCell.entity.Get<Sprite>().tintColor = new Vector4(1f, 1f, 1f, 0.3f);
 
             tilemapCollision = Input.GetKey(Key.C);
-            Vector2 worldMouse = Input.GetMousePosition().PixelToWorld() + Game.activeCam.worldPosition.ToVector2();
+            Vector2 worldMouse = Input.GetMousePosition().MouseToZoomed().PixelToWorld() + Game.activeCam.worldPosition.ToVector2();
             var selCell = gridCells.OrderBy(c => Vector2.Distance(c.worldPosition.ToVector2(), worldMouse)).First();
             if (selCell != null)
             {
@@ -388,7 +388,7 @@ namespace ABEngine.ABEditor
             float yRound = MathF.Floor(camPos.Y / worldOffset.Y) * worldOffset.Y;
 
 
-            Vector3 offset = new Vector3(1, 0, 0f);
+            Vector3 offset = new Vector3(3, 0, 0f);
             Vector3 endPos = new Vector3(xRound, yRound, 0f);
             gridTrans.localPosition = endPos;
         }
@@ -416,7 +416,7 @@ namespace ABEngine.ABEditor
                     gridTrans.children[childId].localPosition = new Vector3(5f, curLinePos.Y, 0.2f);
                     childId++;
 
-                    for (int j = 0; j < 40; j++)
+                    for (int j = 0; j < 60; j++)
                     {
                         if (i == 0)
                         {
@@ -480,7 +480,7 @@ namespace ABEngine.ABEditor
                 lineEnt.transform.localPosition = new Vector3(5f, curLinePos.Y, 0.2f);
                 lineEnt.transform.parent = gridEnt.transform;
 
-                for (int j = 0; j < 40; j++)
+                for (int j = 0; j < 60; j++)
                 {
                     if (i == 0)
                     {

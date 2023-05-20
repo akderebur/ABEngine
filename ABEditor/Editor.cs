@@ -41,6 +41,8 @@ namespace ABEngine.ABEditor
         List<BaseSystem> editorSystems;
         List<BaseSystem> sharedSystems;
 
+        float zoomSpeed = 1f;
+
         // Editor state
         const string EditorSettingsFile = "EditorSettings.abjs";
 
@@ -316,6 +318,16 @@ namespace ABEngine.ABEditor
                         if (ent.IsValid())
                             DeleteRecursive(ent.Get<Transform>());
                     }
+                    else if(Input.GetKey(Key.Up))
+                    {
+                        zoomFactor = Math.Clamp(zoomFactor - elapsed * zoomSpeed, 0.2f, 1.8f);
+                        Zoom();
+                    }
+                    else if(Input.GetKey(Key.Down))
+                    {
+                        zoomFactor = Math.Clamp(zoomFactor + elapsed * zoomSpeed, 0.2f, 1.8f);
+                        Zoom();
+                    }
 
                     MainEditorUpdate(newTime, elapsed);
 
@@ -369,6 +381,21 @@ namespace ABEngine.ABEditor
             //string delPath = Directory.GetCurrentDirectory() + "//GameAssemblies";
             //if (Directory.Exists(delPath))
             //    Directory.Delete(delPath, true);
+        }
+
+        private void Zoom()
+        {
+            float canvasWidth = canvas.canvasSize.X / 100f;
+            float canvasHeight = canvas.canvasSize.Y / 100f;
+            float zoomedWidth = canvasWidth * zoomFactor;
+            float zoomedHeight = canvasHeight * zoomFactor;
+
+            float left = (canvasWidth - zoomedWidth) / 2f;
+            float right = left + zoomedWidth;
+            float bottom = (canvasHeight - zoomedHeight) / 2f;
+            float top = bottom + zoomedHeight;
+
+            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, 1, -1);
         }
 
         private void MainEditorUpdate(float newTime, float elapsed)

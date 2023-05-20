@@ -368,7 +368,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             Sprite spr = null;
             if (cursorSprite.IsValid())
             {
-                cursorSprite.transform.localPosition = Game.activeCam.worldPosition + new Vector3(ImGui.GetMousePos().ToImGuiVector2().PixelToWorld(), 0.5f);
+                cursorSprite.transform.localPosition = Game.activeCam.worldPosition + new Vector3(ImGui.GetMousePos().MouseToZoomed().ToImGuiVector2().PixelToWorld(), 0.5f);
                 spr = cursorSprite.Get<Sprite>();
 
                 if (Input.GetKeyDown(Key.Q))
@@ -487,7 +487,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 {
 
                     Vector2 startPos = pos + new Vector2(quad.startX, quad.StartY);
-                    draw.AddQuad(startPos, new Vector2(startPos.X + cutPrWidth - borderPad, startPos.Y), new Vector2(startPos.X + cutPrWidth - borderPad, startPos.Y + cutPrHeight - borderPad), new Vector2(startPos.X, startPos.Y + cutPrHeight - borderPad), quad.selected ? blueCol : greenCol, 0.1f);
+                    draw.AddQuad(startPos, new Vector2(startPos.X + cutPrWidth - borderPad, startPos.Y), new Vector2(startPos.X + cutPrWidth - borderPad, startPos.Y + cutPrHeight - borderPad), new Vector2(startPos.X, startPos.Y + cutPrHeight - borderPad), quad.selected ? blueCol : greenCol, 0.0001f);
                 }
 
 

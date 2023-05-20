@@ -113,6 +113,8 @@ namespace ABEngine.ABERuntime
 
         internal static bool debug = false;
 
+        internal static float zoomFactor = 1f;
+
         public Game(string windowName, bool debug, List<Type> userTypes)
         {
             UserTypes = userTypes;
