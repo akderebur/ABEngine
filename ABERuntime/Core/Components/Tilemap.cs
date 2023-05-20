@@ -118,6 +118,28 @@ namespace ABEngine.ABERuntime.Components
             //_edges = ex;
         }
 
+        // Try to spawn duplicate in given location
+        internal List<Vector2> ValidateDuplicateSpawn(Vector3 tileWorldPos)
+        {
+            // Bottom left pivot
+            Vector2 pivotPos = tiles.Keys.OrderBy(pos => pos.X).First();
+            pivotPos = tiles.Keys.Where(pos => pos.X == pivotPos.X).OrderBy(pos => pos.Y).First();
+
+            Vector2 targPos = tileWorldPos.RoundTo2Dec().ToVector2();
+            Vector2 dif = (targPos - pivotPos).RoundTo2Dec();
+            if (dif == Vector2.Zero) // No movement
+                return null;
+
+            List<Vector2> updatedPoses = new List<Vector2>();
+            foreach (var tileKV in tiles)
+                updatedPoses.Add((tileKV.Key + dif).RoundTo2Dec());
+
+            if (tilemap.ValidateChunkMovement(this, updatedPoses, layer, false))
+                return updatedPoses;
+
+            return null;
+        }
+
         internal bool UpdatePosition(Vector3 clickPos, Vector3 tileWorldPos, ref Vector2 newPivot)
         {
             Vector2 pivotPos = clickPos.RoundTo2Dec().ToVector2();
@@ -137,6 +159,7 @@ namespace ABEngine.ABERuntime.Components
             bool canMove = tilemap.ValidateChunkMovement(this, updatedPoses, layer);
             if(canMove)
             {
+                tilemap.HandleChunkMovement(this, updatedPoses, layer);
                 newPivot = (pivotPos + dif).RoundTo2Dec();
                 _squares.Clear();
 
@@ -709,18 +732,8 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
-        internal bool ValidateChunkMovement(CollisionChunk chunk, List<Vector2> poses, float layer)
+        internal void HandleChunkMovement(CollisionChunk chunk, List<Vector2> poses, float layer)
         {
-            foreach (var pose in poses)
-            {
-                if (chunk.tiles.ContainsKey(pose))
-                    continue;
-
-                Vector3 worldPos = new Vector3(pose.X, pose.Y, layer);
-                if (tiles.ContainsKey(worldPos))
-                    return false;
-            }
-
             // Handle data alterations here
             Dictionary<Vector3, Tile> tempMap = new Dictionary<Vector3, Tile>();
 
@@ -729,7 +742,7 @@ namespace ABEngine.ABERuntime.Components
             {
                 Vector3 worldPos = new Vector3(cTile.Key.X, cTile.Key.Y, layer);
 
-                if(tiles.ContainsKey(worldPos))
+                if (tiles.ContainsKey(worldPos))
                 {
                     tempMap.Add(worldPos, tiles[worldPos]);
                     tiles.Remove(worldPos);
@@ -747,6 +760,19 @@ namespace ABEngine.ABERuntime.Components
                 Tile tile = tempMap[oldWorldPos];
                 tile.worldPos = newWorldPos;
                 tiles.Add(newWorldPos, tile);
+            }
+        }
+
+        internal bool ValidateChunkMovement(CollisionChunk chunk, List<Vector2> poses, float layer, bool skipSelf = true)
+        {
+            foreach (var pose in poses)
+            {
+                if (skipSelf && chunk.tiles.ContainsKey(pose))
+                    continue;
+
+                Vector3 worldPos = new Vector3(pose.X, pose.Y, layer);
+                if (tiles.ContainsKey(worldPos))
+                    return false;
             }
 
             return true;

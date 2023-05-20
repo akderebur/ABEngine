@@ -247,21 +247,39 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 if (!dupe && !recordLeave)
                     brushRecord.Clear();
             }
-            else // Chunk select
+            else // Chunk select / duplicate
             {
                 Vector3 placePos = placeCell.worldPosition;
                 placePos.Z = 0.001f * layerIndex;
                 clickCellPos = placePos;
 
+                if(dupe && selectedChunk != null) // Dupe chunk
+                {
+                    List<Vector2> spawnPoses = selectedChunk.ValidateDuplicateSpawn(placePos);
+                    if(spawnPoses != null) // Can spawn duplicate
+                    {
+                        for (int i = 0; i < spawnPoses.Count; i++)
+                        {
+                            Vector2 spawnPos = spawnPoses[i];
+                            ChunkTile tile = selectedChunk.tiles.ElementAt(i).Value;
+
+                            var entCopy = EntityManager.Instantiate(tile.spriteTrans.entity, null);
+                            entCopy.transform.localPosition = spawnPos.ToVector3().RoundTo2Dec();
+
+                            lastTilemap.AddTile(entCopy.transform, entCopy.Get<Sprite>().GetSpriteID());
+                            var chunk = lastTilemap.AddCollision(spawnPos.ToVector3().RoundTo2Dec());
+                            onCollisionUpdate?.Invoke(chunk);
+                        }
+                    }
+                }
+
                 var oldChunk = selectedChunk;
                 selectedChunk = lastTilemap.GetSelectionChunk(placePos);
-                if (selectedChunk != oldChunk)
+                if (selectedChunk != oldChunk) // New selection
                 {
                     onCollisionUpdate?.Invoke(oldChunk);
                     onCollisionUpdate?.Invoke(selectedChunk);
                 }
-                return;
-
             }
         }
 
@@ -420,7 +438,8 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
             ImGui.Text("Layer");
             ImGui.PushItemWidth(100f);
-            ImGui.InputInt("##Layer", ref layerIndex);
+            if (ImGui.InputInt("##Layer", ref layerIndex))
+                selectedChunk = null;
             ImGui.PopItemWidth();
 
             ImGui.Text("Chunk Brush");
