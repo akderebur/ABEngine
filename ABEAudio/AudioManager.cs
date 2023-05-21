@@ -70,7 +70,7 @@ namespace ABEngine.ABEAudio
             }
         }
 
-        public override void CleanUp(bool reload)
+        public override void CleanUp(bool reload, bool newScene = false)
         {
             Mix_HaltMusic();
 

@@ -64,7 +64,7 @@ namespace ABEngine.ABEUI
             LoadFont();
         }
 
-        void LoadFont()
+        internal void LoadFont()
         {
             curColor = textColor;
             font = UIRenderer.Instance.GetOrCreateFont(fontPath, fontSize);

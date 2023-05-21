@@ -118,14 +118,25 @@ namespace ABEngine.ABEUI
             fonts.Add("0" + 20, defaultFont);
         }
 
-        public override void CleanUp(bool reload)
+        public override void CleanUp(bool reload = false, bool newScene = false)
         {
-            uiComponents.Clear();
-
             ImGui.GetIO().Fonts.Clear();
             ImGui.GetIO().Fonts.AddFontDefault();
 
             RemakeFonts();
+
+            if (!newScene)
+            {
+                foreach (var uiComp in uiComponents)
+                {
+                    if (uiComp.GetType() == typeof(UIText))
+                        ((UIText)uiComp).LoadFont();
+                }
+            }
+            else
+            {
+                uiComponents.Clear();
+            }
      
 
             // Dispose in the end
@@ -157,7 +168,7 @@ namespace ABEngine.ABEUI
             imguiRenderer.WindowResized((int)Game.screenSize.X, (int)Game.screenSize.Y);
             screenScale = Game.screenSize / Game.canvas.referenceSize;
 
-            uiComponents.Clear();
+            //uiComponents.Clear();
 
             ImGui.GetIO().Fonts.Clear();
             ImGui.GetIO().Fonts.AddFontDefault();

@@ -57,6 +57,11 @@ namespace ABEngine.ABERuntime
             defaultMatName = "NoName";
         }
 
+        internal void UpdateFramebuffer(Framebuffer fb)
+        {
+            this.framebuffer = fb;
+        }
+
         public virtual void BindPipeline()
         {
             cl.SetFramebuffer(framebuffer);

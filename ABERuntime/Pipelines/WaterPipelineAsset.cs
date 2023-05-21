@@ -12,6 +12,7 @@ namespace ABEngine.ABERuntime.Pipelines
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedTextureLayout);
             shaderOptimised = false;
+            defaultMatName = "WaterMat";
 
             PipelineAsset.ParseAsset(Shaders.WaterPipelineAsset, this);
 

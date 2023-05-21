@@ -109,6 +109,7 @@ namespace ABEngine.ABERuntime
         public static ResourceSet pipelineSet;
 
         static bool reload = false;
+        static bool newScene = false;
         bool resize = false;
 
         internal static bool debug = false;
@@ -128,9 +129,10 @@ namespace ABEngine.ABERuntime
             Init(windowName);
         }
 
-        internal static void ReloadGame()
+        internal static void ReloadGame(bool isNewScene)
         {
             reload = true;
+            newScene = isNewScene;
         }
 
         protected virtual void Game_Init()
@@ -247,37 +249,19 @@ namespace ABEngine.ABERuntime
                 if (Input.GetKeyDown(Key.R))
                     reload = true;
 
-                if(reload)
+                if (reload)
                 {
-                    // Recreate assets/worlds
                     reload = false;
-
-                    CoroutineManager.StopAllCoroutines();
-
-                    GameWorld.Destroy();
-                    PrefabWorld.Destroy();
-                    CreateWorlds();
-                    PrefabManager.Init();
 
                     gd.WaitForIdle();
 
                     // Clean extensions
                     foreach (var rendExt in renderExtensions)
                     {
-                        rendExt.CleanUp(true);
+                        rendExt.CleanUp(true, newScene);
                     }
 
-                    // Clean systems
-                    foreach (var system in userSystems)
-                    {
-                        system.CleanUp(true);
-                    }
-
-                    AssetCache.DisposeResources();
-                    rf.DisposeCollector.DisposeAll();
-
-
-                    if(resize)
+                    if (resize)
                     {
                         resize = false;
 
@@ -288,10 +272,10 @@ namespace ABEngine.ABERuntime
 
                         mainRenderView.Dispose();
                         mainRenderFB.Dispose();
-             
+
                         finalQuadRSSet.Dispose();
                         compositeRSSetLight.Dispose();
-                       
+
                         mainDepthTexture.Dispose();
 
                         // Resources
@@ -340,76 +324,110 @@ namespace ABEngine.ABERuntime
                             Time = elapsed,
                             Padding = 0f
                         };
+
+
+                        GraphicsManager.RecreatePipelines(mainRenderFB, false);
+
+                        lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
+                        lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
+
+                        lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
+                        if (debug)
+                            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+
+                        lightRenderSystem.Start();
+                        if (debug)
+                            colDebugSystem.Start();
                     }
 
-                    GraphicsManager.RecreatePipelines(mainRenderFB);
-
-                    lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
-                    lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
-
-                    // Systems
-                    camMoveSystem = new CameraMovementSystem();
-                    b2dInitSystem = new B2DInitSystem();
-                    spriteAnimSystem = new SpriteAnimatorSystem();
-                    rbMoveSystem = new RigidbodyMoveSystem();
-                    spriteBatchSystem = new SpriteBatchSystem(null);
-                    lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
-                    tweenSystem = new Tweening.TweenSystem();
-                    particleSystem = new ParticleModuleSystem();
-                    if (debug)
-                        colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
-
-
-                    for (int i = renderExtensions.Count - 1; i >= 0; i--)
+                    else if(newScene)
                     {
-                        BaseSystem system = renderExtensions[i];
-                        if (!system.dontDestroyOnLoad)
+                        newScene = false;
+                        CoroutineManager.StopAllCoroutines();
+
+                        // Recreate assets/worlds
+                        GameWorld.Destroy();
+                        PrefabWorld.Destroy();
+                        CreateWorlds();
+                        PrefabManager.Init();
+
+                        // Clean systems
+                        foreach (var system in userSystems)
                         {
-                            renderExtensions.RemoveAt(i);
+                            system.CleanUp(true, newScene);
                         }
-                    }
 
-                    for (int i = userSystems.Count - 1; i >= 0; i--)
-                    {
-                        BaseSystem system = userSystems[i];
-                        if(!system.dontDestroyOnLoad)
+                        AssetCache.DisposeResources();
+                        rf.DisposeCollector.DisposeAll();
+
+                        GraphicsManager.RecreatePipelines(mainRenderFB, true);
+
+                        lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
+                        lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
+
+                        // Systems
+                        camMoveSystem = new CameraMovementSystem();
+                        b2dInitSystem = new B2DInitSystem();
+                        spriteAnimSystem = new SpriteAnimatorSystem();
+                        rbMoveSystem = new RigidbodyMoveSystem();
+                        spriteBatchSystem = new SpriteBatchSystem(null);
+                        tweenSystem = new Tweening.TweenSystem();
+                        particleSystem = new ParticleModuleSystem();
+                        lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
+                        if (debug)
+                            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+
+                        for (int i = renderExtensions.Count - 1; i >= 0; i--)
                         {
-                            userSystems.RemoveAt(i);
-                            userSystemTypes.RemoveAt(i);
+                            BaseSystem system = renderExtensions[i];
+                            if (!system.dontDestroyOnLoad)
+                            {
+                                renderExtensions.RemoveAt(i);
+                            }
                         }
+
+                        for (int i = userSystems.Count - 1; i >= 0; i--)
+                        {
+                            BaseSystem system = userSystems[i];
+                            if (!system.dontDestroyOnLoad)
+                            {
+                                userSystems.RemoveAt(i);
+                                userSystemTypes.RemoveAt(i);
+                            }
+                        }
+
+                        notifySystems.Clear();
+                        notifyAnySystems.Clear();
+
+                        Scene_CreatePrefabs();
+
+                        // User systems _ Reflection
+                        Scene_RegisterSystems();
+                        SubscribeSystems();
+
+                        Scene_Setup();
+                        onSceneLoad?.Invoke();
+
+                        //Start Events
+                        b2dInitSystem.Start();
+                        foreach (var system in userSystems)
+                        {
+                            system.Start();
+                        }
+
+                        spriteBatchSystem.Start();
+                        spriteAnimSystem.Start();
+                        camMoveSystem.Start();
+                        lightRenderSystem.Start();
+                        tweenSystem.Start();
+                        particleSystem.Start();
+                        if (debug)
+                            colDebugSystem.Start();
                     }
 
-                    notifySystems.Clear();
-                    notifyAnySystems.Clear();
 
-                    // User systems _ Reflection
-                    Scene_RegisterSystems();
-                    SubscribeSystems();
-
-                    Scene_Setup();
-                    onSceneLoad?.Invoke();
-
-                    snapshot = window.PumpEvents();
-                    Input.UpdateFrameInput(snapshot);
-
-                    // Start Events
-                    b2dInitSystem.Start();
-                    //rbMove.ResetSmoothStates();
-                    foreach (var system in userSystems)
-                    {
-                        system.Start();
-                    }
-
-                    //spriteRenderer.Start();
-                    spriteBatchSystem.Start();
-                    spriteAnimSystem.Start();
-                    camMoveSystem.Start();
-                    lightRenderSystem.Start();
-                    tweenSystem.Start();
-                    particleSystem.Start();
-                    if (debug)
-                        colDebugSystem.Start();
-
+                    //snapshot = window.PumpEvents();
+                    //Input.UpdateFrameInput(snapshot);
 
                     foreach (var rendExt in renderExtensions)
                     {
@@ -488,6 +506,7 @@ namespace ABEngine.ABERuntime
             SDL2.SDL.SDL_VideoQuit();
             SDL2.SDL.SDL_Quit();
         }
+
 
 
         private protected void MainFixedUpdate(float newTime, float elapsed)
@@ -824,6 +843,11 @@ namespace ABEngine.ABERuntime
                     Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 
+            GameWorld.OnRemove((ParticleModule pm) =>
+            {
+                pm.Stop();
+            });
+
             GameWorld.OnRemove((Rigidbody rb) => rb.Destroy());
 
             GameWorld.OnEnable((Entity entity, Sprite sprite) =>
@@ -883,13 +907,13 @@ namespace ABEngine.ABERuntime
             // Clean extensions
             foreach (var rendExt in renderExtensions)
             {
-                rendExt.CleanUp(false);
+                rendExt.CleanUp(false, false);
             }
 
             // Clean systems
             foreach (var system in userSystems)
             {
-                system.CleanUp(false);
+                system.CleanUp(false, false);
             }
 
 

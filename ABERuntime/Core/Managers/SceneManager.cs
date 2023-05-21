@@ -21,7 +21,7 @@ namespace ABEngine.ABERuntime
 		public static void LoadScene(int sceneID)
 		{
 			_sceneID = sceneID;
-			Game.ReloadGame();
+			Game.ReloadGame(true);
 		}
 
         public static void LoadNextScene()

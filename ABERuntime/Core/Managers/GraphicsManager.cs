@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
@@ -325,14 +326,28 @@ namespace ABEngine.ABERuntime
             //File.WriteAllText(@"/Users/akderebur/Documents/frag" + 1 + ".txt", result.FragmentShader);
         }
 
-        public static void RecreatePipelines(Framebuffer mainRenderFB)
+        public static void RecreatePipelines(Framebuffer mainRenderFB, bool newScene)
         {
-            pipelineMaterials = new List<PipelineMaterial>();
-            pipelineAssets = new Dictionary<string, PipelineAsset>();
+            if (newScene)
+            {
+                pipelineMaterials = new List<PipelineMaterial>();
+                pipelineAssets = new Dictionary<string, PipelineAsset>();
 
-            var uberAlpha = new UberPipelineAsset(mainRenderFB);
-            var uberAdditive = new UberPipelineAdditive(mainRenderFB);
-            var waterAsset = new WaterPipelineAsset(mainRenderFB);
+                var uberAlpha = new UberPipelineAsset(mainRenderFB);
+                var uberAdditive = new UberPipelineAdditive(mainRenderFB);
+                var waterAsset = new WaterPipelineAsset(mainRenderFB);
+            }
+            else
+            {
+                foreach (var pipeline in pipelineAssets)
+                    pipeline.Value.UpdateFramebuffer(mainRenderFB);
+
+                //foreach (var mat in pipelineMaterials)
+                //{
+                //    if (mat.pipelineAsset.GetType() == typeof(UberPipelineAsset))
+                //        mat.pipelineAsset = pipe;
+                //}
+            }
         }
 
         public static void DisposeResources()

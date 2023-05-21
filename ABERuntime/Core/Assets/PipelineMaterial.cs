@@ -215,14 +215,6 @@ namespace ABEngine.ABERuntime
         }
     }
 
-    struct Test
-    {
-        public float aa { get; set; } // 4 bytes
-        public Vector2 bb { get; set; } // 0 bytes + 8
-
-        // 8 byte
-    }
-
     [StructLayout(LayoutKind.Explicit)]
     public unsafe struct ShaderProp
     {
