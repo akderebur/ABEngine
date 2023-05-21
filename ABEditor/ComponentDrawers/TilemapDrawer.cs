@@ -234,7 +234,18 @@ namespace ABEngine.ABEditor.ComponentDrawers
             Vector3 placePosRound = placeGrid.worldPosition.RoundTo2Dec();
             placePosRound.Z = layerZ;
 
-            lastTilemap.RemoveTile(placePosRound);
+            bool removed = lastTilemap.RemoveTile(placePosRound);
+            if(!removed) // Empty right click
+            {
+                if (curSelection != null)
+                    curSelection.selected = false;
+                savedQuad = null;
+                curSelection = null;
+                if (cursorSprite.IsValid())
+                {
+                    cursorSprite.SetEnabled(false);
+                }
+            }
         }
 
         // Left click down
@@ -286,7 +297,6 @@ namespace ABEngine.ABEditor.ComponentDrawers
         // Left click up
         public static void LeftClickUp()
         {
-
             if (savedQuad != null && curSelection != savedQuad)
             {
                 if(curSelection != null)
@@ -305,7 +315,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 recordLeave = false;
         }
 
-        static void ResetState(bool cutSet = false)
+        static void ResetState(bool cutSet = false, float cutX = 0f, float cutY = 0f)
         {
             brushRecord = new Dictionary<Vector3, CutQuad>();
             curSelection = null;
@@ -313,8 +323,16 @@ namespace ABEngine.ABEditor.ComponentDrawers
             uvIndent = 0f;
             if (!cutSet)
             {
-                cutWidth = texture.Width;
-                cutHeight = texture.Height;
+                if (cutX != 0f && cutY != 0f)
+                {
+                    cutWidth = cutX;
+                    cutHeight = cutY;
+                }
+                else
+                {
+                    cutWidth = texture.Width;
+                    cutHeight = texture.Height;
+                }
             }
             lastCutWidth = 0;
             lastCutHeight = 0;
@@ -400,6 +418,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             {
                 if (curSelection != null)
                     curSelection.selected = false;
+                savedQuad = null;
                 curSelection = null;
                 if (cursorSprite.IsValid())
                 {
@@ -439,7 +458,10 @@ namespace ABEngine.ABEditor.ComponentDrawers
             ImGui.Text("Layer");
             ImGui.PushItemWidth(100f);
             if (ImGui.InputInt("##Layer", ref layerIndex))
+            {
+                onCollisionUpdate?.Invoke(selectedChunk);
                 selectedChunk = null;
+            }
             ImGui.PopItemWidth();
 
             ImGui.Text("Chunk Brush");
@@ -502,12 +524,34 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 //IntPtr imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, tilemap.tileImage.texture);
                 ImGui.Image(imgPtr, new Vector2(prWidth, prHeight));
 
-                foreach (var quad in quads) // Draw cut quads
-                {
 
-                    Vector2 startPos = pos + new Vector2(quad.startX, quad.StartY);
-                    draw.AddQuad(startPos, new Vector2(startPos.X + cutPrWidth - borderPad, startPos.Y), new Vector2(startPos.X + cutPrWidth - borderPad, startPos.Y + cutPrHeight - borderPad), new Vector2(startPos.X, startPos.Y + cutPrHeight - borderPad), quad.selected ? blueCol : greenCol, 0.0001f);
+                Vector2 cutStep = new Vector2(cutPrWidth, cutPrHeight);
+                float offset = 0f;
+                while(offset < prWidth)
+                {
+                    draw.AddLine(new Vector2(pos.X + offset, pos.Y), new Vector2(pos.X + offset, pos.Y + prHeight), greenCol, 0.1f);
+                    offset += cutStep.X;
                 }
+
+                offset = 0f;
+                while (offset < prHeight)
+                {
+                    draw.AddLine(new Vector2(pos.X, pos.Y + offset), new Vector2(pos.X + prWidth, pos.Y + offset), greenCol, 0.1f);
+                    offset += cutStep.Y;
+                }
+
+                if (curSelection != null)
+                {
+                    Vector2 startPos = pos + new Vector2(curSelection.startX, curSelection.StartY);
+                    draw.AddQuad(startPos, new Vector2(startPos.X + cutPrWidth - borderPad, startPos.Y), new Vector2(startPos.X + cutPrWidth - borderPad, startPos.Y + cutPrHeight - borderPad), new Vector2(startPos.X, startPos.Y + cutPrHeight - borderPad), blueCol, 0.1f);
+                }
+
+                //foreach (var quad in quads) // Draw cut quads
+                //{
+
+                //    Vector2 startPos = pos + new Vector2(quad.startX, quad.StartY);
+                //    draw.AddQuad(startPos, new Vector2(startPos.X + cutPrWidth - borderPad, startPos.Y), new Vector2(startPos.X + cutPrWidth - borderPad, startPos.Y + cutPrHeight - borderPad), new Vector2(startPos.X, startPos.Y + cutPrHeight - borderPad), quad.selected ? blueCol : greenCol, 0.0001f);
+                //}
 
 
                 if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
@@ -596,9 +640,10 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     texture = AssetCache.GetTextureDebug(Game.AssetPath + spriteFilePath);
                     imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, texture);
                     init = false;
-                    ResetState();
 
-                    //TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;
+                    TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;
+                    ResetState(false, texMeta.spriteSize.X, texMeta.spriteSize.Y);
+
                     //Texture2D texture = AssetHandler.GetTextureBinding(texMeta, spriteFilePath);
                     //tilemap.tileImage = texture;
                 }

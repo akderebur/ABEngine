@@ -295,7 +295,7 @@ namespace ABEngine.ABEditor
                     {
                         //tmpJson = base.SaveScene();
 
-                        if(loadedScenePath != null)
+                        if (loadedScenePath != null)
                         {
                             File.WriteAllText(loadedScenePath, base.SaveScene());
                         }
@@ -308,25 +308,38 @@ namespace ABEngine.ABEditor
                     {
                         EditorActions.Undo();
                     }
-                    else if(Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.Y))
+                    else if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.Y))
                     {
                         EditorActions.Redo();
                     }
-                    else if(Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.BackSpace))
+                    else if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.BackSpace))
                     {
                         var ent = GameWorld.GetData<Entity>();
                         if (ent.IsValid())
                             DeleteRecursive(ent.Get<Transform>());
                     }
-                    else if(Input.GetKey(Key.Up))
+
+                    if (!ImGui.GetIO().WantCaptureKeyboard)
                     {
-                        zoomFactor = Math.Clamp(zoomFactor - elapsed * zoomSpeed, 0.2f, 1.8f);
-                        Zoom();
+                        if (Input.GetKey(Key.Up))
+                        {
+                            zoomFactor = Math.Clamp(zoomFactor - elapsed * zoomSpeed, 0.2f, 1.8f);
+                            Zoom();
+                        }
+                        else if (Input.GetKey(Key.Down))
+                        {
+                            zoomFactor = Math.Clamp(zoomFactor + elapsed * zoomSpeed, 0.2f, 1.8f);
+                            Zoom();
+                        }
                     }
-                    else if(Input.GetKey(Key.Down))
+
+                    if (!ImGui.GetIO().WantCaptureMouse)
                     {
-                        zoomFactor = Math.Clamp(zoomFactor + elapsed * zoomSpeed, 0.2f, 1.8f);
-                        Zoom();
+                        if (Input.MouseScrollDelta != 0)
+                        {
+                            zoomFactor = Math.Clamp(zoomFactor - elapsed * -Input.MouseScrollDelta, 0.2f, 1.8f);
+                            Zoom();
+                        }
                     }
 
                     MainEditorUpdate(newTime, elapsed);

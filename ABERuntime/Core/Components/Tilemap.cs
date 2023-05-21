@@ -715,21 +715,25 @@ namespace ABEngine.ABERuntime.Components
                 tiles.Add(pos, newTile);
         }
 
-		internal void RemoveTile(Vector3 worldPos)
+		internal bool RemoveTile(Vector3 worldPos)
 		{
             if (tiles.TryGetValue(worldPos, out Tile tile))
             {
                 if (tile.spriteTrans == null)
-                    return;
+                    return false;
 
                 EntityManager.DestroyEntity(tile.spriteTrans.entity);
                 tile.spriteTrans = null;
 
-                if(tile.chunk == null)
-                    tiles.Remove(worldPos);
-                else
+                if(tile.chunk != null)
                     tile.chunk.RemoveSprite(worldPos);
+                else
+                    tiles.Remove(worldPos);
+
+                return true;
             }
+
+            return false;
         }
 
         internal void HandleChunkMovement(CollisionChunk chunk, List<Vector2> poses, float layer)

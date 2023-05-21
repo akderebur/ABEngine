@@ -19,6 +19,7 @@ namespace ABEngine.ABERuntime
         private static Dictionary<string, List<AxisMapping>> axisMappings = new Dictionary<string, List<AxisMapping>>();
 
         public static Vector2 MousePosition;
+        public static float MouseScrollDelta;
         public static InputSnapshot FrameSnapshot { get; private set; }
 
         private static float _XAxis;
@@ -155,6 +156,7 @@ namespace ABEngine.ABERuntime
             _keyUpThisFrame.Clear();
 
             MousePosition = snapshot.MousePosition;
+            MouseScrollDelta = snapshot.WheelDelta;
             for (int i = 0; i < snapshot.KeyEvents.Count; i++)
             {
                 KeyEvent ke = snapshot.KeyEvents[i];
