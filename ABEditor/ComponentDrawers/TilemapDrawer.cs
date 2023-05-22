@@ -46,6 +46,8 @@ namespace ABEngine.ABEditor.ComponentDrawers
         static float lastCutHeight = 720;
         static float cutPrWidth = 720;
         static float cutPrHeight = 720;
+        static float lastCutPrWidth = 720;
+        static float lastCutPrHeight = 720;
 
         static float prWidth = 720;
         static float prHeight = 720;
@@ -347,6 +349,43 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
         static List<CutQuad> quads = new List<CutQuad>();
 
+        private static void RefreshCutQuads()
+        {
+            if(curSelection != null)
+            {
+                curSelection.selected = false;
+                curSelection = null;
+            }
+
+            float curWidth = 0f, curHeight = 0f;
+            float srcWidth = 0f, srcHeight = 0f;
+            colC = 0; rowC = 0;
+
+            quads.Clear();
+            int quadId = 0;
+            while (srcHeight < texture.Height)
+            {
+                curWidth = 0f;
+                srcWidth = 0f;
+                rowC++;
+
+                colC = 0;
+                while (srcWidth < texture.Width)
+                {
+                    quads.Add(new CutQuad() { startX = curWidth, StartY = curHeight, srcStartX = srcWidth, srcStartY = srcHeight, quadId = quadId++ });
+                    //draw.AddQuad(new Vector2(pos.X + curWidth, pos.Y + curHeight), new Vector2(pos.X + curWidth + cutPrWidth, pos.Y + curHeight), new Vector2(pos.X + cutPrWidth + curWidth, pos.Y + cutPrHeight + curHeight), new Vector2(pos.X + curWidth, pos.Y + cutPrHeight + curHeight), col, 0.1f);
+                    curWidth += cutPrWidth;
+                    srcWidth += cutWidth;
+                    colC++;
+                }
+
+                curHeight += cutPrHeight;
+                srcHeight += cutHeight;
+            }
+            updateGrid = true;
+            tileSize = new Vector2(cutWidth, cutHeight);
+        }
+
         public static void RenderTilemap(Tilemap tilemap, Transform tilemapTrans)
         {
             // Reinit
@@ -430,7 +469,6 @@ namespace ABEngine.ABEditor.ComponentDrawers
             prWidth = ImGui.GetWindowWidth();
             prHeight = texture.Height * prWidth / texture.Width;
 
-
             widthMult = prWidth / texture.Width;
             heightMult = prHeight / texture.Height;
 
@@ -484,36 +522,22 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 cutPrWidth = cutWidth * widthMult;
                 cutPrHeight = cutHeight * heightMult;
 
+                lastCutPrWidth = cutPrWidth;
+                lastCutPrHeight = cutPrHeight;
+
                 lastCutHeight = cutHeight;
                 lastCutWidth = cutWidth;
 
-                float curWidth = 0f, curHeight = 0f;
-                float srcWidth = 0f, srcHeight = 0f;
-                colC = 0; rowC = 0;
+                RefreshCutQuads();
+            }
 
-                quads.Clear();
-                int quadId = 0;
-                while (srcHeight < texture.Height)
-                {
-                    curWidth = 0f;
-                    srcWidth = 0f;
-                    rowC++;
+            if(lastCutPrWidth != cutPrWidth || lastCutPrHeight != cutPrHeight)
+            {
 
-                    colC = 0;
-                    while (srcWidth < texture.Width)
-                    {
-                        quads.Add(new CutQuad() { startX = curWidth, StartY = curHeight, srcStartX = srcWidth, srcStartY = srcHeight, quadId = quadId++ });
-                        //draw.AddQuad(new Vector2(pos.X + curWidth, pos.Y + curHeight), new Vector2(pos.X + curWidth + cutPrWidth, pos.Y + curHeight), new Vector2(pos.X + cutPrWidth + curWidth, pos.Y + cutPrHeight + curHeight), new Vector2(pos.X + curWidth, pos.Y + cutPrHeight + curHeight), col, 0.1f);
-                        curWidth += cutPrWidth;
-                        srcWidth += cutWidth;
-                        colC++;
-                    }
+                lastCutPrWidth = cutPrWidth;
+                lastCutPrHeight = cutPrHeight;
 
-                    curHeight += cutPrHeight;
-                    srcHeight += cutHeight;
-                }
-                updateGrid = true;
-                tileSize = new Vector2(cutWidth, cutHeight);
+                RefreshCutQuads();
             }
 
             if (imgPtr != null)
