@@ -276,10 +276,13 @@ namespace ABEngine.ABEditor.ComponentDrawers
                             Vector2 spawnPos = spawnPoses[i];
                             ChunkTile tile = selectedChunk.tiles.ElementAt(i).Value;
 
-                            var entCopy = EntityManager.Instantiate(tile.spriteTrans.entity, null);
-                            entCopy.transform.localPosition = spawnPos.ToVector3().RoundTo2Dec();
+                            if (tile.spriteTrans != null)
+                            {
+                                var entCopy = EntityManager.Instantiate(tile.spriteTrans.entity, null);
+                                entCopy.transform.localPosition = spawnPos.ToVector3().RoundTo2Dec();
 
-                            lastTilemap.AddTile(entCopy.transform, entCopy.Get<Sprite>().GetSpriteID());
+                                lastTilemap.AddTile(entCopy.transform, entCopy.Get<Sprite>().GetSpriteID());
+                            }
                             var chunk = lastTilemap.AddCollision(spawnPos.ToVector3().RoundTo2Dec());
                             onCollisionUpdate?.Invoke(chunk);
                         }

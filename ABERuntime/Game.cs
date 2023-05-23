@@ -692,6 +692,14 @@ namespace ABEngine.ABERuntime
             //spriteBatcher.LateRender();
         }
 
+        internal static void RefreshProjection(Canvas canvas)
+        {
+            if (canvas == null || Game.canvas != canvas)
+                return;
+
+            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1, -1);
+        }
+
         protected void SetupGraphics(string windowName)
         {
             // Graphics
@@ -706,18 +714,16 @@ namespace ABEngine.ABERuntime
             window = VeldridStartup.CreateWindow(ref windowCI);
             screenSize = new Vector2(window.Width, window.Height);
             canvas = new Canvas(window.Width, window.Height);
-            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1, -1);
-            canvas.referenceSize = new Vector2(1280f, 720f);
             canvas.isDynamicSize = false;
+            canvas.referenceSize = new Vector2(1280f, 720f);
 
-            //canvas.isDynamicSize = true;
-
+            
             window.Resized += () =>
             {
                 //canvas.canvasSize = new Vector2(window.Width, window.Height);
-                canvas.UpdateScreenSize(new Vector2(window.Width, window.Height));
                 screenSize = new Vector2(window.Width, window.Height);
-                projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1, -1);
+                canvas.UpdateScreenSize(screenSize);
+
                 //pipelineData.Resolution = canvas.canvasSize;
                 //gd.UpdateBuffer(pipelineBuffer,0, pipelineData);
                 gd.MainSwapchain.Resize((uint)window.Width, (uint)window.Height);
@@ -1097,7 +1103,7 @@ namespace ABEngine.ABERuntime
                 if (isCanvasEnt)
                 {
                     canvas = newEnt.Get<Canvas>();
-                    projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1, -1);
+                    canvas.UpdateScreenSize(screenSize);
                 }
             }
 

@@ -400,8 +400,7 @@ namespace ABEngine.ABEditor
         {
             if(TilemapDrawer.updateGrid)
             {
-                Texture2D gridTex = AssetCache.GetGridTexture();
-                Texture2D lineTex = AssetCache.GetDefaultTexture();
+                Texture2D gridTex = EditorAssetCache.GetGridTexture();
 
                 worldOffset = TilemapDrawer.tileSize.PixelToWorld();
 
@@ -458,8 +457,8 @@ namespace ABEngine.ABEditor
             int lastLayer = GraphicsManager.renderLayers.Count - 1;
             GraphicsManager.AddRenderLayer("Tilemap");
 
-            Texture2D gridTex = AssetCache.GetGridTexture();
-            Texture2D lineTex = AssetCache.GetDefaultTexture();
+            Texture2D gridTex = EditorAssetCache.GetGridTexture();
+            Texture2D lineTex = EditorAssetCache.GetGridLineTexture();
 
             worldOffset = gridTex.imageSize.PixelToWorld();
             worldOffset /= 2f;
@@ -476,7 +475,7 @@ namespace ABEngine.ABEditor
                 lineSpr.tintColor = new Vector4(1f, 1f, 1f, 0.3f);
                 Entity lineEnt = EntityManager.CreateEntity("Line_" + i, "EditorGridLine", lineSpr);
                 lineSpr.renderLayerIndex = 1;
-                lineEnt.transform.localScale = new Vector3(20f, 0.01f, 1f);
+                lineEnt.transform.localScale = new Vector3(1, 1f, 1f);
                 lineEnt.transform.localPosition = new Vector3(5f, curLinePos.Y, 0.2f);
                 lineEnt.transform.parent = gridEnt.transform;
 
@@ -491,7 +490,8 @@ namespace ABEngine.ABEditor
                         lineSpr.tintColor = new Vector4(1f, 1f, 1f, 0.3f);
                         lineEnt = EntityManager.CreateEntity("Line_" + i, "EditorGridLine", lineSpr);
                         lineSpr.renderLayerIndex = 1;
-                        lineEnt.transform.localScale = new Vector3(0.01f, 20f, 1f);
+                        lineEnt.transform.localScale = new Vector3(1f, 1f, 1f);
+                        lineEnt.transform.localEulerAngles = new Vector3(0f, 0f, MathF.PI / 2f); 
                         lineEnt.transform.localPosition = new Vector3(curLinePos.X, 0f, 0.3f);
                         lineEnt.transform.parent = gridEnt.transform;
                     }
@@ -751,7 +751,7 @@ namespace ABEngine.ABEditor
                         bool isDynamic = canvas.isDynamicSize;
 
                         if (ImGui.InputFloat2("Size", ref size))
-                            canvas.canvasSize = size;
+                            canvas.UpdateCanvasSize(size);
                         if (ImGui.Checkbox("Dynamic Size", ref isDynamic))
                             canvas.isDynamicSize = isDynamic;
                     }

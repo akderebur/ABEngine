@@ -408,7 +408,19 @@ namespace ABEngine.ABEditor
             float bottom = (canvasHeight - zoomedHeight) / 2f;
             float top = bottom + zoomedHeight;
 
-            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, 1, -1);
+            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, 1f, -1f);
+
+            if(GameWorld != null)
+            {
+                var query = GameWorld.CreateQuery().Has<Sprite>().Has<Transform>();
+
+                query.Foreach((Entity rbEnt, ref Sprite sprite, ref Transform transform) =>
+                {
+                    if (transform.name.StartsWith("Line_"))
+                        transform.localScale = new Vector3(1f, zoomFactor * canvasWidth / 12.8f , 1f);
+                }
+                );
+            }
         }
 
         private void MainEditorUpdate(float newTime, float elapsed)
