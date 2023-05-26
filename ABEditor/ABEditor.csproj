@@ -32,6 +32,7 @@
     <None Remove="ImGuiPlugins\" />
     <None Remove="PropertyDrawers\" />
     <None Remove="ActionCache\" />
+    <None Remove="EditorSystems\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
@@ -44,6 +45,7 @@
     <Folder Include="ImGuiPlugins\" />
     <Folder Include="PropertyDrawers\" />
     <Folder Include="ActionCache\" />
+    <Folder Include="EditorSystems\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />

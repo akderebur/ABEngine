@@ -165,9 +165,11 @@ namespace ABEngine.ABEditor
             spriteBatchSystem = new SpriteBatchSystem(null);
             lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
             particleSystem = new ParticleModuleSystem();
+            spriteAnimSystem = new SpriteAnimSystem();
+
             colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
             TMColliderGizmo = new TilemapColliderGizmo(tmColPipelineAsset);
-            sharedSystems = new List<BaseSystem> { spriteBatchSystem, lightRenderSystem };
+            sharedSystems = new List<BaseSystem> { spriteBatchSystem, lightRenderSystem, particleSystem, spriteAnimSystem };
             renderExtensions = new List<RenderSystem>();
 
             // Editor
@@ -441,6 +443,7 @@ namespace ABEngine.ABEditor
             }
 
             particleSystem.Update(newTime, elapsed);
+            spriteAnimSystem.Update(newTime, elapsed);
             spriteBatchSystem.Update(newTime, elapsed);
             lightRenderSystem.Update(newTime, elapsed);
             colDebugSystem.Update(newTime, elapsed);
@@ -583,6 +586,7 @@ namespace ABEngine.ABEditor
             spriteBatchSystem.Start();
             lightRenderSystem.Start();
             particleSystem.Start();
+            spriteAnimSystem.Start();
             isGameOpen = true;
 
             EditorActions = new EditorActionStack();
@@ -677,6 +681,7 @@ namespace ABEngine.ABEditor
             spriteBatchSystem.Start();
             lightRenderSystem.Start();
             particleSystem.Start();
+            spriteAnimSystem.Start();
             isGameOpen = true;
 
             EditorActions = new EditorActionStack();

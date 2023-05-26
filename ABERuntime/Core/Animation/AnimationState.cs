@@ -40,7 +40,7 @@ namespace ABEngine.ABERuntime.Animation
             stateUID = Guid.NewGuid();
 
             curFrame = -1;
-            lastFrameTime = 0f;
+            lastFrameTime = Game.Time;
 
             speed = 1;
             looping = true;
@@ -52,7 +52,7 @@ namespace ABEngine.ABERuntime.Animation
             stateUID = Guid.NewGuid();
 
             curFrame = -1;
-            lastFrameTime = 0f;
+            lastFrameTime = Game.Time;
         }
 
         public bool GetNextState(ref AnimationState animatorState, ref List<string> transParams)

@@ -81,7 +81,8 @@ namespace ABEngine.ABERuntime
             foreach (Vector2 framePos in framePoses)
                 uvPoses.Add(framePos / tex2d.imageSize);
 
-            Vector2 uvScale = tex2d.spriteSize / tex2d.imageSize;
+            Vector2 spriteSize = tex2d.spriteSize != Vector2.Zero ? tex2d.spriteSize : tex2d.imageSize;
+            Vector2 uvScale = spriteSize / tex2d.imageSize;
             foreach (var item in uvPoses)
                 uvScales.Add(uvScale);
 

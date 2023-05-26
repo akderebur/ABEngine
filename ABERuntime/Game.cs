@@ -77,7 +77,8 @@ namespace ABEngine.ABERuntime
         // Systems
         protected CameraMovementSystem camMoveSystem;
         internal static B2DInitSystem b2dInitSystem;
-        protected SpriteAnimatorSystem spriteAnimSystem;
+        protected SpriteAnimatorSystem spriteAnimatorSystem;
+        protected SpriteAnimSystem spriteAnimSystem;
         protected RigidbodyMoveSystem rbMoveSystem;
         public static SpriteBatchSystem spriteBatchSystem;
         protected static LightRenderSystem lightRenderSystem;
@@ -166,7 +167,8 @@ namespace ABEngine.ABERuntime
             // Shared
             camMoveSystem = new CameraMovementSystem();
             b2dInitSystem = new B2DInitSystem();
-            spriteAnimSystem = new SpriteAnimatorSystem();
+            spriteAnimatorSystem = new SpriteAnimatorSystem();
+            spriteAnimSystem = new SpriteAnimSystem();
             rbMoveSystem = new RigidbodyMoveSystem();
             spriteBatchSystem = new SpriteBatchSystem(null);
             renderExtensions = new List<RenderSystem>();
@@ -206,6 +208,7 @@ namespace ABEngine.ABERuntime
 
             //spriteRenderer.Start();
             spriteBatchSystem.Start();
+            spriteAnimatorSystem.Start();
             spriteAnimSystem.Start();
             camMoveSystem.Start();
             lightRenderSystem.Start();
@@ -368,7 +371,8 @@ namespace ABEngine.ABERuntime
                         // Systems
                         camMoveSystem = new CameraMovementSystem();
                         b2dInitSystem = new B2DInitSystem();
-                        spriteAnimSystem = new SpriteAnimatorSystem();
+                        spriteAnimatorSystem = new SpriteAnimatorSystem();
+                        spriteAnimSystem = new SpriteAnimSystem();
                         rbMoveSystem = new RigidbodyMoveSystem();
                         spriteBatchSystem = new SpriteBatchSystem(null);
                         tweenSystem = new Tweening.TweenSystem();
@@ -416,6 +420,7 @@ namespace ABEngine.ABERuntime
                         }
 
                         spriteBatchSystem.Start();
+                        spriteAnimatorSystem.Start();
                         spriteAnimSystem.Start();
                         camMoveSystem.Start();
                         lightRenderSystem.Start();
@@ -636,6 +641,7 @@ namespace ABEngine.ABERuntime
                 system.Update(newTime, elapsed);
             }
             tweenSystem.Update(newTime, elapsed);
+            spriteAnimatorSystem.Update(newTime, elapsed);
             spriteAnimSystem.Update(newTime, elapsed);
             particleSystem.Update(newTime, elapsed);
             rbMoveSystem.Update(newTime, interpolation);

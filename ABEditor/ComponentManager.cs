@@ -55,5 +55,10 @@ namespace ABEngine.ABEditor
             entity.Set(new ParticleModule());
         }
 
+        public static void AddSpriteAnimation(in Entity entity)
+        {
+            if (entity.Has<Sprite>())
+                entity.Set(new SpriteAnimation(entity.Get<Sprite>()));
+        }
     }
 }

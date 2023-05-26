@@ -688,6 +688,16 @@ namespace ABEngine.ABEditor
                         SpriteDrawer.Draw(sprite);
                     }
                 }
+                else if(type == typeof(SpriteAnimation))
+                {
+                    SpriteAnimation sprAnim = (SpriteAnimation)comp;
+                    ImGui.GetStateStorage().SetInt(ImGui.GetID("SpriteAnim"), 1);
+
+                    if (ImGui.CollapsingHeader("SpriteAnim"))
+                    {
+                        SpriteAnimationDrawer.Draw(sprAnim);
+                    }
+                }
                 else if (type == typeof(Rigidbody))
                 {
                     Rigidbody rb = (Rigidbody)comp;
@@ -820,10 +830,14 @@ namespace ABEngine.ABEditor
                 {
                     ComponentManager.AddRigidbody(selectedEntity);
                 }
-                else if (ImGui.MenuItem("Animator"))
+                else if (ImGui.MenuItem("Sprite Animation"))
                 {
-                    ComponentManager.AddAnimator(selectedEntity);
+                    ComponentManager.AddSpriteAnimation(selectedEntity);
                 }
+                //else if (ImGui.MenuItem("Animator"))
+                //{
+                //    ComponentManager.AddAnimator(selectedEntity);
+                //}
                 else if (ImGui.MenuItem("Particle Module"))
                 {
                     ComponentManager.AddParticleModule(selectedEntity);
