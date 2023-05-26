@@ -134,7 +134,7 @@ namespace ABEngine.ABEditor
         
             // ECS and Physics Worlds
             ResetWorld();
-            PhysicsManager.InitSettings();
+            PhysicsManager.ResetPhysics();
             GraphicsManager.InitSettings();
 
             // Graphics

@@ -25,6 +25,7 @@ namespace ABEngine.ABERuntime.Components
         public bool collisionActive;
         public Transform chunkTrans;
 
+
         // Tilesize in world coordinates
         internal CollisionChunk(Tilemap tilemap, Vector2 tileSize, float layer, Transform exTrans = null)
         {

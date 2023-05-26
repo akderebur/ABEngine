@@ -153,7 +153,7 @@ namespace ABEngine.ABERuntime
             CreateWorlds();
 
             // Init
-            PhysicsManager.InitSettings();
+            PhysicsManager.ResetPhysics();
             GraphicsManager.InitSettings();
 
             // Veldrid 
@@ -353,6 +353,7 @@ namespace ABEngine.ABERuntime
                         PrefabWorld.Destroy();
                         CreateWorlds();
                         PrefabManager.Init();
+                        PhysicsManager.ResetPhysics();
 
                         // Clean systems
                         foreach (var system in userSystems)

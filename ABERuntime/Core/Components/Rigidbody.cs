@@ -18,6 +18,7 @@ namespace ABEngine.ABERuntime.Components
         public float linearDamping { get; set; }
         public RBInterpolationType interpolationType { get; set; }
         public bool isTrigger { get; set; }
+        public CollisionLayer collisionLayer { get; set; }
 
         public bool enabled { get; set; }
 
@@ -45,6 +46,7 @@ namespace ABEngine.ABERuntime.Components
             bodyType = BodyType.Static;
             mass = 1f;
             interpolationType = RBInterpolationType.None;
+            collisionLayer = PhysicsManager.GetDefaultCollisionLayer();
         }
 
         public JValue Serialize()
@@ -132,7 +134,8 @@ namespace ABEngine.ABERuntime.Components
                 _colliders = new List<Rigidbody>(),
                 interpolationType = this.interpolationType,
                 bodyType = this.bodyType,
-                isTrigger = this.isTrigger
+                isTrigger = this.isTrigger,
+                collisionLayer = this.collisionLayer
             };
 
             return rb;

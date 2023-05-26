@@ -8,72 +8,47 @@ namespace ABEngine.ABERuntime.Physics
 {
     public static class PhysicsManager
     {
-        static List<string> collisionLayers;
+        static CollisionLayer defaultLayer;
+        static List<CollisionLayer> collisionLayers = new List<CollisionLayer>();
 
-        static string layersPath;
+        private static Queue<Body> destroyQueue = new Queue<Body>();
 
-        private static List<Body> destroyQueue = new List<Body>();
-
-        internal static void InitSettings()
+        public static int GetCollisionLayerCount()
         {
-            layersPath = Game.AssetPath + "PhysicsLayers.abconfig";
-            //if (!File.Exists(layersPath))
-            //{
-            //    File.WriteAllText(layersPath, "Default");
-            //}
-
-            collisionLayers = new List<string>();
-            //foreach (var line in File.ReadAllLines(layersPath))
-            //{
-            //    string layerName = line.Trim();
-            //    if (!collisionLayers.Contains(layerName))
-            //        collisionLayers.Add(layerName);
-            //}
+            return collisionLayers.Count;
         }
 
-        public static void AddCollisionLayer(string layerName)
+
+        internal static void AddCollisionLayer(CollisionLayer layer)
         {
-            layerName = layerName.Trim();
-            if (!collisionLayers.Contains(layerName))
-            {
-                collisionLayers.Add(layerName);
-
-                if (!File.Exists(layersPath))
-                {
-                    File.WriteAllText(layersPath, "Default");
-                }
-
-                using (StreamWriter w = File.AppendText(layersPath))
-                {
-                    w.Write("\n" + layerName);
-                }
-            }
+            collisionLayers.Add(layer);
         }
 
-        public static int GetColliisonLayerID(string layerName)
+        public static CollisionLayer GetDefaultCollisionLayer()
         {
-            return collisionLayers.IndexOf(layerName);
+            return defaultLayer;
         }
 
         internal static void DestroyBody(Body b2dBody)
         {
-            destroyQueue.Add(b2dBody);
+            destroyQueue.Enqueue(b2dBody);
         }
 
         internal static void PostFixedUpdate()
         {
             while (destroyQueue.Count > 0)
             {
-                var body = destroyQueue.First();
+                var body = destroyQueue.Dequeue();
                 body.GetWorld().DestroyBody(body);
-                destroyQueue.RemoveAt(0);
             }
         }
 
         internal static void ResetPhysics()
         {
-            destroyQueue = new List<Body>();
+            destroyQueue = new Queue<Body>();
+            collisionLayers.Clear();
 
+            defaultLayer = new CollisionLayer("Default");
         }
     }
 }

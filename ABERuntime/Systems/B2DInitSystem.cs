@@ -29,6 +29,8 @@ namespace ABEngine.ABERuntime
 
             var b2dBody = Game.B2DWorld.CreateBody(bodyDef);
             FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.filter.categoryBits = rb.collisionLayer.categoryBits;
+            fixtureDef.filter.maskBits = rb.collisionLayer.maskBits;
 
             Shape boxShape = null;
 
