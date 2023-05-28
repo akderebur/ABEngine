@@ -76,7 +76,9 @@ namespace ABEngine.ABEditor.Assets.Meta
 
         public override Texture2D CreateAssetBinding()
         {
-            Texture2D tex = AssetCache.CreateTexture2D(base.fPath, sampler, spriteSize);
+            Texture2D tex = AssetCache.GetTextureEditorBinding(base.fPath);
+            if(tex == null)
+                tex = AssetCache.CreateTexture2D(base.fPath, sampler, spriteSize);
             return tex;
         }
     }

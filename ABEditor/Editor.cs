@@ -410,7 +410,7 @@ namespace ABEngine.ABEditor
             float bottom = (canvasHeight - zoomedHeight) / 2f;
             float top = bottom + zoomedHeight;
 
-            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, 1f, -1f);
+            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, 1000f, -1000f);
 
             if(GameWorld != null)
             {

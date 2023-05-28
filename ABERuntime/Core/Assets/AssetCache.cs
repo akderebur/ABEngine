@@ -419,6 +419,13 @@ namespace ABEngine.ABERuntime
         }
 
         // Editor ONLY remove later
+        internal static Texture2D GetTextureEditorBinding(string texPath)
+        {
+            uint hash = texPath.ToHash32();
+            var tex2d = s_texture2ds.FirstOrDefault(t => t.fPathHash == hash);
+            return tex2d;
+        }
+
         internal static void AddMaterial(PipelineMaterial mat, string file)
         {
             uint hash = mat.fPathHash;

@@ -141,7 +141,7 @@ namespace ABEngine.ABERuntime
 
         }
 
-        protected virtual void Scene_CreatePrefabs()
+        protected virtual void Scene_Init()
         {
 
         }
@@ -181,7 +181,7 @@ namespace ABEngine.ABERuntime
             Game_Init();
             PrefabManager.Init(); // For shared prefabs
 
-            Scene_CreatePrefabs();
+            Scene_Init();
 
             // User systems _ Reflection
             Scene_RegisterSystems();
@@ -404,7 +404,7 @@ namespace ABEngine.ABERuntime
                         notifySystems.Clear();
                         notifyAnySystems.Clear();
 
-                        Scene_CreatePrefabs();
+                        Scene_Init();
 
                         // User systems _ Reflection
                         Scene_RegisterSystems();
@@ -704,7 +704,7 @@ namespace ABEngine.ABERuntime
             if (canvas == null || Game.canvas != canvas)
                 return;
 
-            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1, -1);
+            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1000f, -1000f);
         }
 
         protected void SetupGraphics(string windowName)

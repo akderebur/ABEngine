@@ -25,6 +25,8 @@ namespace ABEditor.Debug
 
         Vector4 normalColor = RgbaFloat.Green.ToVector4();
         Vector4 selColor = RgbaFloat.Red.ToVector4();
+        Vector4 noCollisionColor = RgbaFloat.Blue.ToVector4();
+
 
         public bool render = false;
 
@@ -69,6 +71,8 @@ namespace ABEditor.Debug
             Vector4 color = normalColor;
             if (chunk == TilemapDrawer.selectedChunk)
                 color = selColor;
+            else if (!chunk.collisionActive)
+                color = noCollisionColor;
 
             var points = chunk.GetCollisionShape();
 
@@ -110,7 +114,7 @@ namespace ABEditor.Debug
 
         public override void Render()
         {
-            if (!render)
+            if (!render || !TilemapDrawer.renderGizmo)
                 return;
 
             pipelineAsset.BindPipeline();

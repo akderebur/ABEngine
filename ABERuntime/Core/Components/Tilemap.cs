@@ -25,6 +25,33 @@ namespace ABEngine.ABERuntime.Components
         public bool collisionActive;
         public Transform chunkTrans;
 
+        private Vector2 _chunkScale;
+        public Vector2 chunkScale
+        {
+            get { return _chunkScale; }
+            set
+            {
+                bool yChange = _chunkScale.Y != value.Y;
+                _chunkScale = value;
+                chunkTrans.localScale = new Vector3(chunkScale.X, chunkScale.Y, chunkTrans.localScale.Z);
+
+                if(yChange)
+                {
+                    Vector3 eulerAngles = Vector3.Zero;
+                    if (_chunkScale.Y < 0)
+                        eulerAngles = new Vector3(0f, 0f, MathF.PI);
+
+                    // Change sprite orientation
+                    foreach (var tile in tiles.Values)
+                    {
+                        if (tile.spriteTrans != null)
+                            tile.spriteTrans.localEulerAngles = eulerAngles;
+                    }
+
+                }
+            }
+        }
+
 
         // Tilesize in world coordinates
         internal CollisionChunk(Tilemap tilemap, Vector2 tileSize, float layer, Transform exTrans = null)
@@ -49,6 +76,7 @@ namespace ABEngine.ABERuntime.Components
                 chunkTrans = exTrans;
             }
 
+            _chunkScale = Vector2.One;
         }
 
         #region Algorithm
@@ -465,6 +493,7 @@ namespace ABEngine.ABERuntime.Components
             }
 
             jChunk.Put("Collision", pointsArr.Build());
+            jChunk.Put("CollisionActive", collisionActive);
 
             return jChunk.Build();
         }
@@ -513,6 +542,7 @@ namespace ABEngine.ABERuntime.Components
                     var sprite = tile.spriteTrans.entity.Get<Sprite>();
                     layerIds.Add(sprite.renderLayerIndex);
                     sprite.renderLayerIndex = 0;
+                    tile.spriteTrans.isStatic = true;
                 }
             }
         }
@@ -524,6 +554,7 @@ namespace ABEngine.ABERuntime.Components
             {
                 if (tile.spriteTrans != null)
                 {
+                    tile.spriteTrans.isStatic = false;
                     var sprite = tile.spriteTrans.entity.Get<Sprite>();
                     sprite.renderLayerIndex = layerIds[listId++];
                 }
@@ -873,6 +904,10 @@ namespace ABEngine.ABERuntime.Components
             {
                 foreach (var jChunk in data["Chunks"].Array())
                 {
+                    bool hasCollision = jChunk["CollisionActive"];
+                    if (!hasCollision)
+                        continue;
+
                     Vector2 curPoint = Vector2.Zero;
                     List<Vector2> colliderPoints = new List<Vector2>();
 
@@ -917,7 +952,10 @@ namespace ABEngine.ABERuntime.Components
                         var transGuid = Guid.Parse(tile.transformGuid);
                         Transform trans = Game.GameWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(transGuid)).transform;
                         if (trans != null)
+                        {
                             tile.spriteTrans = trans;
+                            trans.isStatic = false;
+                        }
                     }
                 }
 
@@ -929,6 +967,7 @@ namespace ABEngine.ABERuntime.Components
                     Transform trans = Game.GameWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(chunkGuid)).transform;
 
                     CollisionChunk chunk = new CollisionChunk(this, tileSize, layer, trans);
+                    chunk.collisionActive = jChunk["CollisionActive"];
                     collisionChunks.Add(chunk);
 
                     if (layerChunksDict.ContainsKey(layer))

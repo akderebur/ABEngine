@@ -71,20 +71,21 @@ namespace ABEngine.ABEditor.ComponentDrawers
         static bool placeWithCol;
 
         static int layerIndex = 0;
+        internal static bool renderGizmo = true;
 
         internal static event Action<CollisionChunk> onCollisionUpdate;
 
         internal static CollisionChunk AddCollision(Transform placeCell)
         {
             Vector3 placePos = placeCell.worldPosition;
-            placePos.Z = 0.001f * layerIndex;
+            placePos.Z = layerIndex;
             return lastTilemap.AddCollision(placePos);
         }
 
         internal static CollisionChunk RemoveCollision(Transform placeCell)
         {
             Vector3 placePos = placeCell.worldPosition;
-            placePos.Z = 0.001f * layerIndex;
+            placePos.Z = layerIndex;
             return lastTilemap.RemoveCollision(placePos);
         }
 
@@ -93,7 +94,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             if (lastTilemap == null)
                 return;
 
-            float layerZ = 0.001f * layerIndex;
+            float layerZ = layerIndex;
             Vector3 placePos = placeGrid.worldPosition;
             placePos.Z = layerZ;
             Vector3 placePosRound = placePos.RoundTo2Dec();
@@ -232,7 +233,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             if (lastTilemap == null)
                 return;
 
-            float layerZ = 0.001f * layerIndex;
+            float layerZ = layerIndex;
             Vector3 placePosRound = placeGrid.worldPosition.RoundTo2Dec();
             placePosRound.Z = layerZ;
 
@@ -263,7 +264,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             else // Chunk select / duplicate
             {
                 Vector3 placePos = placeCell.worldPosition;
-                placePos.Z = 0.001f * layerIndex;
+                placePos.Z = layerIndex;
                 clickCellPos = placePos;
 
                 if(dupe && selectedChunk != null) // Dupe chunk
@@ -505,6 +506,10 @@ namespace ABEngine.ABEditor.ComponentDrawers
             }
             ImGui.PopItemWidth();
 
+            ImGui.Text("Chunk Gizmo");
+            ImGui.SameLine();
+            ImGui.Checkbox("##ShowGizmo", ref renderGizmo);
+
             ImGui.Text("Chunk Brush");
             ImGui.SameLine();
             ImGui.Checkbox("##BrushCol", ref placeWithCol);
@@ -640,6 +645,24 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     ImGui.Text("Tile Count: ");
                     ImGui.SameLine();
                     ImGui.Text("" + selectedChunk.tiles.Count);
+
+                    Vector2 scale = selectedChunk.chunkScale;
+                    bool xFlip = scale.X != 1, yFlip = scale.Y != 1;
+
+                    ImGui.Text("Flip X");
+                    ImGui.SameLine();
+                    if (ImGui.Checkbox("##ChunkFliPX", ref xFlip))
+                        selectedChunk.chunkScale = new Vector2(xFlip ? -1 : 1, scale.Y);
+
+                    ImGui.Text("Flip Y");
+                    ImGui.SameLine();
+                    if (ImGui.Checkbox("##ChunkFliPY", ref yFlip))
+                        selectedChunk.chunkScale = new Vector2(scale.X, yFlip ? -1 : 1);
+
+                    ImGui.Text("Collision Active");
+                    ImGui.SameLine();
+                    ImGui.Checkbox("##CollisionActive", ref selectedChunk.collisionActive);
+
                 }
 
                 if(Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.X))

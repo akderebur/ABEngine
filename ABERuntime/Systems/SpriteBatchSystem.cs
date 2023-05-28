@@ -24,6 +24,7 @@ namespace ABEngine.ABERuntime
         public override void Start()
         {
             batches = new Dictionary<string, SpriteBatch>();
+            renderGroups = new Dictionary<int, List<AssetBatchPair>>();
 
             _gd = GraphicsManager.gd;
             _cl = GraphicsManager.cl;

@@ -196,6 +196,11 @@ namespace ABEngine.ABERuntime.Components
             {
                 SetTexture(tex2d);
 
+
+                SetUVPosScale(new Vector2(data["UVPosX"], data["UVPosY"]),
+                              new Vector2(data["UVScaX"], data["UVScaY"]));
+
+
                 for (int i = 0; i < tex2d.Length; i++)
                 {
                     Vector2 samplePos = tex2d[i] / tex2d.imageSize;
@@ -207,9 +212,6 @@ namespace ABEngine.ABERuntime.Components
                     }
                 }
             }
-
-            SetUVPosScale(new Vector2(data["UVPosX"], data["UVPosY"]),
-                          new Vector2(data["UVScaX"], data["UVScaY"]));
 
 
             _material = material;

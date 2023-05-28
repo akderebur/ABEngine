@@ -181,6 +181,7 @@ namespace ABEngine.ABEditor
                     if (metaType.Equals(typeof(TextureMeta)))
                     {
                         TextureMeta texMeta = meta as TextureMeta;
+                        var editTex = AssetHandler.GetAssetBinding(texMeta, selectedAsset) as Texture2D;
                         ImGui.Begin("Details");
 
                         Vector2 spriteSize = texMeta.spriteSize;
@@ -589,11 +590,16 @@ namespace ABEngine.ABEditor
                     loadedScenePath = sceneFile;
                     fileDialogType = FileDialogType.None;
 
+                    AssetCache.DisposeResources();
+
                     ResetWorld();
                     AssetCache.ClearSceneCache();
+                    AssetHandler.ResetScene();
 
                     TMColliderGizmo.ResetGizmo();
                     LoadScene(File.ReadAllText(sceneFile));
+
+                    spriteBatchSystem.Start();
 
                     RemakeGrid();
                     DepthSearch();
