@@ -84,8 +84,6 @@ namespace ABEngine.ABEditor.TilemapExtension
 
 	public class TileRule
 	{
-		//public List<Vector3> emptyTiles { get; set; }
-		//public List<Vector3> occupiedTiles { get; set; }
 		public int spriteID;
 		public bool selected;
 
@@ -98,6 +96,8 @@ namespace ABEngine.ABEditor.TilemapExtension
                 Grid[i] = new int[3];
             }
         }
+
+        
     }
 }
 

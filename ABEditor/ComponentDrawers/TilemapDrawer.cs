@@ -656,6 +656,8 @@ namespace ABEngine.ABEditor.ComponentDrawers
                             cursorSprite.SetEnabled(true);
                             cursorSprite.Get<Sprite>().SetSpriteID(curSelection.quadId);
                             cursorSprite.transform.localEulerAngles = Vector3.Zero;
+
+                            AutoTileDrawer.SetSprite(curSelection.quadId);
                         }
                     }
                 }

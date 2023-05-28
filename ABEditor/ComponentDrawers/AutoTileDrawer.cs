@@ -26,6 +26,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
         public static AutoTile selectedAutoTile = null;
 
         static IntPtr imgPtr = IntPtr.Zero;
+        static int selectedImgId = -2;
 
 
         public static void SetTilemap(Tilemap newTilemap)
@@ -49,6 +50,53 @@ namespace ABEngine.ABEditor.ComponentDrawers
 				{
 					string json = File.ReadAllText(autotileFile);
                     autoTiles = JsonConvert.DeserializeObject<List<AutoTile>>(json);
+                }
+            }
+        }
+
+        public static void SetSprite(int spriteId)
+        {
+            if (selectedAutoTile == null)
+                return;
+
+            if (selectedImgId == -1)
+                selectedAutoTile.defaultSpriteID = spriteId;
+            else if(selectedImgId >= 0)
+            {
+                if(selectedImgId > selectedAutoTile.tileRules.Count)
+                {
+                    selectedImgId = -2;
+                    return;
+                }
+
+                selectedAutoTile.tileRules[selectedImgId].spriteID = spriteId;
+            }
+        }
+
+        static void ImageWithBorder(int spriteID, int itemID)
+        {
+            if (imgPtr != IntPtr.Zero)
+            {
+                bool selected = selectedImgId == itemID;
+                Vector2 uvPos = tilemap.tileImage[spriteID];
+                uvPos /= tilemap.tileImage.imageSize;
+                Vector2 uvScale = tilemap.tileImage.spriteSize / tilemap.tileImage.imageSize;
+
+                if (selected)
+                {
+                    ImGui.BeginChild("imageWithBorder", new Vector2(64, 64), true, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+                    ImGui.Image(imgPtr, new Vector2(64, 64), uvPos, uvPos + uvScale);
+                    ImGui.EndChild();
+                }
+                else
+                    ImGui.Image(imgPtr, new Vector2(64, 64), uvPos, uvPos + uvScale);
+
+                if(ImGui.IsItemClicked())
+                {
+                    if (selected)
+                        selectedImgId = -2;
+                    else
+                        selectedImgId = itemID;
                 }
             }
         }
@@ -84,13 +132,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 {
                     if (isHeaderSelected)
                     {
-                        if (imgPtr != IntPtr.Zero)
-                        {
-                            Vector2 uvPos = tilemap.tileImage[autoTile.defaultSpriteID];
-                            uvPos /= tilemap.tileImage.imageSize;
-                            Vector2 uvScale = tilemap.tileImage.spriteSize / tilemap.tileImage.imageSize;
-                            ImGui.Image(imgPtr, new Vector2(64, 64), uvPos, uvPos + uvScale);
-                        }
+                        ImageWithBorder(autoTile.defaultSpriteID, -1);
                         ImGui.SameLine();
                         ImGui.InputInt($"Sprite ID##auto{t}", ref autoTile.defaultSpriteID);
                         ImGui.Separator();
@@ -103,13 +145,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                             var entry = autoTile.tileRules[index];
                             ImGui.PushID(index); // Push unique ID
 
-                            if (imgPtr != IntPtr.Zero)
-                            {
-                                Vector2 uvPos = tilemap.tileImage[entry.spriteID];
-                                uvPos /= tilemap.tileImage.imageSize;
-                                Vector2 uvScale = tilemap.tileImage.spriteSize / tilemap.tileImage.imageSize;
-                                ImGui.Image(imgPtr, new Vector2(64, 64), uvPos, uvPos + uvScale);
-                            }
+                            ImageWithBorder(entry.spriteID, index);
                             ImGui.SameLine();
                             ImGui.InputInt("Sprite ID", ref entry.spriteID);
 
@@ -170,6 +206,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 // Closed now
                 SaveConfiguration();
                 selectedAutoTile = null;
+                selectedImgId = -2;
             }
         }
 	}
