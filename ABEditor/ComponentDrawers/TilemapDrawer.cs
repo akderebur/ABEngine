@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Runtime.ConstrainedExecution;
 using System.Linq;
 using ABEngine.ABERuntime.ECS;
+using ABEngine.ABEditor.TilemapExtension;
 
 namespace ABEngine.ABEditor.ComponentDrawers
 {
@@ -100,6 +101,26 @@ namespace ABEngine.ABEditor.ComponentDrawers
             Vector3 placePosRound = placePos.RoundTo2Dec();
             placePosRound.Z = layerZ;
 
+            // Auto tiling
+            if(AutoTileDrawer.selectedAutoTile != null)
+            {
+                if (!lastTilemap.HasPlacement(placePosRound))
+                {
+                    Sprite tileSprite = new Sprite(texture2d, texture2d.spriteSize);
+                    tileSprite.SetUVIndent(uvIndent);
+
+                    var tileSpriteEnt = EntityManager.CreateEntity("Tile", "TilemapTile", tileSprite, false);
+                    tileSpriteEnt.transform.localPosition = placePosRound;
+                    tileSpriteEnt.transform.localEulerAngles = cursorSprite.transform.localEulerAngles;
+                    tileSpriteEnt.transform.parent = lastTilemapTrans;
+
+                    tileSprite.renderLayerIndex = GraphicsManager.renderLayers.Count - 1;
+
+                    lastTilemap.PlaceAutoTile(tileSprite, AutoTileDrawer.selectedAutoTile);
+                }
+                return;
+            }
+
             if (curSelection == null) // Chunk move
             {
                 if(selectedChunk != null)
@@ -120,7 +141,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
             // Painting - Place tile on cell
             int placeSprID = lastTilemap.GetPlacementSpriteID(placePosRound);
-            if (placeSprID == curSelection.quadId)
+            if (placeSprID == curSelection.quadId) // Same sprite abort
             {
                 return;
             }
@@ -479,10 +500,16 @@ namespace ABEngine.ABEditor.ComponentDrawers
             cutPrWidth = cutWidth * widthMult;
             cutPrHeight = cutHeight * heightMult;
 
+            AutoTileDrawer.Draw();
 
             // Tilemap details
             ImGui.Text("Tilemap Image");
             ImGui.Spacing();
+
+            if(ImGui.Button("Auto Tiling"))
+            {
+                AutoTileDrawer.SetTilemap(tilemap);
+            }
 
             ImGui.Text("Cell Size: ");
             ImGui.SameLine();

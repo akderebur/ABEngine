@@ -722,6 +722,14 @@ namespace ABEngine.ABERuntime
             return null;
         }
 
+        internal static string GetFilenameFromHash(uint hash)
+        {
+            if (hashToFName.TryGetValue(hash, out string fName))
+                return fName;
+
+            return null;
+        }
+
         internal static void ClearSceneCache()
         {
             s_texture2ds.Clear();

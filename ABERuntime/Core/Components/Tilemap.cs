@@ -814,6 +814,14 @@ namespace ABEngine.ABERuntime.Components
             return true;
         }
 
+        internal Transform GetSpriteTransFromPos(Vector3 pos)
+        {
+            if (tiles.TryGetValue(pos, out Tile tile))
+                return tile.spriteTrans;
+
+            return null;
+        }
+
 		internal List<Transform> GetAllSprites()
 		{
             List<Transform> sprites = new List<Transform>();

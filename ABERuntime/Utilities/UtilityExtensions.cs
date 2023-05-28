@@ -109,6 +109,23 @@ namespace ABEngine.ABERuntime
             return neighbors;
         }
 
+        public static List<Vector2> GetAdjacentDiagonal(this Vector2 tilePos, Vector2 tileSize)
+        {
+            List<Vector2> neighbors = new List<Vector2>();
+
+            neighbors.Add((tilePos + new Vector2(tileSize.X, 0f)).RoundTo2Dec()); // Right
+            neighbors.Add((tilePos - new Vector2(tileSize.X, 0f)).RoundTo2Dec()); // Left
+            neighbors.Add((tilePos + new Vector2(0f, tileSize.Y)).RoundTo2Dec()); // Up
+            neighbors.Add((tilePos - new Vector2(0f, tileSize.Y)).RoundTo2Dec()); // Down
+
+            neighbors.Add((tilePos + new Vector2(tileSize.X, tileSize.Y)).RoundTo2Dec()); // Right - Up
+            neighbors.Add((tilePos + new Vector2(tileSize.X, -tileSize.Y)).RoundTo2Dec()); // Right - Down
+            neighbors.Add((tilePos + new Vector2(-tileSize.X, tileSize.Y)).RoundTo2Dec()); // Left - Up
+            neighbors.Add((tilePos + new Vector2(-tileSize.X, -tileSize.Y)).RoundTo2Dec()); // Left - Down
+
+            return neighbors;
+        }
+
         // IO
         public static string ToCommonPath(this string path)
         {

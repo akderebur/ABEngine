@@ -9,6 +9,7 @@ using ABEngine.ABERuntime.Components;
 using System.Xml;
 using Halak;
 using ABEngine.ABERuntime.Core.Assets;
+using System.Linq;
 
 namespace ABEngine.ABEditor.Assets
 {
@@ -313,7 +314,12 @@ namespace ABEngine.ABEditor.Assets
 				return null;
 		}
 
-		public static Asset GetAssetBinding(AssetMeta meta, string assetPath)
+        public static AssetMeta GetMeta(uint hash)
+        {
+			return metaDict.Values.FirstOrDefault(e => e.fPathHash == hash);
+        }
+
+        public static Asset GetAssetBinding(AssetMeta meta, string assetPath)
 		{
 			if (sceneAssets.ContainsKey(meta))
 				return sceneAssets[meta];

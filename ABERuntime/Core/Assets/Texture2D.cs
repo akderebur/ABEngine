@@ -65,50 +65,6 @@ namespace ABEngine.ABERuntime
             }
         }
 
-   //     public Texture2D(string texturePath, Sampler sampler)
-   //     {
-			//this.imagePath = texturePath;
-   //         this.folderPath = Game.AssetPath;
-			//this.textureSampler = sampler;
-   //         LoadTexture();
-   //     }
-
-   //     public Texture2D(string texturePath, Sampler sampler, Vector2 spriteSize)
-   //     {
-   //         this.imagePath = texturePath;
-   //         this.folderPath = Game.AssetPath;
-   //         this.textureSampler = sampler;
-   //         this.spriteSize = spriteSize;
-   //         isSpriteSheet = true;
-   //         LoadTexture();
-   //     }
-
-   //     public Texture2D(string folderPath, string texturePath, Sampler sampler)
-   //     {
-   //         this.imagePath = texturePath;
-   //         this.folderPath = folderPath;
-   //         this.textureSampler = sampler;
-   //         LoadTexture();
-   //     }
-
-   //     private void LoadTexture()
-   //     {
-   //         textureID = texInitC++;
-   //         texture = AssetCache.GetOrCreateTexture(folderPath + imagePath);
-   //         imageSize = new Vector2(texture.Width, texture.Height);
-
-   //         if (isSpriteSheet)
-   //         {
-   //             this.colCount = (int)(imageSize.X / spriteSize.X);
-   //             this.rowCount = (int)(imageSize.Y / spriteSize.Y);
-   //         }
-   //     }
-
-        //public string GetFullPath()
-        //{
-        //    return folderPath + imagePath;
-        //}
-
         // Indexer for sprite sheets
         public Vector2 this[int spriteID]
         {

@@ -33,6 +33,7 @@
     <None Remove="PropertyDrawers\" />
     <None Remove="ActionCache\" />
     <None Remove="EditorSystems\" />
+    <None Remove="Tilemap\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
@@ -46,6 +47,7 @@
     <Folder Include="PropertyDrawers\" />
     <Folder Include="ActionCache\" />
     <Folder Include="EditorSystems\" />
+    <Folder Include="Tilemap\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />
