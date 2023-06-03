@@ -85,7 +85,6 @@ namespace ABEngine.ABEditor.TilemapExtension
 	public class TileRule
 	{
 		public int spriteID;
-		public bool selected;
 
 		public int[][] Grid;
 		public TileRule()

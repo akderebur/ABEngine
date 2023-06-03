@@ -32,7 +32,9 @@ namespace ABEngine.ABERuntime.Animation
         public int curFrame { get; set; }
         public float lastFrameTime { get; set; }
 
-        public AnimationState(SpriteClip clip)
+        internal bool completed { get; set; }
+
+        public AnimationState(SpriteClip clip, bool looping)
         {
             this.clip = clip;
             this.name = clip.name;
@@ -43,7 +45,12 @@ namespace ABEngine.ABERuntime.Animation
             lastFrameTime = Game.Time;
 
             speed = 1;
-            looping = true;
+            this.looping = looping;
+        }
+
+        public AnimationState(SpriteClip clip) : this(clip, false)
+        {
+          
         }
 
         public AnimationState()

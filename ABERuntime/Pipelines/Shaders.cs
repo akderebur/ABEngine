@@ -257,13 +257,14 @@ Vertex
     layout(location = 3) in float ZRotation;
     layout(location = 4) in vec2 uvStart;
     layout(location = 5) in vec2 uvScale;
+    layout(location = 6) in vec2 Pivot;
 
     layout(location = 0) out vec2 fsin_TexCoords;
     layout(location = 1) out vec4 fsin_Tint;
     layout(location = 2) out vec2 fsin_UnitUV;
     layout(location = 3) out vec2 fsin_UVScale;
 
-    //layout(constant_id = 0) const bool InvertedY = false;
+    //vec2 Pivot = vec2(-0.2, 0);
 
 
     //   B____C
@@ -297,7 +298,11 @@ Vertex
         vec2 uv_pos = unit_quad.zw;
 
         //vec2 srcPos = src.xy;
-        vec2 pos = unit_pos * Scale.xy;
+        //vec2 pos = unit_pos * Scale.xy;
+        //pos = rotate(pos, ZRotation);
+        //pos += Position.xy + Pivot*Scale.xy;
+
+        vec2 pos = ((unit_pos - Pivot) * Scale.xy) + Pivot;
         pos = rotate(pos, ZRotation);
         pos += Position.xy;
 

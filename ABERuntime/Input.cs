@@ -15,7 +15,7 @@ namespace ABEngine.ABERuntime
         private static HashSet<MouseButton> _newMouseButtonsThisFrame = new HashSet<MouseButton>();
         private static HashSet<MouseButton> _mouseUpThisFrame = new HashSet<MouseButton>();
 
-        private static Dictionary<string, List<Key>> buttonsMappings = new Dictionary<string, List<Key>>();
+        private static Dictionary<string, List<Key>> buttonMappings = new Dictionary<string, List<Key>>();
         private static Dictionary<string, List<AxisMapping>> axisMappings = new Dictionary<string, List<AxisMapping>>();
 
         public static Vector2 MousePosition;
@@ -117,7 +117,7 @@ namespace ABEngine.ABERuntime
 
         public static bool GetButton(string button)
         {
-            if (buttonsMappings.TryGetValue(button, out List<Key> keys))
+            if (buttonMappings.TryGetValue(button, out List<Key> keys))
                 foreach (var key in keys)
                     if (GetKey(key))
                         return true;
@@ -127,7 +127,7 @@ namespace ABEngine.ABERuntime
 
         public static bool GetButtonDown(string button)
         {
-            if (buttonsMappings.TryGetValue(button, out List<Key> keys))
+            if (buttonMappings.TryGetValue(button, out List<Key> keys))
                 foreach (var key in keys)
                     if (GetKeyDown(key))
                         return true;
@@ -138,12 +138,20 @@ namespace ABEngine.ABERuntime
 
         public static bool GetButtonUp(string button)
         {
-            if (buttonsMappings.TryGetValue(button, out List<Key> keys))
+            if (buttonMappings.TryGetValue(button, out List<Key> keys))
                 foreach (var key in keys)
                     if (GetKeyUp(key))
                         return true;
 
             return false;
+        }
+
+        public static void AddButtonMapping(ButtonMapping buttonMapping)
+        {
+            if (buttonMappings.ContainsKey(buttonMapping.buttonName))
+                buttonMappings[buttonMapping.buttonName] = buttonMapping.keys;
+            else
+                buttonMappings.Add(buttonMapping.buttonName, buttonMapping.keys);
         }
 
 
@@ -231,5 +239,17 @@ namespace ABEngine.ABERuntime
     {
         public Key key { get; set; }
         public float axisWeight { get; set; }
+        public string axisName;
+    }
+
+    public class ButtonMapping
+    {
+        public List<Key> keys;
+        public string buttonName;
+
+        public ButtonMapping()
+        {
+            keys = new List<Key>();
+        }
     }
 }

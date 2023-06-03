@@ -52,6 +52,7 @@
     <None Remove="Crc32.NET" />
     <None Remove="System.IO.Hashing" />
     <None Remove="Core\Math\" />
+    <None Remove="Core\Animation\StateMatch\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
@@ -73,6 +74,7 @@
     <Folder Include="Core\Assets\" />
     <Folder Include="Systems\Base\" />
     <Folder Include="Core\Math\" />
+    <Folder Include="Core\Animation\StateMatch\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Box2D\Box2D.NetStandard.csproj" />

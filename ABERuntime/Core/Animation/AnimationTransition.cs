@@ -122,6 +122,7 @@ namespace ABEngine.ABERuntime.Animation
     {
         Equals,
         Greater,
-        Less
+        Less,
+        NotEquals
     }
 }

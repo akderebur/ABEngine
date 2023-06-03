@@ -19,6 +19,7 @@ using ABEngine.ABERuntime.Tweening;
 using ABEngine.ABERuntime.Components;
 using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
+using ABEngine.ABERuntime.Core.Animation.StateMatch;
 
 namespace ABEngine.ABERuntime
 {
@@ -78,6 +79,7 @@ namespace ABEngine.ABERuntime
         protected CameraMovementSystem camMoveSystem;
         internal static B2DInitSystem b2dInitSystem;
         protected SpriteAnimatorSystem spriteAnimatorSystem;
+        protected StateAnimatorSystem stateAnimatorSystem;
         protected SpriteAnimSystem spriteAnimSystem;
         protected RigidbodyMoveSystem rbMoveSystem;
         public static SpriteBatchSystem spriteBatchSystem;
@@ -168,6 +170,7 @@ namespace ABEngine.ABERuntime
             camMoveSystem = new CameraMovementSystem();
             b2dInitSystem = new B2DInitSystem();
             spriteAnimatorSystem = new SpriteAnimatorSystem();
+            stateAnimatorSystem = new StateAnimatorSystem();
             spriteAnimSystem = new SpriteAnimSystem();
             rbMoveSystem = new RigidbodyMoveSystem();
             spriteBatchSystem = new SpriteBatchSystem(null);
@@ -209,6 +212,7 @@ namespace ABEngine.ABERuntime
             //spriteRenderer.Start();
             spriteBatchSystem.Start();
             spriteAnimatorSystem.Start();
+            stateAnimatorSystem.Start();
             spriteAnimSystem.Start();
             camMoveSystem.Start();
             lightRenderSystem.Start();
@@ -373,6 +377,7 @@ namespace ABEngine.ABERuntime
                         camMoveSystem = new CameraMovementSystem();
                         b2dInitSystem = new B2DInitSystem();
                         spriteAnimatorSystem = new SpriteAnimatorSystem();
+                        stateAnimatorSystem = new StateAnimatorSystem();
                         spriteAnimSystem = new SpriteAnimSystem();
                         rbMoveSystem = new RigidbodyMoveSystem();
                         spriteBatchSystem = new SpriteBatchSystem(null);
@@ -422,6 +427,7 @@ namespace ABEngine.ABERuntime
 
                         spriteBatchSystem.Start();
                         spriteAnimatorSystem.Start();
+                        stateAnimatorSystem.Start();
                         spriteAnimSystem.Start();
                         camMoveSystem.Start();
                         lightRenderSystem.Start();
@@ -643,6 +649,7 @@ namespace ABEngine.ABERuntime
             }
             tweenSystem.Update(newTime, elapsed);
             spriteAnimatorSystem.Update(newTime, elapsed);
+            stateAnimatorSystem.Update(newTime, elapsed);
             spriteAnimSystem.Update(newTime, elapsed);
             particleSystem.Update(newTime, elapsed);
             rbMoveSystem.Update(newTime, interpolation);
@@ -850,6 +857,9 @@ namespace ABEngine.ABERuntime
                     newBB.sizeSet = true;
                 }
             });
+            GameWorld.OnSet((Entity entity, ref StateMatchAnimator animator) => animator.SetTransform(entity.transform));
+
+
             GameWorld.OnRemove((Sprite sprite) =>
             {
                 if (!sprite.manualBatching)

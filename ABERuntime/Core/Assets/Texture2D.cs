@@ -117,6 +117,14 @@ namespace ABEngine.ABERuntime
             return frames;
         }
 
+        public List<Vector2> GetFreezeFrames(int spriteID, int count)
+        {
+            List<Vector2> freezeFrames = new List<Vector2>();
+            for (int i = 0; i < count; i++)
+                freezeFrames.Add(this[spriteID]);
+            return freezeFrames;
+        }
+
         internal override JValue SerializeAsset()
         {
             JsonObjectBuilder assetEnt = new JsonObjectBuilder(200);

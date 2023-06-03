@@ -192,7 +192,8 @@ namespace ABEngine.ABERuntime
                 new VertexElementDescription("Tint", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float4),
                 new VertexElementDescription("ZRotation", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
                 new VertexElementDescription("uvStart", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
-                new VertexElementDescription("uvScale", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2));
+                new VertexElementDescription("uvScale", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
+                new VertexElementDescription("Pivot", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2));
             vertexLayout.InstanceStepRate = 1;
             sharedVertexLayout = vertexLayout;
 

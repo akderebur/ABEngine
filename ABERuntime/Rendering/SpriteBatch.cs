@@ -153,7 +153,8 @@ namespace ABEngine.ABERuntime.Rendering
                                            spriteData.tintColor,
                                            spriteTrans.localEulerAngles.Z,
                                            spriteData.uvPos,
-                                           spriteData.uvScale);
+                                           spriteData.uvScale,
+                                           spriteData.pivot);
             }
 
             // Buffer resources
@@ -193,7 +194,8 @@ namespace ABEngine.ABERuntime.Rendering
                                            spriteData.tintColor,
                                            spriteTrans.localEulerAngles.Z,
                                            spriteData.uvPos,
-                                           spriteData.uvScale);
+                                           spriteData.uvScale,
+                                           spriteData.pivot);
             }
 
             //foreach (var sprite in sprites)

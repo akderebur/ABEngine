@@ -7,7 +7,7 @@ namespace ABEngine.ABERuntime.Components
 {
     public struct QuadVertex
     {
-        public const uint VertexSize = 60;
+        public const uint VertexSize = 68;
 
         public Vector3 Position;
         public Vector3 Scale;
@@ -15,9 +15,10 @@ namespace ABEngine.ABERuntime.Components
         public float ZRotation;
         public Vector2 UvStart;
         public Vector2 UvScale;
+        public Vector2 Pivot;
 
-        public QuadVertex(Vector3 position, Vector3 scale) : this(position, scale, RgbaFloat.White.ToVector4(), 0f, Vector2.Zero, Vector2.One) { }
-        public QuadVertex(Vector3 position, Vector3 scale, Vector4 tint, float zRotation, Vector2 uvStart, Vector2 uvScale)
+        public QuadVertex(Vector3 position, Vector3 scale) : this(position, scale, RgbaFloat.White.ToVector4(), 0f, Vector2.Zero, Vector2.One, Vector2.Zero) { }
+        public QuadVertex(Vector3 position, Vector3 scale, Vector4 tint, float zRotation, Vector2 uvStart, Vector2 uvScale, Vector2 pivot)
         {
             Position = position;
             Scale = scale;
@@ -25,6 +26,7 @@ namespace ABEngine.ABERuntime.Components
             ZRotation = zRotation;
             UvStart = uvStart;
             UvScale = uvScale;
+            Pivot = pivot; 
         }
     }
 
@@ -63,6 +65,7 @@ namespace ABEngine.ABERuntime.Components
         public Vector2 uvPos;
         public Vector2 uvScale = Vector2.One;
         public Vector3 flipScale = Vector3.One;
+        public Vector2 pivot;
 
         internal bool manualBatching = false;
 
@@ -175,6 +178,7 @@ namespace ABEngine.ABERuntime.Components
             jObj.Put("UVPosY", uvPos.Y);
             jObj.Put("UVScaX", uvScale.X);
             jObj.Put("UVScaY", uvScale.Y);
+            jObj.Put("Pivot", pivot);
 
             return jObj.Build();
         }
@@ -212,6 +216,8 @@ namespace ABEngine.ABERuntime.Components
                     }
                 }
             }
+
+            pivot = data["Pivot"];
 
 
             _material = material;
@@ -297,6 +303,7 @@ namespace ABEngine.ABERuntime.Components
                 uvScale = this.uvScale,
                 uvPos = this.uvPos,
                 tintColor = this.tintColor,
+                pivot = pivot
             };
 
             return copySprite;
