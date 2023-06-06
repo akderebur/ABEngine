@@ -188,7 +188,8 @@ namespace ABEngine.ABERuntime
             // Shared pipeline vertex layout
             VertexLayoutDescription vertexLayout = new VertexLayoutDescription(
                 new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
-                new VertexElementDescription("Scale", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
+                new VertexElementDescription("Scale", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
+                new VertexElementDescription("WorldScale", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
                 new VertexElementDescription("Tint", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float4),
                 new VertexElementDescription("ZRotation", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
                 new VertexElementDescription("uvStart", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),

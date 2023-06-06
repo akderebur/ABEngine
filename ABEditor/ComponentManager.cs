@@ -33,7 +33,7 @@ namespace ABEngine.ABEditor
             if (entity.Has<Sprite>())
             {
                 Sprite sprite = entity.Get<Sprite>();
-                Vector2 spriteSize = sprite.GetSize().ToVector2();
+                Vector2 spriteSize = sprite.GetSize();
                 aabb.size = spriteSize;
             }
             entity.Set(aabb);

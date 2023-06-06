@@ -30,6 +30,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             bool flipY = sprite.flipY;
             Vector2 spriteSize = sprite.size * 100f;
             int spriteID = sprite.GetSpriteID();
+            Vector2 pivot = sprite.pivot;
 
             if(ImGui.ColorEdit4("Tint", ref tint))
                 Editor.EditorActions.UpdateProperty(sprite.tintColor, tint, sprite, nameof(sprite.tintColor));
@@ -40,6 +41,10 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 Editor.EditorActions.UpdateProperty(sprite.flipY, flipY, sprite, nameof(sprite.flipY));
             if (ImGui.InputInt("Sprite ID", ref spriteID))
                 sprite.SetSpriteID(spriteID);
+
+            if(ImGui.InputFloat2("Pivot", ref pivot))
+                Editor.EditorActions.UpdateProperty(sprite.pivot, pivot, sprite, nameof(sprite.pivot));
+
 
             ImGui.Text("Material");
             ImGui.InputText("##matName", ref sprite.sharedMaterial.name, 100, ImGuiInputTextFlags.ReadOnly);

@@ -252,12 +252,13 @@ Vertex
     };
 
     layout(location = 0) in vec3 Position;
-    layout(location = 1) in vec3 Scale;
-    layout(location = 2) in vec4 Tint;
-    layout(location = 3) in float ZRotation;
-    layout(location = 4) in vec2 uvStart;
-    layout(location = 5) in vec2 uvScale;
-    layout(location = 6) in vec2 Pivot;
+    layout(location = 1) in vec2 Scale;
+    layout(location = 2) in vec3 WorldScale;
+    layout(location = 3) in vec4 Tint;
+    layout(location = 4) in float ZRotation;
+    layout(location = 5) in vec2 uvStart;
+    layout(location = 6) in vec2 uvScale;
+    layout(location = 7) in vec2 Pivot;
 
     layout(location = 0) out vec2 fsin_TexCoords;
     layout(location = 1) out vec4 fsin_Tint;
@@ -302,7 +303,8 @@ Vertex
         //pos = rotate(pos, ZRotation);
         //pos += Position.xy + Pivot*Scale.xy;
 
-        vec2 pos = ((unit_pos - Pivot) * Scale.xy) + Pivot;
+        vec2 pos = ((unit_pos + Pivot) * Scale.xy);
+        pos *= WorldScale.xy;
         pos = rotate(pos, ZRotation);
         pos += Position.xy;
 

@@ -84,13 +84,8 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
                 {
                     if (animMatch.IsStatesMatched())
                     {
-                        if (_currentAnimMatch != animMatch)
-                        {
-                            _currentAnimMatch = animMatch;
-                            return true;
-                        }
-                        else
-                            return false;
+                        _currentAnimMatch = animMatch;
+                        return true;
                     }
                 }
             }

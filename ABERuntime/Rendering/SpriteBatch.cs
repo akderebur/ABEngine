@@ -78,7 +78,7 @@ namespace ABEngine.ABERuntime.Rendering
                 spriteData.Resize(imageSize.ToVector2());
 
             //QuadVertex quad = new QuadVertex(trans.worldPosition, trans.worldScale * spriteData.GetSize());
-            QuadVertex quad = new QuadVertex(trans.worldPosition, trans.worldScale * spriteData.GetSize());
+            QuadVertex quad = new QuadVertex(trans.worldPosition, spriteData.GetSize(), trans.worldScale);
             verticesList.Add(quad);
 
             sprites.Add(new SpriteTransformPair {  spriteData = spriteData, transform = trans});
@@ -149,7 +149,8 @@ namespace ABEngine.ABERuntime.Rendering
                 Sprite spriteData = spritePair.spriteData;
 
                 vertices[index++] = new QuadVertex(spriteTrans.worldPosition,
-                                           spriteTrans.worldScale * spriteData.GetSize(),
+                                           spriteData.GetSize(),
+                                           spriteTrans.worldScale,
                                            spriteData.tintColor,
                                            spriteTrans.localEulerAngles.Z,
                                            spriteData.uvPos,
@@ -190,7 +191,8 @@ namespace ABEngine.ABERuntime.Rendering
                 Sprite spriteData = spritePair.spriteData;
 
                 writemap[index++] = new QuadVertex(spriteTrans.worldPosition,
-                                           spriteTrans.worldScale * spriteData.GetSize(),
+                                           spriteData.GetSize(),
+                                           spriteTrans.worldScale,
                                            spriteData.tintColor,
                                            spriteTrans.localEulerAngles.Z,
                                            spriteData.uvPos,

@@ -45,6 +45,7 @@ namespace ABEngine.ABERuntime.Components
             _colliders = new List<Rigidbody>();
             bodyType = BodyType.Static;
             mass = 1f;
+            density = 1f;
             interpolationType = RBInterpolationType.None;
             collisionLayer = PhysicsManager.GetDefaultCollisionLayer();
         }

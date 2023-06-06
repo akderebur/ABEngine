@@ -61,10 +61,10 @@ namespace ABEngine.ABEditor
 
             // Vertex Buffer
             base.Resize(new Vector2(100, 100));
-            Vector3 size = base.GetSize();
+            Vector2 size = base.GetSize();
             drawPos = new Vector3(size.X / 2f, size.Y / 2f, 0f);
 
-            QuadVertex quad = new QuadVertex(drawPos, size);
+            QuadVertex quad = new QuadVertex(drawPos, size, Vector3.Zero);
             _vertexBuffer = GraphicsManager.rf.CreateBuffer(new BufferDescription(QuadVertex.VertexSize, BufferUsage.VertexBuffer));
             GraphicsManager.gd.UpdateBuffer(_vertexBuffer, 0, quad);
            
@@ -80,10 +80,12 @@ namespace ABEngine.ABEditor
 
             var newVert = new QuadVertex(drawPos,
                                             base.GetSize(),
+                                            Vector3.Zero,
                                             RgbaFloat.White.ToVector4(),
                                             0f,
                                             base.uvPos,
-                                            base.uvScale);
+                                            base.uvScale,
+                                            base.pivot);
             GraphicsManager.gd.UpdateBuffer(_vertexBuffer, 0, newVert);
 
 
