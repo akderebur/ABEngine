@@ -1121,6 +1121,7 @@ namespace ABEngine.ABERuntime
                 {
                     canvas = newEnt.Get<Canvas>();
                     canvas.UpdateScreenSize(screenSize);
+                    Game.canvas.UpdateCanvasSize(canvas.canvasSize);
                 }
             }
 

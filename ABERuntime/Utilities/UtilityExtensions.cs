@@ -126,6 +126,25 @@ namespace ABEngine.ABERuntime
             return neighbors;
         }
 
+        public static List<Vector2> GetAdjacentDiagonalExtended(this Vector2 tilePos, Vector2 tileSize)
+        {
+            List<Vector2> neighbors = new List<Vector2>();
+
+            Vector2 start = tilePos - new Vector2(-tileSize.X * 2, -tileSize.Y * 2).RoundTo2Dec();
+            for (int y = 0; y < 5; y++)
+            {
+                for (int x = 0; x < 5; x++)
+                {
+                    if (y == 2 && x == 2)
+                        continue;
+
+                    neighbors.Add((start + new Vector2(tileSize.X * x, tileSize.Y * y)).RoundTo2Dec());
+                }
+            }
+
+            return neighbors;
+        }
+
         // IO
         public static string ToCommonPath(this string path)
         {

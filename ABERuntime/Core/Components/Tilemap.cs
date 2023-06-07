@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using ABEngine.ABERuntime.ECS;
+using ABEngine.ABERuntime.Physics;
 using Halak;
 using Veldrid;
 
@@ -23,6 +24,8 @@ namespace ABEngine.ABERuntime.Components
         public float layer;
 
         public bool collisionActive;
+        public string tag = "";
+        public string collisionLayer = "";
         public Transform chunkTrans;
 
         private Vector2 _chunkScale;
@@ -494,6 +497,8 @@ namespace ABEngine.ABERuntime.Components
 
             jChunk.Put("Collision", pointsArr.Build());
             jChunk.Put("CollisionActive", collisionActive);
+            jChunk.Put("Tag", tag);
+            jChunk.Put("CollisionLayer", collisionLayer);
 
             return jChunk.Build();
         }
@@ -934,9 +939,15 @@ namespace ABEngine.ABERuntime.Components
                         index++;
                     }
 
+                    string colLayerName = jChunk["CollisionLayer"];
+                    CollisionLayer colLayer = PhysicsManager.GetCollisionLayerByName(colLayerName);
+
                     Rigidbody rb = new Rigidbody();
+                    if (colLayer != null)
+                        rb.collisionLayer = colLayer;
+
                     PolygonCollider collider = new PolygonCollider(colliderPoints);
-                    var spriteEnt = EntityManager.CreateEntity("TilemapCollider", "EditorCollider", rb, collider, true);
+                    var chunkEnt = EntityManager.CreateEntity("TilemapCollider", jChunk["Tag"], rb, collider, true);
                 }
             }
             else // Save chunk tiles data for later use in Editor
@@ -976,6 +987,8 @@ namespace ABEngine.ABERuntime.Components
 
                     CollisionChunk chunk = new CollisionChunk(this, tileSize, layer, trans);
                     chunk.collisionActive = jChunk["CollisionActive"];
+                    chunk.tag = jChunk["Tag"];
+                    chunk.collisionLayer = jChunk["CollisionLayer"];
                     collisionChunks.Add(chunk);
 
                     if (layerChunksDict.ContainsKey(layer))

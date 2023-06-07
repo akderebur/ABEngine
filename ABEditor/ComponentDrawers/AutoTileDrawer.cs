@@ -137,8 +137,10 @@ namespace ABEngine.ABEditor.ComponentDrawers
                         ImGui.InputInt($"Sprite ID##auto{t}", ref autoTile.defaultSpriteID);
                         ImGui.Separator();
 
+                        ImGui.Checkbox("Extended", ref autoTile.extended);
+
                         if (ImGui.Button("Add Rule"))
-                            autoTile.tileRules.Add(new TileRule());
+                            autoTile.tileRules.Add(new TileRule(autoTile.extended));
 
                         for (int index = 0; index < autoTile.tileRules.Count; index++)
                         {
@@ -149,9 +151,10 @@ namespace ABEngine.ABEditor.ComponentDrawers
                             ImGui.SameLine();
                             ImGui.InputInt("Sprite ID", ref entry.spriteID);
 
-                            for (int i = 0; i < 3; i++)
+                            int count = autoTile.extended ? 5 : 3;
+                            for (int i = 0; i < count; i++)
                             {
-                                for (int j = 0; j < 3; j++)
+                                for (int j = 0; j < count; j++)
                                 {
                                     Vector4 color;
                                     if (entry.Grid[i][j] == 1)
@@ -173,12 +176,12 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                                     if (ImGui.Button($"##Square{i}{j}", new Vector2(30, 30)))
                                     {
-                                        entry.Grid[i][j] = (entry.Grid[i][j] + 1) % 3;
+                                        entry.Grid[i][j] = (entry.Grid[i][j] + 1) % count;
                                     }
 
                                     ImGui.PopStyleColor(3); // Pop colors
 
-                                    if (j < 2)
+                                    if (j < (count - 1))
                                     {
                                         ImGui.SameLine();
                                     }

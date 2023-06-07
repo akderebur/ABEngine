@@ -29,6 +29,11 @@ namespace ABEngine.ABERuntime.Physics
             return defaultLayer;
         }
 
+        public static CollisionLayer GetCollisionLayerByName(string name)
+        {
+            return collisionLayers.FirstOrDefault(c => c.layerName.Equals(name));
+        }
+
         internal static void DestroyBody(Body b2dBody)
         {
             destroyQueue.Enqueue(b2dBody);

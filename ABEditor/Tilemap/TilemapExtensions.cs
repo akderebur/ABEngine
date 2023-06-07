@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
@@ -14,13 +15,22 @@ namespace ABEngine.ABEditor.TilemapExtension
             // Update neighbors
             Vector3 pos3d = sprite.transform.worldPosition;
             Vector2 pos = pos3d.ToVector2().RoundTo2Dec();
-            var neighbors = pos.GetAdjacentDiagonal(tilemap.tileImage.spriteSize.PixelToWorld());
-            foreach (var neighbor in neighbors)
-            {
-                Transform spriteTrans = tilemap.GetSpriteTransFromPos(neighbor.ToVector3().RoundTo2Dec());
-                if (spriteTrans != null)
-                    autoTile.UpdateSprite(spriteTrans.entity.Get<Sprite>(), tilemap, true);
-            }
+
+            //List<Vector2> neighbors = null;
+            //if (autoTile.extended)
+            //    neighbors = pos.GetAdjacentDiagonalExtended(tilemap.tileImage.spriteSize.PixelToWorld());
+            //else
+            //    neighbors = pos.GetAdjacentDiagonal(tilemap.tileImage.spriteSize.PixelToWorld());
+            //foreach (var neighbor in neighbors)
+            //{
+            //    Transform spriteTrans = tilemap.GetSpriteTransFromPos(neighbor.ToVector3().RoundTo2Dec());
+            //    if (spriteTrans != null)
+            //        autoTile.UpdateSprite(spriteTrans.entity.Get<Sprite>(), tilemap, true);
+            //}
+
+            autoTile.UpdateExisting(tilemap);
+
+            
         }
     }
 }

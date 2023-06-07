@@ -268,5 +268,16 @@ namespace ABEngine.ABERuntime
             entity.Destroy();
         }
 
+        public static Transform FindTransformByName(string name)
+        {
+            foreach (var ent in Game.GameWorld.GetEntities())
+            {
+                if (ent.transform.name.Equals(name))
+                    return ent.transform;
+            }
+
+            return null;
+        }
+
     }
 }

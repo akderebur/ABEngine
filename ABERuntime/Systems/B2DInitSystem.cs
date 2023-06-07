@@ -38,9 +38,11 @@ namespace ABEngine.ABERuntime
             {
                 var points = rbEnt.Get<PolygonCollider>().GetPoints();
                 //points.Add(points[0]);
-                
-                boxShape = new ChainShape();
-                ((ChainShape)boxShape).CreateLoop(points.ToArray());
+
+                //boxShape = new ChainShape();
+                //((ChainShape)boxShape).CreateLoop(points.ToArray());
+                boxShape = new PolygonShape();
+                ((PolygonShape)boxShape).Set(points.ToArray());
 
                 fixtureDef.isSensor = rb.isTrigger;
 

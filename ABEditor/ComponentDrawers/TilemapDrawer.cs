@@ -293,6 +293,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     List<Vector2> spawnPoses = selectedChunk.ValidateDuplicateSpawn(placePos);
                     if(spawnPoses != null) // Can spawn duplicate
                     {
+                        CollisionChunk newChunk = null;
                         for (int i = 0; i < spawnPoses.Count; i++)
                         {
                             Vector2 spawnPos = spawnPoses[i];
@@ -307,6 +308,15 @@ namespace ABEngine.ABEditor.ComponentDrawers
                             }
                             var chunk = lastTilemap.AddCollision(spawnPos.ToVector3().RoundTo2Dec());
                             onCollisionUpdate?.Invoke(chunk);
+                            newChunk = chunk;
+                        }
+
+                        if(newChunk != null)
+                        {
+                            newChunk.tag = selectedChunk.tag;
+                            newChunk.collisionActive = selectedChunk.collisionActive;
+                            newChunk.chunkScale = selectedChunk.chunkScale;
+                            newChunk.collisionLayer = selectedChunk.collisionLayer;
                         }
                     }
                 }
@@ -692,9 +702,16 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     ImGui.SameLine();
                     ImGui.Checkbox("##CollisionActive", ref selectedChunk.collisionActive);
 
+                    ImGui.Text("Tag");
+                    ImGui.SameLine();
+                    ImGui.InputText("##ChunkTag", ref selectedChunk.tag, 100);
+
+                    ImGui.Text("Collision Layer");
+                    ImGui.SameLine();
+                    ImGui.InputText("##ChunkColLayer", ref selectedChunk.collisionLayer, 100);
                 }
 
-                if(Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.X))
+                if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.X))
                 {
                     lastTilemap.DeleteChunk(selectedChunk);
                     onCollisionUpdate?.Invoke(selectedChunk);
