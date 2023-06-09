@@ -212,6 +212,8 @@ namespace ABEngine.ABEditor
 
                 imguiRenderer.Update(elapsed, snapshot); // [2]
 
+                EntityManager.CheckEntityChanges();
+
                 UpdateEditorUI();
 
                 // TODO reload later

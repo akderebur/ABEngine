@@ -561,6 +561,7 @@ namespace ABEngine.ABERuntime
 
         internal static Dictionary<TypeSignature, List<BaseSystem>> notifySystems;
         internal static Dictionary<TypeSignature, List<BaseSystem>> notifyAnySystems;
+        internal static Dictionary<TypeSignature, List<BaseSystem>> collisionAnySystems;
 
 
         protected virtual void Scene_RegisterSystems() { }
@@ -575,35 +576,51 @@ namespace ABEngine.ABERuntime
             userSystems.Add(system);
         }
 
+        private void AddSystemFromAttribute(Type type, BaseSystem system, Type attributeType, Dictionary<TypeSignature, List<BaseSystem>> dict)
+        {
+            if (!typeof(Attribute).IsAssignableFrom(attributeType))
+            {
+                return;
+            }
+
+            object[] attributes = type.GetCustomAttributes(attributeType, false);
+            if (attributes.Length > 0)
+            {
+                List<Type> subTypes = new List<Type>();
+                for (int i = 0; i < attributes.Length; i++)
+                {
+                    dynamic attribute = attributes[i];
+                    for (int t = 0; t < attribute.ComponentTypes.Length; t++)
+                    {
+                        subTypes.Add(attribute.ComponentTypes[t]);
+                    }
+                }
+
+                TypeSignature typeSig = new TypeSignature(subTypes);
+                if (dict.ContainsKey(typeSig))
+                    dict[typeSig].Add(system);
+                else
+                    dict.Add(typeSig, new List<BaseSystem> { system });
+            }
+        }
+
         private protected void SubscribeSystems()
         {
             notifySystems = new Dictionary<TypeSignature, List<BaseSystem>>();
             notifyAnySystems = new Dictionary<TypeSignature, List<BaseSystem>>();
+            collisionAnySystems = new Dictionary<TypeSignature, List<BaseSystem>>();
 
             for (int s = 0; s < userSystemTypes.Count; s++)
             {
                 Type type = userSystemTypes[s];
                 BaseSystem system = userSystems[s];
 
-                object[] attributes = type.GetCustomAttributes(typeof(SubscribeAttribute), false);
-                if (attributes.Length > 0)
-                {
-                    List<Type> subTypes = new List<Type>();
-                    for (int i = 0; i < attributes.Length; i++)
-                    {
-                        var attribute = (SubscribeAttribute)attributes[i];
-                        for (int t = 0; t < attribute.ComponentTypes.Length; t++)
-                        {
-                            subTypes.Add(attribute.ComponentTypes[t]);
-                        }
-                    }
+                // Subscribe entity creation
+                AddSystemFromAttribute(type, system, typeof(SubscribeAttribute), notifySystems);
 
-                    TypeSignature typeSig = new TypeSignature(subTypes);
-                    if (notifySystems.ContainsKey(typeSig))
-                        notifySystems[typeSig].Add(system);
-                    else
-                        notifySystems.Add(typeSig, new List<BaseSystem> { system });
-                }
+                // Subscribe collision
+                AddSystemFromAttribute(type, system, typeof(CollisionEventAttribute), collisionAnySystems);
+
             }
 
             // Render extensions - Subscribe Any

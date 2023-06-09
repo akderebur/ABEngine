@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.ECS;
+using ABEngine.ABERuntime.ECS.Internal;
 using Box2D.NetStandard.Dynamics.Bodies;
 
 namespace ABEngine.ABERuntime.Physics
@@ -70,9 +72,41 @@ namespace ABEngine.ABERuntime.Physics
         internal static void ResetPhysics()
         {
             destroyQueue = new Queue<Rigidbody>();
+            createQueue = new Queue<Rigidbody>();
             collisionLayers.Clear();
 
             defaultLayer = new CollisionLayer("Default");
+        }
+
+        internal static void RegisterCollision(CollisionData collision)
+        {
+            TypeSignature typeSig1 = collision.rigidbodyA.entity.archetype.GetTypeSignature();
+            TypeSignature typeSig2 = collision.rigidbodyB.entity.archetype.GetTypeSignature();
+
+            foreach (var notifyKP in Game.collisionAnySystems)
+            {
+                if (typeSig1.HasAny(notifyKP.Key))
+                {
+                    foreach (var system in notifyKP.Value)
+                    {
+                        system.OnCollision(collision);
+                    }
+                }
+
+                if(typeSig2.HasAny(notifyKP.Key))
+                {
+                    foreach (var system in notifyKP.Value)
+                    {
+                        CollisionData inversedData = new CollisionData()
+                        {
+                            rigidbodyA = collision.rigidbodyB,
+                            rigidbodyB = collision.rigidbodyA,
+                            collisionType = collision.collisionType
+                        };
+                        system.OnCollision(inversedData);
+                    }
+                }
+            }
         }
     }
 }

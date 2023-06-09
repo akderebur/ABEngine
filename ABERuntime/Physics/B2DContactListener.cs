@@ -23,8 +23,16 @@ namespace ABEngine.ABERuntime.Physics
                 var rbA = contact.GetFixtureA().GetBody().GetUserData<Rigidbody>();
                 var rbB = contact.GetFixtureB().GetBody().GetUserData<Rigidbody>();
 
-                rbA.CollisionEnter(rbB);
-                rbB.CollisionEnter(rbA);
+                CollisionData collision = new CollisionData()
+                {
+                    collisionType = CollisionType.Enter,
+                    rigidbodyA = rbA,
+                    rigidbodyB = rbB
+                };
+                PhysicsManager.RegisterCollision(collision);
+
+                //rbA.CollisionEnter(rbB);
+                //rbB.CollisionEnter(rbA);
             }
         }
 
@@ -35,8 +43,18 @@ namespace ABEngine.ABERuntime.Physics
                 var rbA = contact.GetFixtureA().GetBody().GetUserData<Rigidbody>();
                 var rbB = contact.GetFixtureB().GetBody().GetUserData<Rigidbody>();
 
-                rbA.CollisionExit(rbB);
-                rbB.CollisionExit(rbA);
+
+                CollisionData collision = new CollisionData()
+                {
+                    collisionType = CollisionType.Exit,
+                    rigidbodyA = rbA,
+                    rigidbodyB = rbB
+                };
+                PhysicsManager.RegisterCollision(collision);
+
+
+                //rbA.CollisionExit(rbB);
+                //rbB.CollisionExit(rbA);
             }
 
             //contact.SetEnabled(true);

@@ -1,5 +1,6 @@
 ﻿using System;
 using ABEngine.ABERuntime.ECS;
+using ABEngine.ABERuntime.Physics;
 
 namespace ABEngine.ABERuntime
 {
@@ -41,6 +42,11 @@ namespace ABEngine.ABERuntime
 
 
         public virtual void FixedUpdate(float gameTime, float fixedDeltaTime)
+        {
+
+        }
+
+        public virtual void OnCollision(CollisionData collisionData)
         {
 
         }
