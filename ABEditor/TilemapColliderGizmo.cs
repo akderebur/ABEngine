@@ -63,6 +63,7 @@ namespace ABEditor.Debug
             }
         }
 
+
         internal void UpdateChunk(CollisionChunk chunk)
         {
             if (chunk == null)
@@ -126,6 +127,11 @@ namespace ABEditor.Debug
                 cl.Draw(chunkKV.Value.drawC - 1, 1, 0, 0);
             }
           
+        }
+
+        public void UpdatePipeline(PipelineAsset newPipeline)
+        {
+            this.pipelineAsset = newPipeline;
         }
     }
 }

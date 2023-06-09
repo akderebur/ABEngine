@@ -46,6 +46,13 @@ namespace ABEngine.ABERuntime.Debug
             base.Start();
 
             linePointsBuffer = rf.CreateBuffer(new BufferDescription((uint)(linePoints.Length * LinePoint.VertexSize), BufferUsage.VertexBuffer | BufferUsage.Dynamic));
+
+            MappedResourceView<LinePoint> writemap = gd.Map<LinePoint>(linePointsBuffer, MapMode.Write);
+            for (int i = 0; i < 5; i++)
+            {
+                writemap[i] = new LinePoint(color, Vector3.Zero);
+            }
+            gd.Unmap(linePointsBuffer);
         }
 
         public override void Update(float gameTime, float deltaTime)
@@ -153,6 +160,11 @@ namespace ABEngine.ABERuntime.Debug
 
             cl.Draw(5, 1, 0, 0);
 
+        }
+
+        public override void CleanUp(bool reload, bool newScene)
+        {
+            linePointsBuffer.Dispose();
         }
     }
 }

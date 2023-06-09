@@ -27,7 +27,6 @@ namespace ABEngine.ABEditor
         System.Runtime.Loader.AssemblyLoadContext assemblyCtx;
         Assembly GameAssembly;
         FileSystemWatcher watcher;
-        bool reload = false;
 
         // Imgui
         static ImGuiRenderer imguiRenderer;
@@ -231,6 +230,101 @@ namespace ABEngine.ABEditor
 
                 //    reload = false;
                 //}
+
+                if (reload)
+                {
+                    reload = false;
+
+                    gd.WaitForIdle();
+
+                    if (resize)
+                    {
+                        resize = false;
+
+                        mainRenderTexture.Dispose();
+                        ScreenTexture.Dispose();
+                        lightRenderTexture.Dispose();
+                        compositeRenderTexture.Dispose();
+
+                        mainRenderView.Dispose();
+                        mainRenderFB.Dispose();
+
+                        finalQuadRSSet.Dispose();
+                        compositeRSSetLight.Dispose();
+
+                        mainDepthTexture.Dispose();
+
+                        // Resources
+                        var mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
+                        mainRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                        mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+                        mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
+
+                        mainDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                        mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil));
+
+                        ScreenTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                           mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+                            mainFBTexture.Format, TextureUsage.Sampled));
+
+                        lightRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                                      mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+                                       mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
+
+                        compositeRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                           mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+                            mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
+
+                        mainRenderView = gd.ResourceFactory.CreateTextureView(mainRenderTexture);
+                        mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture));
+                        mainFBOutDesc = mainRenderFB.OutputDescription;
+
+                        lightRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, lightRenderTexture));
+                        compositeRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, compositeRenderTexture));
+
+                        finalQuadRSSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
+                               GraphicsManager.sharedTextureLayout,
+                               compositeRenderTexture, gd.LinearSampler
+                               ));
+
+                        compositeRSSetLight = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
+                              GraphicsManager.sharedTextureLayout,
+                              lightRenderTexture, gd.LinearSampler
+                              ));
+
+                        pipelineData = new PipelineData()
+                        {
+                            VP = Matrix4x4.Identity,
+                            Resolution = screenSize,
+                            Time = elapsed,
+                            Padding = 0f
+                        };
+
+
+                        GraphicsManager.RecreatePipelines(mainRenderFB, false);
+
+                        lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
+                        lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
+                        tmColPipelineAsset = new TMColliderPipelineAsset(compositeRenderFB);
+
+                        lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
+                        lightRenderSystem.Start();
+
+                        if (debug)
+                        {
+                            colDebugSystem.CleanUp(true, false);
+                            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+                            colDebugSystem.Start();
+
+                        }
+
+                        TMColliderGizmo.UpdatePipeline(tmColPipelineAsset);
+
+                    }
+                    continue;
+
+                }
 
                 // TODO Enter play mode
                 if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.P))

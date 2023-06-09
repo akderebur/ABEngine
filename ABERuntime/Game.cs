@@ -31,7 +31,7 @@ namespace ABEngine.ABERuntime
 
     public class Game
     {
-        private GraphicsDevice gd;
+         protected private  GraphicsDevice gd;
         private DisposeCollectorResourceFactory rf;
 
         // Resources
@@ -111,9 +111,9 @@ namespace ABEngine.ABERuntime
         public static DeviceBuffer pipelineBuffer;
         public static ResourceSet pipelineSet;
 
-        static bool reload = false;
-        static bool newScene = false;
-        bool resize = false;
+        protected private  static bool reload = false;
+        protected private  static bool newScene = false;
+        protected private bool resize = false;
 
         internal static bool debug = false;
 

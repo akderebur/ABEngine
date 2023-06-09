@@ -124,6 +124,16 @@ namespace ABEngine.ABERuntime
 
             lightList.Clear();
         }
+
+        public override void CleanUp(bool reload, bool newScene)
+        {
+            foreach (var buffer in layerLightBuffers.Values)
+            {
+                buffer.Dispose();
+            }
+
+            textureSet.Dispose();
+        }
     }
 }
 
