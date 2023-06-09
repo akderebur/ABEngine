@@ -130,7 +130,7 @@ namespace ABEngine.ABERuntime
         {
             List<Vector2> neighbors = new List<Vector2>();
 
-            Vector2 start = tilePos - new Vector2(-tileSize.X * 2, -tileSize.Y * 2).RoundTo2Dec();
+            Vector2 start = tilePos + new Vector2(-tileSize.X * 2, -tileSize.Y * 2).RoundTo2Dec();
             for (int y = 0; y < 5; y++)
             {
                 for (int x = 0; x < 5; x++)

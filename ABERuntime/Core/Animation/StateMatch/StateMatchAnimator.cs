@@ -17,6 +17,7 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
         private Dictionary<string, Trigger> _triggers { get; set; }
 
         public event Action<StateMatchAnimator, AnimationMatch> OnAnimationFinished;
+        public event Action<StateMatchAnimator, AnimationMatch> OnAnimationStarted;
 
         public StateMatchAnimator()
 		{
@@ -183,6 +184,11 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
         internal void AnimationComplete(AnimationMatch animationMatch)
         {
             OnAnimationFinished?.Invoke(this, animationMatch);
+        }
+
+        internal void AnimationStarted(AnimationMatch animationMatch)
+        {
+            OnAnimationStarted?.Invoke(this, animationMatch);
         }
 
         internal void SetTransform(Transform transform)

@@ -39,6 +39,7 @@ namespace ABEngine.ABERuntime.Components
         public Vector2 target;
         public Vector2 current;
 
+        internal bool destroyed;
 
         public Rigidbody()
         {
@@ -121,7 +122,7 @@ namespace ABEngine.ABERuntime.Components
             onCollisionExit = null;
             colliders.Clear();
 
-            PhysicsManager.DestroyBody(b2dBody);
+            PhysicsManager.DestroyBody(this);
         }
 
         public JSerializable GetCopy()

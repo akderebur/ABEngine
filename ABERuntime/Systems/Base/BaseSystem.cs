@@ -8,7 +8,7 @@ namespace ABEngine.ABERuntime
         protected static World _world;
         protected Archetype archetype;
 
-        protected bool started;
+        public bool started;
         public bool dontDestroyOnLoad { get; private set; }
 
         public static void SetECSWorld(World world)

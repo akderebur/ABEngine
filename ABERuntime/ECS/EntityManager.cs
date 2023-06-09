@@ -6,11 +6,30 @@ using ABEngine.ABERuntime.Components;
 using System.Linq;
 using System.Collections.Generic;
 using Halak;
+using Box2D.NetStandard.Dynamics.Bodies;
 
 namespace ABEngine.ABERuntime
 {
     public static class EntityManager
     {
+        private static List<EntityDestroyInfo> destroyList = new List<EntityDestroyInfo>();
+
+        public static void CheckEntityChanges()
+        {
+            for (int i = 0; i < destroyList.Count; i++)
+            {
+                var destroyInfo = destroyList[i];
+                bool canDestroy = destroyInfo.rb == null ? true : destroyInfo.rb.destroyed;
+
+                if(canDestroy)
+                {
+                    var entity = destroyInfo.entity;
+                    CheckSubscribers(in entity, false);
+                    entity.Destroy();
+                }
+            }
+        }
+
         // Instantiate scene objects
         public static Entity Instantiate(in Entity entity, Transform parent = null)
         {
@@ -90,7 +109,7 @@ namespace ABEngine.ABERuntime
 
 
             if (newRb != null)
-                Game.b2dInitSystem.AddRBRuntime(ref copy);
+                Game.b2dInitSystem.AddRBRuntime(copy);
 
             if (entity.enabled)
             {
@@ -264,8 +283,13 @@ namespace ABEngine.ABERuntime
 
         public static void DestroyEntity(this in Entity entity)
         {
-            CheckSubscribers(in entity, false);
-            entity.Destroy();
+            var destroyInfo = new EntityDestroyInfo() { entity = entity };
+            if (entity.Has<Rigidbody>())
+            {
+                destroyInfo.rb = entity.Get<Rigidbody>();
+                destroyInfo.rb.Destroy();
+            }
+            destroyList.Add(destroyInfo);
         }
 
         public static Transform FindTransformByName(string name)
@@ -278,6 +302,11 @@ namespace ABEngine.ABERuntime
 
             return null;
         }
+    }
 
+    class EntityDestroyInfo
+    {
+        public Entity entity;
+        public Rigidbody rb;
     }
 }

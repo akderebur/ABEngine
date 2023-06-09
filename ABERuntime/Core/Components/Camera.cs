@@ -37,7 +37,9 @@ namespace ABEngine.ABERuntime.Components
         public bool ignoreY { get; set; }
         public Vector3 offset { get; set; }
         public bool followInFixedUpdate { get; set; }
+        public float cutoffY { get; set; }
 
+        public Vector3 velocity;
         public bool isActive
         {
             get { return _isActive; }

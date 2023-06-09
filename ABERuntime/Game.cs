@@ -149,6 +149,7 @@ namespace ABEngine.ABERuntime
         }
 
         float accumulator;
+        float interpolation;
         protected private virtual void Init(string windowName)
         {
             // ECS and Physics Worlds
@@ -253,8 +254,13 @@ namespace ABEngine.ABERuntime
                     lastFps += 1.0f;
                 }
 
+                EntityManager.CheckEntityChanges();
+
                 if (Input.GetKeyDown(Key.R))
+                {
                     reload = true;
+                    newScene = true;
+                }
 
                 if (reload)
                 {
@@ -451,9 +457,8 @@ namespace ABEngine.ABERuntime
 
                 }
 
-
                 MainFixedUpdate(newTime, elapsed);
-                float interpolation = accumulator / TimeStep;
+                interpolation = accumulator / TimeStep;
                 MainUpdate(newTime, elapsed, interpolation);
                 foreach (var rendExt in renderExtensions)
                 {
@@ -529,15 +534,18 @@ namespace ABEngine.ABERuntime
             int steps = 0;
             while (TimeStep < accumulator && MAX_STEPS > steps)
             {
-                if(steps == 0)
+                if (steps == 0)
+                {
+                    PhysicsManager.PreFixedUpdate();
                     rbMoveSystem.PreFixedUpdate();
+                }
+
+                rbMoveSystem.ResetSmoothStates();
 
                 foreach (var system in userSystems)
                 {
                     system.FixedUpdate(newTime, TimeStep);
                 }
-
-                rbMoveSystem.ResetSmoothStates();
 
                 B2DWorld?.Step(TimeStep, VelocityIterations, PositionIterations);
 
@@ -843,8 +851,20 @@ namespace ABEngine.ABERuntime
             // ECS World
             GameWorld = World.Create();
             GameWorld.OnSet((Entity entity, ref Transform newTrans) => newTrans.SetEntity(entity));
-            GameWorld.OnSet((Entity entity, ref Rigidbody newRb) => newRb.SetEntity(entity));
-            GameWorld.OnSet((Entity entity, ref Sprite newSprite) => newSprite.SetTransform(entity.transform));
+            GameWorld.OnSet((Entity entity, ref Rigidbody newRb) =>
+            {
+                newRb.SetEntity(entity);
+                if(b2dInitSystem.started)
+                    PhysicsManager.CreateBody(newRb);
+            });
+            //GameWorld.OnSet((Entity entity, ref Sprite newSprite) => newSprite.SetTransform(entity.transform));
+            GameWorld.OnSet((Entity entity, ref Sprite sprite) =>
+            {
+                sprite.SetTransform(entity.transform);
+                if (!sprite.manualBatching)
+                    Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+            });
+
             GameWorld.OnSet((Entity entity, ref Camera newCam) => TriggerCamCheck());
             GameWorld.OnSet((Entity entity, ref AABB newBB) =>
             {
@@ -871,7 +891,7 @@ namespace ABEngine.ABERuntime
                 pm.Stop();
             });
 
-            GameWorld.OnRemove((Rigidbody rb) => rb.Destroy());
+            //GameWorld.OnRemove((Rigidbody rb) => rb.Destroy());
 
             GameWorld.OnEnable((Entity entity, Sprite sprite) =>
             {
@@ -1068,6 +1088,7 @@ namespace ABEngine.ABERuntime
 
             // Assets
             var jAssets = scene["Assets"];
+            AssetCache.ClearSceneCache();
             AssetCache.ClearSerializeDependencies();
             AssetCache.DeserializeAssets(jAssets);
 

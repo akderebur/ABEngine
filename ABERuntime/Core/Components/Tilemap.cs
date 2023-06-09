@@ -913,13 +913,29 @@ namespace ABEngine.ABERuntime.Components
                 tiles.Add(tileWorldPos, tile);
             }
 
+
+            // Save chunk tiles data for later use
+
+            jChunks = data["Chunks"];
+
+        }
+
+        public void SetReferences()
+        {
+            // Transform reference
+            //var transGuid = Guid.Parse(transformGuidStr);
+            //Transform trans = Game.GameWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(transGuid)).transform;
+
             if (Game.gameMode == GameMode.Runtime) // Chunk collision for game
             {
-                foreach (var jChunk in data["Chunks"].Array())
+                foreach (var jChunk in jChunks.Array())
                 {
                     bool hasCollision = jChunk["CollisionActive"];
                     if (!hasCollision)
                         continue;
+
+                    Guid chunkGuid = Guid.Parse(jChunk["ChunkGUID"]);
+                    Transform chunkTrans = Game.GameWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(chunkGuid)).transform;
 
                     Vector2 curPoint = Vector2.Zero;
                     List<Vector2> colliderPoints = new List<Vector2>();
@@ -933,7 +949,7 @@ namespace ABEngine.ABERuntime.Components
                         else
                         {
                             curPoint.Y = axis;
-                            colliderPoints.Add(curPoint);
+                            colliderPoints.Add(curPoint - chunkTrans.worldPosition.ToVector2());
                         }
 
                         index++;
@@ -947,22 +963,16 @@ namespace ABEngine.ABERuntime.Components
                         rb.collisionLayer = colLayer;
 
                     PolygonCollider collider = new PolygonCollider(colliderPoints);
-                    var chunkEnt = EntityManager.CreateEntity("TilemapCollider", jChunk["Tag"], rb, collider, true);
+                    chunkTrans.tag = jChunk["Tag"];
+                    chunkTrans.entity.Set<Rigidbody>(rb);
+                    chunkTrans.entity.Set<PolygonCollider>(collider);
+                    chunkTrans.isStatic = true;
+
+
+                    //var chunkEnt = EntityManager.CreateEntity("TilemapCollider", jChunk["Tag"], rb, collider, true);
                 }
             }
-            else // Save chunk tiles data for later use in Editor
-            {
-                jChunks = data["Chunks"];
-            }
-        }
-
-        public void SetReferences()
-        {
-            // Transform reference
-            //var transGuid = Guid.Parse(transformGuidStr);
-            //Transform trans = Game.GameWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(transGuid)).transform;
-
-            if (Game.gameMode == GameMode.Editor)
+            else if (Game.gameMode == GameMode.Editor)
             {
                 foreach (var tile in tiles.Values)
                 {

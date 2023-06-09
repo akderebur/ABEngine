@@ -15,7 +15,7 @@ namespace ABEngine.ABERuntime
         {
         }
 
-        private void CreateBody(ref Entity rbEnt)
+        private void CreateBody(in Entity rbEnt)
         {
             Rigidbody rb = rbEnt.Get<Rigidbody>();
             Transform rbTrans = rbEnt.Get<Transform>();
@@ -98,18 +98,18 @@ namespace ABEngine.ABERuntime
             for (int i = 0; i < rbEnts.Length; i++)
             {
                 Entity rbEnt = rbEnts[i];
-                CreateBody(ref rbEnt);
+                CreateBody(rbEnt);
             }
 
             base.Start();
         }
 
-        internal void AddRBRuntime(ref Entity entity)
+        internal void AddRBRuntime(in Entity entity)
         {
             if (!started)
                 return;
 
-            CreateBody(ref entity);
+            CreateBody(entity);
         }
 
 

@@ -14,6 +14,7 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
 		public bool chainOnly;
 		public List<AnimationMatch> chainStates;
 
+		public string startTag = "";
 		public string endTag = "";
 
 		public AnimationMatch()

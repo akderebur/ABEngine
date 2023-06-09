@@ -13,37 +13,6 @@ namespace ABEngine.ABERuntime
         {
         }
 
-        //public void ResetSmoothStates()
-        //{
-        //    var query = _world.CreateQuery().Has<Rigidbody>().Has<Transform>();
-
-        //    foreach (var rbEnt in query.GetEntities())
-        //    {
-        //        var rb = rbEnt.Get<Rigidbody>();
-        //        if (rb.bodyType == BodyType.Static)
-        //            continue;
-
-        //        rb.smoothedPosition = rb.b2dBody.GetPosition();
-        //    }
-        //}
-
-        //public void SmoothStates(float accumulatorRatio)
-        //{
-        //    float dt = accumulatorRatio * 1f / 60f;
-
-
-        //    var query = _world.CreateQuery().Has<Rigidbody>().Has<Transform>();
-
-        //    foreach (var rbEnt in query.GetEntities())
-        //    {
-        //        var rb = rbEnt.Get<Rigidbody>();
-        //        if (rb.bodyType == BodyType.Static)
-        //            continue;
-
-        //        rb.smoothedPosition = rb.b2dBody.GetPosition() + dt * rb.b2dBody.GetLinearVelocity();
-        //    }
-        //}
-
         public void ResetSmoothStates()
         {
             var query = _world.CreateQuery().Has<Rigidbody>().Has<Transform>();
@@ -51,28 +20,11 @@ namespace ABEngine.ABERuntime
             foreach (var rbEnt in query.GetEntities())
             {
                 var rb = rbEnt.Get<Rigidbody>();
-                if (rb.bodyType == BodyType.Static)
+                if (rb.b2dBody == null || rb.bodyType == BodyType.Static)
                     continue;
 
                 //rb.smoothedPosition = rb.previousPosition = rb.b2dBody.GetPosition();
                 rb.start = rb.current = rb.target = rb.b2dBody.GetPosition();
-            }
-        }
-
-        public void SmoothStates(float accumulatorRatio)
-        {
-            float oneMinusRatio = 1f - accumulatorRatio;
-
-            var query = _world.CreateQuery().Has<Rigidbody>().Has<Transform>();
-
-            foreach (var rbEnt in query.GetEntities())
-            {
-                var rb = rbEnt.Get<Rigidbody>();
-                if (rb.bodyType == BodyType.Static)
-                    continue;
-
-                //rb.smoothedPosition = Vector2.Lerp(rb.previousPosition, rb.b2dBody.GetPosition(), oneMinusRatio);
-                rb.smoothedPosition = accumulatorRatio * rb.b2dBody.GetPosition() + oneMinusRatio * rb.previousPosition;
             }
         }
 
@@ -82,10 +34,14 @@ namespace ABEngine.ABERuntime
 
             query.Foreach((Entity rbEnt, ref Rigidbody rb, ref Transform transform) =>
             {
-                if (transform.transformMove)
-                    rb.SetPosition(transform.worldPosition);
+                if (rb.b2dBody != null)
+                {
 
-                transform.transformMove = false;
+                    if (transform.transformMove)
+                        rb.SetPosition(transform.worldPosition);
+
+                    transform.transformMove = false;
+                }
             }
             );
         }
@@ -96,7 +52,9 @@ namespace ABEngine.ABERuntime
 
             query.Foreach((Entity rbEnt, ref Rigidbody rb, ref Transform transform) =>
             {
-                if (rb.entity.enabled && rb.bodyType != BodyType.Static)
+               
+                    
+                if (rb.b2dBody != null && rb.entity.enabled && rb.bodyType != BodyType.Static)
                 {
 
                     //Vector3 locPos = Vector3.Transform(new Vector3(rb.b2dBody.GetPosition() * 100f, 0f), transform.parent != null ? transform.parent.worldToLocaMatrix : Matrix4x4.Identity);
@@ -114,13 +72,12 @@ namespace ABEngine.ABERuntime
 
                     if (rb.interpolationType == RBInterpolationType.None)
                     {
-
                         Vector3 locPos = Vector3.Transform(new Vector3(rb.b2dBody.GetPosition(), transform.localPosition.Z), transform.parent != null ? transform.parent.worldToLocaMatrix : Matrix4x4.Identity);
                         transform.localPosition = locPos;
                     }
                     else
                     {
-                        rb.start = rb.current;
+                        //rb.start = rb.current;
                         rb.target = rb.b2dBody.GetPosition();
                     }
 
@@ -140,10 +97,12 @@ namespace ABEngine.ABERuntime
                 {
                     if (rb.interpolationType == RBInterpolationType.Interpolate)
                     {
+                        bool oldMovestate = transform.transformMove;
                         rb.current = Vector2.Lerp(rb.start, rb.target, ratio);
 
                         Vector3 locPos = Vector3.Transform(new Vector3(rb.current, transform.localPosition.Z), transform.parent != null ? transform.parent.worldToLocaMatrix : Matrix4x4.Identity);
                         transform.localPosition = locPos;
+                        transform.transformMove = oldMovestate;
                     }
                 }
             }

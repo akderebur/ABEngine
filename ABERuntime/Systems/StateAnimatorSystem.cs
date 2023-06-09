@@ -20,13 +20,14 @@ namespace ABEngine.ABERuntime
                 SpriteClip curClip = curState.clip;
                 if (stateChanged)
                 {
+                    anim.AnimationStarted(curMatch);
                     curState.loopStartTime = gameTime;
                     curState.lastFrameTime = 0f;
                     curState.curFrame = -1;
                 }
 
                 curState.normalizedTime = (gameTime - curState.loopStartTime) / curState.length;
-                if(curState.normalizedTime >= 1f && !curState.looping)
+                if(curState.normalizedTime >= 1f && !curState.looping && curState.loopStartTime != 0)
                 {
                     curState.completed = true;
                     anim.AnimationComplete(curMatch);
