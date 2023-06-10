@@ -946,8 +946,6 @@ namespace ABEngine.ABERuntime
             // Prefab container world
             PrefabWorld = World.Create();
 
-            // Systems
-            BaseSystem.SetECSWorld(GameWorld);
         }
 
         internal static void TriggerCamCheck()

@@ -138,24 +138,27 @@ namespace ABEngine.ABERuntime.Rendering
                 //defSize = new Vector2(texData.Width, texData.Height);
             }
 
-            // Static one time sort
-            sprites = sprites.OrderBy(sp => sp.transform.worldPosition.Z).ToList();
-            maxZ = sprites.Last().transform.worldPosition.Z;
-            int index = 0;
-            for (int i = 0; i < sprites.Count; i++)
+            if (isStatic)
             {
-                SpriteTransformPair spritePair = sprites[i];
-                Transform spriteTrans = spritePair.transform;
-                Sprite spriteData = spritePair.spriteData;
+                // Static one time sort
+                sprites = sprites.OrderBy(sp => sp.transform.worldPosition.Z).ToList();
+                maxZ = sprites.Last().transform.worldPosition.Z;
+                int index = 0;
+                for (int i = 0; i < sprites.Count; i++)
+                {
+                    SpriteTransformPair spritePair = sprites[i];
+                    Transform spriteTrans = spritePair.transform;
+                    Sprite spriteData = spritePair.spriteData;
 
-                vertices[index++] = new QuadVertex(spriteTrans.worldPosition,
-                                           spriteData.GetSize(),
-                                           spriteTrans.worldScale,
-                                           spriteData.tintColor,
-                                           spriteTrans.localEulerAngles.Z,
-                                           spriteData.uvPos,
-                                           spriteData.uvScale,
-                                           spriteData.pivot);
+                    vertices[index++] = new QuadVertex(spriteTrans.worldPosition,
+                                               spriteData.GetSize(),
+                                               spriteTrans.worldScale,
+                                               spriteData.tintColor,
+                                               spriteTrans.localEulerAngles.Z,
+                                               spriteData.uvPos,
+                                               spriteData.uvScale,
+                                               spriteData.pivot);
+                }
             }
 
             // Buffer resources

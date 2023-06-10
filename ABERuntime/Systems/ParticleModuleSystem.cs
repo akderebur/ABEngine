@@ -12,7 +12,7 @@ namespace ABEngine.ABERuntime
 
         public override void Start()
         {
-            var query = _world.CreateQuery().Has<ParticleModule>().Has<Transform>();
+            var query = Game.GameWorld.CreateQuery().Has<ParticleModule>().Has<Transform>();
 
             query.Foreach((ref ParticleModule pm, ref Transform transform) =>
             {
@@ -22,7 +22,7 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = _world.CreateQuery().Has<ParticleModule>().Has<Transform>();
+            var query = Game.GameWorld.CreateQuery().Has<ParticleModule>().Has<Transform>();
 
             query.Foreach((ref ParticleModule pm, ref Transform transform) =>
             {

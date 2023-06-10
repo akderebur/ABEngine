@@ -86,6 +86,7 @@ namespace ABEngine.ABERuntime.Components
         SpriteBatch particleBatch;
         string batchGuid;
         Transform moduleTrans;
+        int particleCount;
 
         public ParticleModule()
         {
@@ -127,7 +128,7 @@ namespace ABEngine.ABERuntime.Components
             sprite.manualBatching = true;
             sprite.SetMaterial(_particleMaterial, true);
             Transform trans = new Transform("EditorNotVisible");
-            var entity = Game.GameWorld.CreateEntity("P" + particles.Count, Guid.NewGuid(), trans, sprite);
+            var entity = Game.GameWorld.CreateEntity("P" + particleCount, Guid.NewGuid(), trans, sprite);
             trans.localPosition = new Vector3(0f, 0f, -10f);
             Game.spriteBatchSystem.AddSpriteToBatch(trans, sprite, batchGuid);
             particleBatch = Game.spriteBatchSystem.GetBatchFromSprite(trans, sprite, batchGuid);
@@ -139,6 +140,7 @@ namespace ABEngine.ABERuntime.Components
                 Lifetime = -10
             };
             particles.AddLast(particle);
+            particleCount++;
             isPlaying = true;
 
             float rate = Math.Clamp(spawnRate.NextValue(), 0.5f, 10000f);
@@ -164,6 +166,10 @@ namespace ABEngine.ABERuntime.Components
         {
             if (!isPlaying)
                 return;
+
+            if (deltaTime > 1 / 10f)
+                deltaTime = 1 / 10f;
+
 
             this.moduleTrans = moduleTrans;
             scale = moduleTrans.worldScale.X + 0.00001f;
@@ -293,7 +299,7 @@ namespace ABEngine.ABERuntime.Components
                         trans.parent = moduleTrans;
                     reusePart.Sprite.tintColor = lifetimeColor.Evaluate(0f);
                 }
-                else if (particles.Count <= maxParticles)
+                else if (particleCount <= maxParticles)
                 {
                     Sprite sprite = new Sprite(particleTexture);
                     sprite.manualBatching = true;
@@ -305,7 +311,7 @@ namespace ABEngine.ABERuntime.Components
                     //sprite.sharedMaterial.SetVector4("OutlineColor", Veldrid.RgbaFloat.Blue.ToVector4());
 
                     Transform trans = new Transform("EditorNotVisible");
-                    var entity = Game.GameWorld.CreateEntity("P" + particles.Count, Guid.NewGuid(), trans, sprite);
+                    var entity = Game.GameWorld.CreateEntity("P" + particleCount, Guid.NewGuid(), trans, sprite);
 
                     float lifetime = startLifetime.NextValue() * scale;
                     Particle particle = new Particle()
@@ -318,6 +324,7 @@ namespace ABEngine.ABERuntime.Components
                         StartSize = startSize.NextValue()
                     };
                     particles.AddLast(particle);
+                    particleCount++;
 
                     particleBatch.AddSpriteEntity(trans, sprite);
 

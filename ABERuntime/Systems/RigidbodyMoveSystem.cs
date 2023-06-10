@@ -15,7 +15,7 @@ namespace ABEngine.ABERuntime
 
         public void ResetSmoothStates()
         {
-            var query = _world.CreateQuery().Has<Rigidbody>().Has<Transform>();
+            var query = Game.GameWorld.CreateQuery().Has<Rigidbody>().Has<Transform>();
 
             foreach (var rbEnt in query.GetEntities())
             {
@@ -30,7 +30,7 @@ namespace ABEngine.ABERuntime
 
         public void PreFixedUpdate()
         {
-            var query = _world.CreateQuery().Has<Rigidbody>().Has<Transform>();
+            var query = Game.GameWorld.CreateQuery().Has<Rigidbody>().Has<Transform>();
 
             query.Foreach((Entity rbEnt, ref Rigidbody rb, ref Transform transform) =>
             {
@@ -48,7 +48,7 @@ namespace ABEngine.ABERuntime
 
         public override void FixedUpdate(float gameTime, float fixedDeltaTime)
         {
-            var query = _world.CreateQuery().Has<Rigidbody>().Has<Transform>();
+            var query = Game.GameWorld.CreateQuery().Has<Rigidbody>().Has<Transform>();
 
             query.Foreach((Entity rbEnt, ref Rigidbody rb, ref Transform transform) =>
             {
@@ -89,7 +89,7 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float ratio)
         {
-            var query = _world.CreateQuery().Has<Rigidbody>().Has<Transform>();
+            var query = Game.GameWorld.CreateQuery().Has<Rigidbody>().Has<Transform>();
 
             query.Foreach((Entity rbEnt, ref Rigidbody rb, ref Transform transform) =>
             {

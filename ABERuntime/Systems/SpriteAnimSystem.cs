@@ -12,7 +12,7 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = _world.CreateQuery().Has<SpriteAnimation>().Has<Sprite>().Not<Animator>();
+            var query = Game.GameWorld.CreateQuery().Has<SpriteAnimation>().Has<Sprite>().Not<Animator>();
             query.Foreach((ref SpriteAnimation anim, ref Sprite sprite) =>
             {
                 AnimationState curState = anim.state;

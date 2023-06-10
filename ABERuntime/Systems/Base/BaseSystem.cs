@@ -6,16 +6,8 @@ namespace ABEngine.ABERuntime
 {
     public class BaseSystem
     {
-        protected static World _world;
-        protected Archetype archetype;
-
         public bool started;
         public bool dontDestroyOnLoad { get; private set; }
-
-        public static void SetECSWorld(World world)
-        {
-            _world = world;
-        }
 
         public BaseSystem()
         {

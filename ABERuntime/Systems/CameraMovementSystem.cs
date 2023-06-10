@@ -10,7 +10,7 @@ namespace ABEngine.ABERuntime
     {
         public override void Start()
         {
-            var query = _world.CreateQuery().Has<Camera>().Has<Transform>();
+            var query = Game.GameWorld.CreateQuery().Has<Camera>().Has<Transform>();
             query.Foreach((ref Camera cam, ref Transform camTrans) =>
             {
                 if (cam.followTarget != null)
@@ -28,7 +28,7 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = _world.CreateQuery().Has<Camera>().Has<Transform>();
+            var query = Game.GameWorld.CreateQuery().Has<Camera>().Has<Transform>();
             query.Foreach((ref Camera cam, ref Transform camTrans) =>
             {
                 if (!cam.followInFixedUpdate && cam.followTarget != null)
@@ -41,7 +41,7 @@ namespace ABEngine.ABERuntime
 
         public override void FixedUpdate(float gameTime, float deltaTime)
         {
-            var query = _world.CreateQuery().Has<Camera>().Has<Transform>();
+            var query = Game.GameWorld.CreateQuery().Has<Camera>().Has<Transform>();
             query.Foreach((ref Camera cam, ref Transform camTrans) =>
             {
                 if (cam.followInFixedUpdate && cam.followTarget != null)
