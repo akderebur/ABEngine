@@ -352,9 +352,9 @@ namespace ABEngine.ABERuntime
                         if (debug)
                             colDebugSystem.Start();
                     }
-
                     else if(newScene)
                     {
+                        EntityManager.SetImmediateDestroy(true);
                         newScene = false;
                         CoroutineManager.StopAllCoroutines();
 
@@ -364,6 +364,9 @@ namespace ABEngine.ABERuntime
                         CreateWorlds();
                         PrefabManager.Init();
                         PhysicsManager.ResetPhysics();
+
+                        EntityManager.SetImmediateDestroy(false);
+
 
                         // Clean systems
                         foreach (var system in userSystems)

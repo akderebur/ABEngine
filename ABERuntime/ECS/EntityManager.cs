@@ -12,6 +12,7 @@ namespace ABEngine.ABERuntime
 {
     public static class EntityManager
     {
+        private static bool immediateDestroy;
         private static List<EntityDestroyInfo> destroyList = new List<EntityDestroyInfo>();
 
         public static void CheckEntityChanges()
@@ -283,13 +284,26 @@ namespace ABEngine.ABERuntime
 
         public static void DestroyEntity(this in Entity entity)
         {
-            var destroyInfo = new EntityDestroyInfo() { entity = entity };
-            if (entity.Has<Rigidbody>())
+            if (EntityManager.immediateDestroy)
             {
-                destroyInfo.rb = entity.Get<Rigidbody>();
-                destroyInfo.rb.Destroy();
+                CheckSubscribers(in entity, false);
+                entity.Destroy();
             }
-            destroyList.Add(destroyInfo);
+            else
+            {
+                var destroyInfo = new EntityDestroyInfo() { entity = entity };
+                if (entity.Has<Rigidbody>())
+                {
+                    destroyInfo.rb = entity.Get<Rigidbody>();
+                    destroyInfo.rb.Destroy();
+                }
+                destroyList.Add(destroyInfo);
+            }
+        }
+
+        internal static void SetImmediateDestroy(bool imDestroy)
+        {
+            EntityManager.immediateDestroy = imDestroy;
         }
 
         public static Transform FindTransformByName(string name)
