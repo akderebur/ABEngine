@@ -653,10 +653,6 @@ namespace ABEngine.ABEditor
 
             PrefabWorld = World.Create();
             PrefabWorld.OnSet((Entity entity, ref Transform newTrans) => newTrans.SetEntity(entity));
-
-
-            // Systems
-            BaseSystem.SetECSWorld(GameWorld);
         }
 
         void OpenGameDummy(string path)

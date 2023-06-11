@@ -14,7 +14,7 @@ namespace ABEngine.ABEditor
         {
             if (!Input.GetKey(Veldrid.Key.ControlLeft) && Input.GetMouseButtonDown(Veldrid.MouseButton.Left))
             {
-                var query = _world.CreateQuery().Has<AABB>();
+                var query = Game.GameWorld.CreateQuery().Has<AABB>();
                 foreach (var entity in query.GetEntities())
                 {
                     AABB bbox = entity.Get<AABB>();
@@ -24,7 +24,7 @@ namespace ABEngine.ABEditor
                     {
                         selectedTransform = transform;
                         dragDelta = selectedTransform.localPosition - new Vector3(Input.GetMousePosition().PixelToWorld() * Game.zoomFactor, 0f);
-                        _world.SetData(entity);
+                        Game.GameWorld.SetData(entity);
 
                         break;
                     }
