@@ -8,7 +8,6 @@ using ABEngine.ABERuntime.Rendering;
 using Box2D.NetStandard.Common;
 using Halak;
 using Veldrid;
-using Vortice.DXGI;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -219,7 +218,7 @@ namespace ABEngine.ABERuntime.Components
 
                     particle.Transform.parent = null;
                     Vector3 pos = particle.Transform.worldPosition;
-                    pos.Z = -100f;
+                    pos.Z = -1001;
                     particle.Transform.localPosition = pos;
                 }
 

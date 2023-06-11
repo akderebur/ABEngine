@@ -184,8 +184,8 @@ namespace ABEngine.ABERuntime.Rendering
             // Write to GPU buffer
             MappedResourceView<QuadVertex> writemap = _gd.Map<QuadVertex>(vertexBuffer, MapMode.Write);
 
-            sprites = sprites.OrderBy(sp => sp.transform.worldPosition.Z).ToList();
-            maxZ = sprites.Last().transform.worldPosition.Z;
+            //sprites = sprites.OrderBy(sp => sp.transform.worldPosition.Z).ToList();
+            //maxZ = sprites.Last().transform.worldPosition.Z;
             int index = 0;
             for (int i = 0; i < sprites.Count; i++)
             {
