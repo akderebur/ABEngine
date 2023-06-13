@@ -8,12 +8,16 @@ namespace ABEngine.ABERuntime
 {
 	public static class PrefabManager
 	{
-		static Dictionary<uint, Transform> prefabMap = new Dictionary<uint, Transform>();
-        static Dictionary<uint, Transform> sharedPrefabMap = new Dictionary<uint, Transform>();
+		static Dictionary<uint, PrefabAsset> prefabMap = new Dictionary<uint, PrefabAsset>();
+        static Dictionary<uint, PrefabAsset> sharedPrefabMap = new Dictionary<uint, PrefabAsset>();
+
+        static Dictionary<uint, Transform> prefabInstances = new Dictionary<uint, Transform>();
+
+        internal static World PrefabWorld;
 
         internal static Entity EntityToPrefab(in Entity entity, Transform parent)
         {
-            Entity copy = Game.PrefabWorld.CreateEntity();
+            Entity copy = PrefabWorld.CreateEntity();
 
             var comps = entity.GetAllComponents();
             var types = entity.GetAllComponentTypes();
@@ -68,10 +72,38 @@ namespace ABEngine.ABERuntime
             return copy;
         }
 
+        public static Entity Instantiate(string prefabName)
+        {
+            uint hash = prefabName.ToHash32();
+
+            // Check local instance
+            if (prefabInstances.TryGetValue(hash, out Transform entityTrans))
+                return EntityManager.Instantiate(entityTrans.entity, null);
+
+            // Check local prefab
+            if(prefabMap.TryGetValue(hash, out PrefabAsset prefabAsset))
+            {
+                Transform prefabIns = EntityManager.LoadSerializedPrefab(prefabAsset);
+                prefabInstances.Add(hash, prefabIns);
+                return EntityManager.Instantiate(prefabIns.entity, null);
+            }
+
+            // Check shared prefab
+            if (sharedPrefabMap.TryGetValue(hash, out PrefabAsset sharedPrefabAsset))
+            {
+                Transform sharedIns = EntityManager.LoadSerializedPrefab(sharedPrefabAsset);
+                prefabInstances.Add(hash, sharedIns);
+                return EntityManager.Instantiate(sharedIns.entity, null);
+
+            }
+
+            return default(Entity);
+        }
+
         internal static void AddPrefabEntity(in Entity entity, uint hash)
         {
-            entity.Transfer(Game.PrefabWorld);
-            prefabMap.Add(hash, entity.transform);
+            entity.Transfer(PrefabWorld);
+            prefabInstances.Add(hash, entity.transform);
         }
 
         public static void AddPrefabEntity(in Entity entity, string prefabName)
@@ -79,15 +111,27 @@ namespace ABEngine.ABERuntime
 			AddPrefabEntity(entity, prefabName.ToHash32());
 		}
 
-        public static void AddSharedPrefabEntity(in Entity entity, string prefabName)
+        public static void AddPrefabAsset(PrefabAsset prefabAsset, string prefabName)
         {
-            entity.Transfer(Game.PrefabWorld);
-            sharedPrefabMap.Add(prefabName.ToHash32(), entity.transform);
+            uint hash = prefabName.ToHash32();
+            if (prefabMap.ContainsKey(hash))
+                return;
+
+            prefabMap.Add(hash, prefabAsset);
+        }
+
+        public static void AddSharedPrefabAsset(PrefabAsset prefabAsset, string prefabName)
+        {
+            uint hash = prefabName.ToHash32();
+            if (sharedPrefabMap.ContainsKey(hash))
+                return;
+
+            sharedPrefabMap.Add(hash, prefabAsset);
         }
 
         internal static Transform GetPrefabTransform(uint hash)
         {
-            if (prefabMap.TryGetValue(hash, out Transform entityTrans))
+            if (prefabInstances.TryGetValue(hash, out Transform entityTrans))
                 return entityTrans;
 
             return null;
@@ -98,36 +142,30 @@ namespace ABEngine.ABERuntime
 			return GetPrefabTransform(prefabName.ToHash32());
 		}
 
-		internal static void Init()
-		{
-			prefabMap.Clear();
-			foreach (var sharedPrefab in sharedPrefabMap)
-			{
-				prefabMap.Add(sharedPrefab.Key, sharedPrefab.Value);
-			}
-		}
 
-		internal static void UpdatePrefab(uint oldHash, uint newHash)
-		{
-			if(prefabMap.TryGetValue(oldHash, out Transform prefabTrans))
-			{
-				prefabMap.Remove(oldHash);
-				prefabMap.Add(newHash, prefabTrans);
-			}
-
-            if (sharedPrefabMap.TryGetValue(oldHash, out Transform prefabTransShared))
-            {
-                sharedPrefabMap.Remove(oldHash);
-                sharedPrefabMap.Add(newHash, prefabTransShared);
-            }
+        internal static void SceneInit()
+        {
+            PrefabWorld = World.Create("Prefabs");
+            PrefabWorld.OnSet((Entity entity, ref Transform newTrans) => newTrans.SetEntity(entity));
         }
 
-		public static void ClearPrefabs()
+        internal static void UpdatePrefab(uint oldHash, uint newHash)
+		{
+			if(prefabInstances.TryGetValue(oldHash, out Transform prefabTrans))
+			{
+                prefabInstances.Remove(oldHash);
+                prefabInstances.Add(newHash, prefabTrans);
+			}
+        }
+
+		internal static void ClearScene()
 		{
 			prefabMap.Clear();
+            prefabInstances.Clear();
+            PrefabWorld.Destroy();
 		}
 
-		public static void ClearSharedPrefabs()
+        internal static void ClearSharedPrefabs()
 		{
 			sharedPrefabMap.Clear();
 		}

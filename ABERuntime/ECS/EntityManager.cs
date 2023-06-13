@@ -38,15 +38,15 @@ namespace ABEngine.ABERuntime
         }
 
         // Instantiate prefabs
-        public static Entity Instantiate(string prefabName, Transform parent = null)
-        {
-            Transform prefabTrans = PrefabManager.GetPrefabTransform(prefabName);
+        //public static Entity Instantiate(string prefabName, Transform parent = null)
+        //{
+        //    Transform prefabTrans = PrefabManager.GetPrefabTransform(prefabName);
 
-            if(prefabTrans != null)
-                return InstantiateCore(prefabTrans.entity, parent);
+        //    if(prefabTrans != null)
+        //        return InstantiateCore(prefabTrans.entity, parent);
 
-            return default(Entity);
-        }
+        //    return default(Entity);
+        //}
 
         internal static Entity InstantiateCore(in Entity entity, Transform parent)
         {
@@ -143,7 +143,7 @@ namespace ABEngine.ABERuntime
             {
                 string entName = entity["Name"];
                 string guid = entity["GUID"];
-                Entity newEnt = Game.PrefabWorld.CreateEntity(entName, Guid.Parse(guid));
+                Entity newEnt = PrefabManager.PrefabWorld.CreateEntity(entName, Guid.Parse(guid));
 
                 foreach (var component in entity["Components"].Array())
                 {
@@ -183,7 +183,7 @@ namespace ABEngine.ABERuntime
                 if (!string.IsNullOrEmpty(entity.parentGuidStr))
                 {
                     Guid parGuid = Guid.Parse(entity.parentGuidStr);
-                    entity.SetParent(Game.PrefabWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(parGuid)).Get<Transform>(), false);
+                    entity.SetParent(PrefabManager.PrefabWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(parGuid)).Get<Transform>(), false);
                 }
             }
 

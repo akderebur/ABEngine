@@ -20,6 +20,6 @@
     <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ABEngine.Veldrid.ImGui" Version="5.89.22-g548560b577" />
+    <PackageReference Include="ABEngine.Veldrid.ImGui" Version="5.89.26-gc30b37d0e5" />
   </ItemGroup>
 </Project>

@@ -594,6 +594,7 @@ namespace ABEngine.ABEditor
         void ResetWorld()
         {
             GameWorld.Destroy();
+            PrefabManager.ClearScene();
 
             if (isPlaying)
                 CreateWorlds();
@@ -651,8 +652,7 @@ namespace ABEngine.ABEditor
                 Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 
-            PrefabWorld = World.Create();
-            PrefabWorld.OnSet((Entity entity, ref Transform newTrans) => newTrans.SetEntity(entity));
+            PrefabManager.SceneInit();
         }
 
         void OpenGameDummy(string path)

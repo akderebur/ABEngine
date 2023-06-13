@@ -64,22 +64,31 @@ namespace ABEngine.ABERuntime
 
             LoadDefaultMaterials();
 
+            string commonAssetPath = Game.AssetPath.ToCommonPath();
             if (Game.debug)
             {
-                var images = Directory.EnumerateFiles(Game.AssetPath, "*.*", SearchOption.AllDirectories)
+                var images = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories)
                 .Where(s => s.ToLower().EndsWith(".jpg") || s.ToLower().EndsWith(".png"));
                 foreach (var image in images)
                 {
-                    string localPath = image.Replace(Game.AssetPath, "");
+                    string localPath = image.ToCommonPath().Replace(commonAssetPath, "");
                     hashToFName.Add(localPath.ToHash32(), localPath);
                 }
 
 
-                var materials = Directory.EnumerateFiles(Game.AssetPath, "*.*", SearchOption.AllDirectories)
+                var materials = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories)
                 .Where(s => s.ToLower().EndsWith(".abmat"));
                 foreach (var material in materials)
                 {
-                    string localPath = material.Replace(Game.AssetPath, "");
+                    string localPath = material.ToCommonPath().Replace(commonAssetPath, "");
+                    hashToFName.Add(localPath.ToHash32(), localPath);
+                }
+
+                var prefabs = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories)
+                .Where(s => s.ToLower().EndsWith(".abprefab"));
+                foreach (var prefab in prefabs)
+                {
+                    string localPath = prefab.ToCommonPath().Replace(commonAssetPath, "");
                     hashToFName.Add(localPath.ToHash32(), localPath);
                 }
 

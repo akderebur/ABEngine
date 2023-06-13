@@ -40,7 +40,6 @@ namespace ABEngine.ABERuntime
 
         // Worlds and Systems
         public static World GameWorld;
-        internal static World PrefabWorld;
         public static Box2D.NetStandard.Dynamics.World.World B2DWorld;
         private List<Type> userSystemTypes;
         private protected List<BaseSystem> userSystems;
@@ -183,7 +182,6 @@ namespace ABEngine.ABERuntime
 
             // Once in game lifetime
             Game_Init();
-            PrefabManager.Init(); // For shared prefabs
 
             Scene_Init();
 
@@ -354,15 +352,14 @@ namespace ABEngine.ABERuntime
                     }
                     else if(newScene)
                     {
-                        EntityManager.SetImmediateDestroy(true);
                         newScene = false;
+                        EntityManager.SetImmediateDestroy(true);
                         CoroutineManager.StopAllCoroutines();
+                        PrefabManager.ClearScene();
 
                         // Recreate assets/worlds
                         GameWorld.Destroy();
-                        PrefabWorld.Destroy();
                         CreateWorlds();
-                        PrefabManager.Init();
                         PhysicsManager.ResetPhysics();
 
                         EntityManager.SetImmediateDestroy(false);
@@ -946,9 +943,7 @@ namespace ABEngine.ABERuntime
                 tweener.Pause(true);
             });
 
-            // Prefab container world
-            PrefabWorld = World.Create();
-
+            PrefabManager.SceneInit();
         }
 
         internal static void TriggerCamCheck()
