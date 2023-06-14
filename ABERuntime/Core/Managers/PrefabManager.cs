@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ABEngine.ABERuntime.Components;
 using System.Linq;
 using ABEngine.ABERuntime.ECS;
+using System.Threading.Tasks;
 
 namespace ABEngine.ABERuntime
 {
@@ -70,6 +71,62 @@ namespace ABEngine.ABERuntime
             }
 
             return copy;
+        }
+
+        //public static async Task<Entity> InstantiateAsync(string prefabName)
+        //{
+        //    uint hash = prefabName.ToHash32();
+
+        //    // Check local instance
+        //    if (prefabInstances.TryGetValue(hash, out Transform entityTrans))
+        //        return EntityManager.Instantiate(entityTrans.entity, null);
+
+        //    // Check local prefab
+        //    if (prefabMap.TryGetValue(hash, out PrefabAsset prefabAsset))
+        //    {
+        //        Transform prefabIns = EntityManager.LoadSerializedPrefab(prefabAsset);
+        //        prefabInstances.Add(hash, prefabIns);
+        //        return EntityManager.Instantiate(prefabIns.entity, null);
+        //    }
+
+        //    // Check shared prefab
+        //    if (sharedPrefabMap.TryGetValue(hash, out PrefabAsset sharedPrefabAsset))
+        //    {
+        //        Transform sharedIns = EntityManager.LoadSerializedPrefab(sharedPrefabAsset);
+        //        prefabInstances.Add(hash, sharedIns);
+        //        return EntityManager.Instantiate(sharedIns.entity, null);
+
+        //    }
+
+        //    return default(Entity);
+        //}
+
+        public static async Task<Entity> InstantiateAsync(string prefabName, TaskInfo taskInfo)
+        {
+            uint hash = prefabName.ToHash32();
+
+            // Check local instance
+            if (prefabInstances.TryGetValue(hash, out Transform entityTrans))
+                return await EntityManager.InstantiateAsync(entityTrans.entity, taskInfo, null);
+
+            // Check local prefab
+            if (prefabMap.TryGetValue(hash, out PrefabAsset prefabAsset))
+            {
+                Transform prefabIns = EntityManager.LoadSerializedPrefab(prefabAsset);
+                prefabInstances.Add(hash, prefabIns);
+                return await EntityManager.InstantiateAsync(prefabIns.entity, taskInfo, null);
+            }
+
+            // Check shared prefab
+            if (sharedPrefabMap.TryGetValue(hash, out PrefabAsset sharedPrefabAsset))
+            {
+                Transform sharedIns = EntityManager.LoadSerializedPrefab(sharedPrefabAsset);
+                prefabInstances.Add(hash, sharedIns);
+                return await EntityManager.InstantiateAsync(sharedIns.entity, taskInfo, null);
+
+            }
+
+            return default(Entity);
         }
 
         public static Entity Instantiate(string prefabName)

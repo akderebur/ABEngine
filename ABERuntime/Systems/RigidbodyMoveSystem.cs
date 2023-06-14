@@ -34,13 +34,16 @@ namespace ABEngine.ABERuntime
 
             query.Foreach((Entity rbEnt, ref Rigidbody rb, ref Transform transform) =>
             {
-                if (rb.b2dBody != null)
+                if (rb.b2dBody != null && rb.bodyType != BodyType.Static)
                 {
-
                     if (transform.transformMove)
+                    {
                         rb.SetPosition(transform.worldPosition);
+                    }
 
                     transform.transformMove = false;
+
+                    rb.start = rb.current = rb.target = rb.b2dBody.GetPosition();
                 }
             }
             );

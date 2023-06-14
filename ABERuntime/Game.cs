@@ -415,6 +415,7 @@ namespace ABEngine.ABERuntime
                         notifySystems.Clear();
                         notifyAnySystems.Clear();
 
+                        AssetCache.ClearSceneCache();
                         Scene_Init();
 
                         // User systems _ Reflection
@@ -540,7 +541,7 @@ namespace ABEngine.ABERuntime
                     rbMoveSystem.PreFixedUpdate();
                 }
 
-                rbMoveSystem.ResetSmoothStates();
+                //rbMoveSystem.ResetSmoothStates();
 
                 foreach (var system in userSystems)
                 {
@@ -786,7 +787,7 @@ namespace ABEngine.ABERuntime
             gd = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions(
                 debug: false,
                 swapchainDepthFormat: null,
-                syncToVerticalBlank: false,
+                syncToVerticalBlank: true,
                 resourceBindingModel: ResourceBindingModel.Improved,
                 preferDepthRangeZeroToOne: true,
                 preferStandardClipSpaceYDirection: true,
@@ -1101,7 +1102,6 @@ namespace ABEngine.ABERuntime
 
             // Assets
             var jAssets = scene["Assets"];
-            AssetCache.ClearSceneCache();
             AssetCache.ClearSerializeDependencies();
             AssetCache.DeserializeAssets(jAssets);
 

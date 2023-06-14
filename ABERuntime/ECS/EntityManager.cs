@@ -7,13 +7,23 @@ using System.Linq;
 using System.Collections.Generic;
 using Halak;
 using Box2D.NetStandard.Dynamics.Bodies;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ABEngine.ABERuntime
 {
     public static class EntityManager
     {
+        public static SemaphoreSlim creationSemaphore = new SemaphoreSlim(1);
         private static bool immediateDestroy;
         private static List<EntityDestroyInfo> destroyList = new List<EntityDestroyInfo>();
+
+        static World tmpWorld;
+
+        static EntityManager()
+        {
+            tmpWorld = World.Create("Temp");
+        }
 
         public static void CheckEntityChanges()
         {
@@ -29,12 +39,84 @@ namespace ABEngine.ABERuntime
                     entity.Destroy();
                 }
             }
+
+            creationSemaphore.Wait();
+            if (tmpWorld.EntityCount > 0)
+            {
+                foreach (var entity in tmpWorld.GetEntities())
+                {
+                    TempToWorld(entity);
+                    entity.Destroy();
+                }
+            }
+            creationSemaphore.Release();
         }
+
+        private static void TempToWorld(in Entity entity, Transform parent = null)
+        {
+            Entity copy = Game.GameWorld.CreateEntity();
+            var comps = entity.GetAllComponents();
+            var types = entity.GetAllComponentTypes();
+
+            int transformIndex = Array.IndexOf(types, typeof(Transform));
+            if (transformIndex < 0)
+                return;
+
+            // Set transform
+            var transComp = comps[transformIndex];
+            copy.Set(types[transformIndex], transComp);
+
+            for (int i = 0; i < comps.Length; i++)
+            {
+                if (i == transformIndex)
+                    continue;
+
+                var comp = comps[i];
+                var type = types[i];
+
+                copy.Set(type, comp);
+            }
+
+            copy.transform.SetParent(parent, false);
+
+            CheckSubscribers(in copy, true);
+
+            foreach (var child in entity.transform.children.ToList())
+            {
+                TempToWorld(child.entity, copy.transform);
+            }
+        }
+
+        // Instantiate scene objects async
+        public static async Task<Entity> InstantiateAsync(Entity entity, TaskInfo taskInfo, Transform parent = null)
+        {
+            try
+            {
+                await creationSemaphore.WaitAsync();
+                CoroutineManager.createLockTask = taskInfo;
+                Entity newEnt = InstantiateCore(entity, parent, tmpWorld);
+                return newEnt;
+            }
+            finally
+            {
+
+            }
+        }
+
 
         // Instantiate scene objects
         public static Entity Instantiate(in Entity entity, Transform parent = null)
         {
-            return InstantiateCore(entity, parent);
+            creationSemaphore.Wait();
+            try
+            {
+                Entity newEnt = InstantiateCore(entity, parent, tmpWorld);
+                return newEnt;
+            }
+            finally
+            {
+                creationSemaphore.Release();
+            }
         }
 
         // Instantiate prefabs
@@ -48,9 +130,9 @@ namespace ABEngine.ABERuntime
         //    return default(Entity);
         //}
 
-        internal static Entity InstantiateCore(in Entity entity, Transform parent)
+        internal static Entity InstantiateCore(in Entity entity, Transform parent, World world)
         {
-            Entity copy = Game.GameWorld.CreateEntity();
+            Entity copy = world.CreateEntity();
 
             var comps = entity.GetAllComponents();
             var types = entity.GetAllComponentTypes();
@@ -123,7 +205,7 @@ namespace ABEngine.ABERuntime
 
             foreach (var child in entity.transform.children.ToList())
             {
-                InstantiateCore(child.entity, copy.transform);
+                InstantiateCore(child.entity, copy.transform, world);
             }
 
             return copy;
