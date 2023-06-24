@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
+using Arch.Core;
+using Arch.Core.Extensions;
+using Box2D.NetStandard.Dynamics.World;
 using Veldrid;
 
 namespace ABEngine.ABERuntime.Debug
@@ -65,15 +68,12 @@ namespace ABEngine.ABERuntime.Debug
                 clickPos = Input.GetMousePosition();
                 lastPos = clickPos;
 
-                var query = Game.GameWorld.CreateQuery().Has<AABB>().Has<Transform>();
-
-                foreach (var ent in query.GetEntities())
+                var query = new QueryDescription().WithAll<AABB, Transform>();
+                Game.GameWorld.Query(in query, (ref Transform bboxTrans, ref AABB bbox) =>
                 {
-                    Transform bboxTrans = ent.Get<Transform>();
-                    AABB bbox = ent.Get<AABB>();
-
                     if (bbox.CheckCollisionMouse(bboxTrans, Input.GetMousePosition()))
                     {
+                        Console.WriteLine("aa");
                         MappedResourceView<LinePoint> writemap = gd.Map<LinePoint>(linePointsBuffer, MapMode.Write);
 
                         Vector4 bboxPoints = bbox.GetMinMax(bboxTrans);
@@ -91,9 +91,9 @@ namespace ABEngine.ABERuntime.Debug
                         selectedSize = bbox.size;
                         selectedCenter = bbox.center;
 
-                        break;
+                        return;
                     }
-                }
+                });
             }
             else if(Input.GetMouseButtonDown(MouseButton.Right))
             {
@@ -103,7 +103,7 @@ namespace ABEngine.ABERuntime.Debug
             }
             else if(lastTrans != null)
             {
-                if (lastTrans.entity.IsValid() && lastTrans.entity.Has<AABB>())
+                if (lastTrans.entity != Entity.Null && lastTrans.entity.Has<AABB>())
                 {
                     AABB bbox = lastTrans.entity.Get<AABB>();
 

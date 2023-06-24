@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Reflection;
 using ABEngine.ABERuntime;
-using ABEngine.ABERuntime.ECS;
 using Veldrid;
 using Veldrid.StartupUtilities;
 using System.Linq;
@@ -19,6 +18,8 @@ using ABEngine.ABERuntime.Components;
 using ABEditor.Debug;
 using ABEngine.ABEditor.ImGuiPlugins;
 using Halak;
+using Arch.Core;
+using Arch.Core.Extensions;
 
 namespace ABEngine.ABEditor
 {
@@ -27,6 +28,8 @@ namespace ABEngine.ABEditor
         System.Runtime.Loader.AssemblyLoadContext assemblyCtx;
         Assembly GameAssembly;
         FileSystemWatcher watcher;
+
+        public static Entity selectedEntity = Entity.Null;
 
         // Imgui
         static ImGuiRenderer imguiRenderer;
@@ -135,6 +138,8 @@ namespace ABEngine.ABEditor
             ResetWorld();
             PhysicsManager.ResetPhysics();
             GraphicsManager.InitSettings();
+
+            EntityManager.Init();
 
             // Graphics
             base.SetupGraphics(windowName);
@@ -412,8 +417,8 @@ namespace ABEngine.ABEditor
                     }
                     else if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.BackSpace))
                     {
-                        var ent = GameWorld.GetData<Entity>();
-                        if (ent.IsValid())
+                        var ent = Editor.selectedEntity;
+                        if (ent != Entity.Null)
                             DeleteRecursive(ent.Get<Transform>());
                     }
 
@@ -510,9 +515,9 @@ namespace ABEngine.ABEditor
 
             if(GameWorld != null)
             {
-                var query = GameWorld.CreateQuery().Has<Sprite>().Has<Transform>();
+                var query = new QueryDescription().WithAll<Sprite, Transform>();
 
-                query.Foreach((Entity rbEnt, ref Sprite sprite, ref Transform transform) =>
+                Game.GameWorld.Query(in query, (ref Transform transform) =>
                 {
                     if (transform.name.StartsWith("Line_"))
                         transform.localScale = new Vector3(1f, zoomFactor * canvasWidth / 12.8f , 1f);
@@ -526,15 +531,16 @@ namespace ABEngine.ABEditor
             // Active Cam Update
             if (_checkCamUpdate)
             {
-                var camQ = GameWorld.CreateQuery().Has<Camera>().Has<Transform>();
-                if (camQ.EntityCount > 0)
+                activeCam = null;
+                var camQ = new QueryDescription().WithAll<Camera, Transform>();
+                GameWorld.Query(in camQ, (in Entity camEnt) =>
                 {
-                    var camEnt = camQ.GetEntities().FirstOrDefault(c => c.Get<Camera>().isActive);
-                    if (camEnt.IsValid())
+                    if (camEnt != Entity.Null)
+                    {
                         activeCam = camEnt.Get<Transform>();
-                }
-                else
-                    activeCam = null;
+                        return;
+                    }
+                });
                 _checkCamUpdate = false;
             }
 
@@ -572,8 +578,8 @@ namespace ABEngine.ABEditor
         protected override string SaveScene()
         {
             // Reset tilemap render layers
-            var query = GameWorld.CreateQuery().Has<Tilemap>().Has<Transform>();
-            query.Foreach((ref Tilemap tilemap, ref Transform trans) =>
+            var query = new QueryDescription().WithAll<Tilemap, Transform>();
+            Game.GameWorld.Query(in query, (ref Tilemap tilemap, ref Transform trans) =>
             {
                 tilemap.ResetRenderLayers();
             }
@@ -582,7 +588,7 @@ namespace ABEngine.ABEditor
             string sceneData = base.SaveScene();
 
             // Recover tilemap render layers
-            query.Foreach((ref Tilemap tilemap, ref Transform trans) =>
+            Game.GameWorld.Query(in query, (ref Tilemap tilemap, ref Transform trans) =>
             {
                 tilemap.RecoverRenderLayers();
             }
@@ -593,7 +599,8 @@ namespace ABEngine.ABEditor
 
         void ResetWorld()
         {
-            GameWorld.Destroy();
+            if(GameWorld != null)
+                World.Destroy(GameWorld);
             PrefabManager.ClearScene();
 
             if (isPlaying)
@@ -611,46 +618,67 @@ namespace ABEngine.ABEditor
         {
             // ECS World
             GameWorld = World.Create();
-            GameWorld.OnSet((Entity entity, ref Transform newTrans) => newTrans.SetEntity(entity));
-            GameWorld.OnSet((Entity entity, ref Rigidbody newRb) => newRb.SetEntity(entity));
-            GameWorld.OnSet((Entity entity, ref Sprite sprite) =>
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref Transform transform) =>
             {
-                sprite.SetTransform(entity.transform);
-                if(!sprite.manualBatching)
+                transform.SetEntity(entity);
+            });
+
+
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref Rigidbody rb) =>
+            {
+                if (rb == null || rb.transform != null)
+                    return;
+
+                rb.SetEntity(entity.Get<Transform>());
+            });
+
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref Sprite sprite) =>
+            {
+                if (sprite == null || sprite.transform != null)
+                    return;
+
+                sprite.SetTransform(entity.Get<Transform>());
+                if (!sprite.manualBatching)
                     Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
-            GameWorld.OnSet((Entity entity, ref Tilemap tilemap) =>
+
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref Tilemap tilemap) =>
             {
-                tilemap.SetTransform(entity.transform);
+                tilemap.SetTransform(entity.Get<Transform>());
             });
-            GameWorld.OnSet((Entity entity, ref ParticleModule pm) =>
-            {
-                pm.Init(entity.transform);
-            });
-            GameWorld.OnSet((Entity entity, ref Camera newCam) => TriggerCamCheck());
-            GameWorld.OnSet((Entity entity, ref AABB newBB) =>
+
+
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref ParticleModule pm) => pm.Init(entity.Get<Transform>()));
+
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref Camera cam) => TriggerCamCheck());
+
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref AABB newBB) =>
             {
                 if (!newBB.sizeSet && entity.Has<Sprite>())
                 {
                     var spriteSize = entity.Get<Sprite>().size;
                     newBB.size = spriteSize;
-                    //newBB.width = spriteSize.X;
-                    //newBB.height = spriteSize.Y;
                     newBB.sizeSet = true;
                 }
             });
-            GameWorld.OnRemove((Sprite sprite) => Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID));
 
-            GameWorld.OnEnable((Entity entity, Sprite sprite) =>
+            GameWorld.SubscribeComponentRemoved((in Entity entity, ref Sprite sprite) =>
             {
-                Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+                if (!sprite.manualBatching)
+                    Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 
+            GameWorld.SubscribeComponentRemoved((in Entity entity, ref ParticleModule pm) => pm.Stop());
+            //GameWorld.OnEnable((Entity entity, Sprite sprite) =>
+            //{
+            //    Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+            //});
 
-            GameWorld.OnDisable((Entity entity, Sprite sprite) =>
-            {
-                Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
-            });
+
+            //GameWorld.OnDisable((Entity entity, Sprite sprite) =>
+            //{
+            //    Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+            //});
 
             PrefabManager.SceneInit();
         }

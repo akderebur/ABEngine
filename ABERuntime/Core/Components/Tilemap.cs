@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Physics;
+using Arch.Core;
+using Arch.Core.Extensions;
 using Halak;
 using Veldrid;
 
@@ -71,7 +72,7 @@ namespace ABEngine.ABERuntime.Components
 
             if (exTrans == null)
             {
-                chunkTrans = EntityManager.CreateEntity("Chunk", "").transform;
+                chunkTrans = EntityManager.CreateEntity("Chunk", "").Get<Transform>();
                 chunkTrans.parent = tilemap.transform;
             }
             else
@@ -935,7 +936,13 @@ namespace ABEngine.ABERuntime.Components
                         continue;
 
                     Guid chunkGuid = Guid.Parse(jChunk["ChunkGUID"]);
-                    Transform chunkTrans = Game.GameWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(chunkGuid)).transform;
+
+                    var query = new QueryDescription().WithAll<Transform>();
+                    var entities = new List<Entity>();
+                    Game.GameWorld.GetEntities(query, entities);
+
+                    Entity chunkEnt = entities.FirstOrDefault(e => e.Get<Guid>().Equals(chunkGuid));
+                    Transform chunkTrans = chunkEnt.Get<Transform>();
 
                     Vector2 curPoint = Vector2.Zero;
                     List<Vector2> colliderPoints = new List<Vector2>();
@@ -964,8 +971,9 @@ namespace ABEngine.ABERuntime.Components
 
                     PolygonCollider collider = new PolygonCollider(colliderPoints);
                     chunkTrans.tag = jChunk["Tag"];
-                    chunkTrans.entity.Set<Rigidbody>(rb);
-                    chunkTrans.entity.Set<PolygonCollider>(collider);
+                    //chunkEnt.Add<Rigidbody>(rb);
+                    Game.GameWorld.Add(chunkEnt, rb);
+                    chunkEnt.Add<PolygonCollider>(collider);
                     chunkTrans.isStatic = true;
 
 
@@ -979,7 +987,12 @@ namespace ABEngine.ABERuntime.Components
                     if (!string.IsNullOrEmpty(tile.transformGuid))
                     {
                         var transGuid = Guid.Parse(tile.transformGuid);
-                        Transform trans = Game.GameWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(transGuid)).transform;
+
+                        var query = new QueryDescription().WithAll<Transform>();
+                        var entities = new List<Entity>();
+                        Game.GameWorld.GetEntities(query, entities);
+
+                        Transform trans = entities.FirstOrDefault(e => e.Get<Guid>().Equals(transGuid)).Get<Transform>();
                         if (trans != null)
                         {
                             tile.spriteTrans = trans;
@@ -993,7 +1006,12 @@ namespace ABEngine.ABERuntime.Components
                     Vector2 tileSize = jChunk["TileSize"];
                     float layer = jChunk["Layer"];
                     Guid chunkGuid = Guid.Parse(jChunk["ChunkGUID"]);
-                    Transform trans = Game.GameWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(chunkGuid)).transform;
+
+                    var query = new QueryDescription().WithAll<Transform>();
+                    var entities = new List<Entity>();
+                    Game.GameWorld.GetEntities(query, entities);
+
+                    Transform trans = entities.FirstOrDefault(e => e.Get<Guid>().Equals(chunkGuid)).Get<Transform>();
 
                     CollisionChunk chunk = new CollisionChunk(this, tileSize, layer, trans);
                     chunk.collisionActive = jChunk["CollisionActive"];

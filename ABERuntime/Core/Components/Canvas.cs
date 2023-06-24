@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Numerics;
 using Halak;
-using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABERuntime.Components
 {

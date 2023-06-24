@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Arch.Core;
 
 namespace ABEngine.ABERuntime.Tweening
 {
@@ -9,12 +10,11 @@ namespace ABEngine.ABERuntime.Tweening
 
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = Game.GameWorld.CreateQuery().Has<Tweener>();
-            query.Foreach((ref Tweener tweener) =>
+            var query = new QueryDescription().WithAll<Tweener>();
+            Game.GameWorld.Query(in query, (ref Tweener tweener) =>
             {
                 tweener.UpdateTime(gameTime);
-            }
-            );
+            });
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using ABEngine.ABERuntime;
-using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABEUI
 {

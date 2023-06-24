@@ -2,6 +2,7 @@
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Animation.StateMatch;
+using Arch.Core;
 
 namespace ABEngine.ABERuntime
 {
@@ -9,8 +10,8 @@ namespace ABEngine.ABERuntime
     {
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = Game.GameWorld.CreateQuery().Has<StateMatchAnimator>().Has<Sprite>();
-            query.Foreach((ref StateMatchAnimator anim, ref Sprite sprite) =>
+            var query = new QueryDescription().WithAll<StateMatchAnimator, Sprite>();
+            Game.GameWorld.Query(in query, (ref StateMatchAnimator anim, ref Sprite sprite) =>
             {
                 bool stateChanged = anim.CheckStates();
                 anim.CheckTriggers(deltaTime);
@@ -27,7 +28,7 @@ namespace ABEngine.ABERuntime
                 }
 
                 curState.normalizedTime = (gameTime - curState.loopStartTime) / curState.length;
-                if(curState.normalizedTime >= 1f && !curState.looping && curState.loopStartTime != 0)
+                if (curState.normalizedTime >= 1f && !curState.looping && curState.loopStartTime != 0)
                 {
                     curState.completed = true;
                     anim.AnimationComplete(curMatch);
@@ -58,8 +59,7 @@ namespace ABEngine.ABERuntime
 
                     sprite.SetUVPosScale(curClip.uvPoses[curState.curFrame], curClip.uvScales[curState.curFrame]);
                 }
-            }
-            );
+            });
         }
     }
 }

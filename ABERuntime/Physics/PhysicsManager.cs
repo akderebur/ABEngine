@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ABEngine.ABERuntime.Components;
-using ABEngine.ABERuntime.ECS;
-using ABEngine.ABERuntime.ECS.Internal;
+using Arch.Core.Extensions;
+using Arch.Core.Utils;
 using Box2D.NetStandard.Dynamics.Bodies;
 
 namespace ABEngine.ABERuntime.Physics
@@ -60,7 +60,7 @@ namespace ABEngine.ABERuntime.Physics
             while (createQueue.Count > 0)
             {
                 var rb = createQueue.Dequeue();
-                Game.b2dInitSystem.AddRBRuntime(rb.entity);
+                Game.b2dInitSystem.AddRBRuntime(rb.transform.entity);
             }
         }
 
@@ -80,12 +80,12 @@ namespace ABEngine.ABERuntime.Physics
 
         internal static void RegisterCollision(CollisionData collision)
         {
-            TypeSignature typeSig1 = collision.rigidbodyA.entity.archetype.GetTypeSignature();
-            TypeSignature typeSig2 = collision.rigidbodyB.entity.archetype.GetTypeSignature();
+            BitSet typeSig1 = collision.rigidbodyA.transform.entity.GetArchetype().BitSet;
+            BitSet typeSig2 = collision.rigidbodyB.transform.entity.GetArchetype().BitSet;
 
             foreach (var notifyKP in Game.collisionAnySystems)
             {
-                if (typeSig1.HasAny(notifyKP.Key))
+                if (notifyKP.Key.Any(typeSig1))
                 {
                     foreach (var system in notifyKP.Value)
                     {
@@ -93,7 +93,7 @@ namespace ABEngine.ABERuntime.Physics
                     }
                 }
 
-                if(typeSig2.HasAny(notifyKP.Key))
+                if(notifyKP.Key.Any(typeSig2))
                 {
                     foreach (var system in notifyKP.Value)
                     {

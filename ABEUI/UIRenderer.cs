@@ -4,13 +4,14 @@ using ABEngine.ABERuntime;
 using ImGuiNET;
 using Veldrid;
 using System.Numerics;
-using ABEngine.ABERuntime.ECS;
 using System.Linq;
 using System.Collections;
 using System.Reflection;
 using ABEngine.ABERuntime.Components;
 using System.Runtime.InteropServices;
 using System.IO;
+using Arch.Core;
+using Arch.Core.Extensions;
 
 namespace ABEngine.ABEUI
 {
@@ -39,7 +40,7 @@ namespace ABEngine.ABEUI
 
             if (uiComp != null)
             {
-                uiComp.transform = entity.transform;
+                uiComp.transform = entity.Get<Transform>();
                 if (entity.Has<UIAnchor>())
                     uiComp.anchor = entity.Get<UIAnchor>();
                 uiComponents.Add(uiComp);

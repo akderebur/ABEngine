@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Numerics;
 using Box2D.NetStandard.Dynamics.Bodies;
 using Halak;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Physics;
+using Arch.Core;
 
 namespace ABEngine.ABERuntime.Components
 {
     public class Rigidbody : JSerializable
     {
-        public Entity entity { get; private set; }
+        public Transform transform { get; private set; }
         public BodyType bodyType;
         public float mass { get; set; }
         public float density { get; set; }
@@ -98,9 +98,9 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
-        internal void SetEntity(Entity ent)
+        internal void SetEntity(Transform transform)
         {
-            this.entity = ent;
+            this.transform = transform;
         }
 
         public void SetPosition(Vector3 position)

@@ -1,10 +1,11 @@
 ﻿using System;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Animation;
 using System.Security.Principal;
+using Arch.Core;
+using Arch.Core.Extensions;
 
 namespace ABEngine.ABEditor
 {
@@ -21,8 +22,8 @@ namespace ABEngine.ABEditor
 
         public static void AddSprite(in Entity entity)
         {
-            Sprite sprite = new Sprite(squareTex);
-            entity.Set(sprite);
+            Sprite sprite = new Sprite();
+            entity.Add<Sprite>(sprite);
             //sprite.SetDrawable();
             //entity.Set(sprite);
         }
@@ -36,29 +37,29 @@ namespace ABEngine.ABEditor
                 Vector2 spriteSize = sprite.GetSize();
                 aabb.size = spriteSize;
             }
-            entity.Set(aabb);
+            entity.Add(aabb);
         }
 
         public static void AddRigidbody(in Entity entity)
         {
-            entity.Set(new Rigidbody());
+            entity.Add(new Rigidbody());
         }
 
         public static void AddAnimator(in Entity entity)
         {
-            entity.Set(new Animator());
+            entity.Add(new Animator());
         }
 
         public static void AddParticleModule(in Entity entity)
         {
-            entity.transform.tag = "NoChild";
-            entity.Set(new ParticleModule());
+            entity.Get<Transform>().tag = "NoChild";
+            entity.Add(new ParticleModule());
         }
 
         public static void AddSpriteAnimation(in Entity entity)
         {
             if (entity.Has<Sprite>())
-                entity.Set(new SpriteAnimation(entity.Get<Sprite>()));
+                entity.Add(new SpriteAnimation(entity.Get<Sprite>()));
         }
     }
 }

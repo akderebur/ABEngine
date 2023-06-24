@@ -9,9 +9,7 @@ using ABEngine.ABEditor.Assets;
 using ABEngine.ABEditor.Assets.Meta;
 using System.IO;
 using Newtonsoft.Json;
-using ABEngine.ABERuntime.ECS.Internal;
 using Veldrid;
-using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABEditor.ComponentDrawers
 {

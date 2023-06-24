@@ -4,7 +4,6 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using ABEngine.ABERuntime.Components;
-using ABEngine.ABERuntime.ECS;
 using Veldrid;
 
 namespace ABEngine.ABERuntime.Rendering
@@ -184,10 +183,10 @@ namespace ABEngine.ABERuntime.Rendering
             // Write to GPU buffer
             MappedResourceView<QuadVertex> writemap = _gd.Map<QuadVertex>(vertexBuffer, MapMode.Write);
 
-            //sprites = sprites.OrderBy(sp => sp.transform.worldPosition.Z).ToList();
-            //maxZ = sprites.Last().transform.worldPosition.Z;
+            var sorted = sprites.Where(sp => sp.transform.enabled).OrderBy(sp => sp.transform.worldPosition.Z).ToList();
+            maxZ = sprites.Last().transform.worldPosition.Z;
             int index = 0;
-            for (int i = 0; i < sprites.Count; i++)
+            for (int i = 0; i < sorted.Count; i++)
             {
                 SpriteTransformPair spritePair = sprites[i];
                 Transform spriteTrans = spritePair.transform;
@@ -202,6 +201,19 @@ namespace ABEngine.ABERuntime.Rendering
                                            spriteData.uvScale,
                                            spriteData.pivot);
             }
+
+            for (int i = 0; i < sprites.Count - sorted.Count; i++)
+            {
+                writemap[index++] = new QuadVertex(Vector3.Zero,
+                                         Vector2.Zero,
+                                         Vector3.Zero,
+                                         Vector4.Zero,
+                                         0f,
+                                         Vector2.Zero,
+                                         Vector2.Zero,
+                                         Vector2.Zero);
+            }
+
 
             //foreach (var sprite in sprites)
             //{

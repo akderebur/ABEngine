@@ -4,8 +4,11 @@ using Halak;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using System.Reflection;
-using ABEngine.ABERuntime.ECS;
 using System.Linq;
+using Arch.Core.Extensions;
+using Arch.Core;
+using Arch.Core.Utils;
+using System.Collections.Generic;
 
 namespace ABEngine.ABERuntime
 {
@@ -64,8 +67,12 @@ namespace ABEngine.ABERuntime
                     if (string.IsNullOrEmpty(transGuid))
                         continue;
 
-                    var transEnt = Game.GameWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(Guid.Parse(transGuid)));
-                    if (transEnt.IsValid())
+                    var query = new QueryDescription().WithAll<Transform>();
+                    var entities = new List<Entity>();
+                    Game.GameWorld.GetEntities(query, entities);
+
+                    var transEnt = entities.FirstOrDefault(e => e.Get<Guid>().Equals(Guid.Parse(transGuid)));
+                    if (transEnt != Entity.Null)
                         prop.SetValue(obj, transEnt.Get<Transform>());
                 }
             }

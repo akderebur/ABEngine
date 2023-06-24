@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
-using ABEngine.ABERuntime.ECS;
+using Arch.Core.Extensions;
 
 namespace ABEngine.ABERuntime.Tweening
 {
 	public static class TweenExtensions
 	{
-		private static Tweener GetTweener(Transform transform)
-		{
-            Tweener tweener = null;
-            if (!transform.entity.TryGet<Tweener>(out tweener))
-            {
-                tweener = new Tweener();
-                transform.entity.Set<Tweener>(tweener);
-            }
+        private static Tweener GetTweener(Transform transform)
+        {
+            if (transform.entity.Has<Tweener>())
+                return transform.entity.Get<Tweener>();
 
-			return tweener;
+            Tweener tweener = new Tweener();
+            transform.entity.Add<Tweener>(tweener);
+
+            return tweener;
         }
 
 		public static Tween TweenPosition(this Transform transform, Vector3 endPos, float duration)

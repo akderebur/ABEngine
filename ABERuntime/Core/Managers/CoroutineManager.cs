@@ -10,7 +10,7 @@ namespace ABEngine.ABERuntime
         static List<TaskInfo> taskInfos = new List<TaskInfo>();
         internal static TaskInfo createLockTask = null;
 
-        public static void StartCoroutine(string taskName, Func<TaskInfo, Task> taskFunc)
+        public static void StartCoroutine(string taskName, Func<Task> taskFunc)
         {
             CancellationTokenSource cts = new CancellationTokenSource();
             var taskInfo = new TaskInfo()
@@ -23,7 +23,7 @@ namespace ABEngine.ABERuntime
             {
                 try
                 {
-                    await taskFunc(taskInfo);
+                    await taskFunc();
                 }
                 catch (OperationCanceledException)
                 {

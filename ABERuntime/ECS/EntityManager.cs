@@ -1,7 +1,6 @@
 ﻿using System;
 using Microsoft.DotNet.PlatformAbstractions;
 using System.Numerics;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Components;
 using System.Linq;
 using System.Collections.Generic;
@@ -9,54 +8,70 @@ using Halak;
 using Box2D.NetStandard.Dynamics.Bodies;
 using System.Threading;
 using System.Threading.Tasks;
+using Arch.Core;
+using Arch.Core.Extensions;
+using System.Collections;
+using Box2D.NetStandard.Common;
+using Arch.CommandBuffer;
+using Arch.Core.Utils;
+using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABERuntime
 {
     public static class EntityManager
     {
         public static SemaphoreSlim creationSemaphore = new SemaphoreSlim(1);
-        private static bool immediateDestroy;
-        private static List<EntityDestroyInfo> destroyList = new List<EntityDestroyInfo>();
+        public static SemaphoreSlim frameSemaphore = new SemaphoreSlim(1);
 
-        static World tmpWorld;
+        private static bool immediateDestroy;
+        //private static List<EntityDestroyInfo> destroyList = new List<EntityDestroyInfo>();
+        private static Dictionary<int, EntityDestroyInfo> destroyMap = new Dictionary<int, EntityDestroyInfo>();
+
+        public static CommandBuffer cmdBuffer;
 
         static EntityManager()
         {
-            tmpWorld = World.Create("Temp");
+        }
+
+        public static void Init()
+        {
+            cmdBuffer = new CommandBuffer(Game.GameWorld);
+
+            frameSemaphore.Wait();
         }
 
         public static void CheckEntityChanges()
         {
-            for (int i = 0; i < destroyList.Count; i++)
+            foreach (var entID in destroyMap.Keys)
             {
-                var destroyInfo = destroyList[i];
+                var destroyInfo = destroyMap[entID];
                 bool canDestroy = destroyInfo.rb == null ? true : destroyInfo.rb.destroyed;
 
-                if(canDestroy)
+                if (canDestroy)
                 {
                     var entity = destroyInfo.entity;
                     CheckSubscribers(in entity, false);
-                    entity.Destroy();
+                    Game.GameWorld.Destroy(entity);
+                    destroyMap.Remove(entID);
                 }
             }
 
             creationSemaphore.Wait();
-            if (tmpWorld.EntityCount > 0)
+            if (cmdBuffer.Size > 0)
             {
-                foreach (var entity in tmpWorld.GetEntities())
-                {
-                    TempToWorld(entity);
-                    entity.Destroy();
-                }
+                cmdBuffer.Playback();
             }
             creationSemaphore.Release();
+
+            frameSemaphore.Release();
+            frameSemaphore.Wait();
         }
 
         private static void TempToWorld(in Entity entity, Transform parent = null)
         {
-            Entity copy = Game.GameWorld.CreateEntity();
+            Entity copy = Game.GameWorld.Create();
             var comps = entity.GetAllComponents();
-            var types = entity.GetAllComponentTypes();
+            var types = entity.GetComponentTypes();
 
             int transformIndex = Array.IndexOf(types, typeof(Transform));
             if (transformIndex < 0)
@@ -77,29 +92,31 @@ namespace ABEngine.ABERuntime
                 copy.Set(type, comp);
             }
 
-            copy.transform.SetParent(parent, false);
+            copy.Get<Transform>().SetParent(parent, false);
 
             CheckSubscribers(in copy, true);
 
-            foreach (var child in entity.transform.children.ToList())
+            foreach (var child in entity.Get<Transform>().children.ToList())
             {
-                TempToWorld(child.entity, copy.transform);
+                TempToWorld(child.entity, copy.Get<Transform>());
             }
         }
 
         // Instantiate scene objects async
-        public static async Task<Entity> InstantiateAsync(Entity entity, TaskInfo taskInfo, Transform parent = null)
+        public static async Task<AsyncEntity> InstantiateAsync(Entity entity, Transform parent = null)
         {
+            bool locked = false;
             try
             {
                 await creationSemaphore.WaitAsync();
-                CoroutineManager.createLockTask = taskInfo;
-                Entity newEnt = InstantiateCore(entity, parent, tmpWorld);
-                return newEnt;
+                locked = true;
+                return InstantiateBuffer(entity, parent);
+                //return new AsyncEntity(newEnt);
             }
             finally
             {
-
+                if(locked)
+                    creationSemaphore.Release();
             }
         }
 
@@ -107,16 +124,15 @@ namespace ABEngine.ABERuntime
         // Instantiate scene objects
         public static Entity Instantiate(in Entity entity, Transform parent = null)
         {
-            creationSemaphore.Wait();
-            try
-            {
-                Entity newEnt = InstantiateCore(entity, parent, tmpWorld);
+            //creationSemaphore.Wait();
+           
+                Entity newEnt = InstantiateCore(entity, parent, Game.GameWorld);
                 return newEnt;
-            }
-            finally
-            {
-                creationSemaphore.Release();
-            }
+            
+            //finally
+            //{
+            //    creationSemaphore.Release();
+            //}
         }
 
         // Instantiate prefabs
@@ -130,20 +146,26 @@ namespace ABEngine.ABERuntime
         //    return default(Entity);
         //}
 
-        internal static Entity InstantiateCore(in Entity entity, Transform parent, World world)
+        internal static AsyncEntity InstantiateBuffer(in Entity entity, Transform parent)
         {
-            Entity copy = world.CreateEntity();
 
             var comps = entity.GetAllComponents();
-            var types = entity.GetAllComponentTypes();
+            var types = entity.GetComponentTypes();
+
+            Dictionary<Type, object> compCopyList = new Dictionary<Type, object>();
 
             int transformIndex = Array.IndexOf(types, typeof(Transform));
             if (transformIndex < 0)
-                return default(Entity);
+                return new AsyncEntity(default(Entity), compCopyList);
 
             // Set transform
-            var transComp = ((JSerializable)comps[transformIndex]).GetCopy();
-            copy.Set(types[transformIndex], transComp);
+            Transform transComp = ((Transform)comps[transformIndex]).GetCopy() as Transform;
+            Entity copy = Game.GameWorld.Create(transComp);
+            compCopyList.Add(typeof(Transform), transComp);
+
+
+            //AddComponentToBuffer(typeof(Transform), copy, transComp);
+            //cmdBuffer.Add(in copy, transComp);
 
             Sprite newSprite = null;
             Rigidbody newRb = null;
@@ -155,12 +177,13 @@ namespace ABEngine.ABERuntime
                     continue;
 
                 var comp = comps[i];
-                var type = types[i];
+                var type = types[i].Type;
 
                 if (typeof(JSerializable).IsAssignableFrom(type))
                 {
-                    var newComp = ((JSerializable)comp).GetCopy();
-                    copy.Set(type, newComp);
+                    var newComp = GetCopiedComponent(type, (JSerializable)comp);
+                    AddComponentToBuffer(type, copy, newComp);
+                    compCopyList.Add(type, newComp);
 
                     if (type == typeof(Sprite))
                         newSprite = (Sprite)newComp;
@@ -176,36 +199,107 @@ namespace ABEngine.ABERuntime
                     var newComp = ABComponent.Deserialize(serialized.Serialize(), type);
                     ABComponent.SetReferences(((ABComponent)newComp));
 
-                    copy.Set(type, newComp);
+                    AddComponentToBuffer(type, copy, newComp);
+                    compCopyList.Add(type, newComp);
                 }
                 else if (type == typeof(Guid))
                 {
-                    copy.Set(type, Guid.NewGuid());
+                    var guid = Guid.NewGuid();
+                    cmdBuffer.Add<Guid>(in copy, guid);
+                    compCopyList.Add(typeof(Guid), guid);
                 }
                 else if (type.IsValueType || type == typeof(string))
                 {
-                    copy.Set(type, comp);
+                    AddComponentToBuffer(type, copy, comp);
+                    compCopyList.Add(type, comp);
                 }
             }
 
-            copy.transform.SetParent(parent, false);
+            transComp.SetParent(parent, false);
 
-
-            if (newRb != null)
-                Game.b2dInitSystem.AddRBRuntime(copy);
-
-            if (entity.enabled)
+            foreach (var child in transComp.children.ToList())
             {
-                if (newSprite != null)
-                    Game.spriteBatchSystem.UpdateSpriteBatch(newSprite, newSprite.renderLayerIndex, newSprite.texture, newSprite.sharedMaterial.instanceID);
+                InstantiateBuffer(child.entity, transComp);
             }
+
+            return new AsyncEntity(copy, compCopyList);
+        }
+
+        internal static Entity InstantiateCore(in Entity entity, Transform parent, World world)
+        {
+            Entity copy = world.Create();
+
+            var comps = entity.GetAllComponents();
+            var types = entity.GetComponentTypes();
+
+            int transformIndex = Array.IndexOf(types, typeof(Transform));
+            if (transformIndex < 0)
+                return default(Entity);
+
+            // Set transform
+            var transComp = GetCopiedComponent(typeof(Transform), (JSerializable)comps[transformIndex]);
+            copy.Add(transComp);
+
+            Sprite newSprite = null;
+            Rigidbody newRb = null;
+            ParticleModule newPm = null;
+
+            for (int i = 0; i < comps.Length; i++)
+            {
+                if (i == transformIndex)
+                    continue;
+
+                var comp = comps[i];
+                var type = types[i].Type;
+
+                if (typeof(JSerializable).IsAssignableFrom(type))
+                {
+                    var newComp = GetCopiedComponent(type, (JSerializable)comp);
+                    copy.Add(newComp);
+
+                    if (type == typeof(Sprite))
+                        newSprite = (Sprite)newComp;
+                    else if (type == typeof(Rigidbody))
+                        newRb = (Rigidbody)newComp;
+                    else if (type == typeof(ParticleModule))
+                        newPm = (ParticleModule)newComp;
+
+                }
+                else if (type.IsSubclassOf(typeof(ABComponent)))
+                {
+                    var serialized = ABComponent.Serialize((ABComponent)comps[i]);
+                    var newComp = ABComponent.Deserialize(serialized.Serialize(), type);
+                    ABComponent.SetReferences(((ABComponent)newComp));
+
+                    copy.Add(newComp);
+                }
+                else if (type == typeof(Guid))
+                {
+                    copy.Add(Guid.NewGuid());
+                }
+                else if (type.IsValueType || type == typeof(string))
+                {
+                    copy.Add(comp);
+                }
+            }
+
+            copy.Get<Transform>().SetParent(parent, false);
+
+
+            //if (newRb != null)
+            //    Game.b2dInitSystem.AddRBRuntime(copy);
+
+
+            //if (newSprite != null)
+            //    Game.spriteBatchSystem.UpdateSpriteBatch(newSprite, newSprite.renderLayerIndex, newSprite.texture, newSprite.sharedMaterial.instanceID);
+
 
             CheckSubscribers(in copy, true);
 
 
-            foreach (var child in entity.transform.children.ToList())
+            foreach (var child in entity.Get<Transform>().children.ToList())
             {
-                InstantiateCore(child.entity, copy.transform, world);
+                InstantiateCore(child.entity, copy.Get<Transform>(), world);
             }
 
             return copy;
@@ -225,7 +319,7 @@ namespace ABEngine.ABERuntime
             {
                 string entName = entity["Name"];
                 string guid = entity["GUID"];
-                Entity newEnt = PrefabManager.PrefabWorld.CreateEntity(entName, Guid.Parse(guid));
+                Entity newEnt = PrefabManager.PrefabWorld.Create(entName, Guid.Parse(guid));
 
                 foreach (var component in entity["Components"].Array())
                 {
@@ -239,18 +333,17 @@ namespace ABEngine.ABERuntime
 
                     if (typeof(JSerializable).IsAssignableFrom(type))
                     {
-                        var serializedComponent = (JSerializable)Activator.CreateInstance(type);
-                        serializedComponent.Deserialize(component.ToString());
-                        newEnt.Set(type, serializedComponent);
+                        var comp = DeserializeComponent(type, component.ToString());
+                        newEnt.Add(comp);
                     }
                     else if (type.IsSubclassOf(typeof(ABComponent)))
                     {
                         var comp = ABComponent.Deserialize(component.ToString(), type);
-                        newEnt.Set(type, comp);
+                        newEnt.Add(comp);
                     }
                 }
 
-                newEntities.Add(newEnt.transform);
+                newEntities.Add(newEnt.Get<Transform>());
             }
 
             var rootEnt = newEntities.First();
@@ -265,7 +358,13 @@ namespace ABEngine.ABERuntime
                 if (!string.IsNullOrEmpty(entity.parentGuidStr))
                 {
                     Guid parGuid = Guid.Parse(entity.parentGuidStr);
-                    entity.SetParent(PrefabManager.PrefabWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(parGuid)).Get<Transform>(), false);
+
+                    var query = new QueryDescription().WithAll<Transform>();
+                    var entities = new List<Entity>();
+                    PrefabManager.PrefabWorld.GetEntities(query, entities);
+
+
+                    entity.SetParent(entities.FirstOrDefault(e => e.Get<Guid>().Equals(parGuid)).Get<Transform>(), false);
                 }
             }
 
@@ -278,10 +377,10 @@ namespace ABEngine.ABERuntime
             if (Game.notifySystems == null)
                 return;
 
-            TypeSignature typeSig = ent.archetype.GetTypeSignature();
+            var archBitSet = ent.GetArchetype().BitSet;
             foreach (var notifyKP in Game.notifySystems)
             {
-                if (typeSig.HasAll(notifyKP.Key))
+                if (notifyKP.Key.All(archBitSet))
                 {
                     foreach (var system in notifyKP.Value)
                     {
@@ -295,7 +394,7 @@ namespace ABEngine.ABERuntime
 
             foreach (var notifyKP in Game.notifyAnySystems)
             {
-                if (typeSig.HasAny(notifyKP.Key))
+                if (notifyKP.Key.Any(archBitSet))
                 {
                     foreach (var system in notifyKP.Value)
                     {
@@ -310,78 +409,83 @@ namespace ABEngine.ABERuntime
 
         public static Entity CreateEntity()
         {
-            var ent = Game.GameWorld.CreateEntity("New Entity", true, Guid.NewGuid(), new Transform());
+            var ent = Game.GameWorld.Create("New Entity", true, Guid.NewGuid(), new Transform());
             CheckSubscribers(in ent, true);
             return ent;
         }
 
         public static Entity CreateEntity(string entName)
         {
-            var ent = Game.GameWorld.CreateEntity(entName, true, Guid.NewGuid(), new Transform());
+            var ent = Game.GameWorld.Create(entName, true, Guid.NewGuid(), new Transform());
             CheckSubscribers(in ent, true);
             return ent;
         }
 
         public static Entity CreateEntity(string entName, string tag, bool isStatic = false)
         {
-            var ent = Game.GameWorld.CreateEntity(entName, true, Guid.NewGuid(), new Transform(tag, isStatic));
+            var ent = Game.GameWorld.Create(entName, true, Guid.NewGuid(), new Transform(tag, isStatic));
             CheckSubscribers(in ent, true);
             return ent;
         }
 
         public static Entity CreateEntity<C1>(string entName, string tag, C1 c1, bool isStatic = false)
         {
-            var ent = Game.GameWorld.CreateEntity(entName, true, Guid.NewGuid(), new Transform(tag, isStatic), c1);
+            var ent = Game.GameWorld.Create(entName, true, Guid.NewGuid(), new Transform(tag, isStatic), c1);
             CheckSubscribers(in ent, true);
             return ent;
         }
 
         public static Entity CreateEntity<C1, C2>(string entName, string tag, C1 c1, C2 c2, bool isStatic = false)
         {
-            var ent = Game.GameWorld.CreateEntity(entName, true, Guid.NewGuid(), new Transform(tag, isStatic), c1, c2);
+            var ent = Game.GameWorld.Create(entName, true, Guid.NewGuid(), new Transform(tag, isStatic), c1, c2);
             CheckSubscribers(in ent, true);
             return ent;
         }
 
         public static Entity CreateEntity<C1, C2, C3>(string entName, string tag, C1 c1, C2 c2, C3 c3, bool isStatic = false)
         {
-            var ent = Game.GameWorld.CreateEntity(entName, true, Guid.NewGuid(), new Transform(tag, isStatic), c1, c2, c3);
+            var ent = Game.GameWorld.Create(entName, true, Guid.NewGuid(), new Transform(tag, isStatic), c1, c2, c3);
             CheckSubscribers(in ent, true);
             return ent;
         }
 
         public static Entity CreateEntity<C1, C2, C3, C4>(string entName, string tag, C1 c1, C2 c2, C3 c3, C4 c4, bool isStatic = false)
         {
-            var ent = Game.GameWorld.CreateEntity(entName, true, Guid.NewGuid(), new Transform(tag, isStatic), c1, c2, c3, c4);
+            var ent = Game.GameWorld.Create(entName, true, Guid.NewGuid(), new Transform(tag, isStatic), c1, c2, c3, c4);
             CheckSubscribers(in ent, true);
             return ent;
         }
 
         public static Entity CreateEntity<C1, C2, C3, C4, C5>(string entName, string tag, C1 c1, C2 c2, C3 c3, C4 c4, C5 c5, bool isStatic = false)
         {
-            var ent = Game.GameWorld.CreateEntity(entName, true, Guid.NewGuid(), new Transform(tag, isStatic), c1, c2, c3, c4, c5);
+            var ent = Game.GameWorld.Create(entName, true, Guid.NewGuid(), new Transform(tag, isStatic), c1, c2, c3, c4, c5);
             CheckSubscribers(in ent, true);
             return ent;
         }
+
 
         public static void DestroyEntity(this in Entity entity)
         {
             if (EntityManager.immediateDestroy)
             {
                 CheckSubscribers(in entity, false);
-                entity.Destroy();
+                Game.GameWorld.Destroy(entity);
             }
             else
             {
+                if (destroyMap.ContainsKey(entity.Id))
+                    return;
+
                 var destroyInfo = new EntityDestroyInfo() { entity = entity };
                 if (entity.Has<Rigidbody>())
                 {
                     destroyInfo.rb = entity.Get<Rigidbody>();
                     destroyInfo.rb.Destroy();
                 }
-                destroyList.Add(destroyInfo);
+                destroyMap.Add(entity.Id, destroyInfo);
             }
         }
+
 
         internal static void SetImmediateDestroy(bool imDestroy)
         {
@@ -390,14 +494,85 @@ namespace ABEngine.ABERuntime
 
         public static Transform FindTransformByName(string name)
         {
-            foreach (var ent in Game.GameWorld.GetEntities())
+            Transform found = null;
+
+            var query = new QueryDescription().WithAll<Transform>();
+            var entities = new List<Entity>();
+            Game.GameWorld.GetEntities(query, entities);
+
+            foreach (var ent in entities)
             {
-                if (ent.transform.name.Equals(name))
-                    return ent.transform;
+                if (ent.Get<Transform>().name.Equals(name))
+                {
+                    found = ent.Get<Transform>();
+                    break;
+                }
             }
 
-            return null;
+            //var allQuery = new QueryDescription().WithAll<Transform>();
+            //tmpWorld.Query(in allQuery, (ref Transform transform) =>
+            //{
+            //    if(transform.name.Equals(name))
+            //    {
+            //        found = transform;
+            //        return;
+            //    }
+            //});
+
+            return found;
         }
+
+        public static object DeserializeComponent(Type type, string serializedComponent)
+        {
+            var method = typeof(EntityManager).GetMethod(nameof(DeserializeComponentGeneric)).MakeGenericMethod(type);
+            return method.Invoke(null, new object[] { serializedComponent });
+        }
+
+        public static T DeserializeComponentGeneric<T>(string serializedComponent) where T : JSerializable, new()
+        {
+            T component = new T();
+            component.Deserialize(serializedComponent);
+            return component;
+        }
+
+        public static object GetCopiedComponentGeneric<T>(JSerializable comp) where T : JSerializable
+        {
+            T newComp = (T)comp.GetCopy();
+            return newComp;
+        }
+
+        public static object GetCopiedComponent(Type type, JSerializable comp)
+        {
+            var method = typeof(EntityManager).GetMethod(nameof(GetCopiedComponentGeneric)).MakeGenericMethod(type);
+            return method.Invoke(null, new object[] { comp });
+        }
+
+        public static void AddComponentToBuffer(Type type, in Entity ent, object component)
+        {
+            try
+            {
+                var method = typeof(CommandBuffer).GetMethod("Add").MakeGenericMethod(type);
+                method.Invoke(cmdBuffer, new object[] { ent, component });
+            }
+            catch(Exception ex)
+            {
+
+            }
+        }
+
+        public static void SetComponentToBuffer(Type type, in Entity ent, object component)
+        {
+            try
+            {
+                var method = typeof(CommandBuffer).GetMethod("Set").MakeGenericMethod(type);
+                method.Invoke(cmdBuffer, new object[] { ent, component });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Ex");
+            }
+        }
+
     }
 
     class EntityDestroyInfo

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using ABEngine.ABERuntime.Core.Math;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
 using Box2D.NetStandard.Common;
 using Halak;
@@ -127,7 +126,7 @@ namespace ABEngine.ABERuntime.Components
             sprite.manualBatching = true;
             sprite.SetMaterial(_particleMaterial, true);
             Transform trans = new Transform("EditorNotVisible");
-            var entity = Game.GameWorld.CreateEntity("P" + particleCount, Guid.NewGuid(), trans, sprite);
+            var entity = Game.GameWorld.Create("P" + particleCount, Guid.NewGuid(), trans, sprite);
             trans.localPosition = new Vector3(0f, 0f, -10f);
             Game.spriteBatchSystem.AddSpriteToBatch(trans, sprite, batchGuid);
             particleBatch = Game.spriteBatchSystem.GetBatchFromSprite(trans, sprite, batchGuid);
@@ -310,7 +309,7 @@ namespace ABEngine.ABERuntime.Components
                     //sprite.sharedMaterial.SetVector4("OutlineColor", Veldrid.RgbaFloat.Blue.ToVector4());
 
                     Transform trans = new Transform("EditorNotVisible");
-                    var entity = Game.GameWorld.CreateEntity("P" + particleCount, Guid.NewGuid(), trans, sprite);
+                    var entity = Game.GameWorld.Create("P" + particleCount, Guid.NewGuid(), trans, sprite);
 
                     float lifetime = startLifetime.NextValue() * scale;
                     Particle particle = new Particle()

@@ -3,9 +3,10 @@ using System.Numerics;
 using Box2D.NetStandard.Collision.Shapes;
 using Box2D.NetStandard.Dynamics.Bodies;
 using Box2D.NetStandard.Dynamics.Fixtures;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Physics;
 using ABEngine.ABERuntime.Components;
+using Arch.Core;
+using Arch.Core.Extensions;
 
 namespace ABEngine.ABERuntime
 {
@@ -26,6 +27,9 @@ namespace ABEngine.ABERuntime
             bodyDef.angle = rbTrans.localEulerAngles.Z * MathF.PI * 2f / 360f;
             bodyDef.linearDamping = rb.linearDamping;
             bodyDef.fixedRotation = true;
+
+            if (rbEnt.Get<Transform>().tag.Equals("Wall") || rbEnt.Get<Transform>().tag.Equals("Ground"))
+                bodyDef.fixedRotation = true;
 
             var b2dBody = Game.B2DWorld.CreateBody(bodyDef);
             FixtureDef fixtureDef = new FixtureDef();
@@ -85,22 +89,21 @@ namespace ABEngine.ABERuntime
             mass.mass = rb.mass;
             b2dBody.SetMassData(mass);
 
-            if (!rb.entity.enabled)
-                b2dBody.SetEnabled(false);
+            //if (!rb.entity.enabled)
+            //    b2dBody.SetEnabled(false);
 
             rb.b2dBody = b2dBody;
         }
 
         public override void Start()
         {
-            var rbQuery = Game.GameWorld.CreateQuery().Has<Rigidbody>();
-            var rbEnts = rbQuery.GetEntities();
-            for (int i = 0; i < rbEnts.Length; i++)
+            var rbQuery = new QueryDescription().WithAll<Rigidbody>();
+            Game.GameWorld.Query(in rbQuery, (in Entity rbEnt) =>
             {
-                Entity rbEnt = rbEnts[i];
                 CreateBody(rbEnt);
-            }
+            });
 
+         
             base.Start();
         }
 

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Halak;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Core.Math;
+using Arch.Core;
+using Arch.Core.Extensions;
 
 namespace ABEngine.ABERuntime
 {
@@ -25,7 +26,24 @@ namespace ABEngine.ABERuntime
 
         private Transform _parent;
 
-        internal bool enabled = true;
+        //internal bool enabled = true;
+
+        private bool _enabled = true;
+        public bool enabled
+        {
+            get { return _enabled; }
+            set
+            {
+                if(_enabled != value)
+                {
+                    _enabled = value;
+                    foreach (var child in children)
+                    {
+                        child.enabled = _enabled;
+                    }
+                }
+            }
+        }
 
         public List<Transform> children { get; private set; }
         public string name { get { return entity.Get<string>(); } }
@@ -72,27 +90,27 @@ namespace ABEngine.ABERuntime
             RecalculateTRS();
         }
 
-        public void SetEntity(Entity ent)
+        public void SetEntity(in Entity ent)
         {
             this.entity = ent;
         }
 
-        internal void EnableChildren()
-        {
-            foreach (var child in children)
-            {
-                child.entity.SetEnabled(true);
-            }
-        }
+        //internal void EnableChildren()
+        //{
+        //    foreach (var child in children)
+        //    {
+        //        child.entity.SetEnabled(true);
+        //    }
+        //}
 
 
-        internal void DisableChildren()
-        {
-            foreach (var child in children)
-            {
-                child.entity.SetEnabled(false);
-            }
-        }
+        //internal void DisableChildren()
+        //{
+        //    foreach (var child in children)
+        //    {
+        //        child.entity.SetEnabled(false);
+        //    }
+        //}
 
 
         private void RecalculateTRS()

@@ -3,7 +3,8 @@ using System.IO;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
-using ABEngine.ABERuntime.ECS;
+using Arch.Core;
+using Arch.Core.Extensions;
 using Halak;
 
 namespace ABEngine.ABEditor.Assets.Meta
@@ -49,7 +50,7 @@ namespace ABEngine.ABEditor.Assets.Meta
             // Clear assets references
             AssetCache.ClearSerializeDependencies();
 
-            RecurseEntity(entity.transform, entArr);
+            RecurseEntity(entity.Get<Transform>(), entArr);
 
             // Save assets
             jPrefab.Put("Assets", AssetCache.SerializeAssets());
@@ -85,7 +86,7 @@ namespace ABEngine.ABEditor.Assets.Meta
 
             JsonArrayBuilder compArr = new JsonArrayBuilder(10000);
             var comps = entity.GetAllComponents();
-            var types = entity.GetAllComponentTypes();
+            var types = entity.GetComponentTypes();
 
             // Serialize transform first
             int transIndex = Array.IndexOf(types, typeof(Transform));
@@ -93,14 +94,15 @@ namespace ABEngine.ABEditor.Assets.Meta
 
             for (int i = 0; i < comps.Length; i++)
             {
-                if (types[i] == typeof(Transform))
+                Type type = types[i].Type;
+                if (type == typeof(Transform))
                     continue;
 
-                if (typeof(JSerializable).IsAssignableFrom(types[i]))
+                if (typeof(JSerializable).IsAssignableFrom(type))
                 {
                     compArr.Push(((JSerializable)comps[i]).Serialize());
                 }
-                else if (types[i].IsSubclassOf(typeof(ABComponent)))
+                else if (type.IsSubclassOf(typeof(ABComponent)))
                 {
                     //ompArr.Push(((AutoSerializable)comps[i]).Serialize());
                     compArr.Push(ABComponent.Serialize((ABComponent)comps[i]));

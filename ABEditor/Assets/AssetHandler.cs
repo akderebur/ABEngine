@@ -10,6 +10,7 @@ using System.Xml;
 using Halak;
 using ABEngine.ABERuntime.Core.Assets;
 using System.Linq;
+using Arch.Core;
 
 namespace ABEngine.ABEditor.Assets
 {
@@ -357,9 +358,9 @@ namespace ABEngine.ABEditor.Assets
 				Texture2D oldTex = sceneAssets[texMeta] as Texture2D;
 				Texture2D newTex = AssetCache.CreateTexture2D(assetPath, texMeta.sampler, texMeta.spriteSize);
 
-				// Find all entities with this texture
-				var query = Game.GameWorld.CreateQuery().Has<Sprite>();
-				query.Foreach((ref Sprite sprite) =>
+                // Find all entities with this texture
+                var query = new QueryDescription().WithAll<Sprite>();
+                Game.GameWorld.Query(in query, (ref Sprite sprite) =>
 				{
 					if (sprite.texture == oldTex)
 					{

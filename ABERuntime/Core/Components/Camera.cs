@@ -3,7 +3,6 @@ using System.Linq;
 using System.Numerics;
 using Halak;
 using Newtonsoft.Json;
-using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABERuntime.Components
 {

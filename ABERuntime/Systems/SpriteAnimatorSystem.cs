@@ -1,6 +1,7 @@
 ﻿using System;
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Components;
+using Arch.Core;
 
 namespace ABEngine.ABERuntime
 {
@@ -18,8 +19,9 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = Game.GameWorld.CreateQuery().Has<Animator>().Has<Sprite>();
-            query.Foreach((ref Animator anim, ref Sprite sprite) =>
+            var query = new QueryDescription().WithAll<Animator, Sprite>();
+
+            Game.GameWorld.Query(in query ,(ref Animator anim, ref Sprite sprite) =>
             {
                 bool stateChanged = anim.CheckTransitions();
                 anim.CheckTriggers(deltaTime);

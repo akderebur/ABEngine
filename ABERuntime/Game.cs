@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using ABEngine.ABERuntime.ECS;
 using Veldrid;
 using Veldrid.Sdl2;
 using Veldrid.StartupUtilities;
@@ -20,6 +19,11 @@ using ABEngine.ABERuntime.Components;
 using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
 using ABEngine.ABERuntime.Core.Animation.StateMatch;
+using Arch.Core.Utils;
+using Arch.Core;
+using Arch.Core.Extensions;
+using System.Collections;
+using Arch.Core.Extensions.Internal;
 
 namespace ABEngine.ABERuntime
 {
@@ -161,6 +165,8 @@ namespace ABEngine.ABERuntime
             // Veldrid 
             SetupGraphics(windowName);
             AssetCache.InitAssetCache();
+
+            EntityManager.Init();
 
             LightPipelineAsset lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
             LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
@@ -358,7 +364,7 @@ namespace ABEngine.ABERuntime
                         PrefabManager.ClearScene();
 
                         // Recreate assets/worlds
-                        GameWorld.Destroy();
+                        World.Destroy(GameWorld);
                         CreateWorlds();
                         PhysicsManager.ResetPhysics();
 
@@ -416,6 +422,9 @@ namespace ABEngine.ABERuntime
                         notifyAnySystems.Clear();
 
                         AssetCache.ClearSceneCache();
+                        EntityManager.frameSemaphore.Release();
+                        EntityManager.Init();
+
                         Scene_Init();
 
                         // User systems _ Reflection
@@ -560,9 +569,9 @@ namespace ABEngine.ABERuntime
             PhysicsManager.PostFixedUpdate();
         }
 
-        internal static Dictionary<TypeSignature, List<BaseSystem>> notifySystems;
-        internal static Dictionary<TypeSignature, List<BaseSystem>> notifyAnySystems;
-        internal static Dictionary<TypeSignature, List<BaseSystem>> collisionAnySystems;
+        internal static Dictionary<BitSet, List<BaseSystem>> notifySystems;
+        internal static Dictionary<BitSet, List<BaseSystem>> notifyAnySystems;
+        internal static Dictionary<BitSet, List<BaseSystem>> collisionAnySystems;
 
 
         protected virtual void Scene_RegisterSystems() { }
@@ -577,7 +586,7 @@ namespace ABEngine.ABERuntime
             userSystems.Add(system);
         }
 
-        private void AddSystemFromAttribute(Type type, BaseSystem system, Type attributeType, Dictionary<TypeSignature, List<BaseSystem>> dict)
+        private void AddSystemFromAttribute(Type type, BaseSystem system, Type attributeType, Dictionary<BitSet, List<BaseSystem>> dict)
         {
             if (!typeof(Attribute).IsAssignableFrom(attributeType))
             {
@@ -587,29 +596,45 @@ namespace ABEngine.ABERuntime
             object[] attributes = type.GetCustomAttributes(attributeType, false);
             if (attributes.Length > 0)
             {
-                List<Type> subTypes = new List<Type>();
+                ComponentType[] subTypes = null;
                 for (int i = 0; i < attributes.Length; i++)
                 {
                     dynamic attribute = attributes[i];
+                    subTypes = new ComponentType[attribute.ComponentTypes.Length];
                     for (int t = 0; t < attribute.ComponentTypes.Length; t++)
                     {
-                        subTypes.Add(attribute.ComponentTypes[t]);
+                        subTypes[t] = attribute.ComponentTypes[t];
                     }
                 }
 
-                TypeSignature typeSig = new TypeSignature(subTypes);
-                if (dict.ContainsKey(typeSig))
-                    dict[typeSig].Add(system);
+                var bitSet = subTypes.ToBitSet();
+                BitSet foundBitSet = null;
+
+                if (dict.Count > 0)
+                {
+                    foreach (var exBitSet in dict.Keys)
+                    {
+                        if (exBitSet.All(bitSet))
+                        {
+                            foundBitSet = exBitSet;
+                            break;
+                        }
+                    }
+                }
+
+                if (foundBitSet != null)
+                    dict[foundBitSet].Add(system);
                 else
-                    dict.Add(typeSig, new List<BaseSystem> { system });
+                    dict.Add(bitSet, new List<BaseSystem> { system });
+
             }
         }
 
         private protected void SubscribeSystems()
         {
-            notifySystems = new Dictionary<TypeSignature, List<BaseSystem>>();
-            notifyAnySystems = new Dictionary<TypeSignature, List<BaseSystem>>();
-            collisionAnySystems = new Dictionary<TypeSignature, List<BaseSystem>>();
+            notifySystems = new Dictionary<BitSet, List<BaseSystem>>();
+            notifyAnySystems = new Dictionary<BitSet, List<BaseSystem>>();
+            collisionAnySystems = new Dictionary<BitSet, List<BaseSystem>>();
 
             for (int s = 0; s < userSystemTypes.Count; s++)
             {
@@ -625,31 +650,31 @@ namespace ABEngine.ABERuntime
             }
 
             // Render extensions - Subscribe Any
-            for (int s = 0; s < renderExtensions.Count; s++)
-            {
-                BaseSystem system = renderExtensions[s];
-                Type type = renderExtensions[s].GetType();
+            //for (int s = 0; s < renderExtensions.Count; s++)
+            //{
+            //    BaseSystem system = renderExtensions[s];
+            //    Type type = renderExtensions[s].GetType();
 
-                object[] attributes = type.GetCustomAttributes(typeof(SubscribeAnyAttribute), false);
-                if (attributes.Length > 0)
-                {
-                    List<Type> subTypes = new List<Type>();
-                    for (int i = 0; i < attributes.Length; i++)
-                    {
-                        var attribute = (SubscribeAnyAttribute)attributes[i];
-                        for (int t = 0; t < attribute.ComponentTypes.Length; t++)
-                        {
-                            subTypes.Add(attribute.ComponentTypes[t]);
-                        }
-                    }
+            //    object[] attributes = type.GetCustomAttributes(typeof(SubscribeAnyAttribute), false);
+            //    if (attributes.Length > 0)
+            //    {
+            //        List<Type> subTypes = new List<Type>();
+            //        for (int i = 0; i < attributes.Length; i++)
+            //        {
+            //            var attribute = (SubscribeAnyAttribute)attributes[i];
+            //            for (int t = 0; t < attribute.ComponentTypes.Length; t++)
+            //            {
+            //                subTypes.Add(attribute.ComponentTypes[t]);
+            //            }
+            //        }
 
-                    TypeSignature typeSig = new TypeSignature(subTypes);
-                    if (notifyAnySystems.ContainsKey(typeSig))
-                        notifyAnySystems[typeSig].Add(system);
-                    else
-                        notifyAnySystems.Add(typeSig, new List<BaseSystem> { system });
-                }
-            }
+            //        TypeSignature typeSig = new TypeSignature(subTypes);
+            //        if (notifyAnySystems.ContainsKey(typeSig))
+            //            notifyAnySystems[typeSig].Add(system);
+            //        else
+            //            notifyAnySystems.Add(typeSig, new List<BaseSystem> { system });
+            //    }
+            //}
         }
 
         private protected void MainUpdate(float newTime, float elapsed, float interpolation)
@@ -657,15 +682,16 @@ namespace ABEngine.ABERuntime
             // Active Cam Update
             if (_checkCamUpdate)
             {
-                var camQ = GameWorld.CreateQuery().Has<Camera>().Has<Transform>();
-                if (camQ.EntityCount > 0)
+                activeCam = null;
+                var camQ = new QueryDescription().WithAll<Camera, Transform>();
+                GameWorld.Query(in camQ, (in Entity camEnt) =>
                 {
-                    var camEnt = camQ.GetEntities().FirstOrDefault(c => c.Get<Camera>().isActive);
-                    if (camEnt.IsValid())
+                    if (camEnt != Entity.Null)
+                    {
                         activeCam = camEnt.Get<Transform>();
-                }
-                else
-                    activeCam = null;
+                        return;
+                    }
+                });
                 _checkCamUpdate = false;
             }
 
@@ -692,7 +718,7 @@ namespace ABEngine.ABERuntime
                 return;
 
             var camEnt = Game.activeCam.entity;
-            if (!camEnt.IsValid())
+            if (camEnt == Entity.Null)
                 return;
 
             Game.pipelineData.VP = Game.activeCam.worldToLocaMatrix * Game.projectionMatrix;
@@ -787,7 +813,7 @@ namespace ABEngine.ABERuntime
             gd = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions(
                 debug: false,
                 swapchainDepthFormat: null,
-                syncToVerticalBlank: true,
+                syncToVerticalBlank: false,
                 resourceBindingModel: ResourceBindingModel.Improved,
                 preferDepthRangeZeroToOne: true,
                 preferStandardClipSpaceYDirection: true,
@@ -868,81 +894,102 @@ namespace ABEngine.ABERuntime
 
             // ECS World
             GameWorld = World.Create();
-            GameWorld.OnSet((Entity entity, ref Transform newTrans) => newTrans.SetEntity(entity));
-            GameWorld.OnSet((Entity entity, ref Rigidbody newRb) =>
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref Transform transform) =>
             {
-                newRb.SetEntity(entity);
-                if(b2dInitSystem.started)
-                    PhysicsManager.CreateBody(newRb);
+                if (transform == null)
+                    return;
+                transform.SetEntity(entity);
             });
-            //GameWorld.OnSet((Entity entity, ref Sprite newSprite) => newSprite.SetTransform(entity.transform));
-            GameWorld.OnSet((Entity entity, ref Sprite sprite) =>
+
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref Rigidbody rb) =>
             {
-                sprite.SetTransform(entity.transform);
-                if (!sprite.manualBatching)
+                if (rb == null)
+                    return;
+                if (rb.transform != null)
+                    return;
+                rb.SetEntity(entity.Get<Transform>());
+                if (b2dInitSystem.started)
+                    PhysicsManager.CreateBody(rb);
+            });
+
+            //GameWorld.SubscribeComponentSet((in Entity entity, ref Rigidbody rb) =>
+            //{
+            //    //if (rb.transform == null)
+            //    //    return;
+            //    rb.SetEntity(entity.Get<Transform>());
+            //    if (b2dInitSystem.started)
+            //        PhysicsManager.CreateBody(rb);
+            //});
+
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref Sprite sprite) =>
+            {
+                if (sprite == null)
+                    return;
+
+                sprite.SetTransform(entity.Get<Transform>());
+                if(!sprite.manualBatching)
                     Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 
-            GameWorld.OnSet((Entity entity, ref Camera newCam) => TriggerCamCheck());
-            GameWorld.OnSet((Entity entity, ref AABB newBB) =>
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref Camera cam) => TriggerCamCheck());
+
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref AABB newBB) =>
             {
-                if(!newBB.sizeSet && entity.Has<Sprite>())
+                if (newBB == null)
+                    return;
+
+                if (!newBB.sizeSet && entity.Has<Sprite>())
                 {
                     var spriteSize = entity.Get<Sprite>().size;
                     newBB.size = spriteSize;
-                    //newBB.width = spriteSize.X;
-                    //newBB.height = spriteSize.Y;
                     newBB.sizeSet = true;
                 }
             });
-            GameWorld.OnSet((Entity entity, ref StateMatchAnimator animator) => animator.SetTransform(entity.transform));
 
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref StateMatchAnimator animator) => animator.SetTransform(entity.Get<Transform>()));
 
-            GameWorld.OnRemove((Sprite sprite) =>
+            GameWorld.SubscribeComponentRemoved((in Entity entity, ref Sprite sprite) =>
             {
                 if (!sprite.manualBatching)
                     Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 
-            GameWorld.OnRemove((ParticleModule pm) =>
-            {
-                pm.Stop();
-            });
+            GameWorld.SubscribeComponentRemoved((in Entity entity, ref ParticleModule pm) => pm.Stop());
 
-            //GameWorld.OnRemove((Rigidbody rb) => rb.Destroy());
+            //GameWorld.SubscribeComponentRemoved((in Entity entity, ref Rigidbody rb) => rb.Destroy());
 
-            GameWorld.OnEnable((Entity entity, Sprite sprite) =>
-            {
-                Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
-            });
+            //GameWorld.OnEnable((Entity entity, Sprite sprite) =>
+            //{
+            //    Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+            //});
 
 
-            GameWorld.OnDisable((Entity entity, Sprite sprite) =>
-            {
-                Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
-            });
+            //GameWorld.OnDisable((Entity entity, Sprite sprite) =>
+            //{
+            //    Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
+            //});
 
-            GameWorld.OnEnable((Entity entity, Rigidbody rb) =>
-            {
-                rb.SetBodyEnabled(true);
-            });
-
-
-            GameWorld.OnDisable((Entity entity, Rigidbody rb) =>
-            {
-                rb.SetBodyEnabled(false);
-            });
-
-            GameWorld.OnEnable((Entity entity, Tweener tweener) =>
-            {
-                tweener.Pause(false);
-            });
+            //GameWorld.OnEnable((Entity entity, Rigidbody rb) =>
+            //{
+            //    rb.SetBodyEnabled(true);
+            //});
 
 
-            GameWorld.OnDisable((Entity entity, Tweener tweener) =>
-            {
-                tweener.Pause(true);
-            });
+            //GameWorld.OnDisable((Entity entity, Rigidbody rb) =>
+            //{
+            //    rb.SetBodyEnabled(false);
+            //});
+
+            //GameWorld.OnEnable((Entity entity, Tweener tweener) =>
+            //{
+            //    tweener.Pause(false);
+            //});
+
+
+            //GameWorld.OnDisable((Entity entity, Tweener tweener) =>
+            //{
+            //    tweener.Pause(true);
+            //});
 
             PrefabManager.SceneInit();
         }
@@ -960,6 +1007,8 @@ namespace ABEngine.ABERuntime
         protected void CleanUp()
         {
             gd.WaitForIdle();
+
+            CoroutineManager.StopAllCoroutines();
 
             // Clean extensions
             foreach (var rendExt in renderExtensions)
@@ -1049,10 +1098,15 @@ namespace ABEngine.ABERuntime
             // Scene Objects
             //scene.Put("Canvas", canvas.Serialize());
 
+            var query = new QueryDescription().WithAll<Transform>();
+            var entities = new List<Entity>();
+            Game.GameWorld.GetEntities(query, entities);
+
+
             JsonArrayBuilder entArr = new JsonArrayBuilder(10000);
-            foreach (var entity in GameWorld.GetEntities())
+            foreach (var entity in entities)
             {
-                if (entity.transform.tag.StartsWith("Editor"))
+                if (entity.Get<Transform>().tag.StartsWith("Editor"))
                     continue;
 
                 JsonObjectBuilder entObj = new JsonObjectBuilder(10000);
@@ -1061,7 +1115,7 @@ namespace ABEngine.ABERuntime
 
                 JsonArrayBuilder compArr = new JsonArrayBuilder(10000);
                 var comps = entity.GetAllComponents();
-                var types = entity.GetAllComponentTypes();
+                var types = entity.GetComponentTypes();
 
                 // Serialize transform first
                 int transIndex = Array.IndexOf(types, typeof(Transform));
@@ -1069,14 +1123,14 @@ namespace ABEngine.ABERuntime
 
                 for (int i = 0; i < comps.Length; i++)
                 {
-                    if (types[i] == typeof(Transform))
+                    if (types[i].Type == typeof(Transform))
                         continue;
 
-                    if (typeof(JSerializable).IsAssignableFrom(types[i]))
+                    if (typeof(JSerializable).IsAssignableFrom(types[i].Type))
                     {
                         compArr.Push(((JSerializable)comps[i]).Serialize());
                     }
-                    else if (types[i].IsSubclassOf(typeof(ABComponent)))
+                    else if (types[i].Type.IsSubclassOf(typeof(ABComponent)))
                     {
                         //ompArr.Push(((AutoSerializable)comps[i]).Serialize());
                         compArr.Push(ABComponent.Serialize((ABComponent)comps[i]));
@@ -1121,7 +1175,7 @@ namespace ABEngine.ABERuntime
             {
                 string entName = entity["Name"];
                 string guid = entity["GUID"];
-                Entity newEnt = GameWorld.CreateEntity(entName, Guid.Parse(guid));
+                Entity newEnt = GameWorld.Create(entName, Guid.Parse(guid));
                 bool isCanvasEnt = false;
 
                 foreach (var component in entity["Components"].Array())
@@ -1139,14 +1193,20 @@ namespace ABEngine.ABERuntime
 
                     if (typeof(JSerializable).IsAssignableFrom(type))
                     {
-                        var serializedComponent = (JSerializable)Activator.CreateInstance(type);
-                        serializedComponent.Deserialize(component.ToString());
-                        newEnt.Set(type, serializedComponent);
+                        //var serializedComponent = (JSerializable)Activator.CreateInstance(type);
+                        //serializedComponent.Deserialize(component.ToString());
+
+                        //newEnt.Add(serializedComponent);
+                        //newEnt.Set(type, serializedComponent);
+
+                        var comp = DeserializeComponent(type, component.ToString());
+                        newEnt.Add(comp);
+                        //AddSerializedComponent(type, component.ToString(), newEnt);
                     }
                     else if (type.IsSubclassOf(typeof(ABComponent)))
                     {
                         var comp = ABComponent.Deserialize(component.ToString(), type);
-                        newEnt.Set(type, comp);
+                        newEnt.Add(comp);
                     }
 
                 }
@@ -1159,36 +1219,53 @@ namespace ABEngine.ABERuntime
                 }
             }
 
+            var query = new QueryDescription().WithAll<Transform>();
+            var entities = new List<Entity>();
+            Game.GameWorld.GetEntities(query, entities);
+
             // Parenting
 
-            foreach (var entity in GameWorld.GetEntities())
+            foreach (var entity in entities)
             {
                 Transform trans = entity.Get<Transform>();
                 if (!string.IsNullOrEmpty(trans.parentGuidStr))
                 {
                     Guid parGuid = Guid.Parse(trans.parentGuidStr);
-                    trans.SetParent(GameWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(parGuid)).Get<Transform>(), false);
+                    trans.SetParent(entities.FirstOrDefault(e => e.Get<Guid>().Equals(parGuid)).Get<Transform>(), false);
                 }
             }
 
             // References
-            foreach (var entity in GameWorld.GetEntities())
+            foreach (var entity in entities)
             {
                 var comps = entity.GetAllComponents();
-                var types = entity.GetAllComponentTypes();
+                var types = entity.GetComponentTypes();
                 for (int i = 0; i < comps.Length; i++)
                 {
-                    if (typeof(JSerializable).IsAssignableFrom(types[i]))
+                    if (typeof(JSerializable).IsAssignableFrom(types[i].Type))
                     {
                         ((JSerializable)comps[i]).SetReferences();
                     }
-                    else if (types[i].IsSubclassOf(typeof(ABComponent)))
+                    else if (types[i].Type.IsSubclassOf(typeof(ABComponent)))
                     {
                         ABComponent.SetReferences(((ABComponent)comps[i]));
                     }
                 }
             }
 
+        }
+
+        public object DeserializeComponent(Type type, string serializedComponent)
+        {
+            var method = GetType().GetMethod(nameof(DeserializeComponentGeneric)).MakeGenericMethod(type);
+            return method.Invoke(this, new object[] { serializedComponent });
+        }
+
+        public T DeserializeComponentGeneric<T>(string serializedComponent) where T : JSerializable, new()
+        {
+            T component = new T();
+            component.Deserialize(serializedComponent);
+            return component;
         }
 
         //protected virtual void CreateResources()

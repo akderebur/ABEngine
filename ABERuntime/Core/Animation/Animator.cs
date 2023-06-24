@@ -4,7 +4,6 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using Halak;
-using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABERuntime.Animation
 {

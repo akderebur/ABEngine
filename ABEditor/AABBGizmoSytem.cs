@@ -2,9 +2,10 @@
 using ABEngine.ABERuntime;
 using System.Collections.Generic;
 using System.Linq;
-using ABEngine.ABERuntime.ECS;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
+using Arch.Core.Extensions;
+using Arch.Core;
 
 namespace ABEngine.ABEditor
 {
@@ -34,8 +35,8 @@ namespace ABEngine.ABEditor
             if (Game.activeCam == null)
                 return;
 
-            var selectedEntity = Game.GameWorld.GetData<Entity>();
-            if (selectedEntity.IsValid() && selectedEntity.Has<AABB>())
+            var selectedEntity = Editor.selectedEntity;
+            if (selectedEntity != Entity.Null && selectedEntity.Has<AABB>())
             {
                 AABB bbox = selectedEntity.Get<AABB>();
                 //Vector3 centerPos = new Vector3(bbox.center, 0f);

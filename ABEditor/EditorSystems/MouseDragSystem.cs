@@ -2,6 +2,7 @@
 using System.Numerics;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
+using Arch.Core;
 
 namespace ABEngine.ABEditor
 {
@@ -14,21 +15,19 @@ namespace ABEngine.ABEditor
         {
             if (!Input.GetKey(Veldrid.Key.ControlLeft) && Input.GetMouseButtonDown(Veldrid.MouseButton.Left))
             {
-                var query = Game.GameWorld.CreateQuery().Has<AABB>();
-                foreach (var entity in query.GetEntities())
+                var query = new QueryDescription().WithAll<AABB>();
+
+                Game.GameWorld.Query(in query, (in Entity entity, ref AABB bbox, ref Transform transform) =>
                 {
-                    AABB bbox = entity.Get<AABB>();
-                    Transform transform = entity.Get<Transform>();
-                   
                     if (bbox.CheckCollisionMouse(transform, Input.GetMousePosition()))
                     {
                         selectedTransform = transform;
                         dragDelta = selectedTransform.localPosition - new Vector3(Input.GetMousePosition().PixelToWorld() * Game.zoomFactor, 0f);
-                        Game.GameWorld.SetData(entity);
+                        Editor.selectedEntity = entity;
 
-                        break;
+                        return; ;
                     }
-                }
+                });
             }
             else if (Input.GetMouseButton(Veldrid.MouseButton.Left))
             {

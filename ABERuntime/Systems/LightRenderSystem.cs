@@ -3,6 +3,7 @@ using Veldrid;
 using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
+using Arch.Core;
 
 namespace ABEngine.ABERuntime
 {
@@ -63,15 +64,11 @@ namespace ABEngine.ABERuntime
 
             base.Update(gameTime, deltaTime);
 
-
-            var query = Game.GameWorld.CreateQuery().Has<Transform>().Has<PointLight2D>();
+            var query = new QueryDescription().WithAll<Transform, PointLight2D>();
 
             lightCount = 0;
-            foreach (var ent in query.GetEntities())
+            Game.GameWorld.Query(in query, (ref Transform lightTrans, ref PointLight2D light) =>
             {
-                Transform lightTrans = ent.Get<Transform>();
-                PointLight2D light = ent.Get<PointLight2D>();
-
                 for (int i = 0; i <= light.renderLayerIndex; i++)
                 {
 
@@ -85,7 +82,7 @@ namespace ABEngine.ABERuntime
 
 
                 lightCount++;
-            }
+            });
         }
 
         public override void Render(int renderLayer)

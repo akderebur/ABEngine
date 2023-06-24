@@ -14,10 +14,11 @@ using ABEngine.ABEditor.ImGuiPlugins;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Components;
-using ABEngine.ABERuntime.ECS;
 using Veldrid;
 using ImGuiNET;
 using ABEngine.ABEditor.PropertyDrawers;
+using Arch.Core;
+using Arch.Core.Extensions;
 
 namespace ABEngine.ABEditor
 {
@@ -133,8 +134,8 @@ namespace ABEngine.ABEditor
 
 
                 // Details - Scene entity
-                var selectedEntity = GameWorld.GetData<Entity>();
-                if (selectedEntity.IsValid())
+                var selectedEntity = Editor.selectedEntity;
+                if (selectedEntity != Entity.Null)
                 {
                     ImGui.Begin("Details");
                     DetailsView(selectedEntity);
@@ -171,7 +172,7 @@ namespace ABEngine.ABEditor
 
         void AssetDetails()
         {
-            string selectedAsset = GameWorld.GetData<string>();
+            string selectedAsset = null;
             if (!string.IsNullOrEmpty(selectedAsset))
             {
                 var meta = AssetHandler.GetMeta(selectedAsset);
@@ -452,7 +453,7 @@ namespace ABEngine.ABEditor
                 EntityManager.CreateEntity("Tilemap", "NoChild", new Tilemap());
             Entity gridEnt = EntityManager.CreateEntity("Grid", "EditorNotVisible");
             //gridEnt.transform.parent = tileEnt.transform;
-            gridTrans = gridEnt.transform;
+            gridTrans = gridEnt.Get<Transform>();
 
             GraphicsManager.AddRenderLayer("Editor");
             int lastLayer = GraphicsManager.renderLayers.Count - 1;
@@ -476,9 +477,9 @@ namespace ABEngine.ABEditor
                 lineSpr.tintColor = new Vector4(1f, 1f, 1f, 0.3f);
                 Entity lineEnt = EntityManager.CreateEntity("Line_" + i, "EditorGridLine", lineSpr);
                 lineSpr.renderLayerIndex = 1;
-                lineEnt.transform.localScale = new Vector3(1, 1f, 1f);
-                lineEnt.transform.localPosition = new Vector3(5f, curLinePos.Y, 0.2f);
-                lineEnt.transform.parent = gridEnt.transform;
+                lineEnt.Get<Transform>().localScale = new Vector3(1, 1f, 1f);
+                lineEnt.Get<Transform>().localPosition = new Vector3(5f, curLinePos.Y, 0.2f);
+                lineEnt.Get<Transform>().parent = gridEnt.Get<Transform>();
 
                 for (int j = 0; j < 60; j++)
                 {
@@ -491,10 +492,10 @@ namespace ABEngine.ABEditor
                         lineSpr.tintColor = new Vector4(1f, 1f, 1f, 0.3f);
                         lineEnt = EntityManager.CreateEntity("Line_" + i, "EditorGridLine", lineSpr);
                         lineSpr.renderLayerIndex = 1;
-                        lineEnt.transform.localScale = new Vector3(1f, 1f, 1f);
-                        lineEnt.transform.localEulerAngles = new Vector3(0f, 0f, MathF.PI / 2f); 
-                        lineEnt.transform.localPosition = new Vector3(curLinePos.X, 0f, 0.3f);
-                        lineEnt.transform.parent = gridEnt.transform;
+                        lineEnt.Get<Transform>().localScale = new Vector3(1f, 1f, 1f);
+                        lineEnt.Get<Transform>().localEulerAngles = new Vector3(0f, 0f, MathF.PI / 2f); 
+                        lineEnt.Get<Transform>().localPosition = new Vector3(curLinePos.X, 0f, 0.3f);
+                        lineEnt.Get<Transform>().parent = gridEnt.Get<Transform>();
                     }
 
                     curPos.X = j * worldOffset.X + worldOffset.X / 2f;
@@ -502,17 +503,17 @@ namespace ABEngine.ABEditor
                     cellSpr.tintColor = new Vector4(1f, 1f, 1f, 0.3f);
                     Entity cellEnt = EntityManager.CreateEntity("Cell_" + i + "_" + j, "EditorGridCell", cellSpr);
                     cellSpr.renderLayerIndex = 1;
-                    cellEnt.transform.localScale = new Vector3(cellScale.X, cellScale.Y, 1f);
-                    cellEnt.transform.localPosition = new Vector3(curPos.X, curPos.Y, 0.1f);
-                    cellEnt.transform.parent = gridEnt.transform;
-                    gridCells.Add(cellEnt.transform);
+                    cellEnt.Get<Transform>().localScale = new Vector3(cellScale.X, cellScale.Y, 1f);
+                    cellEnt.Get<Transform>().localPosition = new Vector3(curPos.X, curPos.Y, 0.1f);
+                    cellEnt.Get<Transform>().parent = gridEnt.Get<Transform>();
+                    gridCells.Add(cellEnt.Get<Transform>());
                 }
 
                 curPos.Y += worldOffset.Y;
                 curLinePos.Y += worldOffset.Y;
             }
 
-            gridEnt.SetEnabled(false);
+            //gridEnt.SetEnabled(false);
         }
 
         private void MainMenu()
@@ -535,14 +536,14 @@ namespace ABEngine.ABEditor
                         canvas = new Canvas(screenSize.X, screenSize.Y);
                         canvas.isDynamicSize = false;
 
-                        GameWorld.CreateEntity("Canvas", Guid.NewGuid(), new Transform(), canvas);
+                        GameWorld.Create("Canvas", Guid.NewGuid(), new Transform(), canvas);
 
-                        var camEnt = GameWorld.CreateEntity("Camera", Guid.NewGuid(), new Transform(), new Camera());
+                        var camEnt = GameWorld.Create("Camera", Guid.NewGuid(), new Transform(), new Camera());
                         activeCam = camEnt.Get<Transform>();
 
                         TMColliderGizmo.ResetGizmo();
 
-                        RemakeGrid(true);
+                        //RemakeGrid(true);
 
                         DepthSearch();
                     }
@@ -649,9 +650,13 @@ namespace ABEngine.ABEditor
 
             if (ImGui.CollapsingHeader("Transform"))
             {
+                bool enabled = transform.enabled;
                 Vector3 pos = transform.localPosition;
                 Vector3 eulRot = transform.localEulerAngles * (360f / (MathF.PI * 2f));
                 Vector3 sca = transform.localScale;
+
+                if (ImGui.Checkbox("Enabled", ref enabled))
+                    transform.enabled = enabled;
 
                 if (ImGui.InputFloat3("Position", ref pos))
                     EditorActions.UpdateProperty(transform.localPosition, pos, transform, nameof(transform.localPosition));
@@ -667,11 +672,11 @@ namespace ABEngine.ABEditor
 
             bool hasTilemap = false;
             var comps = selectedEntity.GetAllComponents();
-            var types = selectedEntity.GetAllComponentTypes();
+            var types = selectedEntity.GetComponentTypes();
 
             for (int i = 0; i < comps.Length; i++)
             {
-                Type type = types[i];
+                Type type = types[i].Type;
                 var comp = comps[i];
 
                 if (type.IsSubclassOf(typeof(ABComponent)))
@@ -802,13 +807,13 @@ namespace ABEngine.ABEditor
             if(hasTilemap)
             {
                 tilemapSelected = true;
-                gridTrans.entity.SetEnabled(true);
+                //gridTrans.entity.SetEnabled(true);
                 TMColliderGizmo.render = true;
             }
             else
             {
                 tilemapSelected = false;
-                gridTrans.entity.SetEnabled(false);
+                //gridTrans.entity.SetEnabled(false);
                 TMColliderGizmo.render = false;
             }
         }
@@ -868,7 +873,7 @@ namespace ABEngine.ABEditor
         {
             if(!selectedEntity.Has<Prefab>())
             {
-                Transform transform = selectedEntity.transform;
+                Transform transform = selectedEntity.Get<Transform>();
                 if (transform.parent != null)
                     return;
 
@@ -897,12 +902,12 @@ namespace ABEngine.ABEditor
             if (prefab == null)
             {
                 prefab = new Prefab();
-                transform.entity.Set<Prefab>(prefab);
+                transform.entity.Add<Prefab>(prefab);
             }
             else
             {
                 //prefab.prefabToSceneRemap.Add(transform.entity.Get<Guid>(), Guid.Empty);
-                transform.entity.Set<PrefabElement>(new PrefabElement(index++));
+                transform.entity.Add<PrefabElement>(new PrefabElement(index++));
             }
 
             foreach (var child in transform.children)
@@ -920,7 +925,7 @@ namespace ABEngine.ABEditor
             }
 
             hierList.Remove(transform);
-            transform.entity.Destroy();
+            transform.entity.DestroyEntity();
         }
 
         private void DeleteEntityButton(in Entity entity)
@@ -936,15 +941,14 @@ namespace ABEngine.ABEditor
         private static void DepthSearch()
         {
             hierList = new List<Transform>();
-            var transQuery = GameWorld.CreateQuery().Has<Transform>();
-            foreach (var entity in transQuery.GetEntities())
+            var query = new QueryDescription().WithAll<Transform>();
+            Game.GameWorld.Query(in query, (ref Transform hierTrans) =>
             {
-                var hierTrans = entity.Get<Transform>();
                 if (hierTrans.parent == null)
                 {
                     DepthRec(hierTrans);
                 }
-            }
+            });
         }
 
         private static void DepthRec(Transform transform)
@@ -993,10 +997,11 @@ namespace ABEngine.ABEditor
                 ImGui.Spacing();
                 if (ImGui.MenuItem("Entity"))
                 {
-                    var newEnt = GameWorld.CreateEntity("NewEntity", Guid.NewGuid());
-                    Transform newTrans = new Transform();
-                    newEnt.Set(newTrans);
-                    hierList.Add(newTrans);
+                    //var newEnt = GameWorld.Create("NewEntity", Guid.NewGuid());
+                    //Transform newTrans = new Transform();
+                    //newEnt.Add(newTrans);
+                    var newEnt = EntityManager.CreateEntity("New Entity");
+                    hierList.Add(newEnt.Get<Transform>());
                 }
 
                 ImGui.EndPopup();
@@ -1033,7 +1038,7 @@ namespace ABEngine.ABEditor
                     }
 
                     var entity = EntityManager.Instantiate(prefabTransform.entity);
-                    hierList.Add(entity.transform);
+                    hierList.Add(entity.Get<Transform>());
                 }
 
 
@@ -1083,7 +1088,7 @@ namespace ABEngine.ABEditor
             if (ImGui.IsItemHovered(0))
             {
                 if (ImGui.IsMouseReleased(ImGuiMouseButton.Left))
-                    GameWorld.SetData(transform.entity);
+                    selectedEntity = transform.entity;
             }
 
             if (ImGui.BeginDragDropSource())
@@ -1135,7 +1140,7 @@ namespace ABEngine.ABEditor
                 bool open = ImGui.TreeNodeEx(transform.name, ImGuiTreeNodeFlags.OpenOnArrow);
                 if (ImGui.IsItemClicked())
                 {
-                    GameWorld.SetData(transform.entity);
+                    selectedEntity = transform.entity;
                 }
                 if (open)
                 {
@@ -1152,7 +1157,7 @@ namespace ABEngine.ABEditor
                 ImGui.TreeNodeEx(transform.name, ImGuiTreeNodeFlags.Leaf);
                 if (ImGui.IsItemClicked())
                 {
-                    GameWorld.SetData(transform.entity);
+                    selectedEntity = transform.entity;
                 }
 
                 ImGui.TreePop();

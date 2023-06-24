@@ -1,6 +1,5 @@
 ﻿using System.Numerics;
 using Halak;
-using ABEngine.ABERuntime.ECS;
 using Veldrid;
 
 namespace ABEngine.ABERuntime.Components
@@ -132,6 +131,7 @@ namespace ABEngine.ABERuntime.Components
             _material = sharedMaterial;
             tintColor = Vector4.One;
             this.texture = AssetCache.GetDefaultTexture();
+            Resize(texture.imageSize);
         }
 
         public Sprite(Texture2D texture)

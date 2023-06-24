@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using ABEngine.ABEditor.Assets;
 using ABEngine.ABERuntime;
-using ABEngine.ABERuntime.ECS;
+using Arch.Core;
 using ImGuiNET;
 
 namespace ABEngine.ABEditor
@@ -304,8 +304,8 @@ namespace ABEngine.ABEditor
                             {
                                 selFile = file;
 
-                                Game.GameWorld.SetData<Entity>(default(Entity));
-                                Game.GameWorld.SetData<string>(catDir.GetLocalPath() + selFile);
+                                Editor.selectedEntity = Entity.Null;
+                                //Game.GameWorld.SetData<string>(catDir.GetLocalPath() + selFile);
                             }
                         }
                         //if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) // Left clik - details

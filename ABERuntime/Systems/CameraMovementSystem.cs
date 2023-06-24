@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
-using ABEngine.ABERuntime.ECS;
+using Arch.Core;
 
 namespace ABEngine.ABERuntime
 {
@@ -10,8 +10,8 @@ namespace ABEngine.ABERuntime
     {
         public override void Start()
         {
-            var query = Game.GameWorld.CreateQuery().Has<Camera>().Has<Transform>();
-            query.Foreach((ref Camera cam, ref Transform camTrans) =>
+            var query = new QueryDescription().WithAll<Camera, Transform>();
+            Game.GameWorld.Query(in query, (ref Camera cam, ref Transform camTrans) =>
             {
                 if (cam.followTarget != null)
                 {
@@ -22,14 +22,13 @@ namespace ABEngine.ABERuntime
 
                     camTrans.localPosition = destPos;
                 }
-            }
-            );
+            });
         }
 
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = Game.GameWorld.CreateQuery().Has<Camera>().Has<Transform>();
-            query.Foreach((ref Camera cam, ref Transform camTrans) =>
+            var query = new QueryDescription().WithAll<Camera, Transform>();
+            Game.GameWorld.Query(in query, (ref Camera cam, ref Transform camTrans) =>
             {
                 if (!cam.followInFixedUpdate && cam.followTarget != null)
                 {
@@ -41,8 +40,8 @@ namespace ABEngine.ABERuntime
 
         public override void FixedUpdate(float gameTime, float deltaTime)
         {
-            var query = Game.GameWorld.CreateQuery().Has<Camera>().Has<Transform>();
-            query.Foreach((ref Camera cam, ref Transform camTrans) =>
+            var query = new QueryDescription().WithAll<Camera, Transform>();
+            Game.GameWorld.Query(in query, (ref Camera cam, ref Transform camTrans) =>
             {
                 if (cam.followInFixedUpdate && cam.followTarget != null)
                 {

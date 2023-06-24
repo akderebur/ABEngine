@@ -1,6 +1,5 @@
 ﻿using System;
 using Halak;
-using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABERuntime
 {

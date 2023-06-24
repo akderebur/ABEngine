@@ -3,9 +3,10 @@ using System.Linq;
 using System.Numerics;
 using System.Collections.Generic;
 using Veldrid;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
 using ABEngine.ABERuntime.Components;
+using Arch.Core;
+using Arch.Core.Extensions;
 
 namespace ABEngine.ABERuntime
 {
@@ -30,10 +31,12 @@ namespace ABEngine.ABERuntime
             _cl = GraphicsManager.cl;
             _rsFactory = GraphicsManager.rf;
 
-
             // Create batch groups
-            var spriteQuery = Game.GameWorld.CreateQuery().Has<Sprite>();
-            var layerGroups = spriteQuery.GetEntities().Where(e => e.enabled).GroupBy(s => s.Get<Sprite>().renderLayerIndex);
+            var query = new QueryDescription().WithAll<Sprite>();
+            var entities = new List<Entity>();
+            Game.GameWorld.GetEntities(query, entities);
+
+            var layerGroups = entities.GroupBy(s => s.Get<Sprite>().renderLayerIndex);
 
             foreach (var layerGroup in layerGroups)
             {
@@ -64,7 +67,7 @@ namespace ABEngine.ABERuntime
                                 SpriteBatch sb = new SpriteBatch(textureGroup.Key, matGroup.Key, layerGroup.Key, true);
                                 foreach (var spriteEnt in statics)
                                 {
-                                    sb.AddSpriteEntity(spriteEnt.transform, spriteEnt.Get<Sprite>());
+                                    sb.AddSpriteEntity(spriteEnt.Get<Transform>(), spriteEnt.Get<Sprite>());
                                 }
 
                                 sb.InitBatch();
@@ -78,7 +81,7 @@ namespace ABEngine.ABERuntime
                                 SpriteBatch sb = new SpriteBatch(textureGroup.Key, matGroup.Key, layerGroup.Key, false);
                                 foreach (var spriteEnt in dynamics)
                                 {
-                                    sb.AddSpriteEntity(spriteEnt.transform, spriteEnt.Get<Sprite>());
+                                    sb.AddSpriteEntity(spriteEnt.Get<Transform>(), spriteEnt.Get<Sprite>());
                                 }
 
                                 sb.InitBatch();
@@ -115,6 +118,8 @@ namespace ABEngine.ABERuntime
                 if (remCount == 0)
                     batches.Remove(key);
             }
+            else
+                Console.WriteLine("aa");
         }
 
         internal void DeleteBatch(SpriteBatch batch)

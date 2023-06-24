@@ -9,7 +9,6 @@ using Veldrid;
 using ABEngine.ABEditor.Assets;
 using ABEngine.ABEditor.Assets.Meta;
 using ABEngine.ABERuntime.Animation;
-using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABEditor.ComponentDrawers
 {

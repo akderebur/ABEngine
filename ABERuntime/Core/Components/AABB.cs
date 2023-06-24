@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
+using Arch.Core;
+using Arch.Core.Extensions;
 using Box2D.NetStandard.Common;
 using Halak;
 using Newtonsoft.Json;
@@ -31,7 +33,7 @@ namespace ABEngine.ABERuntime.Components
                 return false;
 
             var camEnt = Game.activeCam.entity;
-            if (!camEnt.IsValid())
+            if (camEnt == Entity.Null)
                 return false;
 
             Matrix4x4 camRelTrans = transform.worldMatrix * Game.activeCam.worldToLocaMatrix;

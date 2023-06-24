@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
-using ABEngine.ABERuntime.ECS;
+using Arch.Core;
 using Box2D.NetStandard.Common;
 using Box2D.NetStandard.Dynamics.Bodies;
 
@@ -15,24 +15,22 @@ namespace ABEngine.ABERuntime
 
         public void ResetSmoothStates()
         {
-            var query = Game.GameWorld.CreateQuery().Has<Rigidbody>().Has<Transform>();
+            var query = new QueryDescription().WithAll<Transform, Rigidbody>();
 
-            foreach (var rbEnt in query.GetEntities())
+            Game.GameWorld.Query(in query, (ref Rigidbody rb) =>
             {
-                var rb = rbEnt.Get<Rigidbody>();
-                if (rb.b2dBody == null || rb.bodyType == BodyType.Static)
-                    continue;
-
-                //rb.smoothedPosition = rb.previousPosition = rb.b2dBody.GetPosition();
-                rb.start = rb.current = rb.target = rb.b2dBody.GetPosition();
-            }
+                if (rb.b2dBody != null && rb.bodyType != BodyType.Static)
+                {
+                    rb.start = rb.current = rb.target = rb.b2dBody.GetPosition();
+                }
+            });
         }
 
         public void PreFixedUpdate()
         {
-            var query = Game.GameWorld.CreateQuery().Has<Rigidbody>().Has<Transform>();
+            var query = new QueryDescription().WithAll<Transform, Rigidbody>();
 
-            query.Foreach((Entity rbEnt, ref Rigidbody rb, ref Transform transform) =>
+            Game.GameWorld.Query(in query, (ref Transform transform, ref Rigidbody rb) =>
             {
                 if (rb.b2dBody != null && rb.bodyType != BodyType.Static)
                 {
@@ -51,13 +49,13 @@ namespace ABEngine.ABERuntime
 
         public override void FixedUpdate(float gameTime, float fixedDeltaTime)
         {
-            var query = Game.GameWorld.CreateQuery().Has<Rigidbody>().Has<Transform>();
+            var query = new QueryDescription().WithAll<Transform, Rigidbody>();
 
-            query.Foreach((Entity rbEnt, ref Rigidbody rb, ref Transform transform) =>
+            Game.GameWorld.Query(in query, (ref Transform transform, ref Rigidbody rb) =>
             {
-               
-                    
-                if (rb.b2dBody != null && rb.entity.enabled && rb.bodyType != BodyType.Static)
+
+
+                if (rb.b2dBody != null && rb.bodyType != BodyType.Static)
                 {
 
                     //Vector3 locPos = Vector3.Transform(new Vector3(rb.b2dBody.GetPosition() * 100f, 0f), transform.parent != null ? transform.parent.worldToLocaMatrix : Matrix4x4.Identity);
@@ -92,11 +90,11 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float ratio)
         {
-            var query = Game.GameWorld.CreateQuery().Has<Rigidbody>().Has<Transform>();
+            var query = new QueryDescription().WithAll<Transform, Rigidbody>();
 
-            query.Foreach((Entity rbEnt, ref Rigidbody rb, ref Transform transform) =>
+            Game.GameWorld.Query(in query, (ref Transform transform, ref Rigidbody rb) =>
             {
-                if (rb.entity.enabled && rb.bodyType != BodyType.Static)
+                if (rb.bodyType != BodyType.Static)
                 {
                     if (rb.interpolationType == RBInterpolationType.Interpolate)
                     {

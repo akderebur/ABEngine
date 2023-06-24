@@ -1,7 +1,6 @@
 ﻿using System;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Core.Assets;
-using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABEditor.Assets.Meta
 {

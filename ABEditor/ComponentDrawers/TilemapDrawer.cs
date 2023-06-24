@@ -10,8 +10,9 @@ using static ABEngine.ABEditor.SpriteEditor;
 using System.Collections.Generic;
 using System.Runtime.ConstrainedExecution;
 using System.Linq;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABEditor.TilemapExtension;
+using Arch.Core;
+using Arch.Core.Extensions;
 
 namespace ABEngine.ABEditor.ComponentDrawers
 {
@@ -30,8 +31,8 @@ namespace ABEngine.ABEditor.ComponentDrawers
         public static bool updateGrid;
         public static Vector2 tileSize = new Vector2(128, 128);
 
-        static Entity cursorSprite;
-
+        static Entity cursorSprite = Entity.Null;
+        
         static Transform lastTilemapTrans;
         static Tilemap lastTilemap;
         static Texture2D texture2d;
@@ -110,9 +111,9 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     tileSprite.SetUVIndent(uvIndent);
 
                     var tileSpriteEnt = EntityManager.CreateEntity("Tile", "TilemapTile", tileSprite, false);
-                    tileSpriteEnt.transform.localPosition = placePosRound;
-                    tileSpriteEnt.transform.localEulerAngles = cursorSprite.transform.localEulerAngles;
-                    tileSpriteEnt.transform.parent = lastTilemapTrans;
+                    tileSpriteEnt.Get<Transform>().localPosition = placePosRound;
+                    tileSpriteEnt.Get<Transform>().localEulerAngles = cursorSprite.Get<Transform>().localEulerAngles;
+                    tileSpriteEnt.Get<Transform>().parent = lastTilemapTrans;
 
                     tileSprite.renderLayerIndex = GraphicsManager.renderLayers.Count - 1;
 
@@ -165,14 +166,14 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     tileSprite.SetUVIndent(uvIndent);
 
                     var tileSpriteEnt = EntityManager.CreateEntity("Tile", "TilemapTile", false);
-                    tileSpriteEnt.transform.localPosition = newPos;
-                    tileSpriteEnt.transform.localEulerAngles = cursorSprite.transform.localEulerAngles;
-                    tileSpriteEnt.transform.parent = lastTilemapTrans;
+                    tileSpriteEnt.Get<Transform>().localPosition = newPos;
+                    tileSpriteEnt.Get<Transform>().localEulerAngles = cursorSprite.Get<Transform>().localEulerAngles;
+                    tileSpriteEnt.Get<Transform>().parent = lastTilemapTrans;
 
                     tileSpriteEnt.Set<Sprite>(tileSprite);
                     tileSprite.renderLayerIndex = GraphicsManager.renderLayers.Count - 1;
 
-                    lastTilemap.AddTile(tileSpriteEnt.transform, recQuad.quadId);
+                    lastTilemap.AddTile(tileSpriteEnt.Get<Transform>(), recQuad.quadId);
 
                     if (placeWithCol)
                     {
@@ -195,14 +196,14 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 tileSprite.SetUVIndent(uvIndent);
 
                 var tileSpriteEnt = EntityManager.CreateEntity("Tile", "TilemapTile", tileSprite, false);
-                tileSpriteEnt.transform.localPosition = placePosRound;
-                tileSpriteEnt.transform.localEulerAngles = cursorSprite.transform.localEulerAngles;
-                tileSpriteEnt.transform.parent = lastTilemapTrans;
+                tileSpriteEnt.Get<Transform>().localPosition = placePosRound;
+                tileSpriteEnt.Get<Transform>().localEulerAngles = cursorSprite.Get<Transform>().localEulerAngles;
+                tileSpriteEnt.Get<Transform>().parent = lastTilemapTrans;
 
                 //tileSpriteEnt.Set<Sprite>(tileSprite);
                 tileSprite.renderLayerIndex = GraphicsManager.renderLayers.Count - 1;
 
-                lastTilemap.AddTile(tileSpriteEnt.transform, curSelection.quadId);
+                lastTilemap.AddTile(tileSpriteEnt.Get<Transform>(), curSelection.quadId);
                 if (placeWithCol)
                 {
                     var chunk = lastTilemap.AddCollision(placePos);
@@ -243,7 +244,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     curSelection.selected = false;
                     curSelection = targQuad;
                     curSelection.selected = true;
-                    cursorSprite.SetEnabled(true);
+                    //cursorSprite.SetEnabled(true);
                     cursorSprite.Get<Sprite>().SetSpriteID(curSelection.quadId);
                 }
             }
@@ -265,9 +266,9 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     curSelection.selected = false;
                 savedQuad = null;
                 curSelection = null;
-                if (cursorSprite.IsValid())
+                if (cursorSprite != Entity.Null)
                 {
-                    cursorSprite.SetEnabled(false);
+                    //cursorSprite.SetEnabled(false);
                 }
             }
         }
@@ -302,9 +303,9 @@ namespace ABEngine.ABEditor.ComponentDrawers
                             if (tile.spriteTrans != null)
                             {
                                 var entCopy = EntityManager.Instantiate(tile.spriteTrans.entity, null);
-                                entCopy.transform.localPosition = spawnPos.ToVector3().RoundTo2Dec();
+                                entCopy.Get<Transform>().localPosition = spawnPos.ToVector3().RoundTo2Dec();
 
-                                lastTilemap.AddTile(entCopy.transform, entCopy.Get<Sprite>().GetSpriteID());
+                                lastTilemap.AddTile(entCopy.Get<Transform>(), entCopy.Get<Sprite>().GetSpriteID());
                             }
                             var chunk = lastTilemap.AddCollision(spawnPos.ToVector3().RoundTo2Dec());
                             onCollisionUpdate?.Invoke(chunk);
@@ -340,7 +341,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     curSelection.selected = false;
                 curSelection = savedQuad;
                 curSelection.selected = true;
-                cursorSprite.SetEnabled(true);
+                //cursorSprite.SetEnabled(true);
                 cursorSprite.Get<Sprite>().SetSpriteID(curSelection.quadId);
 
                 savedQuad = null;
@@ -377,8 +378,8 @@ namespace ABEngine.ABEditor.ComponentDrawers
             quads.Clear();
             quads.Add(new CutQuad() { startX = 0, StartY = 0, quadId = 0 });
 
-            if (cursorSprite.IsValid())
-                cursorSprite.SetEnabled(false);
+            //if (cursorSprite.IsValid())
+            //    cursorSprite.SetEnabled(false);
             updateGrid = true;
         }
 
@@ -460,7 +461,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                         tileSpr.entity.Get<Sprite>().renderLayerIndex = GraphicsManager.renderLayers.Count - 1;
                     }
 
-                    if (!cursorSprite.IsValid())
+                    if (cursorSprite == Entity.Null)
                     {
                         cursorSprite = EntityManager.CreateEntity("TilemapCursor", "EditorNotVisible", new Sprite(texture2d));
                     }
@@ -476,15 +477,15 @@ namespace ABEngine.ABEditor.ComponentDrawers
             }
 
             Sprite spr = null;
-            if (cursorSprite.IsValid())
+            if (cursorSprite != Entity.Null)
             {
-                cursorSprite.transform.localPosition = Game.activeCam.worldPosition + new Vector3(ImGui.GetMousePos().MouseToZoomed().ToImGuiVector2().PixelToWorld(), 0.5f);
+                cursorSprite.Get<Transform>().localPosition = Game.activeCam.worldPosition + new Vector3(ImGui.GetMousePos().MouseToZoomed().ToImGuiVector2().PixelToWorld(), 0.5f);
                 spr = cursorSprite.Get<Sprite>();
 
                 if (Input.GetKeyDown(Key.Q))
-                    cursorSprite.transform.localEulerAngles -= Vector3.UnitZ * MathF.PI / 2f;
+                    cursorSprite.Get<Transform>().localEulerAngles -= Vector3.UnitZ * MathF.PI / 2f;
                 else if (Input.GetKeyDown(Key.E))
-                    cursorSprite.transform.localEulerAngles += Vector3.UnitZ * MathF.PI / 2f;
+                    cursorSprite.Get<Transform>().localEulerAngles += Vector3.UnitZ * MathF.PI / 2f;
 
             }
 
@@ -494,10 +495,10 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     curSelection.selected = false;
                 savedQuad = null;
                 curSelection = null;
-                if (cursorSprite.IsValid())
-                {
-                    cursorSprite.SetEnabled(false);
-                }
+                //if (cursorSprite.IsValid())
+                //{
+                //    cursorSprite.SetEnabled(false);
+                //}
             }
 
             // Recalculate preview
@@ -651,7 +652,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                                 texture2d.RetileTexture(new Vector2(cutWidth, cutHeight));
 
-                                if (!cursorSprite.IsValid())
+                                if (cursorSprite == Entity.Null)
                                 {
                                     cursorSprite = EntityManager.CreateEntity("TilemapCursor", "EditorNotVisible", new Sprite(texture2d));
                                 }
@@ -663,9 +664,9 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                             curSelection = selQuad;
                             curSelection.selected = true;
-                            cursorSprite.SetEnabled(true);
+                            //cursorSprite.SetEnabled(true);
                             cursorSprite.Get<Sprite>().SetSpriteID(curSelection.quadId);
-                            cursorSprite.transform.localEulerAngles = Vector3.Zero;
+                            cursorSprite.Get<Transform>().localEulerAngles = Vector3.Zero;
 
                             AutoTileDrawer.SetSprite(curSelection.quadId);
                         }

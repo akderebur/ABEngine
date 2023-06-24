@@ -1,6 +1,7 @@
 ﻿using System;
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Components;
+using Arch.Core;
 
 namespace ABEngine.ABERuntime
 {
@@ -12,8 +13,8 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = Game.GameWorld.CreateQuery().Has<SpriteAnimation>().Has<Sprite>().Not<Animator>();
-            query.Foreach((ref SpriteAnimation anim, ref Sprite sprite) =>
+            var query = new QueryDescription().WithAll<SpriteAnimation, Sprite>().WithNone<Animator>();
+            Game.GameWorld.Query(in query, (ref SpriteAnimation anim, ref Sprite sprite) =>
             {
                 AnimationState curState = anim.state;
                 SpriteClip curClip = curState.clip;

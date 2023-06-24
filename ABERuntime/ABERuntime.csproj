@@ -78,5 +78,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Box2D\Box2D.NetStandard.csproj" />
+    <ProjectReference Include="..\..\..\Downloads\Arch-master\src\Arch\Arch.csproj" />
   </ItemGroup>
 </Project>

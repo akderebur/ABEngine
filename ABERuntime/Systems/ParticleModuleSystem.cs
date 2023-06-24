@@ -1,6 +1,6 @@
 ﻿using System;
 using ABEngine.ABERuntime.Components;
-using ABEngine.ABERuntime.ECS;
+using Arch.Core;
 
 namespace ABEngine.ABERuntime
 {
@@ -12,9 +12,9 @@ namespace ABEngine.ABERuntime
 
         public override void Start()
         {
-            var query = Game.GameWorld.CreateQuery().Has<ParticleModule>().Has<Transform>();
+            var query = new QueryDescription().WithAll<Transform, ParticleModule>();
 
-            query.Foreach((ref ParticleModule pm, ref Transform transform) =>
+            Game.GameWorld.Query(in query, (ref ParticleModule pm, ref Transform transform) =>
             {
                 pm.Init(transform);
             });
@@ -22,9 +22,9 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = Game.GameWorld.CreateQuery().Has<ParticleModule>().Has<Transform>();
+            var query = new QueryDescription().WithAll<Transform, ParticleModule>();
 
-            query.Foreach((ref ParticleModule pm, ref Transform transform) =>
+            Game.GameWorld.Query(in query, (ref ParticleModule pm, ref Transform transform) =>
             {
                 pm.Update(deltaTime, transform);
             });

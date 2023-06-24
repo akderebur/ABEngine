@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using System.Linq;
+using Arch.Core.Extensions;
 
 namespace ABEngine.ABEditor.TilemapExtension
 {

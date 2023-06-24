@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Numerics;
 using ABEngine.ABERuntime;
-using ABEngine.ABERuntime.ECS;
 using ImGuiNET;
 
 namespace ABEngine.ABEUI
