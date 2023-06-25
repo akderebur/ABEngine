@@ -140,8 +140,6 @@ namespace ABEngine.ABEUI
         }
 
 
-
-
         private void LoadGraphics()
         {
             // Framebuffer

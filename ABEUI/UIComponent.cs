@@ -8,6 +8,9 @@ namespace ABEngine.ABEUI
 		public Transform transform { get; set; }
 		public UIAnchor anchor { get; set; }
 
+		public bool hovered;
+		public bool clicked;
+
 		internal virtual void Render()
 		{
 

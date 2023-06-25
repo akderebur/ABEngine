@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Numerics;
 using ABEngine.ABERuntime;
+using Arch.Core.Extensions;
 using ImGuiNET;
 
 namespace ABEngine.ABEUI
@@ -11,12 +12,24 @@ namespace ABEngine.ABEUI
         public string fontPath { get; set; }
         public float fontSize { get; set; }
 
-        public Vector4 textColor { get; set; }
+        private Vector4 _textColor;
+        public Vector4 textColor
+        {
+            get { return _textColor; }
+            set { _textColor = value; curColor = value; }
+        }
+
+        public Vector4 hoverColor { get; set; }
 
         internal Func<string> textFunc;
 
         internal Vector4 curColor;
         internal ImFontPtr font;
+
+        internal UIText()
+        {
+
+        }
 
         public UIText(string textContent)
         {
@@ -24,6 +37,7 @@ namespace ABEngine.ABEUI
             fontPath = "";
             fontSize = 12;
             textColor = Vector4.One;
+            hoverColor = textColor;
             LoadFont();
         }
 
@@ -33,6 +47,7 @@ namespace ABEngine.ABEUI
             fontPath = "";
             this.fontSize = fontSize;
             textColor = Vector4.One;
+            hoverColor = textColor;
             LoadFont();
         }
 
@@ -44,6 +59,7 @@ namespace ABEngine.ABEUI
             fontPath = "";
             this.fontSize = fontSize;
             textColor = Vector4.One;
+            hoverColor = textColor;
             LoadFont();
         }
         public UIText(string textContent, string fontPath, float fontSize)
@@ -52,6 +68,7 @@ namespace ABEngine.ABEUI
             this.fontPath = fontPath;
             this.fontSize = fontSize;
             textColor = Vector4.One;
+            hoverColor = textColor;
             LoadFont();
         }
 
@@ -74,6 +91,11 @@ namespace ABEngine.ABEUI
             curColor = textColor;
         }
 
+        public void RevertTextColor()
+        {
+            curColor = textColor;
+        }
+
         internal override void Render()
         {
             UIText uiText = this;
@@ -88,9 +110,15 @@ namespace ABEngine.ABEUI
             {
                 endPos = UIRenderer.Instance.CalculateEndPos(base.anchor, txtTrans.worldPosition);
             }
+            else if (transform.entity.Has<UIAnchor>())
+                base.anchor = transform.entity.Get<UIAnchor>();
             ImGui.PushFont(uiText.font);
             ImGui.SetCursorPos(endPos);
-            ImGui.TextColored(uiText.curColor, uiText.text);
+            ImGui.PushStyleColor(ImGuiCol.Text, hovered ? uiText.hoverColor : uiText.curColor);
+            ImGui.PushTextWrapPos(0.0f);
+            ImGui.TextWrapped(uiText.text);
+            ImGui.PopTextWrapPos();
+            ImGui.PopStyleColor();
             ImGui.PopFont();
         }
     }

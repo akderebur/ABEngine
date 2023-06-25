@@ -20,8 +20,8 @@ namespace ABEngine.ABERuntime
 {
     public static class EntityManager
     {
-        public static SemaphoreSlim creationSemaphore = new SemaphoreSlim(1);
-        public static SemaphoreSlim frameSemaphore = new SemaphoreSlim(1);
+        internal static SemaphoreSlim creationSemaphore = new SemaphoreSlim(1);
+        internal static SemaphoreSlim frameSemaphore = new SemaphoreSlim(1);
 
         private static bool immediateDestroy;
         //private static List<EntityDestroyInfo> destroyList = new List<EntityDestroyInfo>();

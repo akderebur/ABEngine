@@ -23,7 +23,7 @@ namespace ABEngine.ABEUI
 
         List<UIComponent> uiComponents = new List<UIComponent>();
 
-        internal Vector2 screenScale = Vector2.One;
+        public Vector2 screenScale = Vector2.One;
 
         private byte[] openSansData;
         private ImFontConfigPtr openSansConf;
@@ -47,6 +47,23 @@ namespace ABEngine.ABEUI
             }
         }
 
+        protected override void OnEntityDestroyed(in Entity entity)
+        {
+            UIComponent uiComp = null;
+            if (entity.Has<UIText>())
+                uiComp = entity.Get<UIText>();
+            else if (entity.Has<UIImageButton>())
+                uiComp = entity.Get<UIImageButton>();
+            else if (entity.Has<UISliderImage>())
+                uiComp = entity.Get<UISliderImage>();
+
+            if (uiComp != null)
+            {
+                if(uiComponents.Contains(uiComp))
+                    uiComponents.Remove(uiComp);
+            }
+        }
+
         private UIRenderer() : base(true)
         {
             LoadDefaultFontData();
@@ -54,6 +71,7 @@ namespace ABEngine.ABEUI
             ResetRenderer();
 
             Game.onWindowResize += Game_onWindowResize;
+            Game.onCanvasResize += Game_onCanvasResize;
             Game.onSceneLoad += Game_onSceneLoad;
         }
 
@@ -145,6 +163,7 @@ namespace ABEngine.ABEUI
             {
                 Game.onWindowResize -= Game_onWindowResize;
                 Game.onSceneLoad -= Game_onSceneLoad;
+                Game.onCanvasResize -= Game_onCanvasResize;
 
                 imguiRenderer.ClearCachedImageResources();
                 imguiRenderer.DestroyDeviceObjects();
@@ -170,6 +189,15 @@ namespace ABEngine.ABEUI
             screenScale = Game.screenSize / Game.canvas.referenceSize;
 
             //uiComponents.Clear();
+
+            ImGui.GetIO().Fonts.Clear();
+            ImGui.GetIO().Fonts.AddFontDefault();
+            RemakeFonts();
+        }
+
+        private void Game_onCanvasResize()
+        {
+            screenScale = Game.screenSize / Game.canvas.referenceSize;
 
             ImGui.GetIO().Fonts.Clear();
             ImGui.GetIO().Fonts.AddFontDefault();
@@ -235,6 +263,8 @@ namespace ABEngine.ABEUI
             foreach (UIComponent component in orderedComps)
             {
                 component.Render();
+                component.hovered = ImGui.IsItemHovered();
+                component.clicked = ImGui.IsItemClicked();
             }
 
             ImGui.End();

@@ -71,6 +71,12 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
+        public Vector2 ScreenToCanvas(Vector2 screenPos)
+        {
+            Vector2 factor = canvasSize / Game.screenSize;
+            return screenPos * factor - canvasSize / 2f; ;
+        }
+
         public JValue Serialize()
         {
             JsonObjectBuilder canvasJ = new JsonObjectBuilder(200);

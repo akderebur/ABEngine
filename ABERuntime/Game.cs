@@ -64,6 +64,7 @@ namespace ABEngine.ABERuntime
         // Events
         public static event Action onWindowResize;
         public static event Action onSceneLoad;
+        public static event Action onCanvasResize;
 
 
         // Flags
@@ -649,6 +650,17 @@ namespace ABEngine.ABERuntime
 
             }
 
+
+            for (int s = 0; s < renderExtensions.Count; s++)
+            {
+                Type type = renderExtensions[s].GetType();
+                BaseSystem system = renderExtensions[s];
+
+                // Subscribe entity creation
+                AddSystemFromAttribute(type, system, typeof(SubscribeAnyAttribute), notifyAnySystems);
+            }
+
+
             // Render extensions - Subscribe Any
             //for (int s = 0; s < renderExtensions.Count; s++)
             //{
@@ -764,6 +776,7 @@ namespace ABEngine.ABERuntime
                 return;
 
             projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1000f, -1000f);
+            onCanvasResize?.Invoke();
         }
 
         protected void SetupGraphics(string windowName)

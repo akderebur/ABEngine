@@ -41,6 +41,7 @@ namespace ABEngine.ABERuntime
         {
             var obj = JsonConvert.DeserializeObject(json, type, UtilityExtensions.jsonSettings);
             ((ABComponent)obj).savedJson = json;
+            ((ABComponent)obj).PostDeserialize();
             return obj;
         }
 

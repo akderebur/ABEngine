@@ -160,16 +160,23 @@ namespace ABEngine.ABERuntime
             return default(Entity);
         }
 
-        internal static void AddPrefabEntity(in Entity entity, uint hash)
-        {
-            //entity.Transfer(PrefabWorld);
-            //prefabInstances.Add(hash, entity.transform);
-        }
+        //      internal static void AddPrefabEntity(in Entity entity, uint hash)
+        //      {
+        //          //entity.Transfer(PrefabWorld);
+        //          //prefabInstances.Add(hash, entity.transform);
+        //      }
 
-        public static void AddPrefabEntity(in Entity entity, string prefabName)
-		{
-			AddPrefabEntity(entity, prefabName.ToHash32());
-		}
+        public static Transform AddPrefabEntity(in Entity entity, string prefabName)
+        {
+            uint hash = prefabName.ToHash32();
+
+            var prefabEnt = EntityToPrefab(entity, null);
+            prefabInstances.Add(hash, prefabEnt.Get<Transform>());
+
+            EntityManager.DestroyEntity(entity);
+
+            return prefabEnt.Get<Transform>();
+        }
 
         public static void AddPrefabAsset(PrefabAsset prefabAsset, string prefabName)
         {
