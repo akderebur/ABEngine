@@ -15,7 +15,7 @@ using Arch.Core.Extensions;
 
 namespace ABEngine.ABEUI
 {
-    [SubscribeAny(typeof(UIText), typeof(UIImageButton), typeof(UISliderImage))]
+    [SubscribeAny(typeof(UIText), typeof(UIImageButton), typeof(UISliderImage), typeof(UIImage))]
     public class UIRenderer : RenderSystem
     {
         private ImGuiRenderer imguiRenderer;
@@ -37,6 +37,8 @@ namespace ABEngine.ABEUI
                 uiComp = entity.Get<UIImageButton>();
             else if(entity.Has<UISliderImage>())
                 uiComp = entity.Get<UISliderImage>();
+            else if (entity.Has<UIImage>())
+                uiComp = entity.Get<UIImage>();
 
             if (uiComp != null)
             {
@@ -56,6 +58,8 @@ namespace ABEngine.ABEUI
                 uiComp = entity.Get<UIImageButton>();
             else if (entity.Has<UISliderImage>())
                 uiComp = entity.Get<UISliderImage>();
+            else if (entity.Has<UIImage>())
+                uiComp = entity.Get<UIImage>();
 
             if (uiComp != null)
             {
@@ -262,9 +266,12 @@ namespace ABEngine.ABEUI
 
             foreach (UIComponent component in orderedComps)
             {
-                component.Render();
-                component.hovered = ImGui.IsItemHovered();
-                component.clicked = ImGui.IsItemClicked();
+                if (component.enabled)
+                {
+                    component.Render();
+                    component.hovered = ImGui.IsItemHovered();
+                    component.clicked = ImGui.IsItemClicked();
+                }
             }
 
             ImGui.End();

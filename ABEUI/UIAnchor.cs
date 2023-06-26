@@ -12,5 +12,15 @@ namespace ABEngine.ABEUI
         public UIAnchor()
         {
         }
+
+        public UIAnchor(float anchorX, float anchorY)
+        {
+            anchorPos = new Vector2(anchorX, anchorY);
+        }
+
+        public UIAnchor(Vector2 anchorPos)
+        {
+            this.anchorPos = anchorPos;
+        }
     }
 }

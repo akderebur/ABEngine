@@ -7,6 +7,17 @@ namespace ABEngine.ABEUI
     {
 		public Transform transform { get; set; }
 		public UIAnchor anchor { get; set; }
+		private bool _enabled = true;
+		public bool enabled
+		{
+			get { return _enabled; }
+			set
+			{
+				_enabled = value;
+				hovered = false;
+				clicked = false;
+			}
+		}
 
 		public bool hovered;
 		public bool clicked;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using System.Runtime.Intrinsics;
 using ABEngine.ABERuntime;
 using ImGuiNET;
 
@@ -36,7 +37,7 @@ namespace ABEngine.ABEUI
             this.texture2d = texture;
             this.hoverTexture = texture;
             this.clickTexture = texture;
-			this.size = new Vector2(100, 100);
+            this.size = texture.imageSize;
             this.hoverColor = Vector4.One;
 
             GetTextureBindings();
@@ -125,8 +126,14 @@ namespace ABEngine.ABEUI
                 endPos = UIRenderer.Instance.CalculateEndPos(anchor, btnTrans.worldPosition);
             }
 
+            Vector2 endSize = btnTrans.worldScale.ToVector2() * uiImgBtn.size * UIRenderer.Instance.screenScale;
+
+            ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, Vector4.Zero);
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, Vector4.Zero);
+
             ImGui.SetCursorPos(endPos);
-            if (ImGui.ImageButton(uiImgBtn.GetHashCode().ToString(), uiImgBtn.imgPtr, uiImgBtn.size, Vector2.Zero, Vector2.One, Vector4.Zero, uiImgBtn.curColor))
+            if (ImGui.ImageButton(uiImgBtn.GetHashCode().ToString(), uiImgBtn.imgPtr, endSize, Vector2.Zero, Vector2.One, Vector4.Zero, uiImgBtn.curColor))
             {
                 uiImgBtn.ButtonClickEvent();
             }
@@ -147,6 +154,8 @@ namespace ABEngine.ABEUI
                     uiImgBtn.MouseExitEvent();
                 }
             }
+
+            ImGui.PopStyleColor(3);
         }
 
     }

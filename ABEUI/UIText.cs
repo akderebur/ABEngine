@@ -16,7 +16,7 @@ namespace ABEngine.ABEUI
         public Vector4 textColor
         {
             get { return _textColor; }
-            set { _textColor = value; curColor = value; }
+            set { _textColor = value; curColor = value; hoverColor = textColor; }
         }
 
         public Vector4 hoverColor { get; set; }
@@ -50,7 +50,6 @@ namespace ABEngine.ABEUI
             hoverColor = textColor;
             LoadFont();
         }
-
 
         public UIText(Func<string> func, float fontSize)
         {
