@@ -305,7 +305,7 @@ namespace ABEngine.ABEditor
                                 selFile = file;
 
                                 Editor.selectedEntity = Entity.Null;
-                                //Game.GameWorld.SetData<string>(catDir.GetLocalPath() + selFile);
+                                Editor.selectedAsset = catDir.GetLocalPath() + selFile;
                             }
                         }
                         //if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) // Left clik - details

@@ -427,6 +427,14 @@ namespace ABEngine.ABERuntime
             return prefabAsset;
         }
 
+        public static string GetTextAsset(string assetPath)
+        {
+            string fullPath = Game.AssetPath + assetPath;
+            if (File.Exists(fullPath))
+                return File.ReadAllText(fullPath);
+            return "";
+        }
+
         // Editor ONLY remove later
         internal static Texture2D GetTextureEditorBinding(string texPath)
         {

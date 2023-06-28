@@ -160,11 +160,10 @@ namespace ABEngine.ABERuntime
             return default(Entity);
         }
 
-        //      internal static void AddPrefabEntity(in Entity entity, uint hash)
-        //      {
-        //          //entity.Transfer(PrefabWorld);
-        //          //prefabInstances.Add(hash, entity.transform);
-        //      }
+        internal static void AddPrefabEntity(in Entity entity, uint hash)
+        {
+            prefabInstances.Add(hash, entity.Get<Transform>());
+        }
 
         public static Transform AddPrefabEntity(in Entity entity, string prefabName)
         {

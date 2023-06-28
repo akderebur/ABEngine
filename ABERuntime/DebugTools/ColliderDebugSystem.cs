@@ -103,7 +103,20 @@ namespace ABEngine.ABERuntime.Debug
             }
             else if(lastTrans != null)
             {
-                if (lastTrans.entity != Entity.Null && lastTrans.entity.Has<AABB>())
+                if(lastTrans.entity == Entity.Null || !lastTrans.entity.IsAlive())
+                {
+                    lastTrans = null;
+                    MappedResourceView<LinePoint> writemap = gd.Map<LinePoint>(linePointsBuffer, MapMode.Write);
+                    for (int i = 0; i < 5; i++)
+                    {
+                        writemap[i] = new LinePoint(color, Vector3.Zero);
+                    }
+                    gd.Unmap(linePointsBuffer);
+
+                    return;
+                }
+
+                if (lastTrans.entity.Has<AABB>())
                 {
                     AABB bbox = lastTrans.entity.Get<AABB>();
 

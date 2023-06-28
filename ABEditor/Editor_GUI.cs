@@ -135,7 +135,7 @@ namespace ABEngine.ABEditor
 
                 // Details - Scene entity
                 var selectedEntity = Editor.selectedEntity;
-                if (selectedEntity != Entity.Null)
+                if (selectedEntity != Entity.Null && selectedEntity.IsAlive())
                 {
                     ImGui.Begin("Details");
                     DetailsView(selectedEntity);
@@ -172,7 +172,7 @@ namespace ABEngine.ABEditor
 
         void AssetDetails()
         {
-            string selectedAsset = null;
+            string selectedAsset = Editor.selectedAsset;
             if (!string.IsNullOrEmpty(selectedAsset))
             {
                 var meta = AssetHandler.GetMeta(selectedAsset);
@@ -634,6 +634,9 @@ namespace ABEngine.ABEditor
         bool firstGradientOpen = false;
         void DetailsView(in Entity selectedEntity)
         {
+            if(!selectedEntity.IsAlive())
+                return;
+           
             string entName = selectedEntity.Get<string>();
             ImGui.InputText("Name", ref entName, 200);
             if (entName != selectedEntity.Get<string>())

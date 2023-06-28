@@ -207,7 +207,7 @@ namespace ABEngine.ABERuntime
         private static void MouseUp(MouseButton mouseButton)
         {
             _currentlyPressedMouseButtons.Remove(mouseButton);
-            _newMouseButtonsThisFrame.Remove(mouseButton);
+            //_newMouseButtonsThisFrame.Remove(mouseButton);
             _mouseUpThisFrame.Add(mouseButton);
         }
 

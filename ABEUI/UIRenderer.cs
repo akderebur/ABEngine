@@ -270,7 +270,7 @@ namespace ABEngine.ABEUI
                 {
                     component.Render();
                     component.hovered = ImGui.IsItemHovered();
-                    component.clicked = ImGui.IsItemClicked();
+                    component.clicked = component.hovered && Input.GetMouseButtonDown(MouseButton.Left);
                 }
             }
 

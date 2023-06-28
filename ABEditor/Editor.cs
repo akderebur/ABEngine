@@ -30,6 +30,7 @@ namespace ABEngine.ABEditor
         FileSystemWatcher watcher;
 
         public static Entity selectedEntity = Entity.Null;
+        public static string selectedAsset = null;
 
         // Imgui
         static ImGuiRenderer imguiRenderer;
