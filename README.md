@@ -46,5 +46,5 @@ ABEngine depends on multiple great libraries.
 * [SDL](https://github.com/libsdl-org/SDL) / [SDL2-CS](https://github.com/flibitijibibo/SDL2-CS)
 * [Dear ImGui](https://github.com/ocornut/imgui) / [ImGui.NET](https://github.com/mellinoe/ImGui.NET)
 * [JValue](https://github.com/halak/jvalue)
-* [SimpleECS](https://github.com/PeteyChan/SimpleECS)
+* [Arch](https://github.com/genaray/Arch)
 * [Crc32.NET](https://github.com/force-net/Crc32.NET)
