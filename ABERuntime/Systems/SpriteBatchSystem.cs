@@ -118,8 +118,6 @@ namespace ABEngine.ABERuntime
                 if (remCount == 0)
                     batches.Remove(key);
             }
-            else
-                Console.WriteLine("aa");
         }
 
         internal void DeleteBatch(SpriteBatch batch)

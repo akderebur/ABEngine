@@ -73,7 +73,6 @@ namespace ABEngine.ABERuntime.Debug
                 {
                     if (bbox.CheckCollisionMouse(bboxTrans, Input.GetMousePosition()))
                     {
-                        Console.WriteLine("aa");
                         MappedResourceView<LinePoint> writemap = gd.Map<LinePoint>(linePointsBuffer, MapMode.Write);
 
                         Vector4 bboxPoints = bbox.GetMinMax(bboxTrans);
