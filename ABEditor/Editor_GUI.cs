@@ -513,7 +513,7 @@ namespace ABEngine.ABEditor
                 curLinePos.Y += worldOffset.Y;
             }
 
-            //gridEnt.SetEnabled(false);
+            gridEnt.Get<Transform>().enabled = false;
         }
 
         private void MainMenu()
@@ -529,6 +529,9 @@ namespace ABEngine.ABEditor
                     }
                     else if (ImGui.MenuItem("New Scene", isGameOpen))
                     {
+                        Editor.selectedAsset = null;
+                        Editor.selectedEntity = Entity.Null;
+
                         ResetWorld();
                         AssetCache.ClearSceneCache();
                         AssetHandler.ResetScene();
@@ -542,8 +545,8 @@ namespace ABEngine.ABEditor
                         activeCam = camEnt.Get<Transform>();
 
                         TMColliderGizmo.ResetGizmo();
-
-                        //RemakeGrid(true);
+                        spriteBatchSystem.Start();
+                        RemakeGrid();
 
                         DepthSearch();
                     }
@@ -810,13 +813,13 @@ namespace ABEngine.ABEditor
             if(hasTilemap)
             {
                 tilemapSelected = true;
-                //gridTrans.entity.SetEnabled(true);
+                gridTrans.enabled = true;
                 TMColliderGizmo.render = true;
             }
             else
             {
                 tilemapSelected = false;
-                //gridTrans.entity.SetEnabled(false);
+                gridTrans.enabled = false;
                 TMColliderGizmo.render = false;
             }
         }

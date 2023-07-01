@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Intrinsics.X86;
+using ABEngine.ABERuntime;
 using ImGuiNET;
 using Veldrid;
 using Num = System.Numerics;
@@ -123,7 +124,7 @@ namespace ABEngine.ABEditor
 									bool isSelected = SelectedFile == fse;
 									if (ImGui.Selectable(name, isSelected, ImGuiSelectableFlags.DontClosePopups))
 									{
-										SelectedFile = fse;
+										SelectedFile = fse.ToCommonPath();
 										SaveFileName = name;
 									}
 
@@ -154,7 +155,7 @@ namespace ABEngine.ABEditor
 						if (ImGui.Button("Open"))
 						{
 							result = 1;
-							SelectedFile = CurrentFolder;
+							SelectedFile = CurrentFolder.ToCommonPath();
 							recentPaths.Insert(0, SelectedFile);
 							ImGui.CloseCurrentPopup();
 						}
@@ -189,11 +190,22 @@ namespace ABEngine.ABEditor
 				{
 					if (ImGui.BeginChildFrame(2, new Num.Vector2(400, 400)))
 					{
+						int id = 0;
 						foreach (var recent in recentPaths)
 						{
-							string displayName = Path.GetFileName(recent);
-							bool isSelected = SelectedFile == recent;
-							if (ImGui.Selectable(displayName, isSelected, ImGuiSelectableFlags.DontClosePopups))
+                            string displayName = Path.GetFileName(recent);
+							int index = -1;
+							if (recent.Contains("/bin/"))
+								index = recent.IndexOf("/bin/");
+
+							if (index > -1)
+							{
+								string dir = recent.Substring(0, index);
+								displayName = Path.GetFileName(dir);
+                            }
+
+                            bool isSelected = SelectedFile == recent;
+							if (ImGui.Selectable(displayName + "##" + id++, isSelected, ImGuiSelectableFlags.DontClosePopups))
 							{
 								SelectedFile = recent;
 							}
