@@ -755,21 +755,40 @@ namespace ABEngine.ABERuntime.Components
 
 		internal bool RemoveTile(Vector3 worldPos)
 		{
-            if (tiles.TryGetValue(worldPos, out Tile tile))
+            // Rounding error
+            var foundTile = tiles.FirstOrDefault(t => Vector3.Distance(t.Key, worldPos) <= 0.02f);
+            if(foundTile.Value != null)
             {
+                Tile tile = foundTile.Value;
                 if (tile.spriteTrans == null)
                     return false;
 
                 EntityManager.DestroyEntity(tile.spriteTrans.entity);
                 tile.spriteTrans = null;
 
-                if(tile.chunk != null)
+                if (tile.chunk != null)
                     tile.chunk.RemoveSprite(worldPos);
                 else
                     tiles.Remove(worldPos);
 
                 return true;
             }
+
+            //if (tiles.TryGetValue(worldPos, out Tile tile))
+            //{
+            //    if (tile.spriteTrans == null)
+            //        return false;
+
+            //    EntityManager.DestroyEntity(tile.spriteTrans.entity);
+            //    tile.spriteTrans = null;
+
+            //    if(tile.chunk != null)
+            //        tile.chunk.RemoveSprite(worldPos);
+            //    else
+            //        tiles.Remove(worldPos);
+
+            //    return true;
+            //}
 
             return false;
         }

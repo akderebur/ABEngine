@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using ABEngine.ABERuntime.Components;
 using Veldrid;
 
@@ -23,18 +22,9 @@ namespace ABEngine.ABERuntime.Rendering
         public uint instanceCount;
         public bool isStatic { get; set; }
 
-        //TextureView view = null;
-        //string imgPath;
-
         Texture2D texture2d;
 
-        //List<Sprite> sprites = new List<Sprite>();
-        //List<Transform> transforms = new List<Transform>();
-
         List<SpriteTransformPair> sprites = new List<SpriteTransformPair>();
-
-        //Dictionary<Sprite, Transform> sprites = new Dictionary<Sprite, Transform>();
-
         List<QuadVertex> verticesList = new List<QuadVertex>();
 
         QuadVertex[] vertices = null;
@@ -45,6 +35,8 @@ namespace ABEngine.ABERuntime.Rendering
         public int renderLayerIndex = 0;
 
         internal event Action<SpriteBatch> onDelete;
+        bool autoDestroy = true;
+        internal bool active = false;
 
         Vector3 imageSize;
 
@@ -76,13 +68,11 @@ namespace ABEngine.ABERuntime.Rendering
             if(!spriteData.sizeSet)
                 spriteData.Resize(imageSize.ToVector2());
 
-            //QuadVertex quad = new QuadVertex(trans.worldPosition, trans.worldScale * spriteData.GetSize());
             QuadVertex quad = new QuadVertex(trans.worldPosition, spriteData.GetSize(), trans.worldScale);
             verticesList.Add(quad);
 
             sprites.Add(new SpriteTransformPair {  spriteData = spriteData, transform = trans});
-            //sprites.Add(spriteData, trans);
-            //sprites.Add(spriteEnt);
+            active = true;
         }
 
         public int RemoveSpriteEntity(Sprite sprite)
@@ -93,19 +83,29 @@ namespace ABEngine.ABERuntime.Rendering
                 verticesList.RemoveAt(sprites.IndexOf(spriteEntry));
                 sprites.Remove(spriteEntry);
 
-                if(sprites.Count == 0) // Remove batch
+                if(sprites.Count == 0) // Deactivate batch
                 {
-                    vertexBuffer.Dispose();
-                    texSet.Dispose();
-                    onDelete?.Invoke(this);
-                    material.onPipelineChanged -= PipelineMaterial_onPipelineChanged;
-                    return 0;
-                }
+                    active = false;
 
-                InitBatch();
+                    if (autoDestroy) // Destroy batch
+                    {
+                        vertexBuffer.Dispose();
+                        texSet.Dispose();
+                        onDelete?.Invoke(this);
+                        material.onPipelineChanged -= PipelineMaterial_onPipelineChanged;
+                        return -1;
+                    }
+                }
+                else
+                    InitBatch();
             }
 
             return sprites.Count;
+        }
+
+        internal void SetAutoDestroy(bool autoDestroy)
+        {
+            this.autoDestroy = autoDestroy;
         }
 
         internal void DeleteBatch()
@@ -171,11 +171,8 @@ namespace ABEngine.ABERuntime.Rendering
         int runC = 0;
         public void UpdateBatch()
         {
-            //if (runC++ > 100)
-            //    return;
-
             // Dynamic batches only
-            if (isStatic)
+            if (!active || isStatic)
             {
                 return;
             }
@@ -183,26 +180,31 @@ namespace ABEngine.ABERuntime.Rendering
             // Write to GPU buffer
             MappedResourceView<QuadVertex> writemap = _gd.Map<QuadVertex>(vertexBuffer, MapMode.Write);
 
-            var sorted = sprites.Where(sp => sp.transform.enabled).OrderBy(sp => sp.transform.worldPosition.Z).ToList();
-            maxZ = sprites.Last().transform.worldPosition.Z;
+            var sorted = sprites.Where(sp => sp.transform.enabled).OrderBy(sp => sp.transform.worldPosition.Z);
+            int renderCount = sorted.Count();
             int index = 0;
-            for (int i = 0; i < sorted.Count; i++)
-            {
-                SpriteTransformPair spritePair = sprites[i];
-                Transform spriteTrans = spritePair.transform;
-                Sprite spriteData = spritePair.spriteData;
 
-                writemap[index++] = new QuadVertex(spriteTrans.worldPosition,
-                                           spriteData.GetSize(),
-                                           spriteTrans.worldScale,
-                                           spriteData.tintColor,
-                                           spriteTrans.localEulerAngles.Z,
-                                           spriteData.uvPos,
-                                           spriteData.uvScale,
-                                           spriteData.pivot);
+            if (renderCount > 0)
+            {
+                maxZ = sorted.Last().transform.worldPosition.Z;
+                foreach (var spritePair in sorted)
+                {
+                    Transform spriteTrans = spritePair.transform;
+                    Sprite spriteData = spritePair.spriteData;
+
+                    writemap[index++] = new QuadVertex(spriteTrans.worldPosition,
+                                               spriteData.GetSize(),
+                                               spriteTrans.worldScale,
+                                               spriteData.tintColor,
+                                               spriteTrans.localEulerAngles.Z,
+                                               spriteData.uvPos,
+                                               spriteData.uvScale,
+                                               spriteData.pivot);
+                }
+
             }
 
-            for (int i = 0; i < sprites.Count - sorted.Count; i++)
+            for (int i = 0; i < sprites.Count - renderCount; i++)
             {
                 writemap[index++] = new QuadVertex(Vector3.Zero,
                                          Vector2.Zero,
@@ -214,31 +216,8 @@ namespace ABEngine.ABERuntime.Rendering
                                          Vector2.Zero);
             }
 
-
-            //foreach (var sprite in sprites)
-            //{
-            //    Transform spriteTrans = sprite.entity.Get<Transform>();
-            //    Sprite spriteData = sprite;
-
-            //    //vertices[i] = new QuadVertexUber(spriteTrans.worldPosition,
-            //    //                             spriteTrans.worldScale * spriteData.GetSize(),
-            //    //                             RgbaFloat.White,
-            //    //                             0f,
-            //    //                             spriteData.uvPos,
-            //    //                             spriteData.uvScale,
-            //    //                             0f,
-            //    //                             RgbaFloat.White,
-            //    //                             0.8f);
-
-
-            //    if (spriteTrans.worldPosition.Z > maxZ)
-            //        maxZ = spriteTrans.worldPosition.Z;
-
-            //}
-
-         
-
             _gd.Unmap(vertexBuffer);
+
         }
     }
 

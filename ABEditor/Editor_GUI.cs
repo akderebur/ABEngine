@@ -859,6 +859,10 @@ namespace ABEngine.ABEditor
                 {
                     ComponentManager.AddParticleModule(selectedEntity);
                 }
+                else if(ImGui.MenuItem("Tilemap"))
+                {
+                    ComponentManager.AddTilemap(selectedEntity);
+                }
 
                 ImGui.Spacing();
                 ImGui.Spacing();

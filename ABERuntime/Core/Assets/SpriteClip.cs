@@ -12,7 +12,8 @@ namespace ABEngine.ABERuntime
     {
         public string imgPath { get; set; }
         public string clipAssetPath { get; set; }
-        public string name { get; set; }
+        //public string name { get; set; }
+        public Texture2D texture2D { get; set; }
         public List<Vector2> uvPoses = new List<Vector2>();
         public List<Vector2> uvScales = new List<Vector2>();
 
@@ -73,6 +74,7 @@ namespace ABEngine.ABERuntime
         {
             clipAssetPath = id.ToString();
             name = clipAssetPath;
+            this.texture2D = tex2d;
             //imgPath = tex2d.imagePath;
 
             frameWidth = tex2d.spriteSize.X;

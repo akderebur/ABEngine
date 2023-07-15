@@ -195,6 +195,20 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
         {
             this.transform = transform;
         }
+
+        internal HashSet<SpriteClip> GetAllClips()
+        {
+            HashSet<SpriteClip> clips = new HashSet<SpriteClip>();
+
+            foreach (var animMatch in _animMatches)
+            {
+                SpriteClip clip = animMatch.animationState?.clip;
+                if (clip != null)
+                    clips.Add(clip);
+            }
+
+            return clips;
+        }
     }
 }
 

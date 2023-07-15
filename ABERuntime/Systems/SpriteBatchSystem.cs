@@ -115,7 +115,7 @@ namespace ABEngine.ABERuntime
             {
                 SpriteBatch batch = batches[key];
                 int remCount = batch.RemoveSpriteEntity(sprite);
-                if (remCount == 0)
+                if (remCount == -1)
                     batches.Remove(key);
             }
         }
@@ -129,16 +129,22 @@ namespace ABEngine.ABERuntime
 
         internal SpriteBatch GetBatchFromSprite(Transform spriteTrans, Sprite sprite, string extraKey)
         {
+            return GetBatchFromSprite(spriteTrans, sprite, sprite.texture, extraKey);
+        }
+
+        internal SpriteBatch GetBatchFromSprite(Transform spriteTrans, Sprite sprite, Texture2D tex2D, string extraKey)
+        {
             PipelineMaterial mat = sprite.sharedMaterial;
 
             int staticKey = spriteTrans.isStatic ? 1 : 0;
-            string key = sprite.renderLayerIndex + "_" + sprite.texture.textureID + "_" + mat.instanceID + "_" + staticKey + extraKey;
+            string key = sprite.renderLayerIndex + "_" + tex2D.textureID + "_" + mat.instanceID + "_" + staticKey + extraKey;
 
             if (batches.TryGetValue(key, out SpriteBatch batch))
                 return batch;
 
             return null;
         }
+
 
         public void UpdateSpriteBatch(Sprite sprite, int oldRenderLayerID, Texture2D oldTex, int oldMatInsId)
         {
@@ -152,7 +158,7 @@ namespace ABEngine.ABERuntime
             {
                 //SpriteBatch batch = batches[key];
                 int remCount = batch.RemoveSpriteEntity(sprite);
-                if (remCount == 0)
+                if (remCount == -1)
                     batches.Remove(key);
             }
 
@@ -164,10 +170,26 @@ namespace ABEngine.ABERuntime
             return batches.Count;
         }
 
-        internal void AddSpriteToBatch(Transform spriteTrans, Sprite sprite, string extraKey)
+        internal SpriteBatch CreateSpriteBatch(Transform spriteTrans, Sprite sprite, Texture2D tex2D, string extraKey)
+        {
+            PipelineMaterial mat = sprite.sharedMaterial;
+
+            int staticKey = spriteTrans.isStatic ? 1 : 0;
+            string key = sprite.renderLayerIndex + "_" + tex2D.textureID + "_" + mat.instanceID + "_" + staticKey + extraKey;
+
+            if (batches.TryGetValue(key, out SpriteBatch batch))
+                return batch;
+
+            batch = new SpriteBatch(tex2D, mat, sprite.renderLayerIndex, spriteTrans.isStatic);
+            batches.Add(key, batch);
+            UpdateBatchPipeline(batch);
+            return batch;
+        }
+
+        internal SpriteBatch AddSpriteToBatch(Transform spriteTrans, Sprite sprite, string extraKey)
         {
             if (!started)
-                return;
+                return null;
 
             PipelineMaterial mat = sprite.sharedMaterial;
 
@@ -178,6 +200,7 @@ namespace ABEngine.ABERuntime
             {
                 batch.AddSpriteEntity(spriteTrans, sprite);
                 batch.InitBatch();
+                return batch;
             }
             else
             {
@@ -223,12 +246,14 @@ namespace ABEngine.ABERuntime
                     pair.onDelete += AssetPair_onDelete;
                     sb.onDelete += pair.OnBatchDelete;
                 }
+
+                return sb;
             }
         }
 
-        internal void AddSpriteToBatch(Transform spriteTrans, Sprite sprite)
+        internal SpriteBatch AddSpriteToBatch(Transform spriteTrans, Sprite sprite)
         {
-            AddSpriteToBatch(spriteTrans, sprite, "");
+            return AddSpriteToBatch(spriteTrans, sprite, "");
         }
 
         internal void UpdateBatchPipeline(SpriteBatch sb)
@@ -321,12 +346,10 @@ namespace ABEngine.ABERuntime
 
                 foreach (var sb in group.batches)
                 {
-                    //if(sb.material.isLateRender)
-                    //{
-                    //    _cl.CopyTexture(Game.mainRenderTexture, Game.ScreenTexture);
-                    //}
+                    if (!sb.active)
+                        continue;
 
-                    rendC++;
+                    //rendC++;
                     _cl.SetVertexBuffer(0, sb.vertexBuffer);
 
                     _cl.SetGraphicsResourceSet(1, sb.texSet);

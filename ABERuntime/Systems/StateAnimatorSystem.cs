@@ -8,6 +8,22 @@ namespace ABEngine.ABERuntime
 {
     public class StateAnimatorSystem : BaseSystem
     {
+        public override void Start()
+        {
+            var query = new QueryDescription().WithAll<StateMatchAnimator, Sprite>();
+            Game.GameWorld.Query(in query, (ref StateMatchAnimator anim, ref Transform transform, ref Sprite sprite) =>
+            {
+                foreach (var clip in anim.GetAllClips())
+                {
+                    var batch = Game.spriteBatchSystem.GetBatchFromSprite(transform, sprite, clip.texture2D, "");
+                    if (batch == null)
+                        batch = Game.spriteBatchSystem.CreateSpriteBatch(transform, sprite, clip.texture2D, "");
+
+                    batch.SetAutoDestroy(false);
+                }
+            });
+        }
+
         public override void Update(float gameTime, float deltaTime)
         {
             var query = new QueryDescription().WithAll<StateMatchAnimator, Sprite>();
@@ -21,6 +37,8 @@ namespace ABEngine.ABERuntime
                 SpriteClip curClip = curState.clip;
                 if (stateChanged)
                 {
+                    sprite.SetTexture(curClip.texture2D);
+
                     anim.AnimationStarted(curMatch);
                     curState.loopStartTime = gameTime;
                     curState.lastFrameTime = 0f;
