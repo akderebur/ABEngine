@@ -55,8 +55,14 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
             {
                 foreach (var matchState in animMatch.matchStates)
                 {
-                    _matchStates.Add(matchState);
-                    foreach (var condition in matchState.conditions)
+                    //_matchStates.Add(matchState);
+                    MatchState targetState = matchState;
+
+                    if (matchState.inverseState != null)
+                        targetState = matchState.inverseState;
+
+                    _matchStates.Add(targetState);
+                    foreach (var condition in targetState.conditions)
                     {
                         _conditions.Add(condition);
                     }
@@ -79,18 +85,15 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
             }
 
             // Check chain states
-            if (!_currentAnimMatch.IsChainLocked())
+            foreach (var animChain in _currentAnimMatch.chainStates)
             {
-                foreach (var animMatch in _currentAnimMatch.chainStates)
+                if (animChain.animationMatch.IsStatesMatched() && !_currentAnimMatch.IsChainLocked(animChain))
                 {
-                    if (animMatch.IsStatesMatched())
-                    {
-                        _currentAnimMatch = animMatch;
-                        return true;
-                    }
+                    _currentAnimMatch = animChain.animationMatch;
+                    return true;
                 }
             }
-
+            
             // Can't transition to non-chain states if locked
             if (_currentAnimMatch.IsLocked())
                 return false;

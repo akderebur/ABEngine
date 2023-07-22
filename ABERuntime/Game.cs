@@ -909,15 +909,11 @@ namespace ABEngine.ABERuntime
             GameWorld = World.Create();
             GameWorld.SubscribeComponentAdded((in Entity entity, ref Transform transform) =>
             {
-                if (transform == null)
-                    return;
                 transform.SetEntity(entity);
             });
 
             GameWorld.SubscribeComponentAdded((in Entity entity, ref Rigidbody rb) =>
             {
-                if (rb == null)
-                    return;
                 if (rb.transform != null)
                     return;
                 rb.SetEntity(entity.Get<Transform>());
@@ -936,9 +932,6 @@ namespace ABEngine.ABERuntime
 
             GameWorld.SubscribeComponentAdded((in Entity entity, ref Sprite sprite) =>
             {
-                if (sprite == null)
-                    return;
-
                 sprite.SetTransform(entity.Get<Transform>());
                 if(!sprite.manualBatching)
                     Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);

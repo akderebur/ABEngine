@@ -12,7 +12,7 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
 		public float lockTime = -1f;
 		public float chainLockTime = -1f;
 		public bool chainOnly;
-		public List<AnimationMatch> chainStates;
+		public List<AnimationChain> chainStates;
 
 		public string startTag = "";
 		public string endTag = "";
@@ -20,7 +20,7 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
 		public AnimationMatch()
 		{
 			matchStates = new List<MatchState>();
-			chainStates = new List<AnimationMatch>();
+			chainStates = new List<AnimationChain>();
 		}
 
 		public bool IsStatesMatched()
@@ -36,9 +36,9 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
 			return animationState.normalizedTime < lockTime;
 		}
 
-        internal bool IsChainLocked()
+        internal bool IsChainLocked(AnimationChain chain)
         {
-            return animationState.normalizedTime < chainLockTime;
+            return animationState.normalizedTime < chain.chainLockTime;
         }
     }
 }
