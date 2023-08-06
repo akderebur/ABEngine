@@ -44,7 +44,7 @@ namespace ABEngine.ABEditor
 
 
             Vector3 newPos = Vector3.Lerp(transform.localPosition, endPos, deltaTime * camMoveSpeed);
-            newPos.Z = 0f;
+            //newPos.Z = 0f;
             transform.localPosition = newPos;
 
         }

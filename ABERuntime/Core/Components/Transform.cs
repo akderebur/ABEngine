@@ -231,7 +231,7 @@ namespace ABEngine.ABERuntime
             set
             {
                 _localEulerAngles = value;
-                _localRotation = Quaternion.CreateFromYawPitchRoll(_localEulerAngles.X, _localEulerAngles.Y, _localEulerAngles.Z);
+                _localRotation = Quaternion.CreateFromYawPitchRoll(_localEulerAngles.Y, _localEulerAngles.X, _localEulerAngles.Z);
                 RecalculateTRS();
             }
         }

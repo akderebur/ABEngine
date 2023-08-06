@@ -60,6 +60,24 @@ namespace ABEngine.ABERuntime.Tweening
             return tween;
         }
 
+        public static Tween TweenJump(this Transform transform, Vector3 endPos, float jumpPower, float duration)
+        {
+            Tweener tweener = GetTweener(transform);
+            Vector3 startPos = transform.localPosition;
+
+            var tween = new Tween((float t) =>
+            {
+                float y = (float)(-4 * jumpPower * t * (t - 1));
+                Vector3 position = Vector3.Lerp(startPos, endPos, t);
+                position.Y += y;
+
+                transform.localPosition = position;
+            }, duration);
+            tweener.SetTween(tween);
+            tween.Start();
+            return tween;
+        }
+
         public static void KillTweens(this Transform transform)
 		{
 			if (transform.entity.Has<Tweener>())

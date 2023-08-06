@@ -11,6 +11,7 @@ namespace ABEngine.ABERuntime.Components
         private Vector2 _lastScreenSetSize;
         private Vector2 _lastFixedSize;
         private bool _isDynamicSize;
+        private Vector2 _worldSize;
 
         public Vector2 referenceSize;
 
@@ -20,6 +21,7 @@ namespace ABEngine.ABERuntime.Components
             private set
             {
                 _canvasSize = value;
+                _worldSize = _canvasSize.PixelToWorld();
             }
         }
 
@@ -75,6 +77,11 @@ namespace ABEngine.ABERuntime.Components
         {
             Vector2 factor = canvasSize / Game.screenSize;
             return screenPos * factor - canvasSize / 2f; ;
+        }
+
+        public Vector2 GetWorldSize()
+        {
+            return _worldSize;
         }
 
         public JValue Serialize()

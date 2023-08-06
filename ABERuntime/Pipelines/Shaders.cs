@@ -715,7 +715,7 @@ void main()
         vec2 pos = unit_pos * Radius;
         pos += Position.xy;
 
-        gl_Position = VP * vec4(pos, 0, 1);
+        gl_Position = VP * vec4(pos, Position.z, 1);
 
         fs_LightColor = Color;
         fs_Intensity = Intensity;
@@ -837,7 +837,7 @@ void main()
         internal const string DebugUberVertex = @"
 #version 450
 
-    layout (set = 0, binding = 0) uniform PipelineData
+    layout (set = 0, binding = 0) uniform PipelineData3D
     {
         mat4 VP;
         vec2 Resolution;

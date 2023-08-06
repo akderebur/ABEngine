@@ -100,7 +100,7 @@ namespace ABEngine.ABERuntime
             MappedResourceView<LightInfo> writemap = gd.Map<LightInfo>(lightInfoBuffer, MapMode.Write);
 
             // Global Light
-            writemap[0] = new LightInfo(Game.activeCam.worldPosition,
+            writemap[0] = new LightInfo(Game.activeCam.worldPosition - Vector3.UnitZ,
                                                         Vector4.One,
                                                         30,
                                                         GlobalLightIntensity,

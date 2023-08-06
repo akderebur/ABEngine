@@ -733,7 +733,62 @@ namespace ABEngine.ABERuntime
             if (camEnt == Entity.Null)
                 return;
 
-            Game.pipelineData.VP = Game.activeCam.worldToLocaMatrix * Game.projectionMatrix;
+            Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
+            Vector3 cameraPosition = Game.activeCam.worldPosition;
+            Vector3 targetPosition = cameraPosition + forward;
+            Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
+
+            Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
+
+            Game.pipelineData.VP = view * Game.projectionMatrix;
+            gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
+
+            for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
+            {
+                _commandList.SetFramebuffer(mainRenderFB);
+                _commandList.SetFullViewports();
+                _commandList.ClearColorTarget(0, new RgbaFloat(0f, 0f, 0f, 0f));
+                _commandList.ClearDepthStencil(0f);
+
+                spriteBatchSystem.Render(i);
+
+                lightRenderSystem.Render(i);
+
+                // Composition / No Clear - No depth
+                _commandList.SetFramebuffer(compositeRenderFB);
+                _commandList.SetFullViewports();
+                _commandList.SetPipeline(GraphicsManager.CompositePipeline);
+
+                _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+                _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
+
+                _commandList.SetGraphicsResourceSet(0, compositeRSSetLight);
+                _commandList.DrawIndexed(6, 1, 0, 0, 0);
+            }
+
+            if (debug)
+            {
+                colDebugSystem.Render();
+            }
+        }
+
+        private protected void MainRender3D()
+        {
+            if (Game.activeCam == null)
+                return;
+
+            var camEnt = Game.activeCam.entity;
+            if (camEnt == Entity.Null)
+                return;
+
+            Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
+            Vector3 cameraPosition = Game.activeCam.worldPosition;
+            Vector3 targetPosition = cameraPosition + forward;
+            Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
+
+            Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
+
+            Game.pipelineData.VP = view * Game.projectionMatrix;
             gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
 
             for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
@@ -770,12 +825,47 @@ namespace ABEngine.ABERuntime
             //spriteBatcher.LateRender();
         }
 
+        private static Matrix4x4 CreatePerspective(float fov, float aspectRatio, float near, float far)
+        {
+            if (fov <= 0.0f || fov >= MathF.PI)
+                throw new ArgumentOutOfRangeException(nameof(fov));
+
+            if (near <= 0.0f)
+                throw new ArgumentOutOfRangeException(nameof(near));
+
+            if (far <= 0.0f)
+                throw new ArgumentOutOfRangeException(nameof(far));
+
+            float yScale = 1.0f / MathF.Tan(fov * 0.5f);
+            float xScale = yScale / aspectRatio;
+
+            Matrix4x4 result;
+
+            result.M11 = xScale;
+            result.M12 = result.M13 = result.M14 = 0.0f;
+
+            result.M22 = yScale;
+            result.M21 = result.M23 = result.M24 = 0.0f;
+
+            result.M31 = result.M32 = 0.0f;
+            var negFarRange = float.IsPositiveInfinity(far) ? -1.0f : far / (near - far);
+            result.M33 = negFarRange;
+            result.M34 = -1.0f;
+
+            result.M41 = result.M42 = result.M44 = 0.0f;
+            result.M43 = near * negFarRange;
+
+            return result;
+        }
+
+
         internal static void RefreshProjection(Canvas canvas)
         {
             if (canvas == null || Game.canvas != canvas)
                 return;
 
             projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1000f, -1000f);
+            //projectionMatrix = CreatePerspective(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 0.1f, 1000f);
             onCanvasResize?.Invoke();
         }
 
@@ -826,7 +916,7 @@ namespace ABEngine.ABERuntime
             gd = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions(
                 debug: false,
                 swapchainDepthFormat: null,
-                syncToVerticalBlank: false,
+                syncToVerticalBlank: true,
                 resourceBindingModel: ResourceBindingModel.Improved,
                 preferDepthRangeZeroToOne: true,
                 preferStandardClipSpaceYDirection: true,

@@ -23,6 +23,21 @@ namespace ABEngine.ABERuntime.Components
             isPlaying = true;
         }
 
+        public SpriteAnimation(Sprite sprite, SpriteClip clip)
+        {
+            this.sprite = sprite;
+            state = new AnimationState(clip);
+            isPlaying = true;
+        }
+
+        public SpriteAnimation(Sprite sprite, List<Vector2> poses)
+        {
+            this.sprite = sprite;
+            state = new AnimationState(AssetCache.CreateSpriteClip(sprite.texture, poses));
+            isPlaying = true;
+        }
+
+
         internal void Refresh()
         {
             spriteIds = new SortedSet<int>();
@@ -68,6 +83,12 @@ namespace ABEngine.ABERuntime.Components
                 poses.Add(sprite.texture[spriteId]);
 
             state = new AnimationState(AssetCache.CreateSpriteClip(sprite.texture, poses));
+        }
+
+        public void SetLooping(bool isLooping)
+        {
+            if (state != null)
+                state.looping = isLooping;
         }
     }
 }
