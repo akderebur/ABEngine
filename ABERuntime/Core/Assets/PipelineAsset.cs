@@ -212,7 +212,23 @@ namespace ABEngine.ABERuntime
                 Encoding.UTF8.GetBytes(fragmentShaderSrc),
                 "main");
 
-          
+            if (dest.defaultMatName.Equals("Uber3D"))
+            {
+                SpecializationConstant[] specializations =
+                {
+
+                };
+                VertexFragmentCompilationResult result = SpirvCompilation.CompileVertexFragment(
+                    vertexShader.ShaderBytes,
+                    fragmentShader.ShaderBytes,
+                    CrossCompileTarget.MSL,
+                    new CrossCompileOptions(false, false, specializations));
+
+                File.WriteAllText(@"/Users/akderebur/Documents/vert.txt", result.VertexShader);
+                File.WriteAllText(@"/Users/akderebur/Documents/frag.txt", result.FragmentShader);
+            }
+
+
             if (dest.shaderOptimised)
                 dest.shaders = rsFactory.CreateFromSpirv(vertexShader, fragmentShader);
             else

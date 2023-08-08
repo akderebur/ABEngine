@@ -8,11 +8,61 @@ namespace ABEngine.ABERuntime.Core.Components
 	{
 		public PipelineMaterial material { get; set; }
 
+        // TODO Switch to vertex interface
+        private VertexStandard[] _vertices;
+        private ushort[] _indices;
+
+        internal DeviceBuffer vertexBuffer;
+        internal DeviceBuffer indexBuffer;
+
+        public Mesh()
+        {
+            material = GraphicsManager.GetUber3D();
+        }
+
+        public Mesh(VertexStandard[] vertices, ushort[] indices) : this()
+        {
+            this.vertices = vertices;
+            this.indices = indices;
+        }
+
+        public VertexStandard[] vertices
+        {
+            get { return _vertices; }
+            set
+            {
+                _vertices = value;
+                if (vertexBuffer != null)
+                    vertexBuffer.Dispose();
+                vertexBuffer = GraphicsManager.rf.CreateBuffer(
+                                new BufferDescription(_vertices[0].VertexSize * (uint)_vertices.Length, BufferUsage.VertexBuffer));
+                GraphicsManager.gd.UpdateBuffer(vertexBuffer, 0, _vertices);
+            }
+        }
+
+        public ushort[] indices
+        {
+            get { return _indices; }
+            set
+            {
+                _indices = value;
+                if (indexBuffer != null)
+                    indexBuffer.Dispose();
+                indexBuffer = GraphicsManager.rf.CreateBuffer(
+                             new BufferDescription(sizeof(ushort) * (uint)_indices.Length, BufferUsage.IndexBuffer));
+                GraphicsManager.gd.UpdateBuffer(indexBuffer, 0, _indices);
+            }
+        }
 	}
 
-    public struct VertexStandard
+    public interface IVertex
     {
-        public const uint VertexSize = 44;
+        public uint VertexSize { get; }
+    }
+
+    public struct VertexStandard : IVertex
+    {
+        public uint VertexSize => 44;
 
         public Vector3 Position;
         public Vector3 Normal;

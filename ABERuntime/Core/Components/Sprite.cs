@@ -33,7 +33,8 @@ namespace ABEngine.ABERuntime.Components
 
     public struct PipelineData
     {
-        public Matrix4x4 VP;
+        public Matrix4x4 Projection;
+        public Matrix4x4 View;
         public Vector2 Resolution;
         public float Time;
         public float Padding;

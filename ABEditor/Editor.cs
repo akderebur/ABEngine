@@ -301,7 +301,8 @@ namespace ABEngine.ABEditor
 
                         pipelineData = new PipelineData()
                         {
-                            VP = Matrix4x4.Identity,
+                            Projection = Matrix4x4.Identity,
+                            View = Matrix4x4.Identity,
                             Resolution = screenSize,
                             Time = elapsed,
                             Padding = 0f

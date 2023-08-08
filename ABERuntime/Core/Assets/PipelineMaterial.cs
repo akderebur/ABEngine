@@ -96,7 +96,7 @@ namespace ABEngine.ABERuntime
                     }
                     else
                     {
-                        resources[index] = GraphicsManager.defaultTexView;
+                        resources[index] = AssetCache.GetDefaultTexture().texture;
                     }
 
                     index++;

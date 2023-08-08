@@ -32,6 +32,21 @@ namespace ABEngine.ABERuntime.Tweening
 			return tween;
 		}
 
+
+        public static Tween TweenRotation(this Transform transform, Vector3 endRot, float duration)
+        {
+            Tweener tweener = GetTweener(transform);
+            Vector3 startRot = transform.localEulerAngles;
+
+            var tween = new Tween((float time) =>
+            {
+                transform.localEulerAngles = Vector3.Lerp(startRot, endRot, time);
+            }, duration);
+            tweener.SetTween(tween);
+            tween.Start();
+            return tween;
+        }
+
         public static Tween TweenScale(this Transform transform, Vector3 endScale, float duration)
         {
             Tweener tweener = GetTweener(transform);

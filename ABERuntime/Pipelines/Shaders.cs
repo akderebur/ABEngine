@@ -245,7 +245,8 @@ Vertex
 
     layout (set = 0, binding = 0) uniform PipelineData
     {
-        mat4 VP;
+        mat4 Projection;
+        mat4 View;
         vec2 Resolution;
         float Time;
         float Padding;
@@ -317,7 +318,7 @@ Vertex
         //        pos -= vec2(normTime , 0);
         //}
 
-        gl_Position = VP * vec4(pos, Position.z, 1);
+        gl_Position = Projection * View * vec4(pos, Position.z, 1);
 
         vec2 uv_sample = uv_pos * uvScale + uvStart;
         //uv_sample = vec2(1, 1) + FlipScale * uv_pos;
@@ -334,7 +335,8 @@ Fragment
 
     layout (set = 0, binding = 0) uniform PipelineData
     {
-        mat4 VP;
+        mat4 Projection;
+        mat4 View;
         vec2 Resolution;
         float Time;
         float Padding;
@@ -671,7 +673,8 @@ void main()
 
     layout (set = 0, binding = 0) uniform PipelineData
     {
-        mat4 VP;
+        mat4 Projection;
+        mat4 View;
         vec2 Resolution;
         float Time;
         float Padding;
@@ -715,7 +718,7 @@ void main()
         vec2 pos = unit_pos * Radius;
         pos += Position.xy;
 
-        gl_Position = VP * vec4(pos, Position.z, 1);
+        gl_Position = Projection * View * vec4(pos, Position.z, 1);
 
         fs_LightColor = Color;
         fs_Intensity = Intensity;
@@ -729,7 +732,8 @@ void main()
 
    layout (set = 0, binding = 0) uniform PipelineData
     {
-        mat4 VP;
+        mat4 Projection;
+        mat4 View;
         vec2 Resolution;
         float Time;
         float Padding;
@@ -795,7 +799,8 @@ void main()
 
     layout (set = 0, binding = 0) uniform PipelineData
     {
-        mat4 VP;
+        mat4 Projection;
+        mat4 View;
         vec2 Resolution;
         float Time;
         float Padding;
@@ -808,7 +813,7 @@ layout(location = 0) out vec4 fs_Color;
 
 void main()
 {
-    gl_Position = VP * vec4(Position.xyz, 1.0);
+    gl_Position = Projection * View * vec4(Position.xyz, 1.0);
     fs_Color = Color;
 }
 ";
@@ -818,7 +823,8 @@ void main()
 
    layout (set = 0, binding = 0) uniform PipelineData
     {
-        mat4 VP;
+        mat4 Projection;
+        mat4 View;
         vec2 Resolution;
         float Time;
         float Padding;

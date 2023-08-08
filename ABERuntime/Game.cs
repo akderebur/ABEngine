@@ -88,6 +88,7 @@ namespace ABEngine.ABERuntime
         protected RigidbodyMoveSystem rbMoveSystem;
         public static SpriteBatchSystem spriteBatchSystem;
         protected static LightRenderSystem lightRenderSystem;
+        protected MeshRenderSystem meshRenderSystem;
         protected Tweening.TweenSystem tweenSystem;
         protected private ColliderDebugSystem colDebugSystem;
         protected private ParticleModuleSystem particleSystem;
@@ -181,6 +182,7 @@ namespace ABEngine.ABERuntime
             spriteAnimSystem = new SpriteAnimSystem();
             rbMoveSystem = new RigidbodyMoveSystem();
             spriteBatchSystem = new SpriteBatchSystem(null);
+            meshRenderSystem = new MeshRenderSystem(null);
             renderExtensions = new List<RenderSystem>();
             lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
             tweenSystem = new Tweening.TweenSystem();
@@ -217,6 +219,7 @@ namespace ABEngine.ABERuntime
 
             //spriteRenderer.Start();
             spriteBatchSystem.Start();
+            meshRenderSystem.Start();
             spriteAnimatorSystem.Start();
             stateAnimatorSystem.Start();
             spriteAnimSystem.Start();
@@ -337,7 +340,8 @@ namespace ABEngine.ABERuntime
 
                         pipelineData = new PipelineData()
                         {
-                            VP = Matrix4x4.Identity,
+                            Projection = Matrix4x4.Identity,
+                            View = Matrix4x4.Identity,
                             Resolution = screenSize,
                             Time = elapsed,
                             Padding = 0f
@@ -349,6 +353,7 @@ namespace ABEngine.ABERuntime
                         lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
                         lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
 
+                        lightRenderSystem.CleanUp(true, false);
                         lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
                         if (debug)
                             colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
@@ -394,6 +399,7 @@ namespace ABEngine.ABERuntime
                         spriteAnimSystem = new SpriteAnimSystem();
                         rbMoveSystem = new RigidbodyMoveSystem();
                         spriteBatchSystem = new SpriteBatchSystem(null);
+                        meshRenderSystem = new MeshRenderSystem(null);
                         tweenSystem = new Tweening.TweenSystem();
                         particleSystem = new ParticleModuleSystem();
                         lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
@@ -443,6 +449,7 @@ namespace ABEngine.ABERuntime
                         }
 
                         spriteBatchSystem.Start();
+                        meshRenderSystem.Start();
                         spriteAnimatorSystem.Start();
                         stateAnimatorSystem.Start();
                         spriteAnimSystem.Start();
@@ -482,7 +489,7 @@ namespace ABEngine.ABERuntime
                 }
 
                 DrawBegin();
-                MainRender();
+                MainRender3D();
                 foreach (var rendExt in renderExtensions)
                 {
                     rendExt.Render();
@@ -719,6 +726,7 @@ namespace ABEngine.ABERuntime
             rbMoveSystem.Update(newTime, interpolation);
             camMoveSystem.Update(newTime, elapsed);
             spriteBatchSystem.Update(newTime, elapsed);
+            meshRenderSystem.Update(newTime, elapsed);
             lightRenderSystem.Update(newTime, elapsed);
             if(debug)
                 colDebugSystem.Update(newTime, elapsed);
@@ -740,7 +748,7 @@ namespace ABEngine.ABERuntime
 
             Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
 
-            Game.pipelineData.VP = view * Game.projectionMatrix;
+            Game.pipelineData.View = view;
             gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
 
             for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
@@ -788,36 +796,10 @@ namespace ABEngine.ABERuntime
 
             Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
 
-            Game.pipelineData.VP = view * Game.projectionMatrix;
+            Game.pipelineData.View = view;
             gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
 
-            for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
-            {
-                _commandList.SetFramebuffer(mainRenderFB);
-                _commandList.SetFullViewports();
-                _commandList.ClearColorTarget(0, new RgbaFloat(0f, 0f, 0f, 0f));
-                _commandList.ClearDepthStencil(0f);
-
-                spriteBatchSystem.Render(i);
-
-                lightRenderSystem.Render(i);
-
-                // Composition / No Clear - No depth
-                _commandList.SetFramebuffer(compositeRenderFB);
-                _commandList.SetFullViewports();
-                _commandList.SetPipeline(GraphicsManager.CompositePipeline);
-
-                _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-                _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
-
-                _commandList.SetGraphicsResourceSet(0, compositeRSSetLight);
-                _commandList.DrawIndexed(6, 1, 0, 0, 0);
-            }
-
-            if (debug)
-            {
-                colDebugSystem.Render();
-            }
+            meshRenderSystem.Render();
         }
 
         void LateRender()
@@ -864,8 +846,9 @@ namespace ABEngine.ABERuntime
             if (canvas == null || Game.canvas != canvas)
                 return;
 
-            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1000f, -1000f);
-            //projectionMatrix = CreatePerspective(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 0.1f, 1000f);
+            //projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1000f, -1000f);
+            projectionMatrix = CreatePerspective(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 0.1f, 1000f);
+            Game.pipelineData.Projection = Game.projectionMatrix;
             onCanvasResize?.Invoke();
         }
 
@@ -976,12 +959,13 @@ namespace ABEngine.ABERuntime
                   lightRenderTexture, gd.LinearSampler
                   ));
 
-            pipelineBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(80, BufferUsage.UniformBuffer));
+            pipelineBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(144, BufferUsage.UniformBuffer));
             pipelineSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedPipelineLayout, pipelineBuffer));
 
             pipelineData = new PipelineData()
             {
-                VP = Matrix4x4.Identity,
+                Projection = Matrix4x4.Identity,
+                View = Matrix4x4.Identity,
                 Resolution = screenSize,
                 Time = 0f,
                 Padding = 0f

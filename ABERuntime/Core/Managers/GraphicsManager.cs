@@ -44,10 +44,12 @@ namespace ABEngine.ABERuntime
         public static Tuple<ResourceLayout, ResourceLayout> SpriteLayouts;
 
         public static VertexLayoutDescription sharedVertexLayout;
+        public static VertexLayoutDescription sharedMeshVertexLayout;
 
         public static ResourceLayout sharedPipelineLayout;
         public static ResourceLayout sharedTextureLayout;
-        //public static ResourceLayout fullScreenTextureLayout;
+        public static ResourceLayout sharedMeshUniform_VS;
+        public static ResourceLayout sharedMeshUniform_FS;
 
         public static TextureView defaultTexView;
 
@@ -68,6 +70,12 @@ namespace ABEngine.ABERuntime
         {
             return pipelineMaterials[1];
         }
+
+        public static PipelineMaterial GetUber3D()
+        {
+            return pipelineMaterials[2];
+        }
+
 
         public static int GetPipelineCount()
         {
@@ -185,7 +193,7 @@ namespace ABEngine.ABERuntime
             ));
             sharedTextureLayout = texLayout;
 
-            // Shared pipeline vertex layout
+            // Shared vertex layouts
             VertexLayoutDescription vertexLayout = new VertexLayoutDescription(
                 new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
                 new VertexElementDescription("Scale", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
@@ -198,7 +206,23 @@ namespace ABEngine.ABERuntime
             vertexLayout.InstanceStepRate = 1;
             sharedVertexLayout = vertexLayout;
 
+            VertexLayoutDescription vertexLayout3D = new VertexLayoutDescription(
+              new VertexElementDescription("position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
+              new VertexElementDescription("vertexNormal", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
+              new VertexElementDescription("texCoord", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
+              new VertexElementDescription("tangent", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3));
+            sharedMeshVertexLayout = vertexLayout3D;
 
+            // 3D Shared
+            var meshVertexLayout = gd.ResourceFactory.CreateResourceLayout(
+               new ResourceLayoutDescription(
+                   new ResourceLayoutElementDescription("SharedMeshVertex", ResourceKind.UniformBuffer, ShaderStages.Vertex)));
+            sharedMeshUniform_VS = meshVertexLayout;
+
+            var meshFragmentLayout = gd.ResourceFactory.CreateResourceLayout(
+              new ResourceLayoutDescription(
+                  new ResourceLayoutElementDescription("SharedMeshFragment", ResourceKind.UniformBuffer, ShaderStages.Fragment)));
+            sharedMeshUniform_FS = meshFragmentLayout;
 
             // Full screen pipeline
 
@@ -251,7 +275,7 @@ namespace ABEngine.ABERuntime
             gd.UpdateBuffer(fullScreenVB, 0, verts);
 
             fullScreenIB = gd.ResourceFactory.CreateBuffer(
-                new BufferDescription((uint)s_quadIndices.Length * sizeof(float), BufferUsage.IndexBuffer));
+                new BufferDescription((uint)s_quadIndices.Length * sizeof(ushort), BufferUsage.IndexBuffer));
             gd.UpdateBuffer(fullScreenIB, 0, s_quadIndices);
 
             // Composite Pipeline
@@ -285,47 +309,9 @@ namespace ABEngine.ABERuntime
 
             var uberAlpha = new UberPipelineAsset(mainRenderFB);
             var uberAdditive = new UberPipelineAdditive(mainRenderFB);
+            // TODO switch to main render FB
+            var uber3D = new UberPipeline3D(compositeFB);
             var waterAsset = new WaterPipelineAsset(mainRenderFB);
-
-            //pipelineMaterials.Add(CreateNewPipeline(UberPipelineAsset, mainRenderFB, true));
-            //pipelineMaterials.Add(CreateNewPipeline(WaterPipelineAsset, mainRenderFB, false));
-
-            //CreateSpritePipeline();
-
-            // Dissolve Tex
-            //var texData = StaticResourceCache.GetImage(Game.AssetPath + "Sprites/noise_tex.jpeg", false);
-            //var tex = StaticResourceCache.GetTexture2D(_gd, _gd.ResourceFactory, texData);
-
-            //var view = StaticResourceCache.GetTextureView(_gd.ResourceFactory, tex);
-            //dissolveNoiseTexSet = _gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
-            //    PipelineManager.SpriteLayouts.Item3,
-            //    view,
-            //    _gd.LinearSampler));
-
-            // Shader Debugs
-
-            //ShaderDescription vertTest = new ShaderDescription(
-            //    ShaderStages.Vertex,
-            //    Encoding.UTF8.GetBytes(Shaders.DebugUberVertex),
-            //    "main");
-
-            //ShaderDescription fragTest = new ShaderDescription(
-            //    ShaderStages.Fragment,
-            //    Encoding.UTF8.GetBytes(Shaders.DebugUberFragment),
-            //    "main");
-
-            //SpecializationConstant[] specializations =
-            //{
-
-            //};
-            //VertexFragmentCompilationResult result = SpirvCompilation.CompileVertexFragment(
-            //    vertTest.ShaderBytes,
-            //    fragTest.ShaderBytes,
-            //    CrossCompileTarget.MSL,
-            //    new CrossCompileOptions(false, false, specializations));
-
-            //File.WriteAllText(@"/Users/akderebur/Documents/vert" + 1 + ".txt", result.VertexShader);
-            //File.WriteAllText(@"/Users/akderebur/Documents/frag" + 1 + ".txt", result.FragmentShader);
         }
 
         public static void RecreatePipelines(Framebuffer mainRenderFB, bool newScene)
@@ -337,6 +323,7 @@ namespace ABEngine.ABERuntime
 
                 var uberAlpha = new UberPipelineAsset(mainRenderFB);
                 var uberAdditive = new UberPipelineAdditive(mainRenderFB);
+                // TODO Uber 3D
                 var waterAsset = new WaterPipelineAsset(mainRenderFB);
             }
             else
@@ -361,6 +348,10 @@ namespace ABEngine.ABERuntime
 
             sharedPipelineLayout.Dispose();
             sharedTextureLayout.Dispose();
+
+            sharedMeshUniform_VS.Dispose();
+            sharedMeshUniform_FS.Dispose();
+
             defaultTexView.Dispose();
             pointSamplerClamp.Dispose();
 

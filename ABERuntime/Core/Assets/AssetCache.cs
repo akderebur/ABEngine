@@ -585,7 +585,7 @@ namespace ABEngine.ABERuntime
                 PipelineAsset pipelineAsset = GraphicsManager.GetPipelineAssetByName(pipelineName);
                 var layouts = pipelineAsset.GetResourceLayouts();
 
-                PipelineMaterial mat = new PipelineMaterial(hash, pipelineAsset, layouts[0], layouts[1]);
+                PipelineMaterial mat = new PipelineMaterial(hash, pipelineAsset, layouts[2], layouts.Count > 3 ? layouts[3] : null);
                 mat.name = matName;
 
                 // Shader props
