@@ -94,6 +94,16 @@ namespace ABEngine.ABERuntime
                         isLateRender = true;
                         resources[index] = Game.compositeRenderTexture;
                     }
+                    else if(textureName.Equals("DepthTex"))
+                    {
+                        isLateRender = true;
+                        resources[index] = Game.mainDepthTexture;
+                    }
+                    else if (textureName.Equals("CamNormalTex"))
+                    {
+                        isLateRender = true;
+                        resources[index] = Game.cameraNormalTexture;
+                    }
                     else
                     {
                         resources[index] = AssetCache.GetDefaultTexture().texture;
@@ -124,7 +134,7 @@ namespace ABEngine.ABERuntime
             {
                 int texInd = texNameInd * 2;
                 texResources[texInd] = tex2d.texture;
-                texHashes[texInd] = tex2d.fPathHash;
+                texHashes[texNameInd] = tex2d.fPathHash;
                 if(textureSet != null)
                     textureSet.Dispose();
                 textureSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(
@@ -162,6 +172,36 @@ namespace ABEngine.ABERuntime
             this.SetShaderTextureResources(pipeline.GetTextureNames());
 
             onPipelineChanged?.Invoke(pipeline);
+        }
+
+        internal void UpdateSampledTextures()
+        {
+            if (isLateRender)
+            {
+                var textureNames = pipelineAsset.GetTextureNames();
+                int index = 0;
+                foreach (var textureName in textureNames)
+                {
+                    if (textureName.Equals("ScreenTex"))
+                        texResources[index] = Game.compositeRenderTexture;
+                    else if (textureName.Equals("DepthTex"))
+                        texResources[index] = Game.mainDepthTexture;
+                    else if(textureName.Equals("CamNormalTex"))
+                        texResources[index] = Game.cameraNormalTexture;
+
+                    index++;
+                    index++;
+                }
+
+                if (textureSet != null)
+                    textureSet.Dispose();
+                textureSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(
+                   this.texLayout,
+                   texResources
+                   ));
+
+                bindableSets[3] = textureSet;
+            }
         }
 
         public void SetFloat(string propName, float value)

@@ -718,7 +718,10 @@ void main()
         vec2 pos = unit_pos * Radius;
         pos += Position.xy;
 
-        gl_Position = Projection * View * vec4(pos, Position.z, 1);
+        vec3 cameraPosition = -transpose(mat3(View)) * View[3].xyz;
+        vec3 endPos = vec3(pos, Position.z) - cameraPosition;
+
+        gl_Position = Projection * vec4(endPos, 1);
 
         fs_LightColor = Color;
         fs_Intensity = Intensity;

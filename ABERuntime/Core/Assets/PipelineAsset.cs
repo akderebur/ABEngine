@@ -11,7 +11,7 @@ using Veldrid.SPIRV;
 
 namespace ABEngine.ABERuntime
 {
-    public class PipelineAsset
+    public abstract class PipelineAsset
     {
         protected string defaultMatName;
         protected GraphicsDevice gd;
@@ -71,7 +71,7 @@ namespace ABEngine.ABERuntime
             if(clearColor)
                 cl.ClearColorTarget(0, new RgbaFloat(0f,0,0,0));
             if (clearDepth)
-                cl.ClearDepthStencil(0f);
+                cl.ClearDepthStencil(1f);
         }
 
         public static void ParseAsset(string pipelineAsset, PipelineAsset dest)
@@ -212,21 +212,21 @@ namespace ABEngine.ABERuntime
                 Encoding.UTF8.GetBytes(fragmentShaderSrc),
                 "main");
 
-            if (dest.defaultMatName.Equals("Uber3D"))
-            {
-                SpecializationConstant[] specializations =
-                {
+            //if (dest.defaultMatName.Equals("Uber3D"))
+            //{
+            //    SpecializationConstant[] specializations =
+            //    {
 
-                };
-                VertexFragmentCompilationResult result = SpirvCompilation.CompileVertexFragment(
-                    vertexShader.ShaderBytes,
-                    fragmentShader.ShaderBytes,
-                    CrossCompileTarget.MSL,
-                    new CrossCompileOptions(false, false, specializations));
+            //    };
+            //    VertexFragmentCompilationResult result = SpirvCompilation.CompileVertexFragment(
+            //        vertexShader.ShaderBytes,
+            //        fragmentShader.ShaderBytes,
+            //        CrossCompileTarget.MSL,
+            //        new CrossCompileOptions(false, false, specializations));
 
-                File.WriteAllText(@"/Users/akderebur/Documents/vert.txt", result.VertexShader);
-                File.WriteAllText(@"/Users/akderebur/Documents/frag.txt", result.FragmentShader);
-            }
+            //    File.WriteAllText(@"/Users/akderebur/Documents/vert.txt", result.VertexShader);
+            //    File.WriteAllText(@"/Users/akderebur/Documents/frag.txt", result.FragmentShader);
+            //}
 
 
             if (dest.shaderOptimised)
@@ -321,6 +321,11 @@ namespace ABEngine.ABERuntime
         internal List<ResourceLayout> GetResourceLayouts()
         {
             return resourceLayouts;
+        }
+
+        public PipelineMaterial GetDefaultMaterial()
+        {
+            return refMaterial;
         }
     }
 }

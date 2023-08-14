@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Components;
+using ABEngine.ABERuntime.Pipelines;
 using Arch.Core;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
+using Vortice.DXGI;
 
 namespace ABEngine.ABERuntime
 {
@@ -12,16 +17,24 @@ namespace ABEngine.ABERuntime
         public Matrix4x4 transformMatrix;
     }
 
+    public struct LightInfo3D
+    {
+        public Vector3 Position;
+        public float Range;
+        public Vector3 Color;
+        public float Intensity;
+    }
+
     public struct SharedMeshFragment
     {
-        public PointLightInfo PointLights0;
-        public PointLightInfo PointLights1;
-        public PointLightInfo PointLights2;
-        public PointLightInfo PointLights3;
+        public LightInfo3D Light0;
+        public LightInfo3D Light1;
+        public LightInfo3D Light2;
+        public LightInfo3D Light3;
         public Vector3 CamPos;
         public float _padding;
-        public int NumActiveLights;
-        public float _padding1;
+        public int NumDirectionalLights;
+        public int NumPointLights;
         public float _padding2;
         public float _padding3;
     }
@@ -36,18 +49,17 @@ namespace ABEngine.ABERuntime
     public class MeshRenderSystem : RenderSystem
     {
         private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, Mesh>();
-        private readonly QueryDescription lightQuery = new QueryDescription().WithAll<Transform, PointLight>();
+        private readonly QueryDescription pointLightQuery = new QueryDescription().WithAll<Transform, PointLight>();
+        private readonly QueryDescription directionalLightQuery = new QueryDescription().WithAll<Transform, DirectionalLight>();
 
-        DeviceBuffer vertexUniformBuffer;
         DeviceBuffer fragmentUniformBuffer;
 
-        ResourceSet sharedVertexSet;
         ResourceSet sharedFragmentSet;
 
         SharedMeshVertex sharedVertexUniform;
         SharedMeshFragment sharedFragmentUniform;
 
-        PointLightInfo[] pointLightInfos;
+        LightInfo3D[] lightInfos;
 
         public MeshRenderSystem(PipelineAsset asset) : base(asset) { }
 
@@ -55,10 +67,7 @@ namespace ABEngine.ABERuntime
         {
             base.Start();
 
-            pointLightInfos = new PointLightInfo[4];
-
-            vertexUniformBuffer = rf.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
-            sharedVertexSet = rf.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_VS, vertexUniformBuffer));
+            lightInfos = new LightInfo3D[4];
 
             fragmentUniformBuffer = rf.CreateBuffer(new BufferDescription(160, BufferUsage.UniformBuffer));
             sharedFragmentSet = rf.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_FS, fragmentUniformBuffer));
@@ -67,46 +76,85 @@ namespace ABEngine.ABERuntime
             sharedFragmentUniform = new SharedMeshFragment();
         }
 
+        List<(Mesh, Transform)> renderOrder = new List<(Mesh, Transform)>();
         public override void Update(float gameTime, float deltaTime)
         {
-            // Fragment uniform update
-            int lightC = 0;
-            Game.GameWorld.Query(in lightQuery, (ref PointLight light, ref Transform transform) =>
-            {
-                pointLightInfos[lightC] = new PointLightInfo() { Color = light.color.ToVector3(), Position = transform.worldPosition };
+            renderOrder.Clear();
 
-                if (++lightC == 4)
+            // Fragment uniform update
+            int dirLightC = 0;
+            int pointLightC = 0;
+            int lightC = 0;
+            Game.GameWorld.Query(in directionalLightQuery, (ref DirectionalLight light, ref Transform transform) =>
+            {
+                if (lightC >= 4)
                     return;
+
+                lightInfos[lightC++] = new LightInfo3D() { Color = light.color.ToVector3(), Position = light.direction, Intensity = light.Intensity };
+                dirLightC++;
             });
 
-            sharedFragmentUniform.PointLights0 = pointLightInfos[0];
-            sharedFragmentUniform.PointLights1 = pointLightInfos[1];
-            sharedFragmentUniform.PointLights2 = pointLightInfos[2];
-            sharedFragmentUniform.PointLights3 = pointLightInfos[3];
+            Game.GameWorld.Query(in pointLightQuery, (ref PointLight light, ref Transform transform) =>
+            {
+                if (lightC >= 4)
+                    return;
+
+                lightInfos[lightC++] = new LightInfo3D() { Color = light.color.ToVector3(), Position = transform.worldPosition };
+                pointLightC++;
+            });
+
+            sharedFragmentUniform.Light0 = lightInfos[0];
+            sharedFragmentUniform.Light1 = lightInfos[1];
+            sharedFragmentUniform.Light2 = lightInfos[2];
+            sharedFragmentUniform.Light3 = lightInfos[3];
 
             sharedFragmentUniform.CamPos = Game.activeCam.worldPosition;
-            sharedFragmentUniform.NumActiveLights = lightC;
+            sharedFragmentUniform.NumDirectionalLights = dirLightC;
+            sharedFragmentUniform.NumPointLights = pointLightC;
 
             gd.UpdateBuffer(fragmentUniformBuffer, 0, sharedFragmentUniform);
+
+            // Mesh render order
+            Game.GameWorld.Query(in meshQuery, (ref Mesh mesh, ref Transform transform) =>
+            {
+                if(mesh.material.isLateRender)
+                    renderOrder.Add((mesh, transform));
+                else
+                    renderOrder.Insert(0, (mesh, transform));
+            });
+        }
+
+        float LinearEyeDepth(float z)
+        {
+            float far = 1000f;
+            float near = 0.1f;
+            float paramZ = (1 - far / near) / far;
+            float paramW = far / near / far;
+            return 1.0f / (paramZ * z + paramW);
         }
 
         public override void Render()
         {
             // TODO Render layers
-            // TODO Pipeline batching            
+            // TODO Pipeline batching
 
-            Game.GameWorld.Query(in meshQuery, (ref Mesh mesh, ref Transform transform) =>
+            int ind = 0;
+            foreach (var render in renderOrder)
             {
+                Mesh mesh = render.Item1;
+                Transform transform = render.Item2;
+
                 // Update vertex uniform
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
-                gd.UpdateBuffer(vertexUniformBuffer, 0, sharedVertexUniform);
+                gd.UpdateBuffer(mesh.vertexUniformBuffer, 0, sharedVertexUniform);
 
                 mesh.material.pipelineAsset.BindPipeline();
 
                 cl.SetVertexBuffer(0, mesh.vertexBuffer);
                 cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
 
-                cl.SetGraphicsResourceSet(1, sharedVertexSet);
+                cl.SetGraphicsResourceSet(0, Game.pipelineSet);
+                cl.SetGraphicsResourceSet(1, mesh.vertexTransformSet);
 
 
                 // Material Resource Sets
@@ -119,15 +167,76 @@ namespace ABEngine.ABERuntime
 
 
                 cl.DrawIndexed((uint)mesh.indices.Length);
-            });
+
+                //cl.End();
+                //gd.SubmitCommands(cl);
+                //gd.WaitForIdle();
+                //cl.Begin();
+
+                //if (ind == 0)
+                //{
+                //    cl.End();
+                //    gd.SubmitCommands(cl);
+                //    gd.WaitForIdle();
+
+                //    // Copy depth
+                //    cl.Begin();
+                //    cl.CopyTexture(Game.mainDepthTexture, Game.DepthTexture);
+                //    cl.End();
+                //    gd.SubmitCommands(cl);
+                //    gd.WaitForIdle();
+
+                //    MappedResourceView<ushort> map = gd.Map<ushort>(Game.DepthTexture, MapMode.Read);
+                //    ushort[] data = new ushort[Game.DepthTexture.Width * Game.DepthTexture.Height];
+                //    for (int i = 0; i < data.Length; i++)
+                //    {
+                //        data[i] = map[i];
+                //    }
+
+                //    gd.Unmap(Game.DepthTexture);
+
+                //    Image<L8> image = new Image<L8>((int)Game.DepthTexture.Width, (int)Game.DepthTexture.Height);
+                //    for (int y = 0; y < Game.DepthTexture.Height; y++)
+                //    {
+                //        for (int x = 0; x < Game.DepthTexture.Width; x++)
+                //        {
+                //            // Normalize the 16-bit depth data to 8-bit for visualization
+
+                //            float sample = data[y * Game.DepthTexture.Width + x] / 65535.0f;
+                //            byte pixelValue = (byte)(LinearEyeDepth(sample) * 255.0);
+                //            image[x, y] = new L8(pixelValue);
+                //        }
+                //    }
+                //    image.Save("depth_output.png");
+
+                //    cl.Begin();
+                //}
+
+                //ind++;
+            }
+        }
+
+        internal void RenderNormalsBuffer()
+        {
+            // Bind 
+            foreach (var render in renderOrder)
+            {
+                Mesh mesh = render.Item1;
+                Transform transform = render.Item2;
+
+                if (mesh.material.isLateRender)
+                    continue;
+
+
+            }
         }
 
         public override void CleanUp(bool reload, bool newScene)
         {
-            sharedVertexSet.Dispose();
+            //sharedVertexSet.Dispose();
             sharedFragmentSet.Dispose();
 
-            vertexUniformBuffer.Dispose();
+            //ertexUniformBuffer.Dispose();
             fragmentUniformBuffer.Dispose();
         }
 

@@ -49,6 +49,21 @@ namespace ABEngine.ABERuntime.Rendering
             16,17,18, 16,18,19,
             20,21,22, 20,22,23,
         };
+
+        public static readonly VertexStandard[] TopVertices = new VertexStandard[]
+        {
+            // Top
+            new VertexStandard(new Vector3(-.5f,.5f,-.5f),     new Vector3(0,1,0),     new Vector2(0, 0)),
+            new VertexStandard(new Vector3(.5f,.5f,-.5f),      new Vector3(0,1,0),     new Vector2(1, 0)),
+            new VertexStandard(new Vector3(.5f,.5f,.5f),       new Vector3(0,1,0),     new Vector2(1, 1)),
+            new VertexStandard(new Vector3(-.5f,.5f,.5f),      new Vector3(0,1,0),     new Vector2(0, 1)),
+          
+        };
+
+        public static readonly ushort[] TopIndices = new ushort[]
+       {
+            0,1,2, 0,2,3,
+       };
     }
 }
 

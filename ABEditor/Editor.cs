@@ -252,7 +252,6 @@ namespace ABEngine.ABEditor
                         lightRenderTexture.Dispose();
                         compositeRenderTexture.Dispose();
 
-                        mainRenderView.Dispose();
                         mainRenderFB.Dispose();
 
                         finalQuadRSSet.Dispose();
@@ -282,7 +281,6 @@ namespace ABEngine.ABEditor
                            mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
                             mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
 
-                        mainRenderView = gd.ResourceFactory.CreateTextureView(mainRenderTexture);
                         mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture));
                         mainFBOutDesc = mainRenderFB.OutputDescription;
 

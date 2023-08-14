@@ -14,10 +14,18 @@ namespace ABEngine.ABERuntime.Core.Components
 
         internal DeviceBuffer vertexBuffer;
         internal DeviceBuffer indexBuffer;
+        internal DeviceBuffer vertexUniformBuffer;
+
+        internal ResourceSet vertexTransformSet;
+
 
         public Mesh()
         {
             material = GraphicsManager.GetUber3D();
+
+            // Mesh model matrix
+            vertexUniformBuffer = GraphicsManager.rf.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
+            vertexTransformSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_VS, vertexUniformBuffer));
         }
 
         public Mesh(VertexStandard[] vertices, ushort[] indices) : this()
@@ -35,7 +43,7 @@ namespace ABEngine.ABERuntime.Core.Components
                 if (vertexBuffer != null)
                     vertexBuffer.Dispose();
                 vertexBuffer = GraphicsManager.rf.CreateBuffer(
-                                new BufferDescription(_vertices[0].VertexSize * (uint)_vertices.Length, BufferUsage.VertexBuffer));
+                                new BufferDescription(_vertices[0].VertexSize * (uint)_vertices.Length, BufferUsage.VertexBuffer | BufferUsage.Dynamic));
                 GraphicsManager.gd.UpdateBuffer(vertexBuffer, 0, _vertices);
             }
         }
@@ -49,7 +57,7 @@ namespace ABEngine.ABERuntime.Core.Components
                 if (indexBuffer != null)
                     indexBuffer.Dispose();
                 indexBuffer = GraphicsManager.rf.CreateBuffer(
-                             new BufferDescription(sizeof(ushort) * (uint)_indices.Length, BufferUsage.IndexBuffer));
+                             new BufferDescription(sizeof(ushort) * (uint)_indices.Length, BufferUsage.IndexBuffer | BufferUsage.Dynamic ));
                 GraphicsManager.gd.UpdateBuffer(indexBuffer, 0, _indices);
             }
         }

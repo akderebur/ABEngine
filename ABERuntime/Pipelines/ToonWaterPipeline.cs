@@ -3,22 +3,23 @@ using Veldrid;
 
 namespace ABEngine.ABERuntime.Pipelines
 {
-    public class UberPipeline3D : PipelineAsset
+    public class ToonWaterPipeline : PipelineAsset
     {
-        public UberPipeline3D(Framebuffer fb) : base(fb, false, false)
+        public ToonWaterPipeline(Framebuffer fb) : base(fb, false, false)
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
             shaderOptimised = false;
-            defaultMatName = "Uber3D";
+            defaultMatName = "ToonWater";
 
-            PipelineAsset.ParseAsset(Shaders3D.UberPipeline3DAsset, this);
+            PipelineAsset.ParseAsset(Shaders3D.ToonWaterAsset, this);
 
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_FS);
 
-            GraphicsPipelineDescription uber3DDesc = new GraphicsPipelineDescription(
+            GraphicsPipelineDescription toonWaterDesc = new GraphicsPipelineDescription(
                 BlendStateDescription.SingleAlphaBlend,
-                DepthStencilStateDescription.DepthOnlyLessEqual,
+                //DepthStencilStateDescription.DepthOnlyLessEqual,
+                new DepthStencilStateDescription(true, false, ComparisonKind.LessEqual),
                 RasterizerStateDescription.Default,
                 PrimitiveTopology.TriangleList,
                 new ShaderSetDescription(
@@ -29,7 +30,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     shaders),
                 resourceLayouts.ToArray(),
                 fb.OutputDescription);
-            pipeline = rf.CreateGraphicsPipeline(ref uber3DDesc);
+            pipeline = rf.CreateGraphicsPipeline(ref toonWaterDesc);
         }
     }
 }

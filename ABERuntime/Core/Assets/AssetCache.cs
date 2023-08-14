@@ -16,6 +16,7 @@ using System.Runtime.InteropServices;
 using Halak;
 using ABEngine.ABERuntime.Core.Assets;
 using System.Runtime.CompilerServices;
+using ABEngine.ABERuntime.Core.Components;
 
 namespace ABEngine.ABERuntime
 {
@@ -275,6 +276,60 @@ namespace ABEngine.ABERuntime
             SpriteClip newClip = new SpriteClip(s_clips.Count, tex2d, framePoses);
             s_clips.Add(newClip);
             return newClip;
+        }
+
+        public static Mesh CreateMesh(string meshFilePath)
+        {
+            meshFilePath = Game.AssetPath.ToCommonPath() + meshFilePath;
+            if (!File.Exists(meshFilePath))
+                return null;
+
+            Mesh mesh = new Mesh();
+            using (FileStream fs = new FileStream(meshFilePath, FileMode.Open))
+            using(BinaryReader br = new BinaryReader(fs))
+            {
+                int vertC = br.ReadInt32();
+                int indC = br.ReadInt32();
+
+                int compC = br.ReadByte();
+
+                VertexStandard[] vertices = new VertexStandard[vertC];
+
+                for (int vc = 0; vc < compC; vc++)
+                {
+                    char vcID = br.ReadChar();
+                    switch (vcID)
+                    {
+                        case 'P':
+                            for (int i = 0; i < vertC; i++)
+                                vertices[i].Position = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                            break;
+                        case 'U':
+                            for (int i = 0; i < vertC; i++)
+                                vertices[i].UV = new Vector2(br.ReadSingle(), br.ReadSingle());
+                            break;
+                        case 'N':
+                            for (int i = 0; i < vertC; i++)
+                                vertices[i].Normal = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                            break;
+                        case 'T':
+                            for (int i = 0; i < vertC; i++)
+                                vertices[i].Tangent = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                ushort[] indices = new ushort[indC];
+                for (int i = 0; i < indC; i++)
+                    indices[i] = br.ReadUInt16();
+
+                mesh.vertices = vertices;
+                mesh.indices = indices;
+            }
+
+            return mesh;
         }
 
         internal static Texture2D GetDefaultTexture()

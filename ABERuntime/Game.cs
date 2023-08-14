@@ -24,6 +24,8 @@ using Arch.Core;
 using Arch.Core.Extensions;
 using System.Collections;
 using Arch.Core.Extensions.Internal;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace ABEngine.ABERuntime
 {
@@ -92,13 +94,22 @@ namespace ABEngine.ABERuntime
         protected Tweening.TweenSystem tweenSystem;
         protected private ColliderDebugSystem colDebugSystem;
         protected private ParticleModuleSystem particleSystem;
+        protected private NormalsPassRenderSystem normalsRenderSystem;
 
         // Framebuffer
         public static Texture mainRenderTexture;
         public static Texture mainDepthTexture;
-        public static TextureView mainRenderView;
+        public static Texture cameraNormalTexture;
         protected Framebuffer mainRenderFB;
         public static Texture ScreenTexture;
+        private static Texture DebugColorTexture;
+
+        public static Texture mainRenderResolved;
+        public static Texture mainDepthResolved;
+
+
+
+        protected Framebuffer normalsRenderFB;
 
         public static Texture lightRenderTexture;
         protected Framebuffer lightRenderFB;
@@ -170,6 +181,7 @@ namespace ABEngine.ABERuntime
 
             EntityManager.Init();
 
+            NormalsPipeline normalsPipeline = new NormalsPipeline(normalsRenderFB);
             LightPipelineAsset lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
             LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
 
@@ -185,6 +197,7 @@ namespace ABEngine.ABERuntime
             meshRenderSystem = new MeshRenderSystem(null);
             renderExtensions = new List<RenderSystem>();
             lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
+            normalsRenderSystem = new NormalsPassRenderSystem(normalsPipeline);
             tweenSystem = new Tweening.TweenSystem();
             colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
             particleSystem = new ParticleModuleSystem();
@@ -200,6 +213,8 @@ namespace ABEngine.ABERuntime
 
             Scene_Setup();
             onSceneLoad?.Invoke();
+
+            RefreshProjection(Game.canvas);
 
             InputSnapshot snapshot = window.PumpEvents();
             Input.UpdateFrameInput(snapshot);
@@ -225,6 +240,7 @@ namespace ABEngine.ABERuntime
             spriteAnimSystem.Start();
             camMoveSystem.Start();
             lightRenderSystem.Start();
+            normalsRenderSystem.Start();
             particleSystem.Start();
             if (debug)
                 colDebugSystem.Start();
@@ -248,6 +264,7 @@ namespace ABEngine.ABERuntime
                 float newTime = (float)sw.Elapsed.TotalSeconds;
                 float elapsed = newTime - previousTime;
                 Time = newTime;
+                pipelineData.Time = Time;
 
                 previousTime = newTime;
                 snapshot = window.PumpEvents();
@@ -291,13 +308,13 @@ namespace ABEngine.ABERuntime
                         lightRenderTexture.Dispose();
                         compositeRenderTexture.Dispose();
 
-                        mainRenderView.Dispose();
                         mainRenderFB.Dispose();
 
                         finalQuadRSSet.Dispose();
                         compositeRSSetLight.Dispose();
 
                         mainDepthTexture.Dispose();
+                        cameraNormalTexture.Dispose();
 
                         // Resources
                         var mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
@@ -307,7 +324,11 @@ namespace ABEngine.ABERuntime
 
                         mainDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                         mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil));
+                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled));
+
+                        cameraNormalTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                        mainRenderTexture.Width, mainRenderTexture.Height, mainRenderTexture.MipLevels, mainRenderTexture.ArrayLayers,
+                        PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled));
 
                         ScreenTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                            mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
@@ -321,7 +342,6 @@ namespace ABEngine.ABERuntime
                            mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
                             mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
 
-                        mainRenderView = gd.ResourceFactory.CreateTextureView(mainRenderTexture);
                         mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture));
                         mainFBOutDesc = mainRenderFB.OutputDescription;
 
@@ -361,6 +381,8 @@ namespace ABEngine.ABERuntime
                         lightRenderSystem.Start();
                         if (debug)
                             colDebugSystem.Start();
+
+                        RefreshProjection(Game.canvas);
                     }
                     else if(newScene)
                     {
@@ -728,6 +750,7 @@ namespace ABEngine.ABERuntime
             spriteBatchSystem.Update(newTime, elapsed);
             meshRenderSystem.Update(newTime, elapsed);
             lightRenderSystem.Update(newTime, elapsed);
+            normalsRenderSystem.Update(newTime, elapsed);
             if(debug)
                 colDebugSystem.Update(newTime, elapsed);
         }
@@ -756,7 +779,7 @@ namespace ABEngine.ABERuntime
                 _commandList.SetFramebuffer(mainRenderFB);
                 _commandList.SetFullViewports();
                 _commandList.ClearColorTarget(0, new RgbaFloat(0f, 0f, 0f, 0f));
-                _commandList.ClearDepthStencil(0f);
+                _commandList.ClearDepthStencil(1f);
 
                 spriteBatchSystem.Render(i);
 
@@ -799,7 +822,41 @@ namespace ABEngine.ABERuntime
             Game.pipelineData.View = view;
             gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
 
+            // Normals Buffer
+            normalsRenderSystem.Render();
+
+
+            //_commandList.End();
+            //gd.SubmitCommands(_commandList);
+            //gd.WaitForIdle();
+            //_commandList.Begin();
+
+           
+            _commandList.SetFramebuffer(mainRenderFB);
+            _commandList.SetFullViewports();
+            _commandList.ClearColorTarget(0, new RgbaFloat(0f, 0f, 0f, 0f));
+            _commandList.ClearDepthStencil(1f);
+
             meshRenderSystem.Render();
+
+         
+
+            //_commandList.ResolveTexture(mainRenderTexture, mainRenderTextureResolved);
+
+          
+
+            lightRenderSystem.Render(0);
+
+             // Composition / No Clear - No depth
+                _commandList.SetFramebuffer(compositeRenderFB);
+                _commandList.SetFullViewports();
+                _commandList.SetPipeline(GraphicsManager.CompositePipeline);
+
+                _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+                _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
+
+                _commandList.SetGraphicsResourceSet(0, compositeRSSetLight);
+                _commandList.DrawIndexed(6, 1, 0, 0, 0);
         }
 
         void LateRender()
@@ -846,8 +903,9 @@ namespace ABEngine.ABERuntime
             if (canvas == null || Game.canvas != canvas)
                 return;
 
-            //projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1000f, -1000f);
-            projectionMatrix = CreatePerspective(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 0.1f, 1000f);
+            //projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, -1000f, 1000f);
+            //projectionMatrix = CreatePerspective(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 1000f, 0.1f);
+            projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 0.1f, 1000f);
             Game.pipelineData.Projection = Game.projectionMatrix;
             onCanvasResize?.Invoke();
         }
@@ -905,6 +963,8 @@ namespace ABEngine.ABERuntime
                 preferStandardClipSpaceYDirection: true,
                 swapchainSrgbFormat: false
             ), backend);
+
+            
             rf = new DisposeCollectorResourceFactory(gd.ResourceFactory);
             _commandList = gd.ResourceFactory.CreateCommandList();
 
@@ -922,11 +982,27 @@ namespace ABEngine.ABERuntime
             Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
             mainRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
+                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled, TextureSampleCount.Count1));
 
             mainDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                         mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil));
+                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled, TextureSampleCount.Count1));
+
+            mainRenderResolved = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+                mainFBTexture.Format, TextureUsage.Sampled | TextureUsage.RenderTarget));
+
+            mainDepthResolved = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                      mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+                      PixelFormat.R16_UNorm, TextureUsage.Sampled));
+
+            cameraNormalTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                     mainRenderTexture.Width, mainRenderTexture.Height, mainRenderTexture.MipLevels, mainRenderTexture.ArrayLayers,
+                     PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled));
+
+            DebugColorTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                     mainRenderTexture.Width, mainRenderTexture.Height, mainRenderTexture.MipLevels, mainRenderTexture.ArrayLayers,
+                     mainRenderTexture.Format, TextureUsage.Staging));
 
             ScreenTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
@@ -940,9 +1016,10 @@ namespace ABEngine.ABERuntime
                mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
                 mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
 
-            mainRenderView = gd.ResourceFactory.CreateTextureView(mainRenderTexture);
             mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture));
             mainFBOutDesc = mainRenderFB.OutputDescription;
+
+            normalsRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, cameraNormalTexture));
 
             lightRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, lightRenderTexture));
             compositeRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, compositeRenderTexture));
@@ -1113,10 +1190,12 @@ namespace ABEngine.ABERuntime
             Console.WriteLine("Clean");
 
             mainRenderTexture.Dispose();
-            mainRenderView.Dispose();
+            mainDepthTexture.Dispose();
+            cameraNormalTexture.Dispose();
+
             mainRenderFB.Dispose();
             ScreenTexture.Dispose();
-
+            
             lightRenderTexture.Dispose();
             lightRenderFB.Dispose();
 
@@ -1127,7 +1206,9 @@ namespace ABEngine.ABERuntime
         void CleanRenderResources()
         {
             mainRenderTexture.Dispose();
-            mainRenderView.Dispose();
+            mainDepthTexture.Dispose();
+            cameraNormalTexture.Dispose();
+
             mainRenderFB.Dispose();
             ScreenTexture.Dispose();
 
