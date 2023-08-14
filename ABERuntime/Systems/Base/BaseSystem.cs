@@ -53,9 +53,14 @@ namespace ABEngine.ABERuntime
 
         }
 
-        public virtual void CleanUp(bool reload, bool newScene)
+        public virtual void CleanUp(bool reload, bool newScene, bool resize)
         {
 
+        }
+
+        public void CleanUp(bool reload, bool newScene)
+        {
+            CleanUp(reload, newScene, false);
         }
     }
 }

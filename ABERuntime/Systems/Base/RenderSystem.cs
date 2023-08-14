@@ -37,6 +37,11 @@ namespace ABEngine.ABERuntime
             this.cl = GraphicsManager.cl;
         }
 
+        public virtual void SetupResources(bool newScene = false, params Texture[] sampledTextures)
+        {
+
+        }
+
         public virtual void Render()
         {
 
@@ -58,6 +63,20 @@ namespace ABEngine.ABERuntime
 
         }
 
-       
+        internal virtual Texture GetMainColorAttachent()
+        {
+            return null;
+        }
+
+        internal virtual Texture GetDepthAttachment()
+        {
+            return null;
+        }
+
+        public virtual Framebuffer GetMainFramebuffer()
+        {
+            return null;
+        }
+
     }
 }

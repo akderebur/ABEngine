@@ -37,7 +37,7 @@ namespace ABEngine.ABERuntime
 
     public class Game
     {
-         protected private  GraphicsDevice gd;
+        protected private  GraphicsDevice gd;
         private DisposeCollectorResourceFactory rf;
 
         // Resources
@@ -89,30 +89,19 @@ namespace ABEngine.ABERuntime
         protected SpriteAnimSystem spriteAnimSystem;
         protected RigidbodyMoveSystem rbMoveSystem;
         public static SpriteBatchSystem spriteBatchSystem;
-        protected static LightRenderSystem lightRenderSystem;
-        protected MeshRenderSystem meshRenderSystem;
         protected Tweening.TweenSystem tweenSystem;
         protected private ColliderDebugSystem colDebugSystem;
         protected private ParticleModuleSystem particleSystem;
-        protected private NormalsPassRenderSystem normalsRenderSystem;
+
+        // Render Systems
+        public static NormalsPassRenderSystem normalsRenderSystem;
+        public static MainRenderSystem mainRenderSystem;
+        protected MeshRenderSystem meshRenderSystem;
+        public static LightRenderSystem lightRenderSystem;
+
+        public List<RenderSystem> internalRenders;
 
         // Framebuffer
-        public static Texture mainRenderTexture;
-        public static Texture mainDepthTexture;
-        public static Texture cameraNormalTexture;
-        protected Framebuffer mainRenderFB;
-        public static Texture ScreenTexture;
-        private static Texture DebugColorTexture;
-
-        public static Texture mainRenderResolved;
-        public static Texture mainDepthResolved;
-
-
-
-        protected Framebuffer normalsRenderFB;
-
-        public static Texture lightRenderTexture;
-        protected Framebuffer lightRenderFB;
 
         public static Texture compositeRenderTexture;
         protected Framebuffer compositeRenderFB;
@@ -164,6 +153,36 @@ namespace ABEngine.ABERuntime
 
         }
 
+        void CreateInternalRenders(bool newScene)
+        {
+            if (newScene)
+            {
+                normalsRenderSystem = new NormalsPassRenderSystem();
+                mainRenderSystem = new MainRenderSystem();
+                meshRenderSystem = new MeshRenderSystem();
+                lightRenderSystem = new LightRenderSystem();
+
+                internalRenders = new List<RenderSystem>()
+                {
+                    normalsRenderSystem,
+                    mainRenderSystem,
+                    meshRenderSystem,
+                    lightRenderSystem
+                };
+            }
+
+            normalsRenderSystem.SetupResources(newScene);
+            mainRenderSystem.SetupResources(newScene);
+            meshRenderSystem.SetupResources(newScene);
+            lightRenderSystem.SetupResources(newScene, mainRenderSystem.GetMainColorAttachent());
+
+            compositeRSSetLight = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
+                  GraphicsManager.sharedTextureLayout,
+                  lightRenderSystem.GetMainColorAttachent(), gd.LinearSampler
+                  ));
+        }
+
+
         float accumulator;
         float interpolation;
         protected private virtual void Init(string windowName)
@@ -177,12 +196,12 @@ namespace ABEngine.ABERuntime
 
             // Veldrid 
             SetupGraphics(windowName);
+            CreateInternalRenders(true);
+
             AssetCache.InitAssetCache();
 
             EntityManager.Init();
 
-            NormalsPipeline normalsPipeline = new NormalsPipeline(normalsRenderFB);
-            LightPipelineAsset lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
             LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
 
             // Systems
@@ -194,13 +213,11 @@ namespace ABEngine.ABERuntime
             spriteAnimSystem = new SpriteAnimSystem();
             rbMoveSystem = new RigidbodyMoveSystem();
             spriteBatchSystem = new SpriteBatchSystem(null);
-            meshRenderSystem = new MeshRenderSystem(null);
             renderExtensions = new List<RenderSystem>();
-            lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
-            normalsRenderSystem = new NormalsPassRenderSystem(normalsPipeline);
             tweenSystem = new Tweening.TweenSystem();
-            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+            //colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
             particleSystem = new ParticleModuleSystem();
+
 
             // Once in game lifetime
             Game_Init();
@@ -220,8 +237,8 @@ namespace ABEngine.ABERuntime
             Input.UpdateFrameInput(snapshot);
 
             // Awake events
-            if (debug)
-                colDebugSystem.Awake();
+            //if (debug)
+            //    colDebugSystem.Awake();
 
             // Start Events
             b2dInitSystem.Start();
@@ -230,7 +247,6 @@ namespace ABEngine.ABERuntime
             {
                 system.Start();
             }
-
 
             //spriteRenderer.Start();
             spriteBatchSystem.Start();
@@ -242,8 +258,8 @@ namespace ABEngine.ABERuntime
             lightRenderSystem.Start();
             normalsRenderSystem.Start();
             particleSystem.Start();
-            if (debug)
-                colDebugSystem.Start();
+            //if (debug)
+            //    colDebugSystem.Start();
            
 
             foreach (var rendExt in renderExtensions)
@@ -303,60 +319,29 @@ namespace ABEngine.ABERuntime
                     {
                         resize = false;
 
-                        mainRenderTexture.Dispose();
-                        ScreenTexture.Dispose();
-                        lightRenderTexture.Dispose();
+                        // Resize render targets
+
                         compositeRenderTexture.Dispose();
-
-                        mainRenderFB.Dispose();
-
                         finalQuadRSSet.Dispose();
                         compositeRSSetLight.Dispose();
 
-                        mainDepthTexture.Dispose();
-                        cameraNormalTexture.Dispose();
+                        foreach (var render in internalRenders)
+                            render.CleanUp(true, false, true);
 
-                        // Resources
-                        var mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
-                        mainRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                        mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
-
-                        mainDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                        mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled));
-
-                        cameraNormalTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                        mainRenderTexture.Width, mainRenderTexture.Height, mainRenderTexture.MipLevels, mainRenderTexture.ArrayLayers,
-                        PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled));
-
-                        ScreenTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                           mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                            mainFBTexture.Format, TextureUsage.Sampled));
-
-                        lightRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                                      mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                                       mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
-
+                        Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
                         compositeRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                            mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
                             mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
 
-                        mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture));
-                        mainFBOutDesc = mainRenderFB.OutputDescription;
-
-                        lightRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, lightRenderTexture));
                         compositeRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, compositeRenderTexture));
+
 
                         finalQuadRSSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
                                GraphicsManager.sharedTextureLayout,
                                compositeRenderTexture, gd.LinearSampler
                                ));
 
-                        compositeRSSetLight = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
-                              GraphicsManager.sharedTextureLayout,
-                              lightRenderTexture, gd.LinearSampler
-                              ));
+                        CreateInternalRenders(false);
 
                         pipelineData = new PipelineData()
                         {
@@ -367,20 +352,16 @@ namespace ABEngine.ABERuntime
                             Padding = 0f
                         };
 
+                        GraphicsManager.RefreshMaterials();
 
-                        GraphicsManager.RecreatePipelines(mainRenderFB, false);
+                        //lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
 
-                        lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
-                        lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
-
-                        lightRenderSystem.CleanUp(true, false);
-                        lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
-                        if (debug)
-                            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+                        //if (debug)
+                        //    colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
 
                         lightRenderSystem.Start();
-                        if (debug)
-                            colDebugSystem.Start();
+                        //if (debug)
+                        //    colDebugSystem.Start();
 
                         RefreshProjection(Game.canvas);
                     }
@@ -398,20 +379,22 @@ namespace ABEngine.ABERuntime
 
                         EntityManager.SetImmediateDestroy(false);
 
-
                         // Clean systems
                         foreach (var system in userSystems)
                         {
                             system.CleanUp(true, newScene);
                         }
 
+                        // Clean Resources
                         AssetCache.DisposeResources();
                         rf.DisposeCollector.DisposeAll();
 
-                        GraphicsManager.RecreatePipelines(mainRenderFB, true);
+                        GraphicsManager.ResetPipelines();
 
-                        lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
-                        lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
+                        foreach (var render in internalRenders)
+                            render.CleanUp(true, true, false);
+
+                        //lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
 
                         // Systems
                         camMoveSystem = new CameraMovementSystem();
@@ -421,12 +404,10 @@ namespace ABEngine.ABERuntime
                         spriteAnimSystem = new SpriteAnimSystem();
                         rbMoveSystem = new RigidbodyMoveSystem();
                         spriteBatchSystem = new SpriteBatchSystem(null);
-                        meshRenderSystem = new MeshRenderSystem(null);
                         tweenSystem = new Tweening.TweenSystem();
                         particleSystem = new ParticleModuleSystem();
-                        lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
-                        if (debug)
-                            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+                        //if (debug)
+                        //    colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
 
                         for (int i = renderExtensions.Count - 1; i >= 0; i--)
                         {
@@ -479,8 +460,8 @@ namespace ABEngine.ABERuntime
                         lightRenderSystem.Start();
                         tweenSystem.Start();
                         particleSystem.Start();
-                        if (debug)
-                            colDebugSystem.Start();
+                        //if (debug)
+                        //    colDebugSystem.Start();
                     }
 
 
@@ -751,57 +732,57 @@ namespace ABEngine.ABERuntime
             meshRenderSystem.Update(newTime, elapsed);
             lightRenderSystem.Update(newTime, elapsed);
             normalsRenderSystem.Update(newTime, elapsed);
-            if(debug)
-                colDebugSystem.Update(newTime, elapsed);
+            //if(debug)
+            //    colDebugSystem.Update(newTime, elapsed);
         }
 
-        private protected void MainRender()
-        {
-            if (Game.activeCam == null)
-                return;
+        //private protected void MainRender()
+        //{
+        //    if (Game.activeCam == null)
+        //        return;
 
-            var camEnt = Game.activeCam.entity;
-            if (camEnt == Entity.Null)
-                return;
+        //    var camEnt = Game.activeCam.entity;
+        //    if (camEnt == Entity.Null)
+        //        return;
 
-            Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
-            Vector3 cameraPosition = Game.activeCam.worldPosition;
-            Vector3 targetPosition = cameraPosition + forward;
-            Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
+        //    Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
+        //    Vector3 cameraPosition = Game.activeCam.worldPosition;
+        //    Vector3 targetPosition = cameraPosition + forward;
+        //    Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
 
-            Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
+        //    Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
 
-            Game.pipelineData.View = view;
-            gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
+        //    Game.pipelineData.View = view;
+        //    gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
 
-            for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
-            {
-                _commandList.SetFramebuffer(mainRenderFB);
-                _commandList.SetFullViewports();
-                _commandList.ClearColorTarget(0, new RgbaFloat(0f, 0f, 0f, 0f));
-                _commandList.ClearDepthStencil(1f);
+        //    for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
+        //    {
+        //        _commandList.SetFramebuffer(mainRenderFB);
+        //        _commandList.SetFullViewports();
+        //        _commandList.ClearColorTarget(0, new RgbaFloat(0f, 0f, 0f, 0f));
+        //        _commandList.ClearDepthStencil(1f);
 
-                spriteBatchSystem.Render(i);
+        //        spriteBatchSystem.Render(i);
 
-                lightRenderSystem.Render(i);
+        //        lightRenderSystem.Render(i);
 
-                // Composition / No Clear - No depth
-                _commandList.SetFramebuffer(compositeRenderFB);
-                _commandList.SetFullViewports();
-                _commandList.SetPipeline(GraphicsManager.CompositePipeline);
+        //        // Composition / No Clear - No depth
+        //        _commandList.SetFramebuffer(compositeRenderFB);
+        //        _commandList.SetFullViewports();
+        //        _commandList.SetPipeline(GraphicsManager.CompositePipeline);
 
-                _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-                _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
+        //        _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+        //        _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
 
-                _commandList.SetGraphicsResourceSet(0, compositeRSSetLight);
-                _commandList.DrawIndexed(6, 1, 0, 0, 0);
-            }
+        //        _commandList.SetGraphicsResourceSet(0, compositeRSSetLight);
+        //        _commandList.DrawIndexed(6, 1, 0, 0, 0);
+        //    }
 
-            if (debug)
-            {
-                colDebugSystem.Render();
-            }
-        }
+        //    if (debug)
+        //    {
+        //        colDebugSystem.Render();
+        //    }
+        //}
 
         private protected void MainRender3D()
         {
@@ -822,41 +803,23 @@ namespace ABEngine.ABERuntime
             Game.pipelineData.View = view;
             gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
 
-            // Normals Buffer
-            normalsRenderSystem.Render();
 
+            foreach (var render in internalRenders)
+            {
+                for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
+                    render.Render(i);
+            }
 
-            //_commandList.End();
-            //gd.SubmitCommands(_commandList);
-            //gd.WaitForIdle();
-            //_commandList.Begin();
-
-           
-            _commandList.SetFramebuffer(mainRenderFB);
+            // Composition / No Clear - No depth
+            _commandList.SetFramebuffer(compositeRenderFB);
             _commandList.SetFullViewports();
-            _commandList.ClearColorTarget(0, new RgbaFloat(0f, 0f, 0f, 0f));
-            _commandList.ClearDepthStencil(1f);
+            _commandList.SetPipeline(GraphicsManager.CompositePipeline);
 
-            meshRenderSystem.Render();
+            _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+            _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
 
-         
-
-            //_commandList.ResolveTexture(mainRenderTexture, mainRenderTextureResolved);
-
-          
-
-            lightRenderSystem.Render(0);
-
-             // Composition / No Clear - No depth
-                _commandList.SetFramebuffer(compositeRenderFB);
-                _commandList.SetFullViewports();
-                _commandList.SetPipeline(GraphicsManager.CompositePipeline);
-
-                _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-                _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
-
-                _commandList.SetGraphicsResourceSet(0, compositeRSSetLight);
-                _commandList.DrawIndexed(6, 1, 0, 0, 0);
+            _commandList.SetGraphicsResourceSet(0, compositeRSSetLight);
+            _commandList.DrawIndexed(6, 1, 0, 0, 0);
         }
 
         void LateRender()
@@ -980,61 +943,19 @@ namespace ABEngine.ABERuntime
         void CreateRenderResources()
         {
             Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
-            mainRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled, TextureSampleCount.Count1));
-
-            mainDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                        mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled, TextureSampleCount.Count1));
-
-            mainRenderResolved = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                mainFBTexture.Format, TextureUsage.Sampled | TextureUsage.RenderTarget));
-
-            mainDepthResolved = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                      mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                      PixelFormat.R16_UNorm, TextureUsage.Sampled));
-
-            cameraNormalTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                     mainRenderTexture.Width, mainRenderTexture.Height, mainRenderTexture.MipLevels, mainRenderTexture.ArrayLayers,
-                     PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled));
-
-            DebugColorTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                     mainRenderTexture.Width, mainRenderTexture.Height, mainRenderTexture.MipLevels, mainRenderTexture.ArrayLayers,
-                     mainRenderTexture.Format, TextureUsage.Staging));
-
-            ScreenTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                mainFBTexture.Format, TextureUsage.Sampled));
-
-            lightRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
 
             compositeRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
                 mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
-
-            mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture));
-            mainFBOutDesc = mainRenderFB.OutputDescription;
-
-            normalsRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, cameraNormalTexture));
-
-            lightRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, lightRenderTexture));
+        
             compositeRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, compositeRenderTexture));
 
-            GraphicsManager.LoadPipelines(gd, _commandList, mainRenderFB, compositeRenderFB);
+            GraphicsManager.LoadPipelines(gd, _commandList, compositeRenderFB);
 
             finalQuadRSSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
                    GraphicsManager.sharedTextureLayout,
                    compositeRenderTexture, gd.LinearSampler
                    ));
-
-            compositeRSSetLight = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
-                  GraphicsManager.sharedTextureLayout,
-                  lightRenderTexture, gd.LinearSampler
-                  ));
 
             pipelineBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(144, BufferUsage.UniformBuffer));
             pipelineSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedPipelineLayout, pipelineBuffer));
@@ -1189,15 +1110,10 @@ namespace ABEngine.ABERuntime
 
             Console.WriteLine("Clean");
 
-            mainRenderTexture.Dispose();
-            mainDepthTexture.Dispose();
-            cameraNormalTexture.Dispose();
-
-            mainRenderFB.Dispose();
-            ScreenTexture.Dispose();
-            
-            lightRenderTexture.Dispose();
-            lightRenderFB.Dispose();
+            foreach (var item in internalRenders)
+            {
+                item.CleanUp(false, false, true);
+            }
 
             compositeRenderTexture.Dispose();
             compositeRenderFB.Dispose();
@@ -1205,15 +1121,10 @@ namespace ABEngine.ABERuntime
 
         void CleanRenderResources()
         {
-            mainRenderTexture.Dispose();
-            mainDepthTexture.Dispose();
-            cameraNormalTexture.Dispose();
-
-            mainRenderFB.Dispose();
-            ScreenTexture.Dispose();
-
-            lightRenderTexture.Dispose();
-            lightRenderFB.Dispose();
+            foreach (var item in internalRenders)
+            {
+                item.CleanUp(false, false, true);
+            }
 
             compositeRenderTexture.Dispose();
             compositeRenderFB.Dispose();
@@ -1429,77 +1340,20 @@ namespace ABEngine.ABERuntime
             return component;
         }
 
-        //protected virtual void CreateResources()
-        //{
-        //    ResourceFactory rsFactory = gd.ResourceFactory;
-        //    _commandList = rsFactory.CreateCommandList();
-        //}
-
-        protected virtual void DrawBeginLight()
-        {
-            _commandList.Begin();
-            _commandList.SetFramebuffer(mainRenderFB);
-            _commandList.SetFullViewports();
-            _commandList.ClearColorTarget(0, RgbaFloat.Black);
-            //_commandList.ClearDepthStencil(1f);
-        }
+      
 
         protected virtual void DrawBegin()
         {
             _commandList.Begin();
-
-            _commandList.SetFramebuffer(lightRenderFB);
-            _commandList.SetFullViewports();
-            _commandList.ClearColorTarget(0, RgbaFloat.Black);
-
-            //_commandList.SetFramebuffer(mainRenderFB);
-            //_commandList.SetFullViewports();
-            //_commandList.ClearColorTarget(0, RgbaFloat.Black);
-            //_commandList.ClearDepthStencil(0f);
 
             _commandList.SetFramebuffer(compositeRenderFB);
             _commandList.SetFullViewports();
             _commandList.ClearColorTarget(0, RgbaFloat.Black);
         }
 
-        protected virtual void DrawBeginNoClear()
-        {
-            _commandList.Begin();
-            _commandList.SetFramebuffer(mainRenderFB);
-            _commandList.SetFullViewports();
-           
-        }
-
-        
-
-        protected virtual void DrawEnd()
-        {
-            _commandList.End();
-            gd.SubmitCommands(_commandList);
-            //gd.WaitForIdle();
-            //gd.SwapBuffers();
-        }
-
-        protected virtual void LateDrawBegin()
-        {
-            _commandList.Begin();
-            _commandList.SetFramebuffer(mainRenderFB);
-            _commandList.SetFullViewports();
-            _commandList.ClearDepthStencil(0f);
-            //_commandList.ClearDepthStencil(1f);
-        }
-
-        protected virtual void LateDrawEnd()
-        {
-            _commandList.End();
-            gd.SubmitCommands(_commandList);
-            gd.WaitForIdle();
-            //gd.SwapBuffers();
-        }
 
         private void FinalRender()
         {
-            //_commandList.Begin();
             _commandList.SetFramebuffer(gd.MainSwapchain.Framebuffer);
             _commandList.SetFullViewports();
             _commandList.ClearColorTarget(0, RgbaFloat.Black);

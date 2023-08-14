@@ -141,7 +141,7 @@ namespace ABEngine.ABEUI
             fonts.Add("0" + 20, defaultFont);
         }
 
-        public override void CleanUp(bool reload = false, bool newScene = false)
+        public override void CleanUp(bool reload = false, bool newScene = false, bool resize = false)
         {
             ImGui.GetIO().Fonts.Clear();
             ImGui.GetIO().Fonts.AddFontDefault();

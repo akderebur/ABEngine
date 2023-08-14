@@ -636,7 +636,6 @@ Fragment
 		vec3 existingNormal = texture(sampler2D(CamNormalTex, CamNormalTexSampler), gl_FragCoord.xy/Resolution).xyz;
         //existingNormal = vec3(dFdx(depth), dFdy(depth), 0);
 
-
 	    float normalDot = clamp(dot(existingNormal, viewNormal), 0.0, 1.0);
 	    float foamDistance = mix(foam_max_distance, foam_min_distance, normalDot);
 	

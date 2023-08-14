@@ -63,17 +63,17 @@ namespace ABEngine.ABERuntime
 
         public static PipelineMaterial GetUberMaterial()
         {
-            return pipelineMaterials[0];
+            return pipelineMaterials[1];
         }
 
         public static PipelineMaterial GetUberAdditiveMaterial()
         {
-            return pipelineMaterials[1];
+            return pipelineMaterials[2];
         }
 
         public static PipelineMaterial GetUber3D()
         {
-            return pipelineMaterials[2];
+            return pipelineMaterials[3];
         }
 
 
@@ -143,7 +143,7 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        public static void LoadPipelines(GraphicsDevice gd, CommandList cl, Framebuffer mainRenderFB, Framebuffer compositeFB)
+        public static void LoadPipelines(GraphicsDevice gd, CommandList cl, Framebuffer compositeFB)
         {
             // Samplers
             AllSamplers = new List<Sampler>();
@@ -305,39 +305,21 @@ namespace ABEngine.ABERuntime
                    shaders),
                new ResourceLayout[] { sharedTextureLayout },
                compositeFB.OutputDescription);
-            CompositePipeline = gd.ResourceFactory.CreateGraphicsPipeline(ref compositePD);
-
-            var uberAlpha = new UberPipelineAsset(mainRenderFB);
-            var uberAdditive = new UberPipelineAdditive(mainRenderFB);
-            var uber3D = new UberPipeline3D(mainRenderFB);
-            var waterAsset = new WaterPipelineAsset(mainRenderFB);
+            CompositePipeline = gd.ResourceFactory.CreateGraphicsPipeline(ref compositePD);  
         }
 
-        public static void RecreatePipelines(Framebuffer mainRenderFB, bool newScene)
+        public static void ResetPipelines()
         {
-            if (newScene)
-            {
-                pipelineMaterials = new List<PipelineMaterial>();
-                pipelineAssets = new Dictionary<string, PipelineAsset>();
+            pipelineMaterials = new List<PipelineMaterial>();
+            pipelineAssets = new Dictionary<string, PipelineAsset>();
+        }
 
-                var uberAlpha = new UberPipelineAsset(mainRenderFB);
-                var uberAdditive = new UberPipelineAdditive(mainRenderFB);
-                var uber3D = new UberPipelineAdditive(mainRenderFB);
-                var waterAsset = new WaterPipelineAsset(mainRenderFB);
-            }
-            else
-            {
-                foreach (var pipeline in pipelineAssets)
-                    pipeline.Value.UpdateFramebuffer(mainRenderFB);
-                foreach (var material in pipelineMaterials)
-                    material.UpdateSampledTextures();
-
-                //foreach (var mat in pipelineMaterials)
-                //{
-                //    if (mat.pipelineAsset.GetType() == typeof(UberPipelineAsset))
-                //        mat.pipelineAsset = pipe;
-                //}
-            }
+        public static void RefreshMaterials()
+        {
+            foreach (var pipeline in pipelineAssets)
+                pipeline.Value.RefreshFrameBuffer();
+            foreach (var material in pipelineMaterials)
+                material.UpdateSampledTextures();
         }
 
         public static void DisposeResources()

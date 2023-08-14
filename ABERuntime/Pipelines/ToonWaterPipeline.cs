@@ -5,7 +5,7 @@ namespace ABEngine.ABERuntime.Pipelines
 {
     public class ToonWaterPipeline : PipelineAsset
     {
-        public ToonWaterPipeline(Framebuffer fb) : base(fb, false, false)
+        public ToonWaterPipeline(Framebuffer fb) : base(fb, false, false, Game.mainRenderSystem.GetMainFramebuffer)
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);

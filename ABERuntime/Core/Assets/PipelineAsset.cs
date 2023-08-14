@@ -37,7 +37,9 @@ namespace ABEngine.ABERuntime
 
         static int pipelineCount = 0;
 
-        public PipelineAsset(Framebuffer fb, bool clearColor, bool clearDepth)
+        Func<Framebuffer> fbRefreshAction;
+
+        public PipelineAsset(Framebuffer fb, bool clearColor, bool clearDepth, Func<Framebuffer> fbRefresh = null)
         {
             gd = GraphicsManager.gd;
             cl = GraphicsManager.cl;
@@ -55,11 +57,19 @@ namespace ABEngine.ABERuntime
             propNames = new Dictionary<string, int>();
             textureNames = new Dictionary<string, int>();
             defaultMatName = "NoName";
+
+            fbRefreshAction = fbRefresh;
         }
 
         internal void UpdateFramebuffer(Framebuffer fb)
         {
             this.framebuffer = fb;
+        }
+
+        internal void RefreshFrameBuffer()
+        {
+            if(fbRefreshAction != null)
+                this.framebuffer = fbRefreshAction.Invoke();
         }
 
         public virtual void BindPipeline()

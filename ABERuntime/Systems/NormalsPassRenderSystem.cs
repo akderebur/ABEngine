@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using ABEngine.ABERuntime.Core.Components;
+using ABEngine.ABERuntime.Pipelines;
 using Arch.Core;
 using Veldrid;
 
@@ -12,12 +13,40 @@ namespace ABEngine.ABERuntime
 
         SharedMeshVertex sharedVertexUniform;
 
-        public NormalsPassRenderSystem(PipelineAsset asset) : base(asset) { }
+        Texture cameraNormalTexture;
+        Texture normalsDepthTexture;
+        Framebuffer normalsRenderFB;
+
+
+        public override void SetupResources(bool newScene = false, params Texture[] samplesTextures)
+        {
+            Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
+            cameraNormalTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+               PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled));
+
+
+            normalsDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                        mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil, TextureSampleCount.Count1));
+
+            normalsRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(normalsDepthTexture, cameraNormalTexture));
+
+            if (newScene)
+                base.pipelineAsset = new NormalsPipeline(normalsRenderFB);
+            else
+                base.pipelineAsset.UpdateFramebuffer(normalsRenderFB);
+        }
 
         public override void Start()
         {
             base.Start();
             sharedVertexUniform = new SharedMeshVertex();
+        }
+
+        public override void Render(int renderLayer)
+        {
+            Render();
         }
 
         public override void Render()
@@ -48,6 +77,26 @@ namespace ABEngine.ABERuntime
 
                 cl.DrawIndexed((uint)mesh.indices.Length);
             });
+        }
+
+        internal override Texture GetMainColorAttachent()
+        {
+            return cameraNormalTexture;
+        }
+
+        public override void CleanUp(bool reload, bool newScene, bool resize)
+        {
+            if(resize)
+            {
+                cameraNormalTexture.Dispose();
+                normalsDepthTexture.Dispose();
+                normalsRenderFB.Dispose();
+            }
+            else if(newScene)
+            {
+                // Recreate pipelines
+                base.pipelineAsset = new NormalsPipeline(normalsRenderFB);
+            }
         }
     }
 }

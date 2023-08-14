@@ -61,16 +61,12 @@ namespace ABEngine.ABERuntime
 
         LightInfo3D[] lightInfos;
 
-        public MeshRenderSystem(PipelineAsset asset) : base(asset) { }
-
-        public override void Start()
+        public override void SetupResources(bool newScene = false, params Texture[] sampledTextures)
         {
-            base.Start();
-
             lightInfos = new LightInfo3D[4];
 
-            fragmentUniformBuffer = rf.CreateBuffer(new BufferDescription(160, BufferUsage.UniformBuffer));
-            sharedFragmentSet = rf.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_FS, fragmentUniformBuffer));
+            fragmentUniformBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(160, BufferUsage.UniformBuffer));
+            sharedFragmentSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_FS, fragmentUniformBuffer));
 
             sharedVertexUniform = new SharedMeshVertex();
             sharedFragmentUniform = new SharedMeshFragment();
@@ -133,6 +129,11 @@ namespace ABEngine.ABERuntime
             return 1.0f / (paramZ * z + paramW);
         }
 
+        public override void Render(int renderLayer)
+        {
+            Render();
+        }
+
         public override void Render()
         {
             // TODO Render layers
@@ -141,8 +142,17 @@ namespace ABEngine.ABERuntime
             int ind = 0;
             foreach (var render in renderOrder)
             {
+
                 Mesh mesh = render.Item1;
                 Transform transform = render.Item2;
+
+                if(mesh.material.isLateRender)
+                {
+                    cl.End();
+                    gd.SubmitCommands(cl);
+                    gd.WaitForIdle();
+                    cl.Begin();
+                }
 
                 // Update vertex uniform
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
@@ -216,28 +226,14 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        internal void RenderNormalsBuffer()
+        public override void CleanUp(bool reload, bool newScene, bool resize)
         {
-            // Bind 
-            foreach (var render in renderOrder)
+            renderOrder.Clear();
+            if (!reload)
             {
-                Mesh mesh = render.Item1;
-                Transform transform = render.Item2;
-
-                if (mesh.material.isLateRender)
-                    continue;
-
-
+                sharedFragmentSet.Dispose();
+                fragmentUniformBuffer.Dispose();
             }
-        }
-
-        public override void CleanUp(bool reload, bool newScene)
-        {
-            //sharedVertexSet.Dispose();
-            sharedFragmentSet.Dispose();
-
-            //ertexUniformBuffer.Dispose();
-            fragmentUniformBuffer.Dispose();
         }
 
     }

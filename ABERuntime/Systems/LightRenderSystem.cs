@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using Arch.Core;
+using ABEngine.ABERuntime.Pipelines;
 
 namespace ABEngine.ABERuntime
 {
     public class LightRenderSystem : RenderSystem
     {
         const uint lightCountLayer = 10;
-        ResourceSet textureSet;
 
         uint lightCount = 0;
         public static float GlobalLightIntensity = 1f;
@@ -18,7 +18,32 @@ namespace ABEngine.ABERuntime
         Dictionary<int, DeviceBuffer> layerLightBuffers;
         Dictionary<int, List<LightInfo>> layerLightInfos;
 
-        public LightRenderSystem(PipelineAsset asset) : base(asset) { }
+        // Rendering
+
+        Texture lightRenderTexture;
+        Framebuffer lightRenderFB;
+
+        ResourceSet textureSet;
+
+        public override void SetupResources(bool newScene = false, params Texture[] sampledTextures)
+        {
+            textureSet = rf.CreateResourceSet(new ResourceSetDescription(
+               GraphicsManager.sharedTextureLayout,
+               sampledTextures[0], GraphicsManager.linearSamplerWrap
+               ));
+
+            Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
+            lightRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+             mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+             mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
+
+            lightRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, lightRenderTexture));
+
+            if (newScene)
+                base.pipelineAsset = new LightPipelineAsset(lightRenderFB);
+            else
+                base.pipelineAsset.UpdateFramebuffer(lightRenderFB);
+        }
 
         public override void Start()
         {
@@ -26,11 +51,7 @@ namespace ABEngine.ABERuntime
             layerLightBuffers = new Dictionary<int, DeviceBuffer>();
             layerLightInfos = new Dictionary<int, List<LightInfo>>();
 
-            textureSet = rf.CreateResourceSet(new ResourceSetDescription(
-                   GraphicsManager.sharedTextureLayout,
-                   Game.mainRenderTexture, GraphicsManager.linearSamplerWrap
-                   ));
-
+     
             //renderLayerStep = lightLimit / (uint)GraphicsManager.renderLayers.Count;
             //layerLightCounts = new uint[GraphicsManager.renderLayers.Count];
 
@@ -85,6 +106,11 @@ namespace ABEngine.ABERuntime
             });
         }
 
+        public override void Render()
+        {
+            Render(0);
+        }
+
         public override void Render(int renderLayer)
         {
             // Light pass
@@ -122,14 +148,30 @@ namespace ABEngine.ABERuntime
             lightList.Clear();
         }
 
-        public override void CleanUp(bool reload, bool newScene)
+        public override void CleanUp(bool reload, bool newScene, bool resize)
         {
             foreach (var buffer in layerLightBuffers.Values)
             {
                 buffer.Dispose();
             }
 
-            textureSet.Dispose();
+
+            if (resize)
+            {
+                textureSet.Dispose();
+                lightRenderTexture.Dispose();
+                lightRenderFB.Dispose();
+            }
+            else if (newScene)
+            {
+                // Recreate pipelines
+                base.pipelineAsset = new LightPipelineAsset(lightRenderFB);
+            }
+        }
+
+        internal override Texture GetMainColorAttachent()
+        {
+            return lightRenderTexture;
         }
     }
 }
