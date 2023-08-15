@@ -61,12 +61,15 @@ namespace ABEngine.ABERuntime
 
         LightInfo3D[] lightInfos;
 
-        public override void SetupResources(bool newScene = false, params Texture[] sampledTextures)
+        public override void SetupResources(params Texture[] sampledTextures)
         {
             lightInfos = new LightInfo3D[4];
 
-            fragmentUniformBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(160, BufferUsage.UniformBuffer));
-            sharedFragmentSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_FS, fragmentUniformBuffer));
+            if (fragmentUniformBuffer == null)
+            {
+                fragmentUniformBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(160, BufferUsage.UniformBuffer));
+                sharedFragmentSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_FS, fragmentUniformBuffer));
+            }
 
             sharedVertexUniform = new SharedMeshVertex();
             sharedFragmentUniform = new SharedMeshFragment();
@@ -131,7 +134,8 @@ namespace ABEngine.ABERuntime
 
         public override void Render(int renderLayer)
         {
-            Render();
+            if (renderLayer == 0)
+                Render();
         }
 
         public override void Render()

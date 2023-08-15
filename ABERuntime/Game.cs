@@ -153,28 +153,33 @@ namespace ABEngine.ABERuntime
 
         }
 
-        void CreateInternalRenders(bool newScene)
+        void CreateInternalRenders()
         {
-            if (newScene)
+
+            normalsRenderSystem = new NormalsPassRenderSystem();
+            mainRenderSystem = new MainRenderSystem();
+            meshRenderSystem = new MeshRenderSystem();
+            spriteBatchSystem = new SpriteBatchSystem(null);
+            lightRenderSystem = new LightRenderSystem();
+
+            internalRenders = new List<RenderSystem>()
             {
-                normalsRenderSystem = new NormalsPassRenderSystem();
-                mainRenderSystem = new MainRenderSystem();
-                meshRenderSystem = new MeshRenderSystem();
-                lightRenderSystem = new LightRenderSystem();
+                normalsRenderSystem,
+                mainRenderSystem,
+                meshRenderSystem,
+                spriteBatchSystem,
+                lightRenderSystem
+            };
 
-                internalRenders = new List<RenderSystem>()
-                {
-                    normalsRenderSystem,
-                    mainRenderSystem,
-                    meshRenderSystem,
-                    lightRenderSystem
-                };
-            }
+            SetupRenderResources();
+        }  
 
-            normalsRenderSystem.SetupResources(newScene);
-            mainRenderSystem.SetupResources(newScene);
-            meshRenderSystem.SetupResources(newScene);
-            lightRenderSystem.SetupResources(newScene, mainRenderSystem.GetMainColorAttachent());
+        void SetupRenderResources()
+        {
+            normalsRenderSystem.SetupResources();
+            mainRenderSystem.SetupResources();
+            meshRenderSystem.SetupResources();
+            lightRenderSystem.SetupResources(mainRenderSystem.GetMainColorAttachent());
 
             compositeRSSetLight = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
                   GraphicsManager.sharedTextureLayout,
@@ -196,7 +201,10 @@ namespace ABEngine.ABERuntime
 
             // Veldrid 
             SetupGraphics(windowName);
-            CreateInternalRenders(true);
+            CreateInternalRenders();
+
+            foreach (var render in internalRenders)
+                render.SceneSetup();
 
             AssetCache.InitAssetCache();
 
@@ -212,7 +220,6 @@ namespace ABEngine.ABERuntime
             stateAnimatorSystem = new StateAnimatorSystem();
             spriteAnimSystem = new SpriteAnimSystem();
             rbMoveSystem = new RigidbodyMoveSystem();
-            spriteBatchSystem = new SpriteBatchSystem(null);
             renderExtensions = new List<RenderSystem>();
             tweenSystem = new Tweening.TweenSystem();
             //colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
@@ -341,7 +348,7 @@ namespace ABEngine.ABERuntime
                                compositeRenderTexture, gd.LinearSampler
                                ));
 
-                        CreateInternalRenders(false);
+                        SetupRenderResources();
 
                         pipelineData = new PipelineData()
                         {
@@ -392,7 +399,14 @@ namespace ABEngine.ABERuntime
                         GraphicsManager.ResetPipelines();
 
                         foreach (var render in internalRenders)
+                        {
                             render.CleanUp(true, true, false);
+                            render.SceneSetup();
+                        }
+
+                        // Reset Camera
+                        Game.activeCam = null;
+                        TriggerCamCheck();
 
                         //lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
 
@@ -403,7 +417,6 @@ namespace ABEngine.ABERuntime
                         stateAnimatorSystem = new StateAnimatorSystem();
                         spriteAnimSystem = new SpriteAnimSystem();
                         rbMoveSystem = new RigidbodyMoveSystem();
-                        spriteBatchSystem = new SpriteBatchSystem(null);
                         tweenSystem = new Tweening.TweenSystem();
                         particleSystem = new ParticleModuleSystem();
                         //if (debug)
@@ -711,6 +724,7 @@ namespace ABEngine.ABERuntime
                     if (camEnt != Entity.Null)
                     {
                         activeCam = camEnt.Get<Transform>();
+                        RefreshProjection(canvas);
                         return;
                     }
                 });
@@ -863,12 +877,18 @@ namespace ABEngine.ABERuntime
 
         internal static void RefreshProjection(Canvas canvas)
         {
-            if (canvas == null || Game.canvas != canvas)
+            if (canvas == null || Game.canvas != canvas || Game.activeCam == null)
                 return;
 
-            //projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, -1000f, 1000f);
+
+            Camera camera = Game.activeCam.entity.Get<Camera>();
+            if (camera.cameraProjection == CameraProjection.Orthographic)
+                projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, -1000f, 1000f);
+            else
+                projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 0.1f, 1000f);
+
             //projectionMatrix = CreatePerspective(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 1000f, 0.1f);
-            projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 0.1f, 1000f);
+
             Game.pipelineData.Projection = Game.projectionMatrix;
             onCanvasResize?.Invoke();
         }

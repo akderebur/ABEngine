@@ -29,6 +29,7 @@ namespace ABEngine.ABERuntime.Components
         // Cam Fields
         private bool _isActive;
         private bool _lastActive;
+        private CameraProjection _projection;
 
         // Cam Props
         public Transform followTarget { get; set; }
@@ -37,6 +38,15 @@ namespace ABEngine.ABERuntime.Components
         public Vector3 offset { get; set; }
         public bool followInFixedUpdate { get; set; }
         public float cutoffY { get; set; }
+        public CameraProjection cameraProjection
+        {
+            get { return _projection; }
+            set
+            {
+                _projection = value;
+                Game.RefreshProjection(Game.canvas);
+            }
+        }
 
         public Vector3 velocity;
         public bool isActive
@@ -92,5 +102,11 @@ namespace ABEngine.ABERuntime.Components
         //    followInFixedUpdate = data["FollowFixed"];
         //    isActive = data["IsActive"];
         //}
+    }
+
+    public enum CameraProjection
+    {
+        Orthographic,
+        Perspective
     }
 }

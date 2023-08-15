@@ -18,7 +18,7 @@ namespace ABEngine.ABERuntime
         Framebuffer normalsRenderFB;
 
 
-        public override void SetupResources(bool newScene = false, params Texture[] samplesTextures)
+        public override void SetupResources(params Texture[] samplesTextures)
         {
             Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
             cameraNormalTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
@@ -32,9 +32,7 @@ namespace ABEngine.ABERuntime
 
             normalsRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(normalsDepthTexture, cameraNormalTexture));
 
-            if (newScene)
-                base.pipelineAsset = new NormalsPipeline(normalsRenderFB);
-            else
+            if (base.pipelineAsset != null)
                 base.pipelineAsset.UpdateFramebuffer(normalsRenderFB);
         }
 
@@ -44,9 +42,15 @@ namespace ABEngine.ABERuntime
             sharedVertexUniform = new SharedMeshVertex();
         }
 
+        public override void SceneSetup()
+        {
+            base.pipelineAsset = new NormalsPipeline(normalsRenderFB);
+        }
+
         public override void Render(int renderLayer)
         {
-            Render();
+            if(renderLayer == 0)
+                Render();
         }
 
         public override void Render()
@@ -91,11 +95,6 @@ namespace ABEngine.ABERuntime
                 cameraNormalTexture.Dispose();
                 normalsDepthTexture.Dispose();
                 normalsRenderFB.Dispose();
-            }
-            else if(newScene)
-            {
-                // Recreate pipelines
-                base.pipelineAsset = new NormalsPipeline(normalsRenderFB);
             }
         }
     }

@@ -25,7 +25,7 @@ namespace ABEngine.ABERuntime
 
         ResourceSet textureSet;
 
-        public override void SetupResources(bool newScene = false, params Texture[] sampledTextures)
+        public override void SetupResources(params Texture[] sampledTextures)
         {
             textureSet = rf.CreateResourceSet(new ResourceSetDescription(
                GraphicsManager.sharedTextureLayout,
@@ -39,10 +39,13 @@ namespace ABEngine.ABERuntime
 
             lightRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, lightRenderTexture));
 
-            if (newScene)
-                base.pipelineAsset = new LightPipelineAsset(lightRenderFB);
-            else
+            if (base.pipelineAsset != null)
                 base.pipelineAsset.UpdateFramebuffer(lightRenderFB);
+        }
+
+        public override void SceneSetup()
+        {
+            base.pipelineAsset = new LightPipelineAsset(lightRenderFB);
         }
 
         public override void Start()
@@ -161,11 +164,6 @@ namespace ABEngine.ABERuntime
                 textureSet.Dispose();
                 lightRenderTexture.Dispose();
                 lightRenderFB.Dispose();
-            }
-            else if (newScene)
-            {
-                // Recreate pipelines
-                base.pipelineAsset = new LightPipelineAsset(lightRenderFB);
             }
         }
 

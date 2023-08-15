@@ -37,7 +37,12 @@ namespace ABEngine.ABERuntime
             this.cl = GraphicsManager.cl;
         }
 
-        public virtual void SetupResources(bool newScene = false, params Texture[] sampledTextures)
+        public virtual void SetupResources(params Texture[] sampledTextures)
+        {
+
+        }
+
+        public virtual void SceneSetup()
         {
 
         }

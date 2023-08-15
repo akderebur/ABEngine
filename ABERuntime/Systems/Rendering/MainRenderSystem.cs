@@ -11,9 +11,9 @@ namespace ABEngine.ABERuntime
         public Texture mainDepthTexture;
         Framebuffer mainRenderFB;
 
-        List<PipelineAsset> pipelines;
+        List<PipelineAsset> pipelines = new List<PipelineAsset>();
 
-        public override void SetupResources(bool newScene = false, params Texture[] sampledTextures)
+        public override void SetupResources(params Texture[] sampledTextures)
         {
             Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
             mainRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
@@ -26,22 +26,22 @@ namespace ABEngine.ABERuntime
 
             mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture));
 
-            if (newScene)
+
+            foreach (var pipeline in pipelines)
+                pipeline.UpdateFramebuffer(mainRenderFB);
+
+        }
+
+        public override void SceneSetup()
+        {
+            // Related default pipelines
+            pipelines = new List<PipelineAsset>()
             {
-                // Related default pipelines
-                pipelines = new List<PipelineAsset>()
-                {
-                    new UberPipelineAsset(mainRenderFB),
-                    new UberPipelineAdditive(mainRenderFB),
-                    new UberPipeline3D(mainRenderFB),
-                    new WaterPipelineAsset(mainRenderFB)
-                };
-            }
-            else
-            {
-                foreach (var pipeline in pipelines)
-                    pipeline.UpdateFramebuffer(mainRenderFB);
-            }
+                new UberPipelineAsset(mainRenderFB),
+                new UberPipelineAdditive(mainRenderFB),
+                new UberPipeline3D(mainRenderFB),
+                new WaterPipelineAsset(mainRenderFB)
+            };
         }
 
         public override void Start()
@@ -51,7 +51,8 @@ namespace ABEngine.ABERuntime
 
         public override void Render(int renderLayer)
         {
-            Render();
+            if (renderLayer == 0)
+                Render();
         }
 
         public override void Render()
@@ -69,17 +70,6 @@ namespace ABEngine.ABERuntime
                 mainRenderTexture.Dispose();
                 mainDepthTexture.Dispose();
                 mainRenderFB.Dispose();
-            }
-            else if (newScene)
-            {
-                // Recreate pipelines
-                pipelines = new List<PipelineAsset>()
-                {
-                    new UberPipelineAsset(mainRenderFB),
-                    new UberPipelineAdditive(mainRenderFB),
-                    new UberPipeline3D(mainRenderFB),
-                    new WaterPipelineAsset(mainRenderFB)
-                };
             }
         }
 
