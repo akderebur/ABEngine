@@ -818,22 +818,25 @@ namespace ABEngine.ABERuntime
             gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
 
 
-            foreach (var render in internalRenders)
+            for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
             {
-                for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
+                foreach (var render in internalRenders)
+                {
                     render.Render(i);
+                }
+
+                // Composition / No Clear - No depth
+                _commandList.SetFramebuffer(compositeRenderFB);
+                _commandList.SetFullViewports();
+                _commandList.SetPipeline(GraphicsManager.CompositePipeline);
+
+                _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+                _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
+
+                _commandList.SetGraphicsResourceSet(0, compositeRSSetLight);
+                _commandList.DrawIndexed(6, 1, 0, 0, 0);
             }
-
-            // Composition / No Clear - No depth
-            _commandList.SetFramebuffer(compositeRenderFB);
-            _commandList.SetFullViewports();
-            _commandList.SetPipeline(GraphicsManager.CompositePipeline);
-
-            _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-            _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
-
-            _commandList.SetGraphicsResourceSet(0, compositeRSSetLight);
-            _commandList.DrawIndexed(6, 1, 0, 0, 0);
+          
         }
 
         void LateRender()

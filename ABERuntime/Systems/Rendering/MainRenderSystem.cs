@@ -51,8 +51,7 @@ namespace ABEngine.ABERuntime
 
         public override void Render(int renderLayer)
         {
-            if (renderLayer == 0)
-                Render();
+            Render();
         }
 
         public override void Render()
