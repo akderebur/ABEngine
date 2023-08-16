@@ -97,7 +97,7 @@ namespace ABEngine.ABERuntime
                     else if(textureName.Equals("DepthTex"))
                     {
                         isLateRender = true;
-                        resources[index] = Game.mainRenderSystem.GetDepthAttachment();
+                        resources[index] = Game.msaaResolveSystem.GetDepthAttachment();
                     }
                     else if (textureName.Equals("CamNormalTex"))
                     {
@@ -185,7 +185,7 @@ namespace ABEngine.ABERuntime
                     if (textureName.Equals("ScreenTex"))
                         texResources[index] = Game.compositeRenderTexture;
                     else if (textureName.Equals("DepthTex"))
-                        texResources[index] = Game.mainRenderSystem.GetDepthAttachment();
+                        texResources[index] = Game.msaaResolveSystem.GetDepthAttachment();
                     else if(textureName.Equals("CamNormalTex"))
                         texResources[index] = Game.normalsRenderSystem.GetMainColorAttachent();
 

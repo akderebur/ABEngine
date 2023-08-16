@@ -1,29 +1,59 @@
 ﻿using System;
 using Veldrid;
 
-namespace ABEngine.ABERuntime.Systems.Rendering
+namespace ABEngine.ABERuntime
 {
 	public class MSAAResolveSystem : RenderSystem
 	{
         Texture resolvedColor;
         Texture resolvedDepth;
 
+        Texture msRenderTexture;
+        Texture msDepthTexture;
+
+        bool enabled = true;
+
         public override void SetupResources(params Texture[] sampledTextures)
         {
+            msRenderTexture = sampledTextures[0];
+            msDepthTexture = sampledTextures[1];
+
             Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
-            resolvedColor = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled, TextureSampleCount.Count1));
 
-            resolvedDepth = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                        mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled, TextureSampleCount.Count1));
+            if (enabled)
+            {
+                resolvedColor = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                   mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+                    mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
 
+                resolvedDepth = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+                            mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+                            PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled));
+            }
+            else
+            {
+                resolvedColor = msRenderTexture;
+                resolvedDepth = msDepthTexture;
+            }
         }
 
         public override void Render(int renderLayer)
         {
-            //resolvedColor
+            if (enabled)
+            {
+                cl.ResolveTexture(msRenderTexture, resolvedColor);
+                cl.ResolveTexture(msDepthTexture, resolvedDepth);
+            }
+        }
+
+        internal override Texture GetMainColorAttachent()
+        {
+            return resolvedColor;
+        }
+
+        internal override Texture GetDepthAttachment()
+        {
+            return resolvedDepth;
         }
     }
 }

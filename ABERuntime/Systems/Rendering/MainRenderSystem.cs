@@ -13,16 +13,20 @@ namespace ABEngine.ABERuntime
 
         List<PipelineAsset> pipelines = new List<PipelineAsset>();
 
+        bool msaaEnabled = true;
+
         public override void SetupResources(params Texture[] sampledTextures)
         {
             Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
+            TextureSampleCount sampleCount = msaaEnabled ? TextureSampleCount.Count4 : TextureSampleCount.Count1;
+
             mainRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled, TextureSampleCount.Count1));
+                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled, sampleCount));
 
             mainDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                         mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled, TextureSampleCount.Count1));
+                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled, sampleCount));
 
             mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture));
 

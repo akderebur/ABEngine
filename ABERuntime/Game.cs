@@ -88,7 +88,6 @@ namespace ABEngine.ABERuntime
         protected StateAnimatorSystem stateAnimatorSystem;
         protected SpriteAnimSystem spriteAnimSystem;
         protected RigidbodyMoveSystem rbMoveSystem;
-        public static SpriteBatchSystem spriteBatchSystem;
         protected Tweening.TweenSystem tweenSystem;
         protected private ColliderDebugSystem colDebugSystem;
         protected private ParticleModuleSystem particleSystem;
@@ -97,6 +96,8 @@ namespace ABEngine.ABERuntime
         public static NormalsPassRenderSystem normalsRenderSystem;
         public static MainRenderSystem mainRenderSystem;
         protected MeshRenderSystem meshRenderSystem;
+        public static SpriteBatchSystem spriteBatchSystem;
+        internal static MSAAResolveSystem msaaResolveSystem;
         public static LightRenderSystem lightRenderSystem;
 
         public List<RenderSystem> internalRenders;
@@ -160,6 +161,7 @@ namespace ABEngine.ABERuntime
             mainRenderSystem = new MainRenderSystem();
             meshRenderSystem = new MeshRenderSystem();
             spriteBatchSystem = new SpriteBatchSystem(null);
+            msaaResolveSystem = new MSAAResolveSystem();
             lightRenderSystem = new LightRenderSystem();
 
             internalRenders = new List<RenderSystem>()
@@ -168,6 +170,7 @@ namespace ABEngine.ABERuntime
                 mainRenderSystem,
                 meshRenderSystem,
                 spriteBatchSystem,
+                msaaResolveSystem,
                 lightRenderSystem
             };
 
@@ -179,7 +182,8 @@ namespace ABEngine.ABERuntime
             normalsRenderSystem.SetupResources();
             mainRenderSystem.SetupResources();
             meshRenderSystem.SetupResources();
-            lightRenderSystem.SetupResources(mainRenderSystem.GetMainColorAttachent());
+            msaaResolveSystem.SetupResources(mainRenderSystem.GetMainColorAttachent(), mainRenderSystem.GetDepthAttachment());
+            lightRenderSystem.SetupResources(msaaResolveSystem.GetMainColorAttachent());
 
             compositeRSSetLight = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
                   GraphicsManager.sharedTextureLayout,
