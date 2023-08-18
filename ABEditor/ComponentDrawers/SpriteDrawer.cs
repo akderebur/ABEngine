@@ -63,7 +63,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     var spriteFilePath = AssetsFolderView.files[srcIndex];
 
                     TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;
-                    Texture2D texture = AssetHandler.GetAssetBinding(texMeta, spriteFilePath) as Texture2D;
+                    Texture2D texture = AssetHandler.GetAssetBinding(texMeta) as Texture2D;
 
                     Editor.EditorActions.UpdateProperty(sourceSprite.texture, texture, sourceSprite, nameof(sourceSprite.texture), value => sourceSprite.SetTexture(value));
 
@@ -86,7 +86,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                     var materialFilePath = AssetsFolderView.files[srcIndex];
                     MaterialMeta matMeta = AssetHandler.GetMeta(materialFilePath) as MaterialMeta;
-                    PipelineMaterial mat = AssetHandler.GetAssetBinding(matMeta, materialFilePath) as PipelineMaterial;
+                    PipelineMaterial mat = AssetHandler.GetAssetBinding(matMeta) as PipelineMaterial;
 
                     Editor.EditorActions.UpdateProperty(sprite.material, mat, sprite, nameof(sprite.material), value => sprite.SetMaterial(value));
 

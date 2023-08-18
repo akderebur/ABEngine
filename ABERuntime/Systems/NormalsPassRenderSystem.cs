@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using ABEngine.ABERuntime.Core.Components;
+using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Pipelines;
 using Arch.Core;
 using Veldrid;
@@ -9,7 +9,7 @@ namespace ABEngine.ABERuntime
 {
 	public class NormalsPassRenderSystem : RenderSystem
 	{
-        private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, Mesh>();
+        private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
 
         SharedMeshVertex sharedVertexUniform;
 
@@ -58,9 +58,11 @@ namespace ABEngine.ABERuntime
             pipelineAsset.BindPipeline();
             cl.SetGraphicsResourceSet(0, Game.pipelineSet);
 
-            Game.GameWorld.Query(in meshQuery, (ref Mesh mesh, ref Transform transform) =>
+            Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
             {
-                if (mesh.material.isLateRender)
+                Mesh mesh = mr.mesh;
+
+                if (mesh == null || mr.material.isLateRender)
                     return;
 
                 // Update vertex uniform
@@ -73,9 +75,9 @@ namespace ABEngine.ABERuntime
                 cl.SetGraphicsResourceSet(1, mesh.vertexTransformSet);
 
                 // Material Resource Sets
-                if (mesh.material.bindableSets.Count > 0)
+                if (mr.material.bindableSets.Count > 0)
                 {
-                    var entry = mesh.material.bindableSets.ElementAt(0);
+                    var entry = mr.material.bindableSets.ElementAt(0);
                     cl.SetGraphicsResourceSet(entry.Key, entry.Value);
                 }
 

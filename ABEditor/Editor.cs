@@ -140,10 +140,15 @@ namespace ABEngine.ABEditor
             PhysicsManager.ResetPhysics();
             GraphicsManager.InitSettings();
 
-            EntityManager.Init();
-
             // Graphics
             base.SetupGraphics(windowName);
+            CreateInternalRenders();
+
+            foreach (var render in internalRenders)
+                render.SceneSetup();
+
+            EntityManager.Init();
+
 
             // ImGui
             imguiRenderer = new ImGuiRenderer(
@@ -154,7 +159,6 @@ namespace ABEngine.ABEditor
             SetupImGuiStyle();
             ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
 
-            LightPipelineAsset lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
             LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
             TMColliderPipelineAsset tmColPipelineAsset = new TMColliderPipelineAsset(compositeRenderFB);
 
@@ -166,9 +170,6 @@ namespace ABEngine.ABEditor
 
             // Systems
             // Shared
-            //SpriteRenderSystem spriteRenderer = new SpriteRenderSystem();
-            spriteBatchSystem = new SpriteBatchSystem(null);
-            lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
             particleSystem = new ParticleModuleSystem();
             spriteAnimSystem = new SpriteAnimSystem();
 
@@ -181,8 +182,6 @@ namespace ABEngine.ABEditor
             editorSystems = new List<BaseSystem>();
             editorSystems.Add(new MouseDragSystem());
             editorSystems.Add(new EditorCamMoveSystem());
-            //editorSystems.Add(colDebug);
-            //AABBGizmoSytem aabbGizmo = new AABBGizmoSytem();
 
             // Editor UI Inits
             SpriteEditor.Init();
@@ -247,55 +246,30 @@ namespace ABEngine.ABEditor
                     {
                         resize = false;
 
-                        mainRenderTexture.Dispose();
-                        ScreenTexture.Dispose();
-                        lightRenderTexture.Dispose();
+                        // Resize render targets
                         compositeRenderTexture.Dispose();
-
-                        mainRenderFB.Dispose();
-
                         finalQuadRSSet.Dispose();
                         compositeRSSetLight.Dispose();
 
-                        mainDepthTexture.Dispose();
+                        foreach (var render in internalRenders)
+                            render.CleanUp(true, false, true);
+
 
                         // Resources
                         var mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
-                        mainRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                        mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
-
-                        mainDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                        mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil));
-
-                        ScreenTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                           mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                            mainFBTexture.Format, TextureUsage.Sampled));
-
-                        lightRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                                      mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                                       mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
+                       
 
                         compositeRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                            mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
                             mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
 
-                        mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture));
-                        mainFBOutDesc = mainRenderFB.OutputDescription;
-
-                        lightRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, lightRenderTexture));
-                        compositeRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, compositeRenderTexture));
-
+                       
                         finalQuadRSSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
                                GraphicsManager.sharedTextureLayout,
                                compositeRenderTexture, gd.LinearSampler
                                ));
 
-                        compositeRSSetLight = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
-                              GraphicsManager.sharedTextureLayout,
-                              lightRenderTexture, gd.LinearSampler
-                              ));
+                        SetupRenderResources();
 
                         pipelineData = new PipelineData()
                         {
@@ -307,25 +281,21 @@ namespace ABEngine.ABEditor
                         };
 
 
-                        GraphicsManager.RecreatePipelines(mainRenderFB, false);
+                        GraphicsManager.RefreshMaterials();
 
-                        lightPipelineAsset = new LightPipelineAsset(lightRenderFB);
                         lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
                         tmColPipelineAsset = new TMColliderPipelineAsset(compositeRenderFB);
-
-                        lightRenderSystem = new LightRenderSystem(lightPipelineAsset);
-                        lightRenderSystem.Start();
 
                         if (debug)
                         {
                             colDebugSystem.CleanUp(true, false);
                             colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
                             colDebugSystem.Start();
-
                         }
 
                         TMColliderGizmo.UpdatePipeline(tmColPipelineAsset);
 
+                        RefreshProjection(Game.canvas);
                     }
                     continue;
 
@@ -464,8 +434,8 @@ namespace ABEngine.ABEditor
                 MainRender();
 
                 //_commandList.ClearDepthStencil(0f);
-                colDebugSystem.Render();
-                TMColliderGizmo.Render();
+                //colDebugSystem.Render();
+                //TMColliderGizmo.Render();
                 // TODO Render extensions
 
          
@@ -511,9 +481,10 @@ namespace ABEngine.ABEditor
             float bottom = (canvasHeight - zoomedHeight) / 2f;
             float top = bottom + zoomedHeight;
 
-            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, 1000f, -1000f);
+            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, -1000f, 1000f);
+            Game.pipelineData.Projection = Game.projectionMatrix;
 
-            if(GameWorld != null)
+            if (GameWorld != null)
             {
                 var query = new QueryDescription().WithAll<Sprite, Transform>();
 
@@ -538,6 +509,7 @@ namespace ABEngine.ABEditor
                     if (camEnt != Entity.Null)
                     {
                         activeCam = camEnt.Get<Transform>();
+                        RefreshProjection(canvas);
                         return;
                     }
                 });
@@ -547,7 +519,9 @@ namespace ABEngine.ABEditor
             particleSystem.Update(newTime, elapsed);
             spriteAnimSystem.Update(newTime, elapsed);
             spriteBatchSystem.Update(newTime, elapsed);
+            meshRenderSystem.Update(newTime, elapsed);
             lightRenderSystem.Update(newTime, elapsed);
+            normalsRenderSystem.Update(newTime, elapsed);
             colDebugSystem.Update(newTime, elapsed);
             foreach (var editorSystem in editorSystems)
             {

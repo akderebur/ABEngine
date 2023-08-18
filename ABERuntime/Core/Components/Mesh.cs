@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Numerics;
+using ABEngine.ABERuntime.Core.Assets;
+using Halak;
 using Veldrid;
 
-namespace ABEngine.ABERuntime.Core.Components
+namespace ABEngine.ABERuntime
 {
-	public class Mesh
+	public class Mesh : Asset
 	{
-		public PipelineMaterial material { get; set; }
-
         // TODO Switch to vertex interface
         private VertexStandard[] _vertices;
         private ushort[] _indices;
@@ -18,14 +18,16 @@ namespace ABEngine.ABERuntime.Core.Components
 
         internal ResourceSet vertexTransformSet;
 
-
         public Mesh()
         {
-            material = GraphicsManager.GetUber3D();
-
             // Mesh model matrix
             vertexUniformBuffer = GraphicsManager.rf.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
             vertexTransformSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_VS, vertexUniformBuffer));
+        }
+
+        internal Mesh(uint hash) : this()
+        {
+            base.fPathHash = hash;
         }
 
         public Mesh(VertexStandard[] vertices, ushort[] indices) : this()
@@ -61,7 +63,15 @@ namespace ABEngine.ABERuntime.Core.Components
                 GraphicsManager.gd.UpdateBuffer(indexBuffer, 0, _indices);
             }
         }
-	}
+
+        internal override JValue SerializeAsset()
+        {
+            JsonObjectBuilder assetEnt = new JsonObjectBuilder(200);
+            assetEnt.Put("TypeID", 3);
+            assetEnt.Put("FileHash", (long)fPathHash);
+            return assetEnt.Build();
+        }
+    }
 
     public interface IVertex
     {

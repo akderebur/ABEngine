@@ -6,6 +6,15 @@ namespace ABEngine.ABERuntime.Rendering
 {
     public static class CubeModel
     {
+        public static Mesh GetCubeMesh()
+        {
+            Mesh mesh = new Mesh();
+            mesh.vertices = Vertices;
+            mesh.indices = Indices;
+
+            return mesh;
+        }
+
         public static readonly VertexStandard[] Vertices = new VertexStandard[]
         {
             // Top

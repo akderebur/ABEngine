@@ -354,7 +354,7 @@ Fragment
     {
         vec3 pointToLight = -light.Position;
         vec3 shade = getPointShade(pointToLight, materialInfo, normal, view);
-        return light.Intensity * light.Color * shade;
+        return light.Intensity * 10 * light.Color * shade;
     }
    
     void main()

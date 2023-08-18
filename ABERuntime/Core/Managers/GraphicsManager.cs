@@ -1586,9 +1586,9 @@ void main()
 {
   
     vec4 color = texture(sampler2D(SceneTex, SceneSampler), fsTexCoord);
-    //vec3 tonedColor = adjustSaturation(color.rgb, 1.1);
-    //tonedColor = adjustContrast(tonedColor, 1.15);
-    OutputColor = color;
+    vec3 tonedColor = adjustSaturation(color.rgb, 1.1);
+    tonedColor = adjustContrast(tonedColor, 1.15);
+    OutputColor = vec4(tonedColor, color.a);
 
     //vec2 rcpFrame = vec2(1.0 / 1280.0, 1.0 / 720.0);
     

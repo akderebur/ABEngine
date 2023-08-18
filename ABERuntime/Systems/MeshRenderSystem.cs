@@ -48,7 +48,7 @@ namespace ABEngine.ABERuntime
 
     public class MeshRenderSystem : RenderSystem
     {
-        private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, Mesh>();
+        private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
         private readonly QueryDescription pointLightQuery = new QueryDescription().WithAll<Transform, PointLight>();
         private readonly QueryDescription directionalLightQuery = new QueryDescription().WithAll<Transform, DirectionalLight>();
 
@@ -75,9 +75,12 @@ namespace ABEngine.ABERuntime
             sharedFragmentUniform = new SharedMeshFragment();
         }
 
-        List<(Mesh, Transform)> renderOrder = new List<(Mesh, Transform)>();
+        List<(MeshRenderer, Transform)> renderOrder = new List<(MeshRenderer, Transform)>();
         public override void Update(float gameTime, float deltaTime)
         {
+            if (Game.activeCam == null)
+                return;
+
             renderOrder.Clear();
 
             // Fragment uniform update
@@ -114,12 +117,12 @@ namespace ABEngine.ABERuntime
             gd.UpdateBuffer(fragmentUniformBuffer, 0, sharedFragmentUniform);
 
             // Mesh render order
-            Game.GameWorld.Query(in meshQuery, (ref Mesh mesh, ref Transform transform) =>
+            Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
             {
-                if(mesh.material.isLateRender)
-                    renderOrder.Add((mesh, transform));
+                if(mr.material.isLateRender)
+                    renderOrder.Add((mr, transform));
                 else
-                    renderOrder.Insert(0, (mesh, transform));
+                    renderOrder.Insert(0, (mr, transform));
             });
         }
 
@@ -146,11 +149,11 @@ namespace ABEngine.ABERuntime
             int ind = 0;
             foreach (var render in renderOrder)
             {
-
-                Mesh mesh = render.Item1;
+                MeshRenderer mr = render.Item1;
                 Transform transform = render.Item2;
+                Mesh mesh = mr.mesh;
 
-                if(mesh.material.isLateRender)
+                if (mr.material.isLateRender)
                 {
                     cl.End();
                     gd.SubmitCommands(cl);
@@ -162,7 +165,7 @@ namespace ABEngine.ABERuntime
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
                 gd.UpdateBuffer(mesh.vertexUniformBuffer, 0, sharedVertexUniform);
 
-                mesh.material.pipelineAsset.BindPipeline();
+                mr.material.pipelineAsset.BindPipeline();
 
                 cl.SetVertexBuffer(0, mesh.vertexBuffer);
                 cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
@@ -172,7 +175,7 @@ namespace ABEngine.ABERuntime
 
 
                 // Material Resource Sets
-                foreach (var setKV in mesh.material.bindableSets)
+                foreach (var setKV in mr.material.bindableSets)
                 {
                     cl.SetGraphicsResourceSet(setKV.Key, setKV.Value);
                 }

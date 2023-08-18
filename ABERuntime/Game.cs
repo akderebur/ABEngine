@@ -154,7 +154,7 @@ namespace ABEngine.ABERuntime
 
         }
 
-        void CreateInternalRenders()
+        protected private void CreateInternalRenders()
         {
 
             normalsRenderSystem = new NormalsPassRenderSystem();
@@ -177,7 +177,7 @@ namespace ABEngine.ABERuntime
             SetupRenderResources();
         }  
 
-        void SetupRenderResources()
+        protected private void SetupRenderResources()
         {
             normalsRenderSystem.SetupResources();
             mainRenderSystem.SetupResources();
@@ -509,7 +509,7 @@ namespace ABEngine.ABERuntime
                 }
 
                 DrawBegin();
-                MainRender3D();
+                MainRender();
                 foreach (var rendExt in renderExtensions)
                 {
                     rendExt.Render();
@@ -754,55 +754,8 @@ namespace ABEngine.ABERuntime
             //    colDebugSystem.Update(newTime, elapsed);
         }
 
-        //private protected void MainRender()
-        //{
-        //    if (Game.activeCam == null)
-        //        return;
-
-        //    var camEnt = Game.activeCam.entity;
-        //    if (camEnt == Entity.Null)
-        //        return;
-
-        //    Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
-        //    Vector3 cameraPosition = Game.activeCam.worldPosition;
-        //    Vector3 targetPosition = cameraPosition + forward;
-        //    Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
-
-        //    Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
-
-        //    Game.pipelineData.View = view;
-        //    gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
-
-        //    for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
-        //    {
-        //        _commandList.SetFramebuffer(mainRenderFB);
-        //        _commandList.SetFullViewports();
-        //        _commandList.ClearColorTarget(0, new RgbaFloat(0f, 0f, 0f, 0f));
-        //        _commandList.ClearDepthStencil(1f);
-
-        //        spriteBatchSystem.Render(i);
-
-        //        lightRenderSystem.Render(i);
-
-        //        // Composition / No Clear - No depth
-        //        _commandList.SetFramebuffer(compositeRenderFB);
-        //        _commandList.SetFullViewports();
-        //        _commandList.SetPipeline(GraphicsManager.CompositePipeline);
-
-        //        _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-        //        _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
-
-        //        _commandList.SetGraphicsResourceSet(0, compositeRSSetLight);
-        //        _commandList.DrawIndexed(6, 1, 0, 0, 0);
-        //    }
-
-        //    if (debug)
-        //    {
-        //        colDebugSystem.Render();
-        //    }
-        //}
-
-        private protected void MainRender3D()
+      
+        private protected void MainRender()
         {
             if (Game.activeCam == null)
                 return;
@@ -1088,7 +1041,7 @@ namespace ABEngine.ABERuntime
             //GameWorld.OnEnable((Entity entity, Tweener tweener) =>
             //{
             //    tweener.Pause(false);
-            //});
+            //});CreateOrthographicOffCenter
 
 
             //GameWorld.OnDisable((Entity entity, Tweener tweener) =>

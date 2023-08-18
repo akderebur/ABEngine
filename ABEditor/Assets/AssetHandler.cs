@@ -29,7 +29,8 @@ namespace ABEngine.ABEditor.Assets
 		{
 			".png",
 			".abmat",
-			".abprefab"
+			".abprefab",
+			".abmesh"
 		};
 
 		static int guidMagic = 1230324289; // ABUI
@@ -164,6 +165,9 @@ namespace ABEngine.ABEditor.Assets
 				case ".abprefab":
 					meta = new PrefabMeta();
 					//meta.refreshEvent +=
+					break;
+				case ".abmesh":
+					meta = new MeshMeta();
 					break;
             }
 
@@ -320,7 +324,7 @@ namespace ABEngine.ABEditor.Assets
 			return metaDict.Values.FirstOrDefault(e => e.fPathHash == hash);
         }
 
-        public static Asset GetAssetBinding(AssetMeta meta, string assetPath)
+        public static Asset GetAssetBinding(AssetMeta meta)
 		{
 			if (sceneAssets.ContainsKey(meta))
 				return sceneAssets[meta];
@@ -337,7 +341,7 @@ namespace ABEngine.ABEditor.Assets
 			File.WriteAllText(AssetsPath + meta.metaAssetPath, meta.Serialize().Serialize());
 		}
 
-		private static void RefreshMaterialAsset(AssetMeta assetMeta, string assetPath)
+		private static void RefreshMaterialAsset(AssetMeta assetMeta)
 		{
 			MaterialMeta matMeta = assetMeta as MaterialMeta;
 			if (sceneAssets.ContainsKey(matMeta))
@@ -350,13 +354,13 @@ namespace ABEngine.ABEditor.Assets
 			}
 		}
 
-        private static void RefreshTextureAsset(AssetMeta assetMeta, string assetPath)
+        private static void RefreshTextureAsset(AssetMeta assetMeta)
 		{
 			TextureMeta texMeta = assetMeta as TextureMeta;
 			if (sceneAssets.ContainsKey(texMeta))
 			{
 				Texture2D oldTex = sceneAssets[texMeta] as Texture2D;
-				Texture2D newTex = AssetCache.CreateTexture2D(assetPath, texMeta.sampler, texMeta.spriteSize);
+				Texture2D newTex = AssetCache.CreateTexture2D(assetMeta.fPath, texMeta.sampler, texMeta.spriteSize);
 
                 // Find all entities with this texture
                 var query = new QueryDescription().WithAll<Sprite>();

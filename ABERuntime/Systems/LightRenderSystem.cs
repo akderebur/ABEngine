@@ -153,11 +153,13 @@ namespace ABEngine.ABERuntime
 
         public override void CleanUp(bool reload, bool newScene, bool resize)
         {
-            foreach (var buffer in layerLightBuffers.Values)
+            if (layerLightBuffers != null)
             {
-                buffer.Dispose();
+                foreach (var buffer in layerLightBuffers.Values)
+                {
+                    buffer.Dispose();
+                }
             }
-
 
             if (resize)
             {

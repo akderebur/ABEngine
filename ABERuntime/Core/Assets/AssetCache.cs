@@ -48,6 +48,8 @@ namespace ABEngine.ABERuntime
         private static readonly List<PipelineMaterial> s_materials = new List<PipelineMaterial>();
         private static readonly List<PrefabAsset> s_prefabAssets = new List<PrefabAsset>();
         private static readonly List<SpriteClip> s_clips = new List<SpriteClip>();
+        private static readonly List<Mesh> s_meshes = new List<Mesh>();
+
 
         private static Texture2D defTexture = null;
 
@@ -280,56 +282,7 @@ namespace ABEngine.ABERuntime
 
         public static Mesh CreateMesh(string meshFilePath)
         {
-            meshFilePath = Game.AssetPath.ToCommonPath() + meshFilePath;
-            if (!File.Exists(meshFilePath))
-                return null;
-
-            Mesh mesh = new Mesh();
-            using (FileStream fs = new FileStream(meshFilePath, FileMode.Open))
-            using(BinaryReader br = new BinaryReader(fs))
-            {
-                int vertC = br.ReadInt32();
-                int indC = br.ReadInt32();
-
-                int compC = br.ReadByte();
-
-                VertexStandard[] vertices = new VertexStandard[vertC];
-
-                for (int vc = 0; vc < compC; vc++)
-                {
-                    char vcID = br.ReadChar();
-                    switch (vcID)
-                    {
-                        case 'P':
-                            for (int i = 0; i < vertC; i++)
-                                vertices[i].Position = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                            break;
-                        case 'U':
-                            for (int i = 0; i < vertC; i++)
-                                vertices[i].UV = new Vector2(br.ReadSingle(), br.ReadSingle());
-                            break;
-                        case 'N':
-                            for (int i = 0; i < vertC; i++)
-                                vertices[i].Normal = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                            break;
-                        case 'T':
-                            for (int i = 0; i < vertC; i++)
-                                vertices[i].Tangent = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                            break;
-                        default:
-                            break;
-                    }
-                }
-
-                ushort[] indices = new ushort[indC];
-                for (int i = 0; i < indC; i++)
-                    indices[i] = br.ReadUInt16();
-
-                mesh.vertices = vertices;
-                mesh.indices = indices;
-            }
-
-            return mesh;
+            return GetOrCreateMesh(meshFilePath);
         }
 
         internal static Texture2D GetDefaultTexture()
@@ -480,6 +433,35 @@ namespace ABEngine.ABERuntime
             else
                 assetDict.Add(hash, prefabAsset);
             return prefabAsset;
+        }
+
+        private static Mesh GetOrCreateMesh(string meshPath, uint preHash = 0)
+        {
+            uint hash = preHash;
+            if (hash == 0)
+                hash = meshPath.ToHash32();
+
+            Mesh mesh = s_meshes.FirstOrDefault(t => t.fPathHash == hash);
+            if (mesh != null)
+                return mesh;
+
+            if (!Game.debug)
+            {
+                //prefabAsset = GetMaterialFromPK(hash);
+            }
+            else
+            {
+                if (preHash != 0)
+                    meshPath = hashToFName[preHash];
+                mesh = LoadMeshRAW(hash, meshPath);
+            }
+
+            s_meshes.Add(mesh);
+            if (assetDict.ContainsKey(hash))
+                assetDict[hash] = mesh;
+            else
+                assetDict.Add(hash, mesh);
+            return mesh;
         }
 
         public static string GetTextAsset(string assetPath)
@@ -693,6 +675,61 @@ namespace ABEngine.ABERuntime
                 return prefabAsset;
             }
         }
+
+        private static Mesh LoadMeshRAW(uint hash, string meshFilePath)
+        {
+            meshFilePath = Game.AssetPath.ToCommonPath() + meshFilePath;
+            if (!File.Exists(meshFilePath))
+                return null;
+
+            Mesh mesh = new Mesh(hash);
+            using (FileStream fs = new FileStream(meshFilePath, FileMode.Open))
+            using (BinaryReader br = new BinaryReader(fs))
+            {
+                int vertC = br.ReadInt32();
+                int indC = br.ReadInt32();
+
+                int compC = br.ReadByte();
+
+                VertexStandard[] vertices = new VertexStandard[vertC];
+
+                for (int vc = 0; vc < compC; vc++)
+                {
+                    char vcID = br.ReadChar();
+                    switch (vcID)
+                    {
+                        case 'P':
+                            for (int i = 0; i < vertC; i++)
+                                vertices[i].Position = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                            break;
+                        case 'U':
+                            for (int i = 0; i < vertC; i++)
+                                vertices[i].UV = new Vector2(br.ReadSingle(), br.ReadSingle());
+                            break;
+                        case 'N':
+                            for (int i = 0; i < vertC; i++)
+                                vertices[i].Normal = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                            break;
+                        case 'T':
+                            for (int i = 0; i < vertC; i++)
+                                vertices[i].Tangent = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                ushort[] indices = new ushort[indC];
+                for (int i = 0; i < indC; i++)
+                    indices[i] = br.ReadUInt16();
+
+                mesh.vertices = vertices;
+                mesh.indices = indices;
+            }
+
+            return mesh;
+        }
+
 
         // Serialization - For scene
         internal static JValue SerializeAssets()

@@ -10,9 +10,10 @@ namespace ABEngine.ABEditor.Assets.Meta
         public Guid uniqueID { get; set; }
         public uint fPathHash { get; set; }
         public string fPath { get; set; }
+        public string displayName { get; set; }
 
         public string metaAssetPath { get; set; }
-        public event Action<AssetMeta, string> refreshEvent;
+        public event Action<AssetMeta> refreshEvent;
 
         protected JsonObjectBuilder jObj; // Serialize
         protected JValue data; // Deserialize
@@ -41,6 +42,7 @@ namespace ABEngine.ABEditor.Assets.Meta
             long fPathHash = data["FileHash"];
             this.fPathHash = (uint)fPathHash;
             fPath = data["FilePath"];
+            displayName = System.IO.Path.GetFileNameWithoutExtension(fPath);
         }
 
         public virtual void MetaCreated()
@@ -53,9 +55,9 @@ namespace ABEngine.ABEditor.Assets.Meta
         public abstract void SetReferences();
         public abstract void DrawMeta();
 
-        public virtual void RefreshAsset(string assetPath)
+        public virtual void RefreshAsset()
         {
-            refreshEvent(this, assetPath);
+            refreshEvent(this);
         }
     }
 }

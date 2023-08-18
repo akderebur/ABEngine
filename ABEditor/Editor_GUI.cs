@@ -182,7 +182,7 @@ namespace ABEngine.ABEditor
                     if (metaType.Equals(typeof(TextureMeta)))
                     {
                         TextureMeta texMeta = meta as TextureMeta;
-                        var editTex = AssetHandler.GetAssetBinding(texMeta, selectedAsset) as Texture2D;
+                        var editTex = AssetHandler.GetAssetBinding(texMeta) as Texture2D;
                         ImGui.Begin("Details");
 
                         Vector2 spriteSize = texMeta.spriteSize;
@@ -206,7 +206,7 @@ namespace ABEngine.ABEditor
 
                         if (ImGui.Button("Save"))
                         {
-                            texMeta.RefreshAsset(selectedAsset);
+                            texMeta.RefreshAsset();
                             AssetHandler.SaveMeta(texMeta);
                         }
                         ImGui.End();
@@ -218,7 +218,7 @@ namespace ABEngine.ABEditor
                         if (editMatPath != selectedAsset)
                         {
                             editMatPath = selectedAsset;
-                            editMat = AssetHandler.GetAssetBinding(matMeta, selectedAsset) as PipelineMaterial;
+                            editMat = AssetHandler.GetAssetBinding(matMeta) as PipelineMaterial;
                             editMat.name = Path.GetFileNameWithoutExtension(selectedAsset);
                         }
 
@@ -296,7 +296,7 @@ namespace ABEngine.ABEditor
                         }
 
                         if (changed)
-                            matMeta.RefreshAsset(selectedAsset);
+                            matMeta.RefreshAsset();
                         
                         if (ImGui.Button("Save"))
                         {
@@ -806,6 +806,17 @@ namespace ABEngine.ABEditor
                         ParticleModuleDrawer.Draw(pm, newSelection);
                     }
                 }
+                else if (type == typeof(MeshRenderer))
+                {
+                    MeshRenderer mr = (MeshRenderer)comp;
+
+                    ImGui.GetStateStorage().SetInt(ImGui.GetID("Mesh Renderer"), 1);
+
+                    if (ImGui.CollapsingHeader("Mesh Renderer"))
+                    {
+                        MeshRendererDrawer.Draw(mr);
+                    }
+                }
             }
 
             // Entity with Tilemap component selected
@@ -862,6 +873,10 @@ namespace ABEngine.ABEditor
                 else if(ImGui.MenuItem("Tilemap"))
                 {
                     ComponentManager.AddTilemap(selectedEntity);
+                }
+                else if (ImGui.MenuItem("MeshRenderer"))
+                {
+                    ComponentManager.AddMeshRenderer(selectedEntity);
                 }
 
                 ImGui.Spacing();
@@ -976,6 +991,11 @@ namespace ABEngine.ABEditor
             }
         }
 
+        internal static void AddToHierList(Transform transform)
+        {
+            hierList.Add(transform);
+        }
+
         private unsafe static void RenderHierarchy()
         {
             ImGui.Begin("Hierarchy");
@@ -1041,7 +1061,7 @@ namespace ABEngine.ABEditor
                     var prefabTransform = PrefabManager.GetPrefabTransform(prefabMeta.fPathHash);
                     if (prefabTransform == null)
                     {
-                        PrefabAsset prefabAsset = AssetHandler.GetAssetBinding(prefabMeta, prefabFilePath) as PrefabAsset;
+                        PrefabAsset prefabAsset = AssetHandler.GetAssetBinding(prefabMeta) as PrefabAsset;
                         prefabTransform = EntityManager.LoadSerializedPrefab(prefabAsset);
                         //prefabTransform.entity.Get<Prefab>().prefabAsset = prefabAsset;
                         PrefabManager.AddPrefabEntity(prefabTransform.entity, prefabAsset.fPathHash);
@@ -1229,43 +1249,67 @@ namespace ABEngine.ABEditor
                 if (prop.PropertyType == typeof(float))
                 {
                     float tmp = (float)prop.GetValue(comp);
-                    ImGui.InputFloat(prop.Name, ref tmp);
-                    prop.SetValue(comp, tmp);
+                    if(ImGui.InputFloat(prop.Name, ref tmp))
+                        prop.SetValue(comp, tmp);
                 }
                 else if (prop.PropertyType == typeof(int))
                 {
                     int tmp = (int)prop.GetValue(comp);
-                    ImGui.InputInt(prop.Name, ref tmp);
-                    prop.SetValue(comp, tmp);
+                    if(ImGui.InputInt(prop.Name, ref tmp))
+                        prop.SetValue(comp, tmp);
                 }
                 else if (prop.PropertyType == typeof(bool))
                 {
                     bool tmp = (bool)prop.GetValue(comp);
-                    ImGui.Checkbox(prop.Name, ref tmp);
-                    prop.SetValue(comp, tmp);
+                    if(ImGui.Checkbox(prop.Name, ref tmp))
+                        prop.SetValue(comp, tmp);
                 }
                 else if (prop.PropertyType == typeof(Vector2))
                 {
                     Vector2 tmp = (Vector2)prop.GetValue(comp);
-                    ImGui.InputFloat2(prop.Name, ref tmp);
-                    prop.SetValue(comp, tmp);
+                    if(ImGui.InputFloat2(prop.Name, ref tmp))
+                        prop.SetValue(comp, tmp);
                 }
                 else if (prop.PropertyType == typeof(Vector3))
                 {
                     Vector3 tmp = (Vector3)prop.GetValue(comp);
-                    ImGui.InputFloat3(prop.Name, ref tmp);
-                    prop.SetValue(comp, tmp);
+                    if(ImGui.InputFloat3(prop.Name, ref tmp))
+                        prop.SetValue(comp, tmp);
 
                 }
                 else if (prop.PropertyType == typeof(string))
                 {
                     string tmp = (string)prop.GetValue(comp);
-                    ImGui.InputText(prop.Name, ref tmp, 500);
-                    prop.SetValue(comp, tmp);
+                    if(ImGui.InputText(prop.Name, ref tmp, 500))
+                        prop.SetValue(comp, tmp);
                 }
                 else if (prop.PropertyType == typeof(Transform))
                 {
                     RenderTransformPropEditor(prop, comp);
+                }
+                else if (prop.PropertyType.IsEnum)
+                {
+                    int curVal = (int)prop.GetValue(comp);
+                    var names = Enum.GetNames(prop.PropertyType);
+
+                    ImGui.Text(prop.Name);
+                    ImGui.SameLine();
+                    if (ImGui.BeginCombo("##" + prop.Name, names[curVal]))
+                    {
+                        for (int sel = 0; sel < names.Length; sel++)
+                        {
+                            bool is_selected = curVal == sel;
+                            if (ImGui.Selectable(names[sel], is_selected))
+                            {
+                                object newEnumValue = Enum.ToObject(prop.PropertyType, sel);
+                                prop.SetValue(comp, newEnumValue);
+                            }
+                            if (is_selected)
+                                ImGui.SetItemDefaultFocus();
+                        }
+
+                        ImGui.EndCombo();
+                    }
                 }
             }
         }

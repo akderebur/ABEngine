@@ -101,6 +101,7 @@ namespace ABEngine.ABEditor
         static CategoryDirectory animGraphCatDir;
         static CategoryDirectory materialCatDir;
         static CategoryDirectory prefabCatDir;
+        static CategoryDirectory meshCatDir;
 
         public static void SetAssetsFolder(string path)
         {
@@ -154,6 +155,15 @@ namespace ABEngine.ABEditor
             });
             prefabCatDir.payloadName = "PrefabFileInd";
             prefabCatDir.canDragDrop = true;
+
+
+            meshCatDir = new CategoryDirectory("", ".abmesh", "Meshes", () =>
+            {
+
+            });
+            meshCatDir.payloadName = "MeshFileInd";
+            meshCatDir.canDragDrop = true;
+
 
             animGraphCatDir = new CategoryDirectory("", ".abanimgraph", "Anim Graphs", () =>
             {
@@ -390,6 +400,7 @@ namespace ABEngine.ABEditor
                 DrawAssetTab(materialCatDir);
                 //DrawAssetTab(animGraphCatDir);
                 DrawAssetTab(prefabCatDir);
+                DrawAssetTab(meshCatDir);
 
                 ImGui.EndTabBar();
             }

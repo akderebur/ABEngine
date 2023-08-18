@@ -6,6 +6,8 @@ using ABEngine.ABERuntime.Animation;
 using System.Security.Principal;
 using Arch.Core;
 using Arch.Core.Extensions;
+using ABEngine.ABERuntime.Rendering;
+using ABEngine.ABERuntime.Core.Components;
 
 namespace ABEngine.ABEditor
 {
@@ -69,6 +71,19 @@ namespace ABEngine.ABEditor
             {
                 entity.Get<Transform>().tag = "NoChild";
                 entity.Add(new Tilemap());
+            }
+        }
+
+        public static void AddMeshRenderer(in Entity entity)
+        {
+            if (!entity.Has<MeshRenderer>())
+            {
+                MeshRenderer mr = new MeshRenderer(CubeModel.GetCubeMesh());
+                entity.Add(mr);
+
+                var sunLight = EntityManager.CreateEntity("DirLight", "", new DirectionalLight()
+                { color = Color.White.ToVector4(), direction = Vector3.Normalize(-Vector3.UnitZ), Intensity = 1f });
+                Editor.AddToHierList(sunLight.Get<Transform>());
             }
         }
     }
