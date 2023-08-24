@@ -416,11 +416,6 @@ namespace ABEngine.ABEditor
                     }
 
                     MainEditorUpdate(newTime, elapsed);
-
-                    foreach (var system in editorSystems)
-                    {
-                        system.Update(newTime, elapsed);
-                    }
                 }
 
                 if (!window.Exists)
@@ -518,15 +513,17 @@ namespace ABEngine.ABEditor
 
             particleSystem.Update(newTime, elapsed);
             spriteAnimSystem.Update(newTime, elapsed);
-            spriteBatchSystem.Update(newTime, elapsed);
-            meshRenderSystem.Update(newTime, elapsed);
-            lightRenderSystem.Update(newTime, elapsed);
-            normalsRenderSystem.Update(newTime, elapsed);
-            colDebugSystem.Update(newTime, elapsed);
+
             foreach (var editorSystem in editorSystems)
             {
                 editorSystem.Update(newTime, elapsed);
             }
+
+            normalsRenderSystem.Update(newTime, elapsed);
+            spriteBatchSystem.Update(newTime, elapsed);
+            meshRenderSystem.Update(newTime, elapsed);
+            lightRenderSystem.Update(newTime, elapsed);
+            colDebugSystem.Update(newTime, elapsed);
         }
 
         private void FinalRender()
@@ -676,7 +673,7 @@ namespace ABEngine.ABEditor
 
             AnimGraphEditor.Init();
 
-            // Sprite renderer
+            // Start systems
             spriteBatchSystem.Start();
             lightRenderSystem.Start();
             particleSystem.Start();
@@ -771,7 +768,7 @@ namespace ABEngine.ABEditor
 
             AnimGraphEditor.Init();
 
-            // Sprite renderer
+            // Start systems
             spriteBatchSystem.Start();
             lightRenderSystem.Start();
             particleSystem.Start();
@@ -842,6 +839,14 @@ namespace ABEngine.ABEditor
                          where t.IsClass && t.IsSubclassOf(typeof(JSerializable))
                          select t).ToList();
 
+            // User pipelines
+            var userPipelines = (from t in GameAssembly.GetTypes()
+                         where t.IsClass && t.IsSubclassOf(typeof(PipelineAsset))
+                         select t).ToList();
+            foreach (var pipeline in userPipelines)
+            {
+                GameAssembly.CreateInstance(pipeline.ToString());
+            }
 
             // Scene loading
             //scenePath = @"/Users/akderebur/Projects/ABEGameTest/ABEGameTest/bin/Debug/netcoreapp3.1/scene.json";

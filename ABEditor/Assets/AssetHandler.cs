@@ -338,6 +338,23 @@ namespace ABEngine.ABEditor.Assets
 
         public static void SaveMeta(AssetMeta meta)
 		{
+			if(meta is MaterialMeta)
+			{
+				// Save material properties
+				PipelineMaterial mat = GetAssetBinding(meta) as PipelineMaterial;
+				if(mat != null)
+				{
+					byte[] matData = MaterialMeta.MaterialToRAW(mat);
+					using(FileStream fs = new FileStream(AssetsPath + meta.fPath, FileMode.Create))
+					using(BinaryWriter bw = new BinaryWriter(fs))
+					{
+						bw.Write(matData);
+						bw.Write(AssetCache.guidMagic);
+						bw.Write(meta.uniqueID.ToByteArray());
+					}
+				}
+			}
+
 			File.WriteAllText(AssetsPath + meta.metaAssetPath, meta.Serialize().Serialize());
 		}
 

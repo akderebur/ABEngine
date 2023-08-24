@@ -46,6 +46,7 @@ namespace ABEngine.ABERuntime
         public Vector4 camPos;
     }
 
+
     public class MeshRenderSystem : RenderSystem
     {
         private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
@@ -75,13 +76,25 @@ namespace ABEngine.ABERuntime
             sharedFragmentUniform = new SharedMeshFragment();
         }
 
+        public Vector3 RotateByQuaternion(Vector3 vec, Quaternion rotation)
+        {
+            Quaternion vecQuat = new Quaternion(vec.X, vec.Y, vec.Z, 0);
+            Quaternion conjugate = Quaternion.Conjugate(rotation);
+            Quaternion rotatedQuat = rotation * vecQuat * conjugate;
+            return new Vector3(rotatedQuat.X, rotatedQuat.Y, rotatedQuat.Z);
+        }
+
+
         List<(MeshRenderer, Transform)> renderOrder = new List<(MeshRenderer, Transform)>();
+        List<(MeshRenderer, Transform)> lateRenderOrder = new List<(MeshRenderer, Transform)>();
+
         public override void Update(float gameTime, float deltaTime)
         {
             if (Game.activeCam == null)
                 return;
 
             renderOrder.Clear();
+            lateRenderOrder.Clear();
 
             // Fragment uniform update
             int dirLightC = 0;
@@ -92,7 +105,10 @@ namespace ABEngine.ABERuntime
                 if (lightC >= 4)
                     return;
 
-                lightInfos[lightC++] = new LightInfo3D() { Color = light.color.ToVector3(), Position = light.direction, Intensity = light.Intensity };
+                Vector3 dir = RotateByQuaternion(-Vector3.UnitZ, transform.worldRotation);
+                light.direction = dir;
+
+                lightInfos[lightC++] = new LightInfo3D() { Color = light.color.ToVector3(), Position = dir, Intensity = light.Intensity };
                 dirLightC++;
             });
 
@@ -120,9 +136,9 @@ namespace ABEngine.ABERuntime
             Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
             {
                 if(mr.material.isLateRender)
-                    renderOrder.Add((mr, transform));
+                    lateRenderOrder.Add((mr, transform));
                 else
-                    renderOrder.Insert(0, (mr, transform));
+                    renderOrder.Add((mr, transform));
             });
         }
 
@@ -141,12 +157,17 @@ namespace ABEngine.ABERuntime
                 Render();
         }
 
+        public void LateRender(int renderLayer)
+        {
+            if (renderLayer == 0)
+                LateRender();
+        }
+
         public override void Render()
         {
             // TODO Render layers
             // TODO Pipeline batching
 
-            int ind = 0;
             foreach (var render in renderOrder)
             {
                 MeshRenderer mr = render.Item1;
@@ -230,6 +251,45 @@ namespace ABEngine.ABERuntime
                 //}
 
                 //ind++;
+            }
+        }
+
+        private void LateRender()
+        {
+            cl.End();
+            gd.SubmitCommands(cl);
+            gd.WaitForIdle();
+            cl.Begin();
+
+            foreach (var render in lateRenderOrder)
+            {
+                MeshRenderer mr = render.Item1;
+                Transform transform = render.Item2;
+                Mesh mesh = mr.mesh;
+
+                // Update vertex uniform
+                sharedVertexUniform.transformMatrix = transform.worldMatrix;
+                gd.UpdateBuffer(mesh.vertexUniformBuffer, 0, sharedVertexUniform);
+
+                mr.material.pipelineAsset.BindPipeline();
+
+                cl.SetVertexBuffer(0, mesh.vertexBuffer);
+                cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
+
+                cl.SetGraphicsResourceSet(0, Game.pipelineSet);
+                cl.SetGraphicsResourceSet(1, mesh.vertexTransformSet);
+
+
+                // Material Resource Sets
+                foreach (var setKV in mr.material.bindableSets)
+                {
+                    cl.SetGraphicsResourceSet(setKV.Key, setKV.Value);
+                }
+
+                cl.SetGraphicsResourceSet(4, sharedFragmentSet);
+
+
+                cl.DrawIndexed((uint)mesh.indices.Length);
             }
         }
 

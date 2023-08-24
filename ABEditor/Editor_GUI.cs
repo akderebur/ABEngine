@@ -295,6 +295,24 @@ namespace ABEngine.ABEditor
 
                         }
 
+                        var texNames = editMat.pipelineAsset.GetTextureNames();
+                        for (int i = 0; i < texNames.Count; i++)
+                        {
+                            string texName = texNames[i];
+                            if (texName.Equals("DepthTex") || texName.Equals("CamNormalTex") || texName.Equals("ScreenTex"))
+                                continue;
+
+                            ImGui.Text(texName);
+                            Texture rawTex = editMat.GetRawTexture(texName);
+                            IntPtr imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, rawTex);
+                            ImGui.Image(imgPtr, new Vector2(100f, 100f));
+                            CheckTextureDropMaterial(editMat, texName);
+                        }
+
+                        ImGui.Text("Late Render");
+                        ImGui.SameLine();
+                        ImGui.Checkbox("##LateRender", ref editMat.isLateRender);
+
                         if (changed)
                             matMeta.RefreshAsset();
                         
@@ -305,6 +323,28 @@ namespace ABEngine.ABEditor
                         ImGui.End();
                     }
                 }
+            }
+        }
+
+        static unsafe void CheckTextureDropMaterial(PipelineMaterial mat, string texName)
+        {
+            if (ImGui.BeginDragDropTarget())
+            {
+                var payload = ImGui.AcceptDragDropPayload("SpriteFileInd");
+                if (payload.NativePtr != null)
+                {
+                    var dataPtr = (int*)payload.Data;
+                    int srcIndex = dataPtr[0];
+
+                    var spriteFilePath = AssetsFolderView.files[srcIndex];
+
+                    TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;
+                    Texture2D texture = AssetHandler.GetAssetBinding(texMeta) as Texture2D;
+
+                    mat.SetTexture(texName, texture);
+                }
+
+                ImGui.EndDragDropTarget();
             }
         }
 

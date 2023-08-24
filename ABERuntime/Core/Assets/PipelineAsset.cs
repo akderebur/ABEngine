@@ -49,6 +49,8 @@ namespace ABEngine.ABERuntime
             this.clearDepth = clearDepth;
 
             framebuffer = fb;
+            if (framebuffer == null && fbRefresh != null)
+                framebuffer = fbRefresh();
 
             pipelineID = pipelineCount;
             pipelineCount++;

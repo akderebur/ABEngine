@@ -44,7 +44,11 @@ namespace ABEngine.ABERuntime.Components
             int matSceneIndex = data["Material"];
 
             var mesh = AssetCache.GetAssetFromSceneIndex(meshSceneIndex) as Mesh;
+            if (mesh == null)
+                mesh = Rendering.CubeModel.GetCubeMesh();
             var material = AssetCache.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
+            if (material == null)
+                material = GraphicsManager.GetUber3D();
 
             this.mesh = mesh;
             this.material = material;

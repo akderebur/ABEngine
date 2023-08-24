@@ -233,6 +233,11 @@ namespace ABEngine.ABERuntime
                 _newKeysThisFrame.Add(key);
             }
         }
+
+        public static bool HasInput()
+        {
+            return (_currentlyPressedKeys.Count + _currentlyPressedMouseButtons.Count) > 0;
+        }
     }
 
     public class AxisMapping

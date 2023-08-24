@@ -7,6 +7,7 @@ namespace ABEngine.ABERuntime
 	{
 		private static int _sceneID;
 		private static Dictionary<int, string> sceneMap;
+		internal static float sceneVersion = 0;
 
 		static SceneManager()
 		{

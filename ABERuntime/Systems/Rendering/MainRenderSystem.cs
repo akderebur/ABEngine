@@ -44,7 +44,9 @@ namespace ABEngine.ABERuntime
                 new UberPipelineAsset(mainRenderFB),
                 new UberPipelineAdditive(mainRenderFB),
                 new UberPipeline3D(mainRenderFB),
-                new WaterPipelineAsset(mainRenderFB)
+                new WaterPipelineAsset(mainRenderFB),
+                new ToonWaterPipeline(mainRenderFB),
+                new ToonLitPipeline()
             };
         }
 

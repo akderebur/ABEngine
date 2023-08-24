@@ -24,11 +24,14 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
             ImGui.Text("Mesh");
             ImGui.SameLine();
-
-            string meshTxt = cachedMeshMeta == null ? "None" : cachedMeshMeta.displayName;
+            string meshTxt = cachedMeshMeta == null ? "Cube" : cachedMeshMeta.displayName;
             ImGui.InputText("##MeshName", ref meshTxt, 100, ImGuiInputTextFlags.ReadOnly);
-
             CheckMeshDrop(mr);
+
+            ImGui.Text("Material");
+            ImGui.SameLine();
+            ImGui.InputText("##matName", ref mr.material.name, 100, ImGuiInputTextFlags.ReadOnly);
+            CheckMaterialDropMR(mr);
         }
 
         static unsafe void CheckMeshDrop(MeshRenderer mr)
@@ -55,28 +58,26 @@ namespace ABEngine.ABEditor.ComponentDrawers
             }
         }
 
-        //static unsafe void CheckMaterialDropSprite(Sprite sprite)
-        //{
-        //    if (ImGui.BeginDragDropTarget())
-        //    {
-        //        var payload = ImGui.AcceptDragDropPayload("MaterialFileInd");
-        //        if (payload.NativePtr != null)
-        //        {
-        //            var dataPtr = (int*)payload.Data;
-        //            int srcIndex = dataPtr[0];
+        static unsafe void CheckMaterialDropMR(MeshRenderer mr)
+        {
+            if (ImGui.BeginDragDropTarget())
+            {
+                var payload = ImGui.AcceptDragDropPayload("MaterialFileInd");
+                if (payload.NativePtr != null)
+                {
+                    var dataPtr = (int*)payload.Data;
+                    int srcIndex = dataPtr[0];
 
-        //            var materialFilePath = AssetsFolderView.files[srcIndex];
-        //            MaterialMeta matMeta = AssetHandler.GetMeta(materialFilePath) as MaterialMeta;
-        //            PipelineMaterial mat = AssetHandler.GetAssetBinding(matMeta, materialFilePath) as PipelineMaterial;
+                    var materialFilePath = AssetsFolderView.files[srcIndex];
+                    MaterialMeta matMeta = AssetHandler.GetMeta(materialFilePath) as MaterialMeta;
+                    PipelineMaterial mat = AssetHandler.GetAssetBinding(matMeta) as PipelineMaterial;
 
-        //            Editor.EditorActions.UpdateProperty(sprite.material, mat, sprite, nameof(sprite.material), value => sprite.SetMaterial(value));
+                    Editor.EditorActions.UpdateProperty(mr.material, mat, mr, nameof(mr.material));
+                }
 
-        //            //sprite.SetMaterial(mat);
-        //        }
-
-        //        ImGui.EndDragDropTarget();
-        //    }
-        //}
+                ImGui.EndDragDropTarget();
+            }
+        }
     }
 }
 

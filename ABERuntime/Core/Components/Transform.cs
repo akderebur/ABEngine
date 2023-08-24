@@ -141,13 +141,9 @@ namespace ABEngine.ABERuntime
             jObj.Put("Tag", tag);
             jObj.Put("ParentGuid", _parent == null ? "" : _parent.entity.Get<Guid>().ToString());
             jObj.Put("Static", isStatic);
-            jObj.Put("PosX", _localPosition.X);
-            jObj.Put("PosY", _localPosition.Y);
-            jObj.Put("PosZ", _localPosition.Z);
-            jObj.Put("ScaX", _localScale.X);
-            jObj.Put("ScaY", _localScale.Y);
-            jObj.Put("ScaZ", _localScale.Z);
-
+            jObj.Put("Position", _localPosition);
+            jObj.Put("Rotation", _localRotation);
+            jObj.Put("Scale", _localScale);
             return jObj.Build();
 
 
@@ -175,9 +171,20 @@ namespace ABEngine.ABERuntime
             JValue data = JValue.Parse(json);
             tag = data["Tag"];
             isStatic = data["Static"];
-            _localRotation = Quaternion.Identity;
-            _localPosition = new Vector3(data["PosX"], data["PosY"], data["PosZ"]);
-            _localScale = new Vector3(data["ScaX"], data["ScaY"], data["ScaZ"]);
+
+            if (SceneManager.sceneVersion == 0) // Old serialize
+            {
+                _localRotation = Quaternion.Identity;
+                _localPosition = new Vector3(data["PosX"], data["PosY"], data["PosZ"]);
+                _localScale = new Vector3(data["ScaX"], data["ScaY"], data["ScaZ"]);
+            }
+            else
+            {
+                _localPosition = data["Position"];
+                _localRotation = data["Rotation"];
+                _localScale = data["Scale"];
+                _localEulerAngles = _localRotation.ToEulerAngles();
+            }
 
             parentGuidStr = data["ParentGuid"];
          

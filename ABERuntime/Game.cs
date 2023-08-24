@@ -101,6 +101,8 @@ namespace ABEngine.ABERuntime
         public static LightRenderSystem lightRenderSystem;
 
         public List<RenderSystem> internalRenders;
+        public List<Action<int>> renderWorkOrder;
+
 
         // Framebuffer
 
@@ -175,6 +177,19 @@ namespace ABEngine.ABERuntime
             };
 
             SetupRenderResources();
+
+            // Work order
+            renderWorkOrder = new List<Action<int>>()
+            {
+                normalsRenderSystem.Render,
+                mainRenderSystem.Render,
+                meshRenderSystem.Render,
+                spriteBatchSystem.Render,
+                msaaResolveSystem.ResolveDepth,
+                meshRenderSystem.LateRender,
+                msaaResolveSystem.Render,
+                lightRenderSystem.Render
+            };
         }  
 
         protected private void SetupRenderResources()
@@ -777,9 +792,9 @@ namespace ABEngine.ABERuntime
 
             for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
             {
-                foreach (var render in internalRenders)
+                foreach (var renderWork in renderWorkOrder)
                 {
-                    render.Render(i);
+                    renderWork(i);
                 }
 
                 // Composition / No Clear - No depth
@@ -1137,6 +1152,7 @@ namespace ABEngine.ABERuntime
 
             JsonObjectBuilder scene = new JsonObjectBuilder(10000);
             scene.Put("SceneName", "Test");
+            scene.Put("Version", 0.1f);
 
             JsonArrayBuilder extensions = new JsonArrayBuilder(1000);
             foreach (var rendExt in renderExtensions)
@@ -1204,7 +1220,12 @@ namespace ABEngine.ABERuntime
 
         protected void LoadScene(string json)
         {
+
             JValue scene = JValue.Parse(json);
+
+            float sceneVersion = scene["Version"];
+            SceneManager.sceneVersion = sceneVersion;
+
 
             // Assets
             var jAssets = scene["Assets"];

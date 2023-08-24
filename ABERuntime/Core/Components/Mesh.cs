@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
 using ABEngine.ABERuntime.Core.Assets;
 using Halak;
@@ -11,6 +12,9 @@ namespace ABEngine.ABERuntime
         // TODO Switch to vertex interface
         private VertexStandard[] _vertices;
         private ushort[] _indices;
+
+        public Vector3 boundsMin;
+        public Vector3 boundsMax;
 
         internal DeviceBuffer vertexBuffer;
         internal DeviceBuffer indexBuffer;
@@ -42,6 +46,7 @@ namespace ABEngine.ABERuntime
             set
             {
                 _vertices = value;
+                CalculateBounds();
                 if (vertexBuffer != null)
                     vertexBuffer.Dispose();
                 vertexBuffer = GraphicsManager.rf.CreateBuffer(
@@ -70,6 +75,21 @@ namespace ABEngine.ABERuntime
             assetEnt.Put("TypeID", 3);
             assetEnt.Put("FileHash", (long)fPathHash);
             return assetEnt.Build();
+        }
+
+        void CalculateBounds()
+        {
+            var order = vertices.OrderBy(v => v.Position.X);
+            boundsMin.X = order.First().Position.X;
+            boundsMax.X = order.Last().Position.X;
+
+            order = vertices.OrderBy(v => v.Position.Y);
+            boundsMin.Y = order.First().Position.Y;
+            boundsMax.Y = order.Last().Position.Y;
+
+            order = vertices.OrderBy(v => v.Position.Z);
+            boundsMin.Z = order.First().Position.Z;
+            boundsMax.Z = order.Last().Position.Z;
         }
     }
 

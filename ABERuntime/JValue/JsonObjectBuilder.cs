@@ -125,6 +125,25 @@ namespace Halak
             return Put(key, vecObj.Build());
         }
 
+        public JsonObjectBuilder Put(string key, Vector4 value)
+        {
+            JsonObjectBuilder vecObj = new JsonObjectBuilder(200);
+            vecObj.Put("X", value.X);
+            vecObj.Put("Y", value.Y);
+            vecObj.Put("Z", value.Z);
+            vecObj.Put("W", value.W);
+            return Put(key, vecObj.Build());
+        }
+
+        public JsonObjectBuilder Put(string key, Quaternion value)
+        {
+            JsonObjectBuilder vecObj = new JsonObjectBuilder(200);
+            vecObj.Put("X", value.X);
+            vecObj.Put("Y", value.Y);
+            vecObj.Put("Z", value.Z);
+            vecObj.Put("W", value.W);
+            return Put(key, vecObj.Build());
+        }
 
         public JsonObjectBuilder PutArray(string key, Action<JsonArrayBuilder> put)
         {

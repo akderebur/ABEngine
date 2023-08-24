@@ -8,6 +8,7 @@ using Arch.Core;
 using Arch.Core.Extensions;
 using ABEngine.ABERuntime.Rendering;
 using ABEngine.ABERuntime.Core.Components;
+using System.Collections.Generic;
 
 namespace ABEngine.ABEditor
 {
@@ -81,9 +82,15 @@ namespace ABEngine.ABEditor
                 MeshRenderer mr = new MeshRenderer(CubeModel.GetCubeMesh());
                 entity.Add(mr);
 
-                var sunLight = EntityManager.CreateEntity("DirLight", "", new DirectionalLight()
-                { color = Color.White.ToVector4(), direction = Vector3.Normalize(-Vector3.UnitZ), Intensity = 1f });
-                Editor.AddToHierList(sunLight.Get<Transform>());
+                var query = new QueryDescription().WithAll<Transform, DirectionalLight>();
+                int dirLightCount = Game.GameWorld.CountEntities(query);
+
+                if (dirLightCount == 0)
+                {
+                    var sunLight = EntityManager.CreateEntity("DirLight", "", new DirectionalLight()
+                    { color = Color.White.ToVector4(), direction = Vector3.Normalize(-Vector3.UnitZ), Intensity = 1f });
+                    Editor.AddToHierList(sunLight.Get<Transform>());
+                }
             }
         }
     }

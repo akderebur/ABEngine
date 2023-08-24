@@ -146,6 +146,18 @@ namespace ABEngine.ABERuntime
             }
         }
 
+        internal Texture GetRawTexture(string textureName)
+        {
+            int texNameInd = pipelineAsset.GetTextureID(textureName);
+            if (texNameInd > -1)
+            {
+                int texInd = texNameInd * 2;
+                return texResources[texInd] as Texture;
+            }
+
+            return null;
+        }
+
         public PipelineMaterial GetCopy()
         {
             var matCopy = new PipelineMaterial(0, this.pipelineAsset, this.propLayout, this.texLayout);

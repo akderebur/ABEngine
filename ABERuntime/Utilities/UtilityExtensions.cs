@@ -71,6 +71,13 @@ namespace ABEngine.ABERuntime
             return new Vector4(vec.X, vec.Y, vec.Z, 0f);
         }
 
+        public static Vector3 Normalize(this Vector3 v)
+        {
+            if (v.Length() < 1e-10)
+                return v;
+
+            return Vector3.Normalize(v);
+        }
 
         public static Vector2 PixelToWorld(this Vector2 vec)
         {

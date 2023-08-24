@@ -94,11 +94,11 @@ namespace ABEngine.ABERuntime.Pipelines
         internal const string UberPipeline3DAsset = @"
 Properties
 {
-	albedoS:vec4
-    metallicS:float
-    roughnessS:float
-    aoS:float
-    propPad:float
+	AlbedoColor:vec4
+    MetallicFactor:float
+    RoughnessFactor:float
+    AOFactor:float
+    PropPad:float
     AlbedoTex:texture2d
 }
 Vertex
@@ -163,11 +163,11 @@ Fragment
 
     layout (set = 2, binding = 0) uniform ShaderProps
     {
-        vec4 albedoS;
-        float metallicS;
-        float roughnessS;
-        float aoS;
-        float propPad;
+        vec4 AlbedoColor;
+        float MetallicFactor;
+        float RoughnessFactor;
+        float AOFactor;
+        float PropPad;
     };
     
     layout (set = 3, binding = 0) uniform texture2D AlbedoTex;
@@ -361,12 +361,12 @@ Fragment
     {
         float dummy = Time - Time;
         dummy += (dummyMatrix[0][0] * vec3(1)).x - (dummyMatrix[0][0] * vec3(1)).x;
-        dummy += metallicS - metallicS;
+        dummy += MetallicFactor - MetallicFactor;
         vec3 albedo = vec3(texture(sampler2D(AlbedoTex, AlbedoSampler), TexCoords));
 
-        vec4 baseColor = vec4(albedo, 1.0);
-        float perceptualRoughness = 0.1;
-        float metallic = 0.4;
+        vec4 baseColor = vec4(albedo, 1.0) * AlbedoColor;
+        float perceptualRoughness = RoughnessFactor;
+        float metallic = MetallicFactor;
         vec3 diffuseColor = vec3(0.0);
         vec3 specularColor= vec3(0.0);
         vec3 f0 = vec3(0.04);

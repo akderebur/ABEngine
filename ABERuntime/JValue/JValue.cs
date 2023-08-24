@@ -236,6 +236,22 @@ namespace Halak
             return new Vector3(this["X"], this["Y"], this["Z"]);
         }
 
+        public Vector4 ToVector4()
+        {
+            if (Type != TypeCode.Object)
+                return Vector4.Zero;
+
+            return new Vector4(this["X"], this["Y"], this["Z"], this["W"]);
+        }
+
+        public Quaternion ToQuaternion()
+        {
+            if (Type != TypeCode.Object)
+                return Quaternion.Identity;
+
+            return new Quaternion(this["X"], this["Y"], this["Z"], this["W"]);
+        }
+
         public JNumber ToNumber() => ToNumber(JNumber.Zero);
         public JNumber ToNumber(JNumber defaultValue)
         {
@@ -902,6 +918,8 @@ namespace Halak
         public static implicit operator decimal(JValue value) => value.ToDecimal();
         public static implicit operator Vector2(JValue value) => value.ToVector2();
         public static implicit operator Vector3(JValue value) => value.ToVector3();
+        public static implicit operator Vector4(JValue value) => value.ToVector4();
+        public static implicit operator Quaternion(JValue value) => value.ToQuaternion();
         public static implicit operator string(JValue value) => value.ToUnescapedString();
         public static implicit operator JValue(bool value) => new JValue(value);
         public static implicit operator JValue(int value) => new JValue(value);

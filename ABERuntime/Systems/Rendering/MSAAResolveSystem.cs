@@ -46,6 +46,12 @@ namespace ABEngine.ABERuntime
             }
         }
 
+        public void ResolveDepth(int renderLayer)
+        {
+            if(enabled)
+                cl.ResolveTexture(msDepthTexture, resolvedDepth);
+        }
+
         internal override Texture GetMainColorAttachent()
         {
             return resolvedColor;

@@ -30,7 +30,7 @@ namespace ABEngine.ABERuntime
 
     public static class AssetCache
     {
-        static int guidMagic = 1230324289; // ABUI
+        internal static int guidMagic = 1230324289; // ABUI
 
         // Debug - Raw
         private static readonly Dictionary<string, ImageSharpTexture> s_images_debug = new Dictionary<string, ImageSharpTexture>();
@@ -68,32 +68,24 @@ namespace ABEngine.ABERuntime
             LoadDefaultMaterials();
 
             string commonAssetPath = Game.AssetPath.ToCommonPath();
+
             if (Game.debug)
             {
-                var images = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories)
-                .Where(s => s.ToLower().EndsWith(".jpg") || s.ToLower().EndsWith(".png"));
-                foreach (var image in images)
+                var hashParser = (string extension) =>
                 {
-                    string localPath = image.ToCommonPath().Replace(commonAssetPath, "");
-                    hashToFName.Add(localPath.ToHash32(), localPath);
-                }
+                    var files = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories)
+                    .Where(s => s.ToLower().EndsWith(extension));
+                    foreach (var file in files)
+                    {
+                        string localPath = file.ToCommonPath().Replace(commonAssetPath, "");
+                        hashToFName.Add(localPath.ToHash32(), localPath);
+                    }
+                };
 
-
-                var materials = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories)
-                .Where(s => s.ToLower().EndsWith(".abmat"));
-                foreach (var material in materials)
-                {
-                    string localPath = material.ToCommonPath().Replace(commonAssetPath, "");
-                    hashToFName.Add(localPath.ToHash32(), localPath);
-                }
-
-                var prefabs = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories)
-                .Where(s => s.ToLower().EndsWith(".abprefab"));
-                foreach (var prefab in prefabs)
-                {
-                    string localPath = prefab.ToCommonPath().Replace(commonAssetPath, "");
-                    hashToFName.Add(localPath.ToHash32(), localPath);
-                }
+                hashParser(".png");
+                hashParser(".abmat");
+                hashParser(".abprefab");
+                hashParser(".abmesh");
 
                 return;
             }
@@ -654,7 +646,7 @@ namespace ABEngine.ABERuntime
                     if (tHash == 0) // Procedural texture skip
                         continue;
 
-                    Texture2D tex2d = GetOrCreateTexture2D(null, null, Vector2.Zero, hash);
+                    Texture2D tex2d = GetOrCreateTexture2D(null, null, Vector2.Zero, tHash);
                     mat.SetTexture(textureNames[i], tex2d);
                 }
 
@@ -773,6 +765,9 @@ namespace ABEngine.ABERuntime
                     case 2: // Prefab
                         curAsset = GetOrCreatePrefabAsset(null, hash);
                         break;
+                    case 3: // Mesh
+                        curAsset = GetOrCreateMesh(null, hash);
+                        break;
                     default:
                         break;
                 }
@@ -844,6 +839,8 @@ namespace ABEngine.ABERuntime
             s_texture2ds.Clear();
             s_clips.Clear();
             s_materials.Clear();
+            s_prefabAssets.Clear();
+            s_meshes.Clear();
             assetDict.Clear();
             sceneAssets.Clear();
 
@@ -922,6 +919,8 @@ namespace ABEngine.ABERuntime
             s_texture2ds.Clear();
             s_materials.Clear();
             s_clips.Clear();
+            s_prefabAssets.Clear();
+            s_meshes.Clear();
             defTexture = null;
         }
     }
