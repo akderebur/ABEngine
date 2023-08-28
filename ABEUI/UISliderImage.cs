@@ -215,11 +215,11 @@ namespace ABEngine.ABEUI
              };
             ushort[] s_quadIndices = new ushort[] { 0, 1, 2, 0, 2, 3 };
 
-            sliderVB = GraphicsManager.gd.ResourceFactory.CreateBuffer(new BufferDescription((uint)verts.Length * sizeof(float), BufferUsage.VertexBuffer));
+            sliderVB = GraphicsManager.gd.ResourceFactory.CreateBuffer(new BufferDescription((uint)verts.Length * sizeof(float), BufferUsage.VertexBuffer | BufferUsage.Dynamic));
             GraphicsManager.gd.UpdateBuffer(sliderVB, 0, verts);
 
             sliderIB = GraphicsManager.gd.ResourceFactory.CreateBuffer(
-                new BufferDescription((uint)s_quadIndices.Length * sizeof(float), BufferUsage.IndexBuffer));
+                new BufferDescription((uint)s_quadIndices.Length * sizeof(float), BufferUsage.IndexBuffer | BufferUsage.Dynamic));
             GraphicsManager.gd.UpdateBuffer(sliderIB, 0, s_quadIndices);
 
             sliderInfoLayout = GraphicsManager.gd.ResourceFactory.CreateResourceLayout(

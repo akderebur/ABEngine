@@ -271,11 +271,11 @@ namespace ABEngine.ABERuntime
                };
             ushort[] s_quadIndices = new ushort[] { 0, 1, 2, 0, 2, 3 };
 
-            fullScreenVB = gd.ResourceFactory.CreateBuffer(new BufferDescription((uint)verts.Length * sizeof(float), BufferUsage.VertexBuffer));
+            fullScreenVB = gd.ResourceFactory.CreateBuffer(new BufferDescription((uint)verts.Length * sizeof(float), BufferUsage.VertexBuffer | BufferUsage.Dynamic));
             gd.UpdateBuffer(fullScreenVB, 0, verts);
 
             fullScreenIB = gd.ResourceFactory.CreateBuffer(
-                new BufferDescription((uint)s_quadIndices.Length * sizeof(ushort), BufferUsage.IndexBuffer));
+                new BufferDescription((uint)s_quadIndices.Length * sizeof(ushort), BufferUsage.IndexBuffer | BufferUsage.Dynamic));
             gd.UpdateBuffer(fullScreenIB, 0, s_quadIndices);
 
             // Composite Pipeline

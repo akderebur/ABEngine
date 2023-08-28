@@ -952,7 +952,7 @@ namespace ABEngine.ABERuntime
                    compositeRenderTexture, gd.LinearSampler
                    ));
 
-            pipelineBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(144, BufferUsage.UniformBuffer));
+            pipelineBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(144, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
             pipelineSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedPipelineLayout, pipelineBuffer));
 
             pipelineData = new PipelineData()

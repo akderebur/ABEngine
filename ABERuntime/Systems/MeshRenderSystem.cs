@@ -68,7 +68,7 @@ namespace ABEngine.ABERuntime
 
             if (fragmentUniformBuffer == null)
             {
-                fragmentUniformBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(160, BufferUsage.UniformBuffer));
+                fragmentUniformBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(160, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
                 sharedFragmentSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_FS, fragmentUniformBuffer));
             }
 

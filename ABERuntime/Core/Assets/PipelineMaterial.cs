@@ -69,7 +69,7 @@ namespace ABEngine.ABERuntime
                 }
             }
 
-            propBuffer = GraphicsManager.rf.CreateBuffer(new BufferDescription(this.shaderPropBufferSize, BufferUsage.UniformBuffer));
+            propBuffer = GraphicsManager.rf.CreateBuffer(new BufferDescription(this.shaderPropBufferSize, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
             propSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(this.propLayout, propBuffer));
 
             GraphicsManager.gd.UpdateBuffer(propBuffer, 0, this.shaderPropData);
