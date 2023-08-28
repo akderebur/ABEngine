@@ -224,20 +224,24 @@ namespace ABEngine.ABERuntime
                 Encoding.UTF8.GetBytes(fragmentShaderSrc),
                 "main");
 
-            //if (dest.defaultMatName.Equals("Uber3D"))
+            //if (dest.defaultMatName.Equals("ToonLit"))
             //{
             //    SpecializationConstant[] specializations =
             //    {
 
             //    };
+
+            //    var fragDebug = SpirvCompilation.CompileGlslToSpirv(
+            //     Encoding.UTF8.GetString(fragmentShader.ShaderBytes), "FS", ShaderStages.Fragment, new GlslCompileOptions(debug: true));
+
             //    VertexFragmentCompilationResult result = SpirvCompilation.CompileVertexFragment(
             //        vertexShader.ShaderBytes,
-            //        fragmentShader.ShaderBytes,
+            //        fragDebug.SpirvBytes,
             //        CrossCompileTarget.MSL,
             //        new CrossCompileOptions(false, false, specializations));
 
-            //    File.WriteAllText(@"/Users/akderebur/Documents/vert.txt", result.VertexShader);
-            //    File.WriteAllText(@"/Users/akderebur/Documents/frag.txt", result.FragmentShader);
+            //    File.WriteAllText(@"/Users/akderebur/Documents/vert_dum.txt", result.VertexShader);
+            //    File.WriteAllText(@"/Users/akderebur/Documents/frag_dum.txt", result.FragmentShader);
             //}
 
 
@@ -297,6 +301,10 @@ namespace ABEngine.ABERuntime
 
         private static Shader[] CompileShaderSet(ShaderDescription vertexDescription, ShaderDescription pixelDescription)
         {
+            var vertexSpirvCompilation = SpirvCompilation.CompileGlslToSpirv(
+              Encoding.UTF8.GetString(vertexDescription.ShaderBytes), "VS", ShaderStages.Vertex, new GlslCompileOptions(debug: true));
+            vertexDescription.ShaderBytes = vertexSpirvCompilation.SpirvBytes;
+
             var pixelSpirvCompilation = SpirvCompilation.CompileGlslToSpirv(
                 Encoding.UTF8.GetString(pixelDescription.ShaderBytes), "FS", ShaderStages.Fragment, new GlslCompileOptions(debug: true));
             pixelDescription.ShaderBytes = pixelSpirvCompilation.SpirvBytes;

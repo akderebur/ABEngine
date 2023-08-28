@@ -610,12 +610,12 @@ Fragment
    
     void main()
     {
-        float dummy = Time - Time;
-        dummy += (dummyMatrix[0][0] * vec3(1)).x - (dummyMatrix[0][0] * vec3(1)).x;
-        dummy += PropPad.x - PropPad.x;
-        dummy += camPos.x - camPos.x;
+        //float dummy = Time - Time;
+        //dummy += (dummyMatrix[0][0] * vec3(1)).x - (dummyMatrix[0][0] * vec3(1)).x;
+        //dummy += PropPad.x - PropPad.x;
+        //dummy += camPos.x - camPos.x;
 
-        vec2 noiseUV = (TexCoords + dummy) * surface_noise_tiling;
+        vec2 noiseUV = (TexCoords) * surface_noise_tiling;
         vec2 distortUV = TexCoords;
 
         //float depthVal =  texture(sampler2D(DepthTex, DepthTexSampler), gl_FragCoord.xy / Resolution).r;
