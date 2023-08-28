@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using ABEngine.ABERuntime.Core.Assets;
 using Halak;
 using Veldrid;
@@ -98,14 +99,15 @@ namespace ABEngine.ABERuntime
         public uint VertexSize { get; }
     }
 
+    [StructLayout(LayoutKind.Explicit)]
     public struct VertexStandard : IVertex
     {
         public uint VertexSize => 44;
 
-        public Vector3 Position;
-        public Vector3 Normal;
-        public Vector2 UV;
-        public Vector3 Tangent;
+        [FieldOffset(0)] public Vector3 Position;
+        [FieldOffset(12)] public Vector3 Normal;
+        [FieldOffset(24)] public Vector2 UV;
+        [FieldOffset(32)] public Vector3 Tangent;
 
         public VertexStandard(Vector3 position, Vector3 normal, Vector2 uv) : this(position, normal, uv, Vector3.Zero) { }
         public VertexStandard(Vector3 position, Vector3 normal, Vector2 uv, Vector3 tangent)
