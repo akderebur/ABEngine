@@ -572,6 +572,7 @@ namespace ABEngine.ABERuntime
 
             // Resource clean up
             CleanUp();
+            gd.Dispose();
 
             SDL2.SDL.SDL_VideoQuit();
             SDL2.SDL.SDL_Quit();
@@ -1101,7 +1102,6 @@ namespace ABEngine.ABERuntime
             GraphicsManager.DisposeResources();
             AssetCache.DisposeResources();
             _commandList.Dispose();
-            gd.Dispose();
 
             Console.WriteLine("Clean");
 

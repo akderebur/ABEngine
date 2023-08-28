@@ -452,6 +452,7 @@ namespace ABEngine.ABEditor
             // Clean up Veldrid resources
             CleanUp();
             imguiRenderer.Dispose();
+            gd.Dispose();
 
             SaveEditorSettings();
 
