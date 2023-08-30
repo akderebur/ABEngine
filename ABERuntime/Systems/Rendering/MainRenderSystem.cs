@@ -13,12 +13,11 @@ namespace ABEngine.ABERuntime
 
         List<PipelineAsset> pipelines = new List<PipelineAsset>();
 
-        bool msaaEnabled = true;
 
         public override void SetupResources(params Texture[] sampledTextures)
         {
             Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
-            TextureSampleCount sampleCount = msaaEnabled ? TextureSampleCount.Count4 : TextureSampleCount.Count1;
+            TextureSampleCount sampleCount = GraphicsManager.msaaSampleCount;
 
             mainRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
@@ -43,11 +42,17 @@ namespace ABEngine.ABERuntime
             {
                 new UberPipelineAsset(mainRenderFB),
                 new UberPipelineAdditive(mainRenderFB),
-                new UberPipeline3D(mainRenderFB),
-                new WaterPipelineAsset(mainRenderFB),
-                new ToonWaterPipeline(mainRenderFB),
-                new ToonLitPipeline()
             };
+
+            if(!GraphicsManager.render2DOnly)
+            {
+                pipelines.AddRange(new List<PipelineAsset>
+                {
+                    new UberPipeline3D(mainRenderFB),
+                    new ToonWaterPipeline(mainRenderFB),
+                    new ToonLitPipeline()
+                });
+            }
         }
 
         public override void Start()

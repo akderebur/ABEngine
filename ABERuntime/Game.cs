@@ -127,8 +127,12 @@ namespace ABEngine.ABERuntime
 
         internal static float zoomFactor = 1f;
 
-        public Game(string windowName, bool debug, List<Type> userTypes)
+        internal static Game Instance;
+
+        public Game(bool debug, List<Type> userTypes)
         {
+            Instance = this;
+
             UserTypes = userTypes;
             userSystems = new List<BaseSystem>();
             userSystemTypes = new List<Type>();
@@ -136,8 +140,6 @@ namespace ABEngine.ABERuntime
             AssetPath = AppPath + "Assets/";
             Game.debug = debug;
             gameMode = GameMode.Runtime;
-
-            Init(windowName);
         }
 
         internal static void ReloadGame(bool isNewScene)
@@ -158,7 +160,7 @@ namespace ABEngine.ABERuntime
 
         protected private void CreateInternalRenders()
         {
-
+          
             normalsRenderSystem = new NormalsPassRenderSystem();
             mainRenderSystem = new MainRenderSystem();
             meshRenderSystem = new MeshRenderSystem();
@@ -176,27 +178,49 @@ namespace ABEngine.ABERuntime
                 lightRenderSystem
             };
 
-            SetupRenderResources();
-
-            // Work order
-            renderWorkOrder = new List<Action<int>>()
+            if(GraphicsManager.render2DOnly)
             {
-                normalsRenderSystem.Render,
-                mainRenderSystem.Render,
-                meshRenderSystem.Render,
-                spriteBatchSystem.Render,
-                msaaResolveSystem.ResolveDepth,
-                meshRenderSystem.LateRender,
-                msaaResolveSystem.Render,
-                lightRenderSystem.Render
-            };
+                internalRenders.Remove(normalsRenderSystem);
+                internalRenders.Remove(meshRenderSystem);
+
+                
+                // 2D Work order
+                renderWorkOrder = new List<Action<int>>()
+                {
+                    mainRenderSystem.Render,
+                    spriteBatchSystem.Render,
+                    msaaResolveSystem.Render,
+                    lightRenderSystem.Render
+                };
+            }
+            else
+            {
+                // 3D Work order
+                renderWorkOrder = new List<Action<int>>()
+                {
+                    normalsRenderSystem.Render,
+                    mainRenderSystem.Render,
+                    meshRenderSystem.Render,
+                    spriteBatchSystem.Render,
+                    msaaResolveSystem.ResolveDepth,
+                    meshRenderSystem.LateRender,
+                    msaaResolveSystem.Render,
+                    lightRenderSystem.Render
+                };
+            }
+
+            SetupRenderResources();
+            Toggle3D(!GraphicsManager.render2DOnly);
         }  
 
         protected private void SetupRenderResources()
         {
-            normalsRenderSystem.SetupResources();
+            if(internalRenders.Contains(normalsRenderSystem))
+                normalsRenderSystem.SetupResources();
+            if (internalRenders.Contains(meshRenderSystem))
+                meshRenderSystem.SetupResources();
+
             mainRenderSystem.SetupResources();
-            meshRenderSystem.SetupResources();
             msaaResolveSystem.SetupResources(mainRenderSystem.GetMainColorAttachent(), mainRenderSystem.GetDepthAttachment());
             lightRenderSystem.SetupResources(msaaResolveSystem.GetMainColorAttachent());
 
@@ -206,10 +230,39 @@ namespace ABEngine.ABERuntime
                   ));
         }
 
+        internal void Toggle3D(bool activate)
+        {
+            if (renderWorkOrder == null)
+                return;
+
+            if(activate)
+            {
+                if (renderWorkOrder.First() == normalsRenderSystem.Render)
+                    return;
+
+
+                renderWorkOrder.Insert(0, normalsRenderSystem.Render);
+                renderWorkOrder.Insert(2, meshRenderSystem.Render);
+                renderWorkOrder.Insert(4, msaaResolveSystem.ResolveDepth);
+                renderWorkOrder.Insert(5, meshRenderSystem.LateRender);
+            }
+            else
+            {
+                if (renderWorkOrder.First() != normalsRenderSystem.Render)
+                    return;
+
+
+                renderWorkOrder.Remove(normalsRenderSystem.Render);
+                renderWorkOrder.Remove(meshRenderSystem.Render);
+                renderWorkOrder.Remove(msaaResolveSystem.ResolveDepth);
+                renderWorkOrder.Remove(meshRenderSystem.LateRender);
+            }
+        }
+
 
         float accumulator;
         float interpolation;
-        protected private virtual void Init(string windowName)
+        protected virtual void Init(string windowName)
         {
             // ECS and Physics Worlds
             CreateWorlds();
@@ -276,13 +329,16 @@ namespace ABEngine.ABERuntime
 
             //spriteRenderer.Start();
             spriteBatchSystem.Start();
-            meshRenderSystem.Start();
+            if (!GraphicsManager.render2DOnly)
+            {
+                normalsRenderSystem.Start();
+                meshRenderSystem.Start();
+            }
             spriteAnimatorSystem.Start();
             stateAnimatorSystem.Start();
             spriteAnimSystem.Start();
             camMoveSystem.Start();
             lightRenderSystem.Start();
-            normalsRenderSystem.Start();
             particleSystem.Start();
             //if (debug)
             //    colDebugSystem.Start();
@@ -484,7 +540,11 @@ namespace ABEngine.ABERuntime
                         }
 
                         spriteBatchSystem.Start();
-                        meshRenderSystem.Start();
+                        if(!GraphicsManager.render2DOnly)
+                        {
+                            normalsRenderSystem.Start();
+                            meshRenderSystem.Start();
+                        }
                         spriteAnimatorSystem.Start();
                         stateAnimatorSystem.Start();
                         spriteAnimSystem.Start();
@@ -763,9 +823,12 @@ namespace ABEngine.ABERuntime
             rbMoveSystem.Update(newTime, interpolation);
             camMoveSystem.Update(newTime, elapsed);
             spriteBatchSystem.Update(newTime, elapsed);
-            meshRenderSystem.Update(newTime, elapsed);
+            if (!GraphicsManager.render2DOnly)
+            {
+                normalsRenderSystem.Update(newTime, elapsed);
+                meshRenderSystem.Update(newTime, elapsed);
+            }
             lightRenderSystem.Update(newTime, elapsed);
-            normalsRenderSystem.Update(newTime, elapsed);
             //if(debug)
             //    colDebugSystem.Update(newTime, elapsed);
         }
@@ -916,7 +979,7 @@ namespace ABEngine.ABERuntime
             gd = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions(
                 debug: false,
                 swapchainDepthFormat: null,
-                syncToVerticalBlank: true,
+                syncToVerticalBlank: false,
                 resourceBindingModel: ResourceBindingModel.Improved,
                 preferDepthRangeZeroToOne: true,
                 preferStandardClipSpaceYDirection: true,

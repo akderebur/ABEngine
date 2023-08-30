@@ -80,8 +80,10 @@ namespace ABEngine.ABEditor
             return imguiRenderer.GetOrCreateImGuiBinding(GraphicsManager.rf, texture);
         }
 
-        public Editor(string windowName) : base(windowName, true, new List<Type>())
+        public Editor(string windowName) : base(true, new List<Type>())
         {
+            GraphicsManager.msaaSampleCount = TextureSampleCount.Count4;
+            Init(windowName);
         }
 
         public static ImGuiRenderer GetImGuiRenderer()
@@ -126,7 +128,7 @@ namespace ABEngine.ABEditor
             File.WriteAllText(settingsPath, settingsJObj.Build().Serialize());
         }
 
-        protected private override void Init(string windowName)
+        protected override void Init(string windowName)
         {
             gameMode = GameMode.Editor;
             userTypes = new List<Type>();

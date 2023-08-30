@@ -11,8 +11,6 @@ namespace ABEngine.ABERuntime
         Texture msRenderTexture;
         Texture msDepthTexture;
 
-        bool enabled = true;
-
         public override void SetupResources(params Texture[] sampledTextures)
         {
             msRenderTexture = sampledTextures[0];
@@ -20,7 +18,7 @@ namespace ABEngine.ABERuntime
 
             Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
 
-            if (enabled)
+            if (GraphicsManager.msaaSampleCount != TextureSampleCount.Count1)
             {
                 resolvedColor = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                    mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
@@ -39,7 +37,7 @@ namespace ABEngine.ABERuntime
 
         public override void Render(int renderLayer)
         {
-            if (enabled)
+            if (GraphicsManager.msaaSampleCount != TextureSampleCount.Count1)
             {
                 cl.ResolveTexture(msRenderTexture, resolvedColor);
                 cl.ResolveTexture(msDepthTexture, resolvedDepth);
@@ -48,7 +46,7 @@ namespace ABEngine.ABERuntime
 
         public void ResolveDepth(int renderLayer)
         {
-            if(enabled)
+            if(GraphicsManager.msaaSampleCount != TextureSampleCount.Count1)
                 cl.ResolveTexture(msDepthTexture, resolvedDepth);
         }
 

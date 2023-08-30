@@ -44,7 +44,8 @@ namespace ABEngine.ABERuntime
 
         public override void SceneSetup()
         {
-            base.pipelineAsset = new NormalsPipeline(normalsRenderFB);
+            if(!GraphicsManager.render2DOnly)
+                base.pipelineAsset = new NormalsPipeline(normalsRenderFB);
         }
 
         public override void Render(int renderLayer)
