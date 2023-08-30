@@ -28,7 +28,7 @@ namespace ABEngine.ABERuntime
 
             normalsDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                         mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil, TextureSampleCount.Count1));
+                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled, TextureSampleCount.Count1));
 
             normalsRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(normalsDepthTexture, cameraNormalTexture));
 
@@ -89,6 +89,11 @@ namespace ABEngine.ABERuntime
         internal override Texture GetMainColorAttachent()
         {
             return cameraNormalTexture;
+        }
+
+        internal override Texture GetDepthAttachment()
+        {
+            return normalsDepthTexture;
         }
 
         public override void CleanUp(bool reload, bool newScene, bool resize)
