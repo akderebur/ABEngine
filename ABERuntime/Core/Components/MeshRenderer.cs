@@ -2,6 +2,7 @@
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using Halak;
+using Veldrid;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -10,9 +11,13 @@ namespace ABEngine.ABERuntime.Components
         public PipelineMaterial material { get; set; }
         public Mesh mesh { get; set; }
 
+        internal DeviceBuffer vertexUniformBuffer;
+        internal ResourceSet vertexTransformSet;
+
         public MeshRenderer()
 		{
             material = GraphicsManager.GetUber3D();
+            SetupResources();
         }
 
         public MeshRenderer(Mesh mesh) : this()
@@ -24,6 +29,13 @@ namespace ABEngine.ABERuntime.Components
         {
             this.mesh = mesh;
             this.material = material;
+            SetupResources();
+        }
+
+        void SetupResources()
+        {
+            vertexUniformBuffer = GraphicsManager.rf.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
+            vertexTransformSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_VS, vertexUniformBuffer));
         }
 
         public JValue Serialize()

@@ -37,6 +37,7 @@ namespace ABEngine.ABERuntime.Tweening
         {
             Tweener tweener = GetTweener(transform);
             Vector3 startRot = transform.localEulerAngles;
+            startRot = new Vector3(startRot.X % MathF.PI, startRot.Y % MathF.PI, startRot.Z % MathF.PI);
 
             var tween = new Tween((float time) =>
             {

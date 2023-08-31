@@ -191,7 +191,7 @@ namespace ABEngine.ABERuntime
             // Shader propery Uniforms
             var shaderPropUniform = rsFactory.CreateResourceLayout(
                new ResourceLayoutDescription(
-                   new ResourceLayoutElementDescription("ShaderProps", ResourceKind.UniformBuffer, ShaderStages.Fragment)));
+                   new ResourceLayoutElementDescription("ShaderProps", ResourceKind.UniformBuffer, ShaderStages.Vertex | ShaderStages.Fragment)));
             dest.resourceLayouts.Add(shaderPropUniform);
 
             // Texture Uniforms

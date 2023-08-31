@@ -68,12 +68,12 @@ namespace ABEngine.ABERuntime
 
                 // Update vertex uniform
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
-                gd.UpdateBuffer(mesh.vertexUniformBuffer, 0, sharedVertexUniform);
+                gd.UpdateBuffer(mr.vertexUniformBuffer, 0, sharedVertexUniform);
 
                 cl.SetVertexBuffer(0, mesh.vertexBuffer);
                 cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
 
-                cl.SetGraphicsResourceSet(1, mesh.vertexTransformSet);
+                cl.SetGraphicsResourceSet(1, mr.vertexTransformSet);
 
                 // Material Resource Sets
                 if (mr.material.bindableSets.Count > 0)

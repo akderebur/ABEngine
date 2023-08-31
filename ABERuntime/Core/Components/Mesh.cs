@@ -19,15 +19,9 @@ namespace ABEngine.ABERuntime
 
         internal DeviceBuffer vertexBuffer;
         internal DeviceBuffer indexBuffer;
-        internal DeviceBuffer vertexUniformBuffer;
-
-        internal ResourceSet vertexTransformSet;
 
         public Mesh()
         {
-            // Mesh model matrix
-            vertexUniformBuffer = GraphicsManager.rf.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
-            vertexTransformSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_VS, vertexUniformBuffer));
         }
 
         internal Mesh(uint hash) : this()

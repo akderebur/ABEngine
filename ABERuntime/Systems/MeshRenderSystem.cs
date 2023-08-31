@@ -184,7 +184,7 @@ namespace ABEngine.ABERuntime
 
                 // Update vertex uniform
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
-                gd.UpdateBuffer(mesh.vertexUniformBuffer, 0, sharedVertexUniform);
+                gd.UpdateBuffer(mr.vertexUniformBuffer, 0, sharedVertexUniform);
 
                 mr.material.pipelineAsset.BindPipeline();
 
@@ -192,7 +192,7 @@ namespace ABEngine.ABERuntime
                 cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
 
                 cl.SetGraphicsResourceSet(0, Game.pipelineSet);
-                cl.SetGraphicsResourceSet(1, mesh.vertexTransformSet);
+                cl.SetGraphicsResourceSet(1, mr.vertexTransformSet);
 
 
                 // Material Resource Sets
@@ -269,7 +269,7 @@ namespace ABEngine.ABERuntime
 
                 // Update vertex uniform
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
-                gd.UpdateBuffer(mesh.vertexUniformBuffer, 0, sharedVertexUniform);
+                gd.UpdateBuffer(mr.vertexUniformBuffer, 0, sharedVertexUniform);
 
                 mr.material.pipelineAsset.BindPipeline();
 
@@ -277,7 +277,7 @@ namespace ABEngine.ABERuntime
                 cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
 
                 cl.SetGraphicsResourceSet(0, Game.pipelineSet);
-                cl.SetGraphicsResourceSet(1, mesh.vertexTransformSet);
+                cl.SetGraphicsResourceSet(1, mr.vertexTransformSet);
 
 
                 // Material Resource Sets
