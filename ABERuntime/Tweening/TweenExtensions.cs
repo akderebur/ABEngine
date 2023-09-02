@@ -94,11 +94,30 @@ namespace ABEngine.ABERuntime.Tweening
             return tween;
         }
 
+
+        public static Tween TweenFloat(this PipelineMaterial material, Transform transform, string propName, float startValue, float endValue, float duration)
+        {
+            Tweener tweener = GetTweener(transform);
+
+            var tween = new Tween((float time) =>
+            {
+                material.SetFloat(propName, Lerp(startValue, endValue, time));
+            }, duration);
+            tweener.SetTween(tween);
+            tween.Start();
+            return tween;
+        }
+
         public static void KillTweens(this Transform transform)
 		{
 			if (transform.entity.Has<Tweener>())
 				transform.entity.Remove<Tweener>();
 		}
+
+        public static float Lerp(float start, float end, float amount)
+        {
+            return start + (end - start) * amount;
+        }
     }
 }
 
