@@ -10,7 +10,7 @@ using Force.Crc32;
 using System.Text;
 using Arch.Core;
 using Arch.Core.Extensions;
-using Box2D.NetStandard.Common;
+using ABEngine.ABERuntime.Components;
 
 namespace ABEngine.ABERuntime
 {

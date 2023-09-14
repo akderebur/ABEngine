@@ -9,6 +9,7 @@ using Arch.Core.Extensions;
 using Arch.Core;
 using Arch.Core.Utils;
 using System.Collections.Generic;
+using ABEngine.ABERuntime.Components;
 
 namespace ABEngine.ABERuntime
 {

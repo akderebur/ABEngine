@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Runtime.Intrinsics;
 using ABEngine.ABERuntime;
+using ABEngine.ABERuntime.Components;
 using ImGuiNET;
 
 namespace ABEngine.ABEUI

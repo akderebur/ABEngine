@@ -7,7 +7,7 @@ using ABEngine.ABERuntime.Core.Math;
 using Arch.Core;
 using Arch.Core.Extensions;
 
-namespace ABEngine.ABERuntime
+namespace ABEngine.ABERuntime.Components
 {
     public class Transform : JSerializable
     {
