@@ -20,6 +20,7 @@ using ABEngine.ABEditor.ImGuiPlugins;
 using Halak;
 using Arch.Core;
 using Arch.Core.Extensions;
+using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABEditor
 {

@@ -14,9 +14,8 @@ using System.Collections;
 using Box2D.NetStandard.Common;
 using Arch.CommandBuffer;
 using Arch.Core.Utils;
-using ABEngine.ABERuntime.ECS;
 
-namespace ABEngine.ABERuntime
+namespace ABEngine.ABERuntime.ECS
 {
     public static class EntityManager
     {

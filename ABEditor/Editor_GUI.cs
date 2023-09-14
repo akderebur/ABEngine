@@ -19,6 +19,7 @@ using ImGuiNET;
 using ABEngine.ABEditor.PropertyDrawers;
 using Arch.Core;
 using Arch.Core.Extensions;
+using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABEditor
 {

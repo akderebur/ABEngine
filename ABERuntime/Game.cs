@@ -26,6 +26,7 @@ using System.Collections;
 using Arch.Core.Extensions.Internal;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using ABEngine.ABERuntime.ECS;
 
 namespace ABEngine.ABERuntime
 {

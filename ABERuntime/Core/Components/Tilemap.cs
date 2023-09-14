@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Physics;
 using Arch.Core;
 using Arch.Core.Extensions;

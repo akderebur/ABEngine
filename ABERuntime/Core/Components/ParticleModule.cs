@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using ABEngine.ABERuntime.Core.Math;
+using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
 using Box2D.NetStandard.Common;
 using Halak;
