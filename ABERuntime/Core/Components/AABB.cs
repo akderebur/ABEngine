@@ -27,6 +27,19 @@ namespace ABEngine.ABERuntime.Components
             size = new Vector2(1f, 1f);
         }
 
+        public Box2D.NetStandard.Collision.AABB ToB2D(Transform transform)
+        {
+            Vector3 centerOff = new Vector3(center, 0f) * transform.worldScale + transform.worldPosition;
+
+            float extentX = size.X / 2f * transform.worldScale.X;
+            float extentY = size.Y / 2f * transform.worldScale.Y;
+
+            Vector2 lower = new Vector2(centerOff.X - extentX, centerOff.Y - extentY);
+            Vector2 upper = new Vector2(centerOff.X + extentX, centerOff.Y + extentY);
+
+            return new Box2D.NetStandard.Collision.AABB(lower, upper);
+        }
+
         public bool CheckCollisionMouse(Transform transform, Vector2 mousePos)
         {
             if (Game.activeCam == null)

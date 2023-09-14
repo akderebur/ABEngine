@@ -430,8 +430,11 @@ namespace ABEngine.ABEditor
                 DrawBegin();
                 MainRender();
 
+                _commandList.SetFramebuffer(compositeRenderFB);
+                _commandList.SetFullViewports();
+
                 //_commandList.ClearDepthStencil(0f);
-                //colDebugSystem.Render();
+                colDebugSystem.Render();
                 //TMColliderGizmo.Render();
                 // TODO Render extensions
 

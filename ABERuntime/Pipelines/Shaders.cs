@@ -773,8 +773,9 @@ void main()
     //    radialFalloff = 0;
 
   
- 
-    float finalInt = fs_Intensity * radialFalloff;
+    // Fix falloff
+    //float finalInt = fs_Intensity * radialFalloff;
+    float finalInt = fs_Intensity;
     vec3 endColor = fs_LightColor.rgb * finalInt;
 
     float volInt = 0.0;
@@ -794,6 +795,7 @@ void main()
 
 
      OutputColor = vec4(color, sampleColor.a);
+     //OutputColor = sampleColor;
 }
 ";
 

@@ -10,6 +10,7 @@ using Force.Crc32;
 using System.Text;
 using Arch.Core;
 using Arch.Core.Extensions;
+using Box2D.NetStandard.Common;
 
 namespace ABEngine.ABERuntime
 {
@@ -87,6 +88,12 @@ namespace ABEngine.ABERuntime
         public static Vector2 PixelToWorld(this Vector3 vec)
         {
             return new Vector2(vec.X, vec.Y) / 100f;
+        }
+
+        public static Vector3 CanvasToWorld(this Vector2 vec)
+        {
+            Vector3 world = new Vector3(vec.X / 100f, vec.Y / 100f, 0f);
+            return world + Game.activeCam.worldPosition;
         }
 
         public static Vector2 MouseToZoomed(this Vector2 mousePos)

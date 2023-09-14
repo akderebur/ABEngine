@@ -294,7 +294,7 @@ namespace ABEngine.ABERuntime
             rbMoveSystem = new RigidbodyMoveSystem();
             renderExtensions = new List<RenderSystem>();
             tweenSystem = new Tweening.TweenSystem();
-            //colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
             particleSystem = new ParticleModuleSystem();
 
 
@@ -589,6 +589,12 @@ namespace ABEngine.ABERuntime
                 {
                     rendExt.Render();
                 }
+
+                //_commandList.SetFramebuffer(compositeRenderFB);
+                //_commandList.SetFullViewports();
+
+                //colDebugSystem.Render();
+
                 //DrawEnd();
 
                 // Copy frame buffer
@@ -922,7 +928,10 @@ namespace ABEngine.ABERuntime
 
             Camera camera = Game.activeCam.entity.Get<Camera>();
             if (camera.cameraProjection == CameraProjection.Orthographic)
-                projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, -1000f, 1000f);
+            {
+                Vector2 extents = canvas.canvasSize / 2f / 100f;
+                projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(-extents.X, extents.X, -extents.Y, extents.Y, -1000f, 1000f);
+            }
             else
                 projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 0.1f, 1000f);
 
@@ -979,7 +988,7 @@ namespace ABEngine.ABERuntime
             gd = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions(
                 debug: false,
                 swapchainDepthFormat: null,
-                syncToVerticalBlank: false,
+                syncToVerticalBlank: true,
                 resourceBindingModel: ResourceBindingModel.Improved,
                 preferDepthRangeZeroToOne: true,
                 preferStandardClipSpaceYDirection: true,

@@ -57,31 +57,42 @@ namespace ABEngine.ABERuntime
             //if (targPos.Y < cam.cutoffY)
             //    targPos.Y = cam.cutoffY;
 
-            //// Define a smoothTime (analogous to Unity's smoothTime in SmoothDamp)
-            //float smoothTime = 0.05f;
-            //// Calculate the difference between the current and target positions
-            //Vector3 diff = targPos - camTrans.localPosition;
-            //// Calculate a "dampened" velocity based on the difference, the current velocity, and the smooth time
-            //cam.velocity = cam.velocity + diff * (2f / smoothTime) * deltaTime - cam.velocity * (1f / smoothTime) * deltaTime;
-            //// Update the new position based on the dampened velocity
-            //Vector3 newPos = camTrans.localPosition + cam.velocity * deltaTime;
-            //newPos.Z = 0f;
-
             //if (cam.ignoreY)
             //    newPos.Y = camTrans.localPosition.Y;
 
             //camTrans.localPosition = newPos;
 
             Vector3 targPos = cam.followTarget.worldPosition + cam.offset;
-            if (targPos.Y < cam.cutoffY)
-                targPos.Y = cam.cutoffY;
 
-            Vector3 newPos = Vector3.Lerp(camTrans.localPosition, targPos, cam.speed * deltaTime);
+            // Define a smoothTime (analogous to Unity's smoothTime in SmoothDamp)
+            float smoothTime = 0.02f;
+            // Calculate the difference between the current and target positions
+            Vector3 diff = targPos - camTrans.localPosition;
+
+
+            //if (cam.velocity.Y < 0)
+            //{
+            //    smoothTime = 0.01f;
+            //}
+
+            // Calculate a "dampened" velocity based on the difference, the current velocity, and the smooth time
+            cam.velocity = cam.velocity + diff * (2f / smoothTime) * deltaTime - cam.velocity * (1f / smoothTime) * deltaTime;
+
+
+            //// Update the new position based on the dampened velocity
+            Vector3 newPos = camTrans.localPosition + cam.velocity * deltaTime;
             newPos.Z = 0f;
 
-            //Vector3 newPos = cam.followTarget.worldPosition + cam.offset;
-            if (cam.ignoreY)
-                newPos.Y = camTrans.localPosition.Y;
+
+            //if (targPos.Y < cam.cutoffY)
+            //    targPos.Y = cam.cutoffY;
+
+            //Vector3 newPos = Vector3.Lerp(camTrans.localPosition, targPos, cam.speed * deltaTime);
+            //newPos.Z = 0f;
+
+            ////Vector3 newPos = cam.followTarget.worldPosition + cam.offset;
+            //if (cam.ignoreY)
+            //    newPos.Y = camTrans.localPosition.Y;
 
             camTrans.localPosition = newPos;
         }
