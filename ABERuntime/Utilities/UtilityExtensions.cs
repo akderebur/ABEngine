@@ -90,11 +90,43 @@ namespace ABEngine.ABERuntime
             return new Vector2(vec.X, vec.Y) / 100f;
         }
 
-        public static Vector3 CanvasToWorld(this Vector2 vec)
+        public static Vector2 ScreenToCanvas(this Vector2 screenPos)
         {
-            Vector3 world = new Vector3(vec.X / 100f, vec.Y / 100f, 0f);
-            return world + Game.activeCam.worldPosition;
+            Vector2 ratio = screenPos / Game.screenSize;
+            return Game.canvas.canvasSize * ratio;
         }
+
+        public static Vector3 ScreenToWorld(this Vector2 screenPoint)
+        {
+            return UnprojectOrtho(screenPoint, Game.pipelineData.Projection, Game.pipelineData.View, Game.screenSize.X, Game.screenSize.Y);
+        }
+
+        public static Vector3 UnprojectOrtho(Vector2 screenPoint, Matrix4x4 projection, Matrix4x4 view, float viewportWidth, float viewportHeight)
+        {
+            // Convert screen point to normalized device coordinates
+            Vector3 point = new Vector3(
+                (screenPoint.X / viewportWidth) * 2.0f - 1.0f,
+                (screenPoint.Y / viewportHeight) * 2.0f - 1.0f,
+                0);  // Z can be set to 0 in orthographic projection
+
+            // Invert view and projection matrices
+            Matrix4x4.Invert(view, out Matrix4x4 invertedView);
+            Matrix4x4.Invert(projection, out Matrix4x4 invertedProjection);
+
+            // Transform to eye space
+            Vector3 eyeSpace = Vector3.Transform(point, invertedProjection);
+
+            // Transform to world space
+            Vector3 worldSpace = Vector3.Transform(eyeSpace, invertedView);
+
+            return worldSpace;
+        }
+
+        //public static Vector3 CanvasToWorld(this Vector2 vec)
+        //{
+        //    Vector3 world = new Vector3(vec.X / 100f, vec.Y / 100f, 0f);
+        //    return world + Game.activeCam.worldPosition;
+        //}
 
         public static Vector2 MouseToZoomed(this Vector2 mousePos)
         {

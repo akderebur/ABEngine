@@ -480,7 +480,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             Sprite spr = null;
             if (cursorSprite != Entity.Null)
             {
-                cursorSprite.Get<Transform>().localPosition = Game.activeCam.worldPosition + new Vector3(ImGui.GetMousePos().MouseToZoomed().ToImGuiVector2().PixelToWorld(), 0.5f);
+                cursorSprite.Get<Transform>().localPosition = Input.GetMousePosition().ScreenToWorld();
                 spr = cursorSprite.Get<Sprite>();
 
                 if (Input.GetKeyDown(Key.Q))

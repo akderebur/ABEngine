@@ -341,8 +341,8 @@ namespace ABEngine.ABERuntime
             camMoveSystem.Start();
             lightRenderSystem.Start();
             particleSystem.Start();
-            //if (debug)
-            //    colDebugSystem.Start();
+            if (debug)
+                colDebugSystem.Start();
            
 
             foreach (var rendExt in renderExtensions)
@@ -594,7 +594,7 @@ namespace ABEngine.ABERuntime
                 //_commandList.SetFramebuffer(compositeRenderFB);
                 //_commandList.SetFullViewports();
 
-                //colDebugSystem.Render();
+                colDebugSystem.Render();
 
                 //DrawEnd();
 
@@ -836,8 +836,8 @@ namespace ABEngine.ABERuntime
                 meshRenderSystem.Update(newTime, elapsed);
             }
             lightRenderSystem.Update(newTime, elapsed);
-            //if(debug)
-            //    colDebugSystem.Update(newTime, elapsed);
+            if(debug)
+                colDebugSystem.Update(newTime, elapsed);
         }
 
       
@@ -1090,6 +1090,16 @@ namespace ABEngine.ABERuntime
                     var spriteSize = entity.Get<Sprite>().size;
                     newBB.size = spriteSize;
                     newBB.sizeSet = true;
+                }
+            });
+
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref CircleCollider newCC) =>
+            {
+                if (!newCC.sizeSet && entity.Has<Sprite>())
+                {
+                    var spriteSize = entity.Get<Sprite>().size;
+                    newCC.radius = spriteSize.X;
+                    newCC.sizeSet = true;
                 }
             });
 

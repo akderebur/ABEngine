@@ -36,7 +36,7 @@ namespace ABEngine.ABERuntime
             fixtureDef.filter.categoryBits = rb.collisionLayer.categoryBits;
             fixtureDef.filter.maskBits = rb.collisionLayer.maskBits;
 
-            Shape boxShape = null;
+            Shape shape = null;
 
             if(rbEnt.Has<PolygonCollider>())
             {
@@ -45,8 +45,8 @@ namespace ABEngine.ABERuntime
 
                 //boxShape = new ChainShape();
                 //((ChainShape)boxShape).CreateLoop(points.ToArray());
-                boxShape = new PolygonShape();
-                ((PolygonShape)boxShape).Set(points.ToArray());
+                shape = new PolygonShape();
+                ((PolygonShape)shape).Set(points.ToArray());
 
                 fixtureDef.isSensor = rb.isTrigger;
 
@@ -61,20 +61,31 @@ namespace ABEngine.ABERuntime
                 float extentX = width / 2f;
                 float extentY = height / 2f;
 
-                boxShape = new PolygonShape();
+                shape = new PolygonShape();
                 Vector2[] vs = new Vector2[4];
                 vs[0] = new Vector2(center.X - extentX, center.Y - extentY);
                 vs[1] = new Vector2(center.X + extentX, center.Y - extentY);
                 vs[2] = new Vector2(center.X + extentX, center.Y + extentY);
                 vs[3] = new Vector2(center.X - extentX, center.Y + extentY);
-                ((PolygonShape)boxShape).Set(vs);
+                ((PolygonShape)shape).Set(vs);
 
                 fixtureDef.isSensor = rb.isTrigger;
             }
+            else if(rbEnt.Has<CircleCollider>())
+            {
+                CircleCollider cc = rbEnt.Get<CircleCollider>();
+                float radiusWS = cc.radius * rbTrans.worldScale.X;
+                Vector2 center = (cc.center * new Vector2(rbTrans.worldScale.X, rbTrans.worldScale.Y)).ToB2DVector();
+
+                CircleShape circleShape = new CircleShape();
+                circleShape.Center = center;
+                circleShape.Radius = radiusWS;
+                shape = circleShape;
+            }
 
 
-            if (boxShape != null)
-                fixtureDef.shape = boxShape;
+            if (shape != null)
+                fixtureDef.shape = shape;
 
             fixtureDef.density = rb.density;
             fixtureDef.friction = rb.friction;

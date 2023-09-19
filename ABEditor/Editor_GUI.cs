@@ -363,7 +363,7 @@ namespace ABEngine.ABEditor
                 lastCell.entity.Get<Sprite>().tintColor = new Vector4(1f, 1f, 1f, 0.3f);
 
             tilemapCollision = Input.GetKey(Key.C);
-            Vector2 worldMouse = Input.GetMousePosition().MouseToZoomed().PixelToWorld() + Game.activeCam.worldPosition.ToVector2();
+            Vector2 worldMouse = Input.GetMousePosition().ScreenToWorld().ToVector2();
             var selCell = gridCells.OrderBy(c => Vector2.Distance(c.worldPosition.ToVector2(), worldMouse)).First();
             if (selCell != null)
             {
@@ -427,9 +427,8 @@ namespace ABEngine.ABEditor
             lastCell = selCell;
 
             Vector3 camPos = Game.activeCam.worldPosition;
-            float xRound = MathF.Floor(camPos.X / worldOffset.X) * worldOffset.X;
-            float yRound = MathF.Floor(camPos.Y / worldOffset.Y) * worldOffset.Y;
-
+            float xRound = MathF.Floor(camPos.X / worldOffset.X) * worldOffset.X - 30 * worldOffset.X;
+            float yRound = MathF.Floor(camPos.Y / worldOffset.Y) * worldOffset.Y - 20 * worldOffset.Y;
 
             Vector3 offset = new Vector3(3, 0, 0f);
             Vector3 endPos = new Vector3(xRound, yRound, 0f);
@@ -443,6 +442,7 @@ namespace ABEngine.ABEditor
         {
             if(TilemapDrawer.updateGrid)
             {
+                TilemapDrawer.updateGrid = false;
                 Texture2D gridTex = EditorAssetCache.GetGridTexture();
 
                 worldOffset = TilemapDrawer.tileSize.PixelToWorld();
@@ -894,6 +894,10 @@ namespace ABEngine.ABEditor
                 else if (ImGui.MenuItem("AABB"))
                 {
                     ComponentManager.AddAABB(selectedEntity);
+                }
+                else if (ImGui.MenuItem("Circle Collider"))
+                {
+                    ComponentManager.AddCircleCollider(selectedEntity);
                 }
                 else if (ImGui.MenuItem("Rigidbody"))
                 {

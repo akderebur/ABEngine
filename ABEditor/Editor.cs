@@ -436,7 +436,7 @@ namespace ABEngine.ABEditor
 
                 //_commandList.ClearDepthStencil(0f);
                 colDebugSystem.Render();
-                //TMColliderGizmo.Render();
+                TMColliderGizmo.Render();
                 // TODO Render extensions
 
          
@@ -473,17 +473,10 @@ namespace ABEngine.ABEditor
 
         private void Zoom()
         {
-            float canvasWidth = canvas.canvasSize.X / 100f;
-            float canvasHeight = canvas.canvasSize.Y / 100f;
-            float zoomedWidth = canvasWidth * zoomFactor;
-            float zoomedHeight = canvasHeight * zoomFactor;
+            Vector2 extents = (canvas.canvasSize / 2f / 100f) * zoomFactor;
+            float canvasWidth = Game.canvas.canvasSize.X / 100f;
 
-            float left = (canvasWidth - zoomedWidth) / 2f;
-            float right = left + zoomedWidth;
-            float bottom = (canvasHeight - zoomedHeight) / 2f;
-            float top = bottom + zoomedHeight;
-
-            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, -1000f, 1000f);
+            projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(-extents.X, extents.X, -extents.Y, extents.Y, -1000f, 1000f);
             Game.pipelineData.Projection = Game.projectionMatrix;
 
             if (GameWorld != null)
@@ -520,6 +513,7 @@ namespace ABEngine.ABEditor
 
             particleSystem.Update(newTime, elapsed);
             spriteAnimSystem.Update(newTime, elapsed);
+            colDebugSystem.Update(newTime, elapsed);
 
             foreach (var editorSystem in editorSystems)
             {
@@ -530,7 +524,6 @@ namespace ABEngine.ABEditor
             spriteBatchSystem.Update(newTime, elapsed);
             meshRenderSystem.Update(newTime, elapsed);
             lightRenderSystem.Update(newTime, elapsed);
-            colDebugSystem.Update(newTime, elapsed);
         }
 
         private void FinalRender()

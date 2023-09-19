@@ -317,15 +317,6 @@ namespace ABEngine.ABERuntime.Components
         {
         }
 
-        internal void CopyFrom(Transform other)
-        {
-            _localPosition = other.localPosition;
-            _localRotation = other.localRotation;
-            _localEulerAngles = other._localEulerAngles;
-            _localScale = other.localScale;
-
-            RecalculateTRS();
-        }
 
         public JSerializable GetCopy()
         {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Numerics;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Debug;
 using Arch.Core;
 using Arch.Core.Extensions;
 using ImGuiNET;
@@ -158,27 +159,40 @@ namespace ABEngine.ABEditor
             Camera cam = Game.activeCam.entity.Get<Camera>();
             if (cam.cameraProjection == CameraProjection.Orthographic)
             {
-                if (!Input.GetKey(Veldrid.Key.ControlLeft) && Input.GetMouseButtonDown(Veldrid.MouseButton.Left))
+
+                //if (!Input.GetKey(Veldrid.Key.ControlLeft) && Input.GetMouseButtonDown(Veldrid.MouseButton.Left))
+                //{
+                //    var query = new QueryDescription().WithAll<Transform>().WithAny<AABB, CircleCollider>();
+
+                //    Game.GameWorld.Query(in query, (in Entity entity, ref AABB bbox, ref Transform transform) =>
+                //    {
+                //        if (bbox.CheckCollisionMouse(transform, Input.GetMousePosition()))
+                //        {
+                //            selectedTransform = transform;
+                //            dragDelta = selectedTransform.worldPosition - Input.GetMousePosition().ScreenToWorld();
+                //            Editor.selectedEntity = entity;
+
+                //            return; ;
+                //        }
+                //    });
+                //}
+                //else
+
+
+                if(!Input.GetKey(Veldrid.Key.ControlLeft) && Input.GetMouseButtonDown(Veldrid.MouseButton.Left))
                 {
-                    var query = new QueryDescription().WithAll<AABB>();
-
-                    Game.GameWorld.Query(in query, (in Entity entity, ref AABB bbox, ref Transform transform) =>
+                    if(selectedTransform != ColliderDebugSystem.lastTrans)
                     {
-                        if (bbox.CheckCollisionMouse(transform, Input.GetMousePosition()))
-                        {
-                            selectedTransform = transform;
-                            dragDelta = selectedTransform.localPosition - new Vector3(Input.GetMousePosition().PixelToWorld() * Game.zoomFactor, 0f);
-                            Editor.selectedEntity = entity;
-
-                            return; ;
-                        }
-                    });
+                        selectedTransform = ColliderDebugSystem.lastTrans;
+                        dragDelta = selectedTransform.worldPosition - Input.GetMousePosition().ScreenToWorld();
+                        Editor.selectedEntity = selectedTransform.entity;
+                    }
                 }
-                else if (Input.GetMouseButton(Veldrid.MouseButton.Left))
+                if (Input.GetMouseButton(Veldrid.MouseButton.Left))
                 {
                     if (selectedTransform != null)
                     {
-                        selectedTransform.localPosition = new System.Numerics.Vector3(Input.GetMousePosition().PixelToWorld() * Game.zoomFactor, 0f) + dragDelta;
+                        selectedTransform.localPosition = Input.GetMousePosition().ScreenToWorld() + dragDelta;
                     }
                 }
                 else

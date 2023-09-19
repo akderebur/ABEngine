@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace ABEngine.ABERuntime.Components
 {
-    public class AABB : ABComponent
+    public class AABB : ABComponent, ICollider
     {
         public Vector2 size { get; set; }
         public Vector2 center { get; set; }
@@ -49,37 +49,17 @@ namespace ABEngine.ABERuntime.Components
             if (camEnt == Entity.Null)
                 return false;
 
-            Matrix4x4 camRelTrans = transform.worldMatrix * Game.activeCam.worldToLocaMatrix;
+            Vector3 mouseWP = mousePos.ScreenToWorld();
 
-            Vector3 camRelPos = Vector3.Zero;
-            Vector3 camRelSca = Vector3.One;
-            Quaternion camRelRot = Quaternion.Identity;
+            Vector3 centerWP = new Vector3(center, 0f) * transform.worldScale + transform.worldPosition;
 
-            Matrix4x4.Decompose(camRelTrans, out camRelSca, out camRelRot, out camRelPos);
+            float extentX = size.X / 2f * transform.worldScale.X;
+            float extentY = size.Y / 2f * transform.worldScale.Y;
 
-            Vector2 resScale = Game.screenSize / Game.canvas.canvasSize * 100f;
-            camRelPos *= new Vector3(resScale.X, resScale.Y, 1f);
-
-            Vector3 centerOff = new Vector3(center, 0f) * transform.worldScale;
-            camRelPos += (centerOff * new Vector3(resScale.X, resScale.Y, 1f));
-
-
-            float extentX = size.X / 2f * transform.worldScale.X * resScale.X;
-            float extentY = size.Y / 2f * transform.worldScale.Y * resScale.Y;
-
-            // Adjust mouse position according to zoom
-            Vector2 zoomedMousePos = mousePos.MouseToZoomed();
-
-            bool isClicked = zoomedMousePos.X > camRelPos.X - extentX &&
-                             zoomedMousePos.X < camRelPos.X + extentX &&
-                             zoomedMousePos.Y > camRelPos.Y - extentY &&
-                             zoomedMousePos.Y < camRelPos.Y + extentY;
-
-            //bool isClicked = mousePos.X > camRelPos.X - extentX &&
-            //        mousePos.X < camRelPos.X + extentX &&
-            //        mousePos.Y > camRelPos.Y - extentY &&
-            //        mousePos.Y < camRelPos.Y + extentY;
-
+            bool isClicked = mouseWP.X > centerWP.X - extentX &&
+                             mouseWP.X < centerWP.X + extentX &&
+                             mouseWP.Y > centerWP.Y - extentY &&
+                             mouseWP.Y < centerWP.Y + extentY;
 
 
             return isClicked; 

@@ -44,6 +44,18 @@ namespace ABEngine.ABEditor
             entity.Add(aabb);
         }
 
+        public static void AddCircleCollider(in Entity entity)
+        {
+            CircleCollider cc = new CircleCollider();
+            if (entity.Has<Sprite>())
+            {
+                Sprite sprite = entity.Get<Sprite>();
+                Vector2 spriteSize = sprite.GetSize();
+                cc.radius = spriteSize.X;
+            }
+            entity.Add(cc);
+        }
+
         public static void AddRigidbody(in Entity entity)
         {
             entity.Add(new Rigidbody());
