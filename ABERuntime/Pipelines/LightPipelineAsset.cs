@@ -31,7 +31,8 @@ namespace ABEngine.ABERuntime.Pipelines
                             new VertexElementDescription("Color", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float4),
                             new VertexElementDescription("Radius", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
                             new VertexElementDescription("Intensity", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
-                            new VertexElementDescription("Volume", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1));
+                            new VertexElementDescription("Volume", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
+                            new VertexElementDescription("Global", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1));
             vertLayout.InstanceStepRate = 1;
 
             GraphicsPipelineDescription lightPipelineDesc = new GraphicsPipelineDescription(

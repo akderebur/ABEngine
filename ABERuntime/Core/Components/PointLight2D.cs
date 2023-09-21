@@ -24,23 +24,25 @@ namespace ABEngine.ABERuntime.Components
 
     public struct LightInfo
     {
-        public const uint VertexSize = 40;
+        public const uint VertexSize = 44;
 
         public Vector3 Position;
         public Vector4 Color;
         public float Radius;
         public float Intensity;
         public float Volume;
+        public float Global;
 
         //public LightInfo(Vector4 color, float radius, float intensity) : this(Vector3.Zero, color, radius, intensity) { }
 
-        public LightInfo(Vector3 position, Vector4 color, float radius, float intensity, float volume)
+        public LightInfo(Vector3 position, Vector4 color, float radius, float intensity, float volume, float global = 0)
         {
             Position = position;
             Radius = radius;
             Intensity = intensity;
             Color = color;
             Volume = volume;
+            Global = global;
         }
     }
 }

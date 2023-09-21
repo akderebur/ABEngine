@@ -133,8 +133,8 @@ namespace ABEngine.ABERuntime
                                                         Vector4.One,
                                                         30,
                                                         GlobalLightIntensity,
-                                                        200f
-                                                        );
+                                                        0f,
+                                                        1);
             for (int i = 0; i < lightList.Count; i++)
             {
                 writemap[i + 1] = lightList[i];

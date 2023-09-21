@@ -769,34 +769,6 @@ namespace ABEngine.ABERuntime
                 // Subscribe entity creation
                 AddSystemFromAttribute(type, system, typeof(SubscribeAnyAttribute), notifyAnySystems);
             }
-
-
-            // Render extensions - Subscribe Any
-            //for (int s = 0; s < renderExtensions.Count; s++)
-            //{
-            //    BaseSystem system = renderExtensions[s];
-            //    Type type = renderExtensions[s].GetType();
-
-            //    object[] attributes = type.GetCustomAttributes(typeof(SubscribeAnyAttribute), false);
-            //    if (attributes.Length > 0)
-            //    {
-            //        List<Type> subTypes = new List<Type>();
-            //        for (int i = 0; i < attributes.Length; i++)
-            //        {
-            //            var attribute = (SubscribeAnyAttribute)attributes[i];
-            //            for (int t = 0; t < attribute.ComponentTypes.Length; t++)
-            //            {
-            //                subTypes.Add(attribute.ComponentTypes[t]);
-            //            }
-            //        }
-
-            //        TypeSignature typeSig = new TypeSignature(subTypes);
-            //        if (notifyAnySystems.ContainsKey(typeSig))
-            //            notifyAnySystems[typeSig].Add(system);
-            //        else
-            //            notifyAnySystems.Add(typeSig, new List<BaseSystem> { system });
-            //    }
-            //}
         }
 
         private protected void MainUpdate(float newTime, float elapsed, float interpolation)
@@ -886,40 +858,6 @@ namespace ABEngine.ABERuntime
         {
             //spriteBatcher.LateRender();
         }
-
-        private static Matrix4x4 CreatePerspective(float fov, float aspectRatio, float near, float far)
-        {
-            if (fov <= 0.0f || fov >= MathF.PI)
-                throw new ArgumentOutOfRangeException(nameof(fov));
-
-            if (near <= 0.0f)
-                throw new ArgumentOutOfRangeException(nameof(near));
-
-            if (far <= 0.0f)
-                throw new ArgumentOutOfRangeException(nameof(far));
-
-            float yScale = 1.0f / MathF.Tan(fov * 0.5f);
-            float xScale = yScale / aspectRatio;
-
-            Matrix4x4 result;
-
-            result.M11 = xScale;
-            result.M12 = result.M13 = result.M14 = 0.0f;
-
-            result.M22 = yScale;
-            result.M21 = result.M23 = result.M24 = 0.0f;
-
-            result.M31 = result.M32 = 0.0f;
-            var negFarRange = float.IsPositiveInfinity(far) ? -1.0f : far / (near - far);
-            result.M33 = negFarRange;
-            result.M34 = -1.0f;
-
-            result.M41 = result.M42 = result.M44 = 0.0f;
-            result.M43 = near * negFarRange;
-
-            return result;
-        }
-
 
         internal static void RefreshProjection(Canvas canvas)
         {

@@ -702,12 +702,13 @@ void main()
     layout(location = 2) in float Radius;
     layout(location = 3) in float Intensity;
     layout(location = 4) in float Volume;
+    layout(location = 5) in float Global;
 
     layout(location = 0) out vec4 fs_LightColor;
     layout(location = 1) out float fs_Intensity;
     layout(location = 2) out float fs_Volume;
     layout(location = 3) out vec2 fs_UV;
-
+    layout(location = 4) out float fs_Global;
 
     void main()
     {
@@ -727,6 +728,7 @@ void main()
         fs_Intensity = Intensity;
         fs_Volume = Volume;
         fs_UV = uv_pos;
+        fs_Global = Global;
     }
 ";
 
@@ -749,6 +751,7 @@ layout(location = 0) in vec4 fs_LightColor;
 layout(location = 1) in float fs_Intensity;
 layout(location = 2) in float fs_Volume;
 layout(location = 3) in vec2 fs_UV;
+layout(location = 4) in float fs_Global;
 
 layout(location = 0) out vec4 OutputColor;
 
@@ -768,14 +771,13 @@ void main()
 
    
     //float radialFalloff = pow(1 - distance, 2);
-    float radialFalloff = 1.0 - smoothstep(-0.2, 1, distance / fs_Volume);
+    float radialFalloff = 1.0 - smoothstep(-0.2, 1, distance) * (1 - fs_Global);
     //if(distance > 1)
     //    radialFalloff = 0;
 
   
     // Fix falloff
-    //float finalInt = fs_Intensity * radialFalloff;
-    float finalInt = fs_Intensity;
+    float finalInt = fs_Intensity * radialFalloff;
     vec3 endColor = fs_LightColor.rgb * finalInt;
 
     float volInt = 0.0;
