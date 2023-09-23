@@ -265,6 +265,7 @@ Vertex
     layout(location = 1) out vec4 fsin_Tint;
     layout(location = 2) out vec2 fsin_UnitUV;
     layout(location = 3) out vec2 fsin_UVScale;
+    layout(location = 4) out vec2 fsin_ObjScale;
 
     //vec2 Pivot = vec2(-0.2, 0);
 
@@ -327,6 +328,7 @@ Vertex
         fsin_Tint = Tint;
         fsin_UnitUV = uv_pos;
         fsin_UVScale = uvScale;
+        fsin_ObjScale = Scale;
     }
 }
 Fragment
@@ -366,6 +368,7 @@ Fragment
     layout(location = 1) in vec4 fsin_Tint;
     layout(location = 2) in vec2 fsin_UnitUV;
     layout(location = 3) in vec2 fsin_UVScale;
+    layout(location = 4) in vec2 fsin_ObjScale;
 
     layout(location = 0) out vec4 outputColor;
     layout(location = 1) out vec4 outputNormal;
@@ -533,9 +536,10 @@ Fragment
        
 	    //vec4 tint = blend_color(color, vec4(1, 1, 1, 1), 0.0);
         outputColor = color;
-        vec4 normalSample = texture(sampler2D(NormalTex, NormalSampler), fsin_TexCoords);
-        normalSample.xy *= vec2(sign(normalSample.x), sign(normalSample.y));
-        outputNormal = normalSample;
+        vec2 normalSample = texture(sampler2D(NormalTex, NormalSampler), fsin_TexCoords).rg * 2.0 - 1.0;
+        normalSample *= vec2(sign(fsin_ObjScale.x), sign(fsin_ObjScale.y));
+        normalSample = (normalSample + 1) * 0.5;
+        outputNormal = vec4(normalSample, 1, 1);
     }
 }
 "
@@ -734,7 +738,7 @@ void main()
 
     vec4 sampleColor = texture(sampler2D(MainTex, MainSampler), screenUV);
     vec4 normalSample =  texture(sampler2D(NormalTex, NormalSampler), screenUV);
-    vec3 normal = normalSample.rgb;  // Get normal from normal map
+    vec3 normal = normalSample.rgb * 2.0 - 1.0;  // Get normal from normal map
 
     vec2 circCoord = 2.0 * fs_UV - 1.0;  // Centered coordinates for the quad
     float distance = length(circCoord);  // Distance from the center of the quad
@@ -744,8 +748,9 @@ void main()
     vec2 lightDir = normalize(circCoord);  // Light direction from quad center to fragment
     float NdotL = max(dot(normal.xy, lightDir), 0.0);  // Compute dot product
 
-    //float nrmAtt = mix(1, NdotL, 1 - normalSample.a);
-    float finalInt = fs_Intensity * radialFalloff * NdotL;  // Multiply by NdotL for normal-based attenuation
+    float normStep = step(length(normal.xy), 1.4);
+    float nrmAtt = mix(1, NdotL, normStep);
+    float finalInt = fs_Intensity * radialFalloff * nrmAtt;  // Multiply by NdotL for normal-based attenuation
     vec3 endColor = fs_LightColor.rgb * finalInt;
 
     vec3 color = mix(sampleColor.rgb * endColor, sampleColor.rgb * fs_Intensity, fs_Global);  // Mix based on fs_Global flag
