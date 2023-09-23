@@ -533,8 +533,9 @@ Fragment
        
 	    //vec4 tint = blend_color(color, vec4(1, 1, 1, 1), 0.0);
         outputColor = color;
-        vec3 normalSample = texture(sampler2D(NormalTex, NormalSampler), fsin_TexCoords).rgb;
-        outputNormal = vec4(normalSample, 1);
+        vec4 normalSample = texture(sampler2D(NormalTex, NormalSampler), fsin_TexCoords);
+        normalSample.xy *= vec2(sign(normalSample.x), sign(normalSample.y));
+        outputNormal = normalSample;
     }
 }
 "
@@ -732,7 +733,7 @@ void main()
     vec2 screenUV = gl_FragCoord.xy / Resolution;
 
     vec4 sampleColor = texture(sampler2D(MainTex, MainSampler), screenUV);
-    vec4 normalSample =  texture(sampler2D(NormalTex, NormalSampler), fs_UV);
+    vec4 normalSample =  texture(sampler2D(NormalTex, NormalSampler), screenUV);
     vec3 normal = normalSample.rgb;  // Get normal from normal map
 
     vec2 circCoord = 2.0 * fs_UV - 1.0;  // Centered coordinates for the quad
@@ -741,7 +742,6 @@ void main()
     float radialFalloff = 1.0 - smoothstep(-0.2, 1, distance) * (1 - fs_Global);  // Adjusted falloff
 
     vec2 lightDir = normalize(circCoord);  // Light direction from quad center to fragment
-    //vec2 lightDir = vec2(1, 0);
     float NdotL = max(dot(normal.xy, lightDir), 0.0);  // Compute dot product
 
     //float nrmAtt = mix(1, NdotL, 1 - normalSample.a);

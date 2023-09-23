@@ -23,11 +23,11 @@ namespace ABEngine.ABERuntime
 
             mainRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled, sampleCount));
+                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled, sampleCount));
 
             spriteNormalsTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled, sampleCount));
+                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled, sampleCount));
 
             mainDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                         mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,

@@ -25,12 +25,12 @@ namespace ABEngine.ABERuntime
             {
                 resolvedColor = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                    mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                    PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled));
+                    mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
 
 
                 resolvedSpriteNormal = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                    mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                    PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled));
+                    mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
 
 
                 resolvedDepth = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
