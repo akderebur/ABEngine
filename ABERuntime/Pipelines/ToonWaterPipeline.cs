@@ -17,7 +17,7 @@ namespace ABEngine.ABERuntime.Pipelines
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_FS);
 
             GraphicsPipelineDescription toonWaterDesc = new GraphicsPipelineDescription(
-                BlendStateDescription.SingleAlphaBlend,
+                new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AlphaBlend, BlendAttachmentDescription.AlphaBlend),
                 //DepthStencilStateDescription.DepthOnlyLessEqual,
                 new DepthStencilStateDescription(true, false, ComparisonKind.LessEqual),
                 RasterizerStateDescription.Default,

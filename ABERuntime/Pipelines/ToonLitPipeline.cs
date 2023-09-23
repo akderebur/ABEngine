@@ -17,7 +17,7 @@ namespace ABEngine.ABERuntime.Pipelines
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_FS);
 
             GraphicsPipelineDescription toonLitDesc = new GraphicsPipelineDescription(
-                BlendStateDescription.SingleAlphaBlend,
+                new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AlphaBlend, BlendAttachmentDescription.AlphaBlend),
                 DepthStencilStateDescription.DepthOnlyLessEqual,
                 RasterizerStateDescription.Default,
                 PrimitiveTopology.TriangleList,

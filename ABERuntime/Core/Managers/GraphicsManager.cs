@@ -62,6 +62,7 @@ namespace ABEngine.ABERuntime
 
         public static ResourceLayout sharedPipelineLayout;
         public static ResourceLayout sharedTextureLayout;
+        public static ResourceLayout sharedSpriteNormalLayout;
         public static ResourceLayout sharedMeshUniform_VS;
         public static ResourceLayout sharedMeshUniform_FS;
 
@@ -210,6 +211,16 @@ namespace ABEngine.ABERuntime
                     new ResourceLayoutElementDescription("SpriteSampler", ResourceKind.Sampler, ShaderStages.Fragment)
             ));
             sharedTextureLayout = texLayout;
+
+            // Texture Layout Normals
+            var texLayoutNormal = gd.ResourceFactory.CreateResourceLayout(
+                new ResourceLayoutDescription(
+                    new ResourceLayoutElementDescription("SpriteTex", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
+                    new ResourceLayoutElementDescription("SpriteSampler", ResourceKind.Sampler, ShaderStages.Fragment),
+                    new ResourceLayoutElementDescription("NormalTex", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
+                    new ResourceLayoutElementDescription("NormalSampler", ResourceKind.Sampler, ShaderStages.Fragment)
+            ));
+            sharedSpriteNormalLayout = texLayoutNormal;
 
             // Shared vertex layouts
             VertexLayoutDescription vertexLayout = new VertexLayoutDescription(

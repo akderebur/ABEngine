@@ -344,6 +344,8 @@ Fragment
 
     layout (set = 1, binding = 0) uniform texture2D SpriteTex; 
     layout (set = 1, binding = 1) uniform sampler SpriteSampler;
+    layout (set = 1, binding = 2) uniform texture2D NormalTex; 
+    layout (set = 1, binding = 3) uniform sampler NormalSampler;
 
     layout (set = 2, binding = 0) uniform ShaderProps
     {
@@ -366,6 +368,7 @@ Fragment
     layout(location = 3) in vec2 fsin_UVScale;
 
     layout(location = 0) out vec4 outputColor;
+    layout(location = 1) out vec4 outputNormal;
 
     // Shine
 
@@ -502,37 +505,6 @@ Fragment
         }
 
 
-        
-        if(EnableShine == -1)
-        {
-            
-            //offset.y -= Time * 0.01; // create a downward movement effect
-            //offset.x += sin(offset.y * 10.0) * 0.1; // add some waviness to the trail
-
-
-            if(fsin_UnitUV.x < 0.5)
-            {
-                vec2 size = fsin_UVScale * 1;
-                vec2 offset =  fsin_TexCoords + size * -velocity;
-                vec4 offColor  = getColor(offset);
-
-                float xDif = 0.5 - fsin_UnitUV.x;
-                xDif *= fsin_UVScale.x;
-                offset.x += xDif;
-                vec4 midCol = getColor(offset);
-
-                float dist = distance(vec2(0.5, 0.45), fsin_UnitUV);
-                float yDis = abs(0.45 - fsin_UnitUV.y);
-                if(yDis < 0.2 && offColor.a == 0 && midCol.a > 0.1)
-                {
-                    color = vec4(0,0,1,1);
-                    color.a = 1 - dist * 3;
-                }
-
-                //color = mix(color, OutlineColor, outline - color.a);
-            }
-        }
-
         if(color.a < 0.1f)
             discard;
 
@@ -558,14 +530,11 @@ Fragment
             //color = vec4(1.0);
         }
 
-        
-        //outputColor = color;
-
-
-
+       
 	    //vec4 tint = blend_color(color, vec4(1, 1, 1, 1), 0.0);
-        color.rgb *= 1;
         outputColor = color;
+        vec3 normalSample = texture(sampler2D(NormalTex, NormalSampler), fsin_TexCoords).rgb;
+        outputNormal = vec4(normalSample, 1);
     }
 }
 "
@@ -744,8 +713,10 @@ void main()
         float Padding;
     };
 
-layout(set = 1, binding = 0) uniform texture2D SpriteTex;
-layout(set = 1, binding = 1) uniform sampler SpriteSampler;
+layout(set = 1, binding = 0) uniform texture2D MainTex;
+layout(set = 1, binding = 1) uniform sampler MainSampler;
+layout(set = 1, binding = 2) uniform texture2D NormalTex;
+layout(set = 1, binding = 3) uniform sampler NormalSampler;
 
 layout(location = 0) in vec4 fs_LightColor;
 layout(location = 1) in float fs_Intensity;
@@ -758,46 +729,28 @@ layout(location = 0) out vec4 OutputColor;
 void main()
 {
 
-    // Light1
-  // Gets the distance from the light's position and the fragment coord
-  vec2 circCoord = 2.0 * fs_UV - 1.0;
+    vec2 screenUV = gl_FragCoord.xy / Resolution;
 
-  vec2 screenUV = gl_FragCoord.xy / Resolution;
+    vec4 sampleColor = texture(sampler2D(MainTex, MainSampler), screenUV);
+    vec4 normalSample =  texture(sampler2D(NormalTex, NormalSampler), fs_UV);
+    vec3 normal = normalSample.rgb;  // Get normal from normal map
 
-  vec4 sampleColor = texture(sampler2D(SpriteTex, SpriteSampler), screenUV);
+    vec2 circCoord = 2.0 * fs_UV - 1.0;  // Centered coordinates for the quad
+    float distance = length(circCoord);  // Distance from the center of the quad
 
-  float distance = distance(vec2(0.0), circCoord);
-  // Calculates the amount of light for the fragment
+    float radialFalloff = 1.0 - smoothstep(-0.2, 1, distance) * (1 - fs_Global);  // Adjusted falloff
 
-   
-    //float radialFalloff = pow(1 - distance, 2);
-    float radialFalloff = 1.0 - smoothstep(-0.2, 1, distance) * (1 - fs_Global);
-    //if(distance > 1)
-    //    radialFalloff = 0;
+    vec2 lightDir = normalize(circCoord);  // Light direction from quad center to fragment
+    //vec2 lightDir = vec2(1, 0);
+    float NdotL = max(dot(normal.xy, lightDir), 0.0);  // Compute dot product
 
-  
-    // Fix falloff
-    float finalInt = fs_Intensity * radialFalloff;
+    //float nrmAtt = mix(1, NdotL, 1 - normalSample.a);
+    float finalInt = fs_Intensity * radialFalloff * NdotL;  // Multiply by NdotL for normal-based attenuation
     vec3 endColor = fs_LightColor.rgb * finalInt;
 
-    float volInt = 0.0;
+    vec3 color = mix(sampleColor.rgb * endColor, sampleColor.rgb * fs_Intensity, fs_Global);  // Mix based on fs_Global flag
 
-    
-
-    //endColor = clamp(vec3(0.3) + endColor, vec3(0), vec3(1));
-    //vec3 color = sampleColor.rgb + sampleColor.rgb * (1.0 / 0.3) * endColor;
-    vec3 color = sampleColor.rgb * endColor;
-    color += fs_LightColor.rgb * volInt * radialFalloff;
-    //color.a = clamp(radialFalloff, 0, 1);
-    //color.rgb = sampleColor.rgb;
-    
-    //vec4 color = mix(sampleColor, sampleColor + sampleColor * fs_LightColor * fs_Intensity, clamp(value, 0, 1));
-
-     //vec4 color = fs_LightColor * fs_Intensity * clamp(value, 0, 1);
-
-
-     OutputColor = vec4(color, sampleColor.a);
-     //OutputColor = sampleColor;
+    OutputColor = vec4(color, sampleColor.a);
 }
 ";
 

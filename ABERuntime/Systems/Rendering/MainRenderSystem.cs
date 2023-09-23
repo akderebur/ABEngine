@@ -8,6 +8,8 @@ namespace ABEngine.ABERuntime
 	public class MainRenderSystem : RenderSystem
 	{
         public Texture mainRenderTexture;
+        public Texture spriteNormalsTexture;
+
         public Texture mainDepthTexture;
         Framebuffer mainRenderFB;
 
@@ -21,13 +23,17 @@ namespace ABEngine.ABERuntime
 
             mainRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled, sampleCount));
+                PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled, sampleCount));
+
+            spriteNormalsTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
+               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
+                PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled, sampleCount));
 
             mainDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
                         mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
                         PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled, sampleCount));
 
-            mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture));
+            mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture, spriteNormalsTexture));
 
 
             foreach (var pipeline in pipelines)
@@ -70,6 +76,7 @@ namespace ABEngine.ABERuntime
             cl.SetFramebuffer(mainRenderFB);
             cl.SetFullViewports();
             cl.ClearColorTarget(0, new RgbaFloat(0f, 0f, 0f, 0f));
+            cl.ClearColorTarget(1, new RgbaFloat(0f, 0f, 0f, 0f));
             cl.ClearDepthStencil(1f);
         }
 
@@ -78,6 +85,7 @@ namespace ABEngine.ABERuntime
             if(resize)
             {
                 mainRenderTexture.Dispose();
+                spriteNormalsTexture.Dispose();
                 mainDepthTexture.Dispose();
                 mainRenderFB.Dispose();
             }
@@ -91,6 +99,11 @@ namespace ABEngine.ABERuntime
         internal override Texture GetMainColorAttachent()
         {
             return mainRenderTexture;
+        }
+
+        internal override Texture GetSecondaryColorAttachment()
+        {
+            return spriteNormalsTexture;
         }
 
         internal override Texture GetDepthAttachment()

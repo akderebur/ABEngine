@@ -222,8 +222,8 @@ namespace ABEngine.ABERuntime
                 meshRenderSystem.SetupResources();
 
             mainRenderSystem.SetupResources();
-            msaaResolveSystem.SetupResources(mainRenderSystem.GetMainColorAttachent(), mainRenderSystem.GetDepthAttachment());
-            lightRenderSystem.SetupResources(msaaResolveSystem.GetMainColorAttachent());
+            msaaResolveSystem.SetupResources(mainRenderSystem.GetMainColorAttachent(), mainRenderSystem.GetSecondaryColorAttachment(), mainRenderSystem.GetDepthAttachment());
+            lightRenderSystem.SetupResources(msaaResolveSystem.GetMainColorAttachent(), msaaResolveSystem.GetSecondaryColorAttachment());
 
             compositeRSSetLight = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
                   GraphicsManager.sharedTextureLayout,

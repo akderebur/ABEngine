@@ -17,7 +17,7 @@ namespace ABEngine.ABERuntime.Pipelines
             PipelineAsset.ParseAsset(Shaders.UberPipelineAsset, this);
 
             GraphicsPipelineDescription uberPipelineDesc = new GraphicsPipelineDescription(
-                BlendStateDescription.SingleAdditiveBlend,
+                new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AdditiveBlend, BlendAttachmentDescription.AdditiveBlend),
                 DepthStencilStateDescription.DepthOnlyLessEqual,
                 RasterizerStateDescription.CullNone,
                 PrimitiveTopology.TriangleList,
