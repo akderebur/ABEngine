@@ -8,6 +8,8 @@ namespace ABEngine.ABERuntime.Pipelines
 {
     public class LightPipelineAsset : PipelineAsset
     {
+        ResourceLayout texLayout;
+
         public LightPipelineAsset(Framebuffer fb) : base(fb, true, false)
         {
 
@@ -35,6 +37,15 @@ namespace ABEngine.ABERuntime.Pipelines
                             new VertexElementDescription("Global", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1));
             vertLayout.InstanceStepRate = 1;
 
+            // Tex Layout
+            texLayout = rf.CreateResourceLayout(
+               new ResourceLayoutDescription(
+                   new ResourceLayoutElementDescription("MainTex", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
+                   new ResourceLayoutElementDescription("MainSampler", ResourceKind.Sampler, ShaderStages.Fragment),
+                   new ResourceLayoutElementDescription("NormalTex", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
+                   new ResourceLayoutElementDescription("NormalSampler", ResourceKind.Sampler, ShaderStages.Fragment)
+            ));
+
             GraphicsPipelineDescription lightPipelineDesc = new GraphicsPipelineDescription(
                new BlendStateDescription(RgbaFloat.White, false,
                new BlendAttachmentDescription
@@ -61,7 +72,7 @@ namespace ABEngine.ABERuntime.Pipelines
                         vertLayout
                     },
                     lightShaders),
-                new ResourceLayout[] { GraphicsManager.sharedPipelineLayout, GraphicsManager.sharedTextureLayout },
+                new ResourceLayout[] { GraphicsManager.sharedPipelineLayout, texLayout },
                 fb.OutputDescription);
 
             pipeline = rf.CreateGraphicsPipeline(ref lightPipelineDesc);
@@ -78,6 +89,11 @@ namespace ABEngine.ABERuntime.Pipelines
 
             // Resource sets
             cl.SetGraphicsResourceSet(0, Game.pipelineSet);
+        }
+
+        public ResourceLayout GetTexResourceLayout()
+        {
+            return texLayout;
         }
     }
 }

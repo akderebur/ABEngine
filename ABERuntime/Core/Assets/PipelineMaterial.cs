@@ -134,6 +134,7 @@ namespace ABEngine.ABERuntime
             {
                 int texInd = texNameInd * 2;
                 texResources[texInd] = tex2d.texture;
+                texResources[texInd + 1] = tex2d.textureSampler;
                 texHashes[texNameInd] = tex2d.fPathHash;
                 if(textureSet != null)
                     textureSet.Dispose();

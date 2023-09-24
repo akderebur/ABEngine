@@ -10,15 +10,15 @@ namespace ABEngine.ABERuntime.Pipelines
         public UberPipelineAsset(Framebuffer fb) : base(fb, false, false)
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
-            resourceLayouts.Add(GraphicsManager.sharedTextureLayout);
+            resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
             shaderOptimised = false;
             defaultMatName = "UberStandard";
 
             PipelineAsset.ParseAsset(Shaders.UberPipelineAsset, this);
 
             GraphicsPipelineDescription uberPipelineDesc = new GraphicsPipelineDescription(
-                BlendStateDescription.SingleAlphaBlend,
-                 DepthStencilStateDescription.DepthOnlyLessEqual,
+                new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AlphaBlend, BlendAttachmentDescription.AlphaBlend),
+                DepthStencilStateDescription.DepthOnlyLessEqual,
                 RasterizerStateDescription.CullNone,
                 PrimitiveTopology.TriangleList,
                 new ShaderSetDescription(
@@ -29,6 +29,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     shaders),
                 resourceLayouts.ToArray(),
                 fb.OutputDescription);
+
             pipeline = rf.CreateGraphicsPipeline(ref uberPipelineDesc);
         }
 

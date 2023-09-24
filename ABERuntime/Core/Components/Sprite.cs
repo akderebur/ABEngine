@@ -125,6 +125,7 @@ namespace ABEngine.ABERuntime.Components
         public Transform transform;
 
         public Texture2D texture { get; private set; }
+        public Texture2D normalTexture { get; set; }
 
         public Sprite() : base()
         {

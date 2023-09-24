@@ -73,6 +73,11 @@ namespace ABEngine.ABERuntime
             return null;
         }
 
+        internal virtual Texture GetSecondaryColorAttachment()
+        {
+            return null;
+        }
+
         internal virtual Texture GetDepthAttachment()
         {
             return null;

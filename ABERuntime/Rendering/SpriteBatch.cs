@@ -128,11 +128,22 @@ namespace ABEngine.ABERuntime.Rendering
             // Texture
             if (texture2d.fPathHash != 0 && texSet == null)
             {
-                //view = AssetCache.GetTextureView(texture2d.texture);
+                Texture2D normalTex = AssetCache.GetDefaultTexture();
+                foreach (var sprite in sprites)
+                {
+                    if (sprite.spriteData.normalTexture != null)
+                    {
+                        normalTex = sprite.spriteData.normalTexture;
+                        break;
+                    }
+                }
+
                 texSet = rsFactory.CreateResourceSet(new ResourceSetDescription(
-                    GraphicsManager.sharedTextureLayout,
+                    GraphicsManager.sharedSpriteNormalLayout,
                     texture2d.texture,
-                    texture2d.textureSampler));
+                    texture2d.textureSampler,
+                    normalTex.texture,
+                    normalTex.textureSampler));
 
                 //defSize = new Vector2(texData.Width, texData.Height);
             }
