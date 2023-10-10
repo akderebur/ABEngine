@@ -348,6 +348,9 @@ namespace ABEngine.ABERuntime
             if (hash == 0)
                 hash = texPath.ToHash32();
 
+            if (sampler == null)
+                sampler = GraphicsManager.linearSampleClamp;
+
             var tex2d = s_texture2ds.FirstOrDefault(t => t.fPathHash == hash && t.textureSampler == sampler && t.spriteSize == spriteSize);
             if (tex2d != null)
                 return tex2d;

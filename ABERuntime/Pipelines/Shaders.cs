@@ -745,7 +745,7 @@ void main()
 
     float radialFalloff = 1.0 - smoothstep(-0.2, 1, distance) * (1 - fs_Global);  // Adjusted falloff
 
-    vec2 lightDir = normalize(circCoord);  // Light direction from quad center to fragment
+    vec2 lightDir = normalize(circCoord * vec2(-1,1));  // Light direction from quad center to fragment
     float NdotL = max(dot(normal.xy, lightDir), 0.0);  // Compute dot product
 
     float normStep = step(length(normal.xy), 1.4);

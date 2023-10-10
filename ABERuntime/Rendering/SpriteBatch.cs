@@ -128,24 +128,34 @@ namespace ABEngine.ABERuntime.Rendering
             // Texture
             if (texture2d.fPathHash != 0 && texSet == null)
             {
-                Texture2D normalTex = AssetCache.GetDefaultTexture();
-                foreach (var sprite in sprites)
+                var layouts = material.pipelineAsset.GetResourceLayouts();
+                if (layouts.Count > 1 && layouts[1] == GraphicsManager.sharedSpriteNormalLayout)
                 {
-                    if (sprite.spriteData.normalTexture != null)
+                    // Sprite normals
+                    Texture2D normalTex = AssetCache.GetDefaultTexture();
+                    foreach (var sprite in sprites)
                     {
-                        normalTex = sprite.spriteData.normalTexture;
-                        break;
+                        if (sprite.spriteData.normalTexture != null)
+                        {
+                            normalTex = sprite.spriteData.normalTexture;
+                            break;
+                        }
                     }
+
+                    texSet = rsFactory.CreateResourceSet(new ResourceSetDescription(
+                         GraphicsManager.sharedSpriteNormalLayout,
+                         texture2d.texture,
+                         texture2d.textureSampler,
+                         normalTex.texture,
+                         normalTex.textureSampler));
                 }
-
-                texSet = rsFactory.CreateResourceSet(new ResourceSetDescription(
-                    GraphicsManager.sharedSpriteNormalLayout,
-                    texture2d.texture,
-                    texture2d.textureSampler,
-                    normalTex.texture,
-                    normalTex.textureSampler));
-
-                //defSize = new Vector2(texData.Width, texData.Height);
+                else
+                {
+                    texSet = rsFactory.CreateResourceSet(new ResourceSetDescription(
+                       GraphicsManager.sharedTextureLayout,
+                       texture2d.texture,
+                       texture2d.textureSampler));
+                }
             }
 
             if (isStatic)
