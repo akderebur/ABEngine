@@ -473,6 +473,7 @@ Fragment
     void main()
     {
         vec4 color = texture(sampler2D(SpriteTex, SpriteSampler), fsin_TexCoords);
+        vec2 normalSample = texture(sampler2D(NormalTex, NormalSampler), fsin_TexCoords).rg * 2.0 - 1.0;
 
         float dummy = Time - Time;
         //vec3 dummy2 = DummyProp - DummyProp;
@@ -536,7 +537,6 @@ Fragment
        
 	    //vec4 tint = blend_color(color, vec4(1, 1, 1, 1), 0.0);
         outputColor = color;
-        vec2 normalSample = texture(sampler2D(NormalTex, NormalSampler), fsin_TexCoords).rg * 2.0 - 1.0;
         normalSample *= vec2(sign(fsin_ObjScale.x), sign(fsin_ObjScale.y));
         normalSample = (normalSample + 1) * 0.5;
         outputNormal = vec4(normalSample, 1, 1);
