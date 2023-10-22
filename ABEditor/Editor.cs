@@ -162,8 +162,8 @@ namespace ABEngine.ABEditor
             SetupImGuiStyle();
             ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
 
-            LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
-            TMColliderPipelineAsset tmColPipelineAsset = new TMColliderPipelineAsset(compositeRenderFB);
+            LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
+            TMColliderPipelineAsset tmColPipelineAsset = new TMColliderPipelineAsset();
 
             window.Resized += () =>
             {
@@ -250,27 +250,17 @@ namespace ABEngine.ABEditor
                         resize = false;
 
                         // Resize render targets
-                        compositeRenderTexture.Dispose();
                         finalQuadRSSet.Dispose();
-                        compositeRSSetLight.Dispose();
-
                         foreach (var render in internalRenders)
                             render.CleanUp(true, false, true);
 
+                        resourceContext.RecreateFrameResources();
 
-                        // Resources
-                        var mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
-                       
-
-                        compositeRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                           mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                            mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
-
-                       
+                      
                         finalQuadRSSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
                                GraphicsManager.sharedTextureLayout,
-                               compositeRenderTexture, gd.LinearSampler
-                               ));
+                                resourceContext.lightRenderTexture, gd.LinearSampler
+                                ));
 
                         SetupRenderResources();
 
@@ -286,8 +276,10 @@ namespace ABEngine.ABEditor
 
                         GraphicsManager.RefreshMaterials();
 
-                        lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
-                        tmColPipelineAsset = new TMColliderPipelineAsset(compositeRenderFB);
+                        lightRenderSystem.Start();
+
+                        lineDbgPipelineAsset = new LineDbgPipelineAsset();
+                        tmColPipelineAsset = new TMColliderPipelineAsset();
 
                         if (debug)
                         {
@@ -430,9 +422,6 @@ namespace ABEngine.ABEditor
 
                 DrawBegin();
                 MainRender();
-
-                _commandList.SetFramebuffer(compositeRenderFB);
-                _commandList.SetFullViewports();
 
                 //_commandList.ClearDepthStencil(0f);
                 colDebugSystem.Render();

@@ -9,7 +9,7 @@ namespace ABEditor.Debug
 {
     public class TMColliderPipelineAsset : PipelineAsset
     {
-        public TMColliderPipelineAsset(Framebuffer fb) : base(fb, false, false)
+        public TMColliderPipelineAsset() : base()
         {
             // Line Pipeline
 
@@ -42,7 +42,7 @@ namespace ABEditor.Debug
                     },
                     lightShaders),
                 new ResourceLayout[] { GraphicsManager.sharedPipelineLayout },
-                fb.OutputDescription);
+                Game.resourceContext.lightRenderFB.OutputDescription);
 
             pipeline = rf.CreateGraphicsPipeline(ref linePipelineDesc);
         }

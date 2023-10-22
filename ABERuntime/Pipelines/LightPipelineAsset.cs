@@ -10,7 +10,7 @@ namespace ABEngine.ABERuntime.Pipelines
     {
         ResourceLayout texLayout;
 
-        public LightPipelineAsset(Framebuffer fb) : base(fb, true, false)
+        public LightPipelineAsset() : base()
         {
 
             // Light Pipeline
@@ -34,6 +34,7 @@ namespace ABEngine.ABERuntime.Pipelines
                             new VertexElementDescription("Radius", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
                             new VertexElementDescription("Intensity", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
                             new VertexElementDescription("Volume", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
+                            new VertexElementDescription("Layer", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
                             new VertexElementDescription("Global", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1));
             vertLayout.InstanceStepRate = 1;
 
@@ -73,7 +74,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     },
                     lightShaders),
                 new ResourceLayout[] { GraphicsManager.sharedPipelineLayout, texLayout },
-                fb.OutputDescription);
+                Game.resourceContext.lightRenderFB.OutputDescription);
 
             pipeline = rf.CreateGraphicsPipeline(ref lightPipelineDesc);
 

@@ -14,6 +14,7 @@ namespace ABEngine.ABERuntime.Rendering
         public PipelineMaterial material;
 
         public DeviceBuffer vertexBuffer;
+        public DeviceBuffer layerBuffer;
    
         protected ResourceFactory rsFactory;
 
@@ -53,6 +54,9 @@ namespace ABEngine.ABERuntime.Rendering
             this.isStatic = isStatic;
 
             pipelineMaterial.onPipelineChanged += PipelineMaterial_onPipelineChanged;
+
+            layerBuffer = rsFactory.CreateBuffer(new BufferDescription(16, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
+            _gd.UpdateBuffer(layerBuffer, 0, new Vector4(renderLayerIndex, 0, 0, 0));
         }
 
         private void PipelineMaterial_onPipelineChanged(PipelineAsset pipeline)
@@ -90,6 +94,7 @@ namespace ABEngine.ABERuntime.Rendering
                     if (autoDestroy) // Destroy batch
                     {
                         vertexBuffer.Dispose();
+                        layerBuffer.Dispose();
                         texSet.Dispose();
                         onDelete?.Invoke(this);
                         material.onPipelineChanged -= PipelineMaterial_onPipelineChanged;
@@ -114,6 +119,7 @@ namespace ABEngine.ABERuntime.Rendering
             sprites.Clear();
 
             vertexBuffer.Dispose();
+            layerBuffer.Dispose();
             texSet.Dispose();
             onDelete?.Invoke(this);
             material.onPipelineChanged -= PipelineMaterial_onPipelineChanged;
@@ -147,7 +153,8 @@ namespace ABEngine.ABERuntime.Rendering
                          texture2d.texture,
                          texture2d.textureSampler,
                          normalTex.texture,
-                         normalTex.textureSampler));
+                         normalTex.textureSampler,
+                         layerBuffer));
                 }
                 else
                 {

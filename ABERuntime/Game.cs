@@ -18,6 +18,7 @@ using Arch.Core;
 using Arch.Core.Extensions;
 using Arch.Core.Extensions.Internal;
 using ABEngine.ABERuntime.ECS;
+using ABEngine.ABERuntime.Rendering;
 
 namespace ABEngine.ABERuntime
 {
@@ -86,25 +87,16 @@ namespace ABEngine.ABERuntime
 
         // Render Systems
         public static NormalsPassRenderSystem normalsRenderSystem;
-        public static MainRenderSystem mainRenderSystem;
         protected MeshRenderSystem meshRenderSystem;
         public static SpriteBatchSystem spriteBatchSystem;
         internal static MSAAResolveSystem msaaResolveSystem;
         public static LightRenderSystem lightRenderSystem;
 
         public List<RenderSystem> internalRenders;
-        public List<Action<int>> renderWorkOrder;
-
+        public List<RenderPass> renderPasses;
 
         // Framebuffer
-
-        public static Texture compositeRenderTexture;
-        protected Framebuffer compositeRenderFB;
-
-        protected ResourceSet compositeRSSetLight;
         protected ResourceSet finalQuadRSSet;
-
-        internal static OutputDescription mainFBOutDesc;
 
         public static PipelineData pipelineData;
 
@@ -120,10 +112,12 @@ namespace ABEngine.ABERuntime
         internal static float zoomFactor = 1f;
 
         internal static Game Instance;
+        internal static ResourceContext resourceContext;
 
         public Game(bool debug, List<Type> userTypes)
         {
             Instance = this;
+            resourceContext = new ResourceContext();
 
             UserTypes = userTypes;
             userSystems = new List<BaseSystem>();
@@ -151,55 +145,96 @@ namespace ABEngine.ABERuntime
         }
 
         protected private void CreateInternalRenders()
-        {
-          
+        { 
             normalsRenderSystem = new NormalsPassRenderSystem();
-            mainRenderSystem = new MainRenderSystem();
             meshRenderSystem = new MeshRenderSystem();
             spriteBatchSystem = new SpriteBatchSystem(null);
             msaaResolveSystem = new MSAAResolveSystem();
             lightRenderSystem = new LightRenderSystem();
 
+            renderPasses = new List<RenderPass>()
+            {
+                // Normals Pass
+                new RenderPass(new RenderPassDescriptor()
+                {
+                    framebufferFetch = resourceContext.GetNormalFramebuffer,
+                    clearColors = new () {
+                        new RgbaFloat(0,0,0,0)
+                    },
+                    depthClearValue = 1f,
+                    workOrder = new() {
+                        normalsRenderSystem.Render
+                    }
+                }),
+
+                // Main Pass
+                new RenderPass(new RenderPassDescriptor()
+                {
+                    framebufferFetch = resourceContext.GetMainFramebuffer,
+                    clearColors = new () {
+                        new RgbaFloat(0,0,0,0),
+                        new RgbaFloat(0,0,0,0)
+                    },
+                    depthClearValue = 1f,
+                    workOrder = new() {
+                        meshRenderSystem.Render,
+                        spriteBatchSystem.Render,
+                        msaaResolveSystem.ResolveDepth,
+                        meshRenderSystem.LateRender,
+                        msaaResolveSystem.Render
+                    }
+                }),
+
+                // Light Pass
+                new RenderPass(new RenderPassDescriptor()
+                {
+                    framebufferFetch = resourceContext.GetLightFramebuffer,
+                    clearColors = new () {
+                        new RgbaFloat(0,0,0,0),
+                    },
+                    workOrder = new() {
+                        lightRenderSystem.Render,
+                    }
+                }),
+            };
+
             internalRenders = new List<RenderSystem>()
             {
                 normalsRenderSystem,
-                mainRenderSystem,
                 meshRenderSystem,
                 spriteBatchSystem,
                 msaaResolveSystem,
                 lightRenderSystem
             };
 
-            if(GraphicsManager.render2DOnly)
-            {
-                internalRenders.Remove(normalsRenderSystem);
-                internalRenders.Remove(meshRenderSystem);
+            //if(GraphicsManager.render2DOnly)
+            //{
+            //    internalRenders.Remove(normalsRenderSystem);
+            //    internalRenders.Remove(meshRenderSystem);
 
                 
-                // 2D Work order
-                renderWorkOrder = new List<Action<int>>()
-                {
-                    mainRenderSystem.Render,
-                    spriteBatchSystem.Render,
-                    msaaResolveSystem.Render,
-                    lightRenderSystem.Render
-                };
-            }
-            else
-            {
-                // 3D Work order
-                renderWorkOrder = new List<Action<int>>()
-                {
-                    normalsRenderSystem.Render,
-                    mainRenderSystem.Render,
-                    meshRenderSystem.Render,
-                    spriteBatchSystem.Render,
-                    msaaResolveSystem.ResolveDepth,
-                    meshRenderSystem.LateRender,
-                    msaaResolveSystem.Render,
-                    lightRenderSystem.Render
-                };
-            }
+            //    // 2D Work order
+            //    renderWorkOrder = new List<Action<int>>()
+            //    {
+            //        spriteBatchSystem.Render,
+            //        msaaResolveSystem.Render,
+            //        lightRenderSystem.Render
+            //    };
+            //}
+            //else
+            //{
+            //    // 3D Work order
+            //    renderWorkOrder = new List<Action<int>>()
+            //    {
+            //        normalsRenderSystem.Render,
+            //        meshRenderSystem.Render,
+            //        spriteBatchSystem.Render,
+            //        msaaResolveSystem.ResolveDepth,
+            //        meshRenderSystem.LateRender,
+            //        msaaResolveSystem.Render,
+            //        lightRenderSystem.Render
+            //    };
+            //}
 
             SetupRenderResources();
             Toggle3D(!GraphicsManager.render2DOnly);
@@ -207,48 +242,38 @@ namespace ABEngine.ABERuntime
 
         protected private void SetupRenderResources()
         {
-            if(internalRenders.Contains(normalsRenderSystem))
-                normalsRenderSystem.SetupResources();
-            if (internalRenders.Contains(meshRenderSystem))
-                meshRenderSystem.SetupResources();
-
-            mainRenderSystem.SetupResources();
-            msaaResolveSystem.SetupResources(mainRenderSystem.GetMainColorAttachent(), mainRenderSystem.GetSecondaryColorAttachment(), mainRenderSystem.GetDepthAttachment());
+            meshRenderSystem.SetupResources();
+            msaaResolveSystem.SetupResources(resourceContext.mainRenderTexture, resourceContext.spriteNormalsTexture, resourceContext.mainDepthTexture);
             lightRenderSystem.SetupResources(msaaResolveSystem.GetMainColorAttachent(), msaaResolveSystem.GetSecondaryColorAttachment());
-
-            compositeRSSetLight = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
-                  GraphicsManager.sharedTextureLayout,
-                  lightRenderSystem.GetMainColorAttachent(), gd.LinearSampler
-                  ));
         }
 
         internal void Toggle3D(bool activate)
         {
-            if (renderWorkOrder == null)
-                return;
+            //if (renderWorkOrder == null)
+            //    return;
 
-            if(activate)
-            {
-                if (renderWorkOrder.First() == normalsRenderSystem.Render)
-                    return;
-
-
-                renderWorkOrder.Insert(0, normalsRenderSystem.Render);
-                renderWorkOrder.Insert(2, meshRenderSystem.Render);
-                renderWorkOrder.Insert(4, msaaResolveSystem.ResolveDepth);
-                renderWorkOrder.Insert(5, meshRenderSystem.LateRender);
-            }
-            else
-            {
-                if (renderWorkOrder.First() != normalsRenderSystem.Render)
-                    return;
+            //if(activate)
+            //{
+            //    if (renderWorkOrder.First() == normalsRenderSystem.Render)
+            //        return;
 
 
-                renderWorkOrder.Remove(normalsRenderSystem.Render);
-                renderWorkOrder.Remove(meshRenderSystem.Render);
-                renderWorkOrder.Remove(msaaResolveSystem.ResolveDepth);
-                renderWorkOrder.Remove(meshRenderSystem.LateRender);
-            }
+            //    renderWorkOrder.Insert(0, normalsRenderSystem.Render);
+            //    renderWorkOrder.Insert(2, meshRenderSystem.Render);
+            //    renderWorkOrder.Insert(4, msaaResolveSystem.ResolveDepth);
+            //    renderWorkOrder.Insert(5, meshRenderSystem.LateRender);
+            //}
+            //else
+            //{
+            //    if (renderWorkOrder.First() != normalsRenderSystem.Render)
+            //        return;
+
+
+            //    renderWorkOrder.Remove(normalsRenderSystem.Render);
+            //    renderWorkOrder.Remove(meshRenderSystem.Render);
+            //    renderWorkOrder.Remove(msaaResolveSystem.ResolveDepth);
+            //    renderWorkOrder.Remove(meshRenderSystem.LateRender);
+            //}
         }
 
 
@@ -274,7 +299,7 @@ namespace ABEngine.ABERuntime
 
             EntityManager.Init();
 
-            LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
+            LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
 
             // Systems
             // Shared
@@ -394,25 +419,15 @@ namespace ABEngine.ABERuntime
                         resize = false;
 
                         // Resize render targets
-
-                        compositeRenderTexture.Dispose();
                         finalQuadRSSet.Dispose();
-                        compositeRSSetLight.Dispose();
-
                         foreach (var render in internalRenders)
                             render.CleanUp(true, false, true);
 
-                        Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
-                        compositeRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                           mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                            mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
-
-                        compositeRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, compositeRenderTexture));
-
+                        resourceContext.RecreateFrameResources();
 
                         finalQuadRSSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
                                GraphicsManager.sharedTextureLayout,
-                               compositeRenderTexture, gd.LinearSampler
+                               resourceContext.lightRenderTexture, gd.LinearSampler
                                ));
 
                         SetupRenderResources();
@@ -824,25 +839,10 @@ namespace ABEngine.ABERuntime
             gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
 
 
-            for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
+            foreach (var renderPass in renderPasses)
             {
-                foreach (var renderWork in renderWorkOrder)
-                {
-                    renderWork(i);
-                }
-
-                // Composition / No Clear - No depth
-                _commandList.SetFramebuffer(compositeRenderFB);
-                _commandList.SetFullViewports();
-                _commandList.SetPipeline(GraphicsManager.CompositePipeline);
-
-                _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-                _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
-
-                _commandList.SetGraphicsResourceSet(0, compositeRSSetLight);
-                _commandList.DrawIndexed(6, 1, 0, 0, 0);
+                renderPass.Render();
             }
-          
         }
 
         void LateRender()
@@ -905,16 +905,7 @@ namespace ABEngine.ABERuntime
                 resize = true;
             };
 
-            GraphicsDeviceOptions options = new GraphicsDeviceOptions();
-            //_window = new Sdl2Window("Snake", 50, 50, width, height, SDL_WindowFlags., false);
-            options.SyncToVerticalBlank = true;
-            options.ResourceBindingModel = ResourceBindingModel.Improved;
-
-            //gd = VeldridStartup.CreateGraphicsDevice(window, options);
-
             var backend = VeldridStartup.GetPlatformDefaultBackend();
-
-
             gd = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions(
                 debug: false,
                 swapchainDepthFormat: null,
@@ -935,24 +926,16 @@ namespace ABEngine.ABERuntime
             GraphicsManager.cl = _commandList;
 
             CreateRenderResources();
-
         }
 
         void CreateRenderResources()
         {
-            Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
-
-            compositeRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
-        
-            compositeRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, compositeRenderTexture));
-
-            GraphicsManager.LoadPipelines(gd, _commandList, compositeRenderFB);
+            GraphicsManager.LoadPipelines(gd, _commandList);
+            resourceContext.RecreateFrameResources();
 
             finalQuadRSSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
                    GraphicsManager.sharedTextureLayout,
-                   compositeRenderTexture, gd.LinearSampler
+                   resourceContext.lightRenderTexture, gd.LinearSampler
                    ));
 
             pipelineBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(144, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
@@ -1122,8 +1105,7 @@ namespace ABEngine.ABERuntime
                 item.CleanUp(false, false, true);
             }
 
-            compositeRenderTexture.Dispose();
-            compositeRenderFB.Dispose();
+            resourceContext.DisposeFrameResources();
         }
 
         void CleanRenderResources()
@@ -1133,8 +1115,7 @@ namespace ABEngine.ABERuntime
                 item.CleanUp(false, false, true);
             }
 
-            compositeRenderTexture.Dispose();
-            compositeRenderFB.Dispose();
+            resourceContext.DisposeFrameResources();
         }
 
         protected void PhysicsUpdate()
@@ -1358,10 +1339,6 @@ namespace ABEngine.ABERuntime
         protected virtual void DrawBegin()
         {
             _commandList.Begin();
-
-            _commandList.SetFramebuffer(compositeRenderFB);
-            _commandList.SetFullViewports();
-            _commandList.ClearColorTarget(0, RgbaFloat.Black);
         }
 
 

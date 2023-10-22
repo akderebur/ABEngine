@@ -7,7 +7,7 @@ namespace ABEngine.ABERuntime.Pipelines
 {
     public class UberPipelineAsset : PipelineAsset
     {
-        public UberPipelineAsset(Framebuffer fb) : base(fb, false, false)
+        public UberPipelineAsset() : base()
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
@@ -24,11 +24,11 @@ namespace ABEngine.ABERuntime.Pipelines
                 new ShaderSetDescription(
                     new[]
                     {
-                      GraphicsManager.sharedVertexLayout
+                        vertexLayout
                     },
                     shaders),
                 resourceLayouts.ToArray(),
-                fb.OutputDescription);
+                Game.resourceContext.mainRenderFB.OutputDescription);
 
             pipeline = rf.CreateGraphicsPipeline(ref uberPipelineDesc);
         }

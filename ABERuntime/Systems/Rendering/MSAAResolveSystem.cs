@@ -50,7 +50,7 @@ namespace ABEngine.ABERuntime
             if (GraphicsManager.msaaSampleCount != TextureSampleCount.Count1)
             {
                 cl.ResolveTexture(msRenderTexture, resolvedColor);
-                cl.ResolveTexture(msRenderTexture, resolvedColor);
+                cl.ResolveTexture(msSpriteNormalTexture, resolvedSpriteNormal);
                 cl.ResolveTexture(msDepthTexture, resolvedDepth);
             }
         }
@@ -74,6 +74,16 @@ namespace ABEngine.ABERuntime
         internal override Texture GetDepthAttachment()
         {
             return resolvedDepth;
+        }
+
+        public override void CleanUp(bool reload, bool newScene, bool resize)
+        {
+            if(resize)
+            {
+                resolvedColor.Dispose();
+                resolvedDepth.Dispose();
+                resolvedSpriteNormal.Dispose();
+            }
         }
     }
 }

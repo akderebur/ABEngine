@@ -5,7 +5,7 @@ namespace ABEngine.ABERuntime.Pipelines
 {
     public class ToonLitPipeline : PipelineAsset
     {
-        public ToonLitPipeline() : base(null, false, false, Game.mainRenderSystem.GetMainFramebuffer)
+        public ToonLitPipeline() : base()
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
@@ -28,7 +28,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     },
                     shaders),
                 resourceLayouts.ToArray(),
-                base.framebuffer.OutputDescription);
+                Game.resourceContext.mainRenderFB.OutputDescription);
             pipeline = rf.CreateGraphicsPipeline(ref toonLitDesc);
         }
 

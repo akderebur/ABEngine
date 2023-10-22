@@ -92,7 +92,7 @@ namespace ABEngine.ABERuntime
                     if (textureName.Equals("ScreenTex"))
                     {
                         isLateRender = true;
-                        resources[index] = Game.compositeRenderTexture;
+                        resources[index] = Game.resourceContext.mainRenderTexture;
                     }
                     else if(textureName.Equals("DepthTex"))
                     {
@@ -196,7 +196,7 @@ namespace ABEngine.ABERuntime
                 foreach (var textureName in textureNames)
                 {
                     if (textureName.Equals("ScreenTex"))
-                        texResources[index] = Game.compositeRenderTexture;
+                        texResources[index] = Game.resourceContext.mainRenderTexture;
                     else if (textureName.Equals("DepthTex"))
                         texResources[index] = Game.normalsRenderSystem.GetDepthAttachment();
                     else if(textureName.Equals("CamNormalTex"))

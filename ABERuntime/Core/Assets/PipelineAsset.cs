@@ -19,14 +19,11 @@ namespace ABEngine.ABERuntime
         protected ResourceFactory rf;
 
         protected Pipeline pipeline;
-        protected Framebuffer framebuffer;
-
-        internal bool clearColor = true;
-        internal bool clearDepth = true;
 
         // Description
         protected Shader[] shaders;
         protected List<ResourceLayout> resourceLayouts;
+        protected VertexLayoutDescription vertexLayout;
 
         Dictionary<string, int> propNames;
         Dictionary<string, int> textureNames;
@@ -37,20 +34,11 @@ namespace ABEngine.ABERuntime
 
         static int pipelineCount = 0;
 
-        Func<Framebuffer> fbRefreshAction;
-
-        public PipelineAsset(Framebuffer fb, bool clearColor, bool clearDepth, Func<Framebuffer> fbRefresh = null)
+        public PipelineAsset()
         {
             gd = GraphicsManager.gd;
             cl = GraphicsManager.cl;
             rf = GraphicsManager.rf;
-
-            this.clearColor = clearColor;
-            this.clearDepth = clearDepth;
-
-            framebuffer = fb;
-            if (framebuffer == null && fbRefresh != null)
-                framebuffer = fbRefresh();
 
             pipelineID = pipelineCount;
             pipelineCount++;
@@ -59,32 +47,30 @@ namespace ABEngine.ABERuntime
             propNames = new Dictionary<string, int>();
             textureNames = new Dictionary<string, int>();
             defaultMatName = "NoName";
-
-            fbRefreshAction = fbRefresh;
-        }
-
-        internal void UpdateFramebuffer(Framebuffer fb)
-        {
-            this.framebuffer = fb;
-        }
-
-        internal void RefreshFrameBuffer()
-        {
-            if(fbRefreshAction != null)
-                this.framebuffer = fbRefreshAction.Invoke();
         }
 
         public virtual void BindPipeline()
         {
-            cl.SetFramebuffer(framebuffer);
-            cl.SetFullViewports();
             cl.SetPipeline(pipeline);
-
-            if(clearColor)
-                cl.ClearColorTarget(0, new RgbaFloat(0f,0,0,0));
-            if (clearDepth)
-                cl.ClearDepthStencil(1f);
         }
+
+        private static Type ShaderToNetType(string shaderType) => shaderType switch
+        {
+            "float" => typeof(float),
+            "vec2" => typeof(Vector2),
+            "vec3" => typeof(Vector3),
+            "vec4" => typeof(Vector4),
+            _ => null
+        };
+
+        private static VertexElementFormat ShaderToVertexElement(string shaderType) => shaderType switch
+        {
+            "float" => VertexElementFormat.Float1,
+            "vec2" => VertexElementFormat.Float2,
+            "vec3" => VertexElementFormat.Float3,
+            "vec4" => VertexElementFormat.Float4,
+            _ => VertexElementFormat.Float1
+        };
 
         public static void ParseAsset(string pipelineAsset, PipelineAsset dest)
         {
@@ -95,6 +81,9 @@ namespace ABEngine.ABERuntime
             List<UniformElement> uniformElements = new List<UniformElement>();
             List<string> uniformElementNames = new List<string>();
             List<string> textureNames = new List<string>();
+
+            List<VertexElementDescription> vertexElements = new List<VertexElementDescription>();
+            uint instanceStepRate = 0;
 
             string vertexShaderSrc = "", fragmentShaderSrc = "";
             string lastLine = "";
@@ -135,42 +124,96 @@ namespace ABEngine.ABERuntime
                         {
                             if (sectionIndex == 0)
                             {
-                                string[] split = line.Split(':');
+                                if (string.IsNullOrEmpty(line))
+                                    continue;
 
-                                string name = split[0];
-                                string type = split[1];
-
-                                switch (type)
+                                if (line.StartsWith("@"))
                                 {
-                                    case "float":
-                                        uniformElements.Add(UniformElement.Float1);
-                                        uniformElementNames.Add(name);
-                                        break;
-                                    case "vec2":
-                                        uniformElements.Add(UniformElement.Float2);
-                                        uniformElementNames.Add(name);
-                                        break;
-                                    case "vec3":
-                                        uniformElements.Add(UniformElement.Float3);
-                                        uniformElementNames.Add(name);
-                                        break;
-                                    case "vec4":
-                                        uniformElements.Add(UniformElement.Float4);
-                                        uniformElementNames.Add(name);
-                                        break;
-                                    case "mat4":
-                                        uniformElements.Add(UniformElement.Matrix4x4);
-                                        uniformElementNames.Add(name);
-                                        break;
-                                    case "texture2d":
-                                        textureNames.Add(name);
-                                        break;
-                                    default:
-                                        continue;
+                                    // Settings
+                                    if (line.Contains("StepMode:"))
+                                        instanceStepRate = 1;
+                                }
+                                else
+                                {
+                                    // Shader property
+                                    string[] split = line.Split(':');
+
+                                    string name = split[0];
+                                    string type = split[1];
+
+                                    switch (type)
+                                    {
+                                        case "float":
+                                            uniformElements.Add(UniformElement.Float1);
+                                            uniformElementNames.Add(name);
+                                            break;
+                                        case "vec2":
+                                            uniformElements.Add(UniformElement.Float2);
+                                            uniformElementNames.Add(name);
+                                            break;
+                                        case "vec3":
+                                            uniformElements.Add(UniformElement.Float3);
+                                            uniformElementNames.Add(name);
+                                            break;
+                                        case "vec4":
+                                            uniformElements.Add(UniformElement.Float4);
+                                            uniformElementNames.Add(name);
+                                            break;
+                                        case "mat4":
+                                            uniformElements.Add(UniformElement.Matrix4x4);
+                                            uniformElementNames.Add(name);
+                                            break;
+                                        case "texture2d":
+                                            textureNames.Add(name);
+                                            break;
+                                        default:
+                                            continue;
+                                    }
                                 }
                             }
                             else if (sectionIndex == 1)
                             {
+                                // Vertex shader
+
+                                // Vertex element
+                                if(line.Contains("layout") && line.Contains("location") && line.Contains("in "))
+                                {
+                                    string[] split = line.Split("in ");
+                                    string typeAndName = split[1];
+
+                                    string type = "";
+                                    string name = "";
+
+                                    string tmp = "";
+                                    bool typeSet = false;
+
+                                    foreach (char item in typeAndName)
+                                    {
+                                        if(item == ' ')
+                                        {
+                                            if(!typeSet)
+                                                type = tmp;
+                                            typeSet = true;
+                                            tmp = "";
+                                            continue;
+                                        }
+                                        else if(item == ';')
+                                        {
+                                            name = tmp;
+                                            tmp = "";
+                                            break;
+                                        }
+
+                                        tmp += item;
+                                    }
+
+                                    VertexElementDescription vertexElement = new VertexElementDescription();
+                                    vertexElement.Name = name;
+                                    vertexElement.Semantic = VertexElementSemantic.TextureCoordinate;
+                                    vertexElement.Format = ShaderToVertexElement(type);
+                                    vertexElements.Add(vertexElement);
+                                }
+                        
                                 vertexShaderSrc += line + System.Environment.NewLine;
                             }
                             else if (sectionIndex == 2)
@@ -187,6 +230,10 @@ namespace ABEngine.ABERuntime
 
                 lastLine = line;
             }
+
+            // Vertex layout
+            dest.vertexLayout = new VertexLayoutDescription(vertexElements.ToArray());
+            dest.vertexLayout.InstanceStepRate = instanceStepRate;
 
             // Shader propery Uniforms
             var shaderPropUniform = rsFactory.CreateResourceLayout(
@@ -224,7 +271,7 @@ namespace ABEngine.ABERuntime
                 Encoding.UTF8.GetBytes(fragmentShaderSrc),
                 "main");
 
-            //if (dest.defaultMatName.Equals("ToonLit"))
+            //if (dest.defaultMatName.Equals("ToonWater"))
             //{
             //    SpecializationConstant[] specializations =
             //    {

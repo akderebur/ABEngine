@@ -85,7 +85,7 @@ namespace ABEngine.ABERuntime
 
         public virtual Framebuffer GetMainFramebuffer()
         {
-            return null;
+            return Game.resourceContext.mainRenderFB;
         }
 
     }

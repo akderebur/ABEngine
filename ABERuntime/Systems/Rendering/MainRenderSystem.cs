@@ -15,7 +15,6 @@ namespace ABEngine.ABERuntime
 
         List<PipelineAsset> pipelines = new List<PipelineAsset>();
 
-
         public override void SetupResources(params Texture[] sampledTextures)
         {
             Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
@@ -35,30 +34,11 @@ namespace ABEngine.ABERuntime
 
             mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture, spriteNormalsTexture));
 
-
-            foreach (var pipeline in pipelines)
-                pipeline.UpdateFramebuffer(mainRenderFB);
-
         }
 
         public override void SceneSetup()
         {
-            // Related default pipelines
-            pipelines = new List<PipelineAsset>()
-            {
-                new UberPipelineAsset(mainRenderFB),
-                new UberPipelineAdditive(mainRenderFB),
-            };
-
-            if(!GraphicsManager.render2DOnly)
-            {
-                pipelines.AddRange(new List<PipelineAsset>
-                {
-                    new UberPipeline3D(mainRenderFB),
-                    new ToonWaterPipeline(mainRenderFB),
-                    new ToonLitPipeline()
-                });
-            }
+          
         }
 
         public override void Start()
@@ -78,6 +58,17 @@ namespace ABEngine.ABERuntime
             cl.ClearColorTarget(0, new RgbaFloat(0f, 0f, 0f, 0f));
             cl.ClearColorTarget(1, new RgbaFloat(0f, 0f, 0f, 0f));
             cl.ClearDepthStencil(1f);
+        }
+
+        public void LateRender(int layer)
+        {
+            cl.End();
+            gd.SubmitCommands(cl);
+            gd.WaitForIdle();
+            cl.Begin();
+
+            cl.SetFramebuffer(mainRenderFB);
+            cl.SetFullViewports();
         }
 
         public override void CleanUp(bool reload, bool newScene, bool resize)

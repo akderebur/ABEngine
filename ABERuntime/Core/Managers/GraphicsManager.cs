@@ -9,6 +9,7 @@ using System.Text;
 using ABEngine.ABERuntime.Pipelines;
 using SharpGen.Runtime;
 using Veldrid;
+using Veldrid.OpenGLBinding;
 using Veldrid.SPIRV;
 using Veldrid.Utilities;
 
@@ -47,7 +48,6 @@ namespace ABEngine.ABERuntime
         public static Pipeline SpritePipeline;
         public static Pipeline EditorSpritePipeline;
         public static Pipeline FullScreenPipeline;
-        public static Pipeline CompositePipeline;
 
         public static List<Sampler> AllSamplers;
 
@@ -77,7 +77,20 @@ namespace ABEngine.ABERuntime
 
         static PipelineMaterial GetFirstMatByName(string name)
         {
-            return pipelineMaterials.FirstOrDefault(pm => pm.name.Equals(name));
+            var mat = pipelineMaterials.FirstOrDefault(pm => pm.name.Equals(name));
+
+            if (mat == null)
+            {
+                return name switch
+                {
+                    "UberStandard" => new UberPipelineAsset().refMaterial,
+                    "UberAdditive" => new UberPipelineAdditive().refMaterial,
+                    "Uber3D" => new UberPipeline3D().refMaterial,
+                    _ => null
+                };
+            }
+            else
+                return mat;
         }
 
 
@@ -162,7 +175,7 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        public static void LoadPipelines(GraphicsDevice gd, CommandList cl, Framebuffer compositeFB)
+        public static void LoadPipelines(GraphicsDevice gd, CommandList cl)
         {
             // Samplers
             AllSamplers = new List<Sampler>();
@@ -218,7 +231,8 @@ namespace ABEngine.ABERuntime
                     new ResourceLayoutElementDescription("SpriteTex", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
                     new ResourceLayoutElementDescription("SpriteSampler", ResourceKind.Sampler, ShaderStages.Fragment),
                     new ResourceLayoutElementDescription("NormalTex", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("NormalSampler", ResourceKind.Sampler, ShaderStages.Fragment)
+                    new ResourceLayoutElementDescription("NormalSampler", ResourceKind.Sampler, ShaderStages.Fragment),
+                    new ResourceLayoutElementDescription("LayerData", ResourceKind.UniformBuffer, ShaderStages.Fragment)
             ));
             sharedSpriteNormalLayout = texLayoutNormal;
 
@@ -329,37 +343,8 @@ namespace ABEngine.ABERuntime
                Encoding.UTF8.GetBytes(FullScreenQuadFragment),
                "main");
 
-            var shadersComposite = gd.ResourceFactory.CreateFromSpirv(vertexShader, fragmentShaderComposite);
-
-            GraphicsPipelineDescription compositePD = new GraphicsPipelineDescription(
-               new BlendStateDescription(RgbaFloat.White, false,
-               new BlendAttachmentDescription
-               (
-                   true,
-                   BlendFactor.One,
-                   BlendFactor.InverseSourceAlpha,
-                   BlendFunction.Add,
-                   BlendFactor.One,
-                   BlendFactor.InverseSourceAlpha,
-                   BlendFunction.Add
-               )),
-               DepthStencilStateDescription.Disabled,
-               new RasterizerStateDescription(FaceCullMode.None, PolygonFillMode.Solid, FrontFace.Clockwise, true, false),
-               PrimitiveTopology.TriangleList,
-               new ShaderSetDescription(
-                   new[]
-                   {
-                        new VertexLayoutDescription(
-                            new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
-                            new VertexElementDescription("TexCoords", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2))
-                   },
-                   shadersComposite),
-               new ResourceLayout[] { sharedTextureLayout },
-               compositeFB.OutputDescription);
-            CompositePipeline = gd.ResourceFactory.CreateGraphicsPipeline(ref compositePD);
-
             // MSAA
-            var maxSamples = gd.GetSampleCountLimit(PixelFormat.R8_G8_B8_A8_UNorm, false);
+            var maxSamples = gd.GetSampleCountLimit(PixelFormat.B8_G8_R8_A8_UNorm, false);
             if (msaaSampleCount > maxSamples)
                 msaaSampleCount = maxSamples;
         }
@@ -372,8 +357,6 @@ namespace ABEngine.ABERuntime
 
         public static void RefreshMaterials()
         {
-            foreach (var pipeline in pipelineAssets)
-                pipeline.Value.RefreshFrameBuffer();
             foreach (var material in pipelineMaterials)
                 material.UpdateSampledTextures();
         }

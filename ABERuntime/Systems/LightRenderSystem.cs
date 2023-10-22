@@ -10,40 +10,29 @@ namespace ABEngine.ABERuntime
 {
     public class LightRenderSystem : RenderSystem
     {
-        const uint lightCountLayer = 10;
+        const uint maxLightCount = 30;
 
         uint lightCount = 0;
         public static float GlobalLightIntensity = 1f;
 
-        Dictionary<int, DeviceBuffer> layerLightBuffers;
-        Dictionary<int, List<LightInfo>> layerLightInfos;
+        DeviceBuffer lightBuffer;
+        List<LightInfo> lightInfos;
 
         // Rendering
-
-        Texture lightRenderTexture;
-        Framebuffer lightRenderFB;
-
         ResourceSet textureSet;
 
         public override void SetupResources(params Texture[] sampledTextures)
         {
-          
-            Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
-            lightRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-             mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-             mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
+            base.pipelineAsset = new LightPipelineAsset();
 
-            lightRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, lightRenderTexture));
+            if (textureSet != null)
+                textureSet.Dispose();
 
-            base.pipelineAsset = new LightPipelineAsset(lightRenderFB);
-
-            textureSet = rf.CreateResourceSet(new ResourceSetDescription(
+            textureSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
               ((LightPipelineAsset)base.pipelineAsset).GetTexResourceLayout(),
               sampledTextures[0], GraphicsManager.linearSamplerWrap, sampledTextures[1], GraphicsManager.linearSamplerWrap 
               ));
-
-            if (base.pipelineAsset != null)
-                base.pipelineAsset.UpdateFramebuffer(lightRenderFB);
+            
         }
 
         public override void SceneSetup()
@@ -54,29 +43,21 @@ namespace ABEngine.ABERuntime
         public override void Start()
         {
             base.Start();
-            layerLightBuffers = new Dictionary<int, DeviceBuffer>();
-            layerLightInfos = new Dictionary<int, List<LightInfo>>();
+            lightInfos = new List<LightInfo>();
 
-     
+            if(pipelineAsset == null )
+                pipelineAsset = new LightPipelineAsset();
+
             //renderLayerStep = lightLimit / (uint)GraphicsManager.renderLayers.Count;
             //layerLightCounts = new uint[GraphicsManager.renderLayers.Count];
 
-            for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
-            {
-                DeviceBuffer lightInfoBuffer = rf.CreateBuffer(new BufferDescription(LightInfo.VertexSize * lightCountLayer, BufferUsage.VertexBuffer | BufferUsage.Dynamic));
-                layerLightBuffers.Add(i, lightInfoBuffer);
-                layerLightInfos.Add(i, new List<LightInfo>());
-            }
+            lightBuffer = rf.CreateBuffer(new BufferDescription(LightInfo.VertexSize * maxLightCount, BufferUsage.VertexBuffer | BufferUsage.Dynamic));
         }
 
         internal void AddLayer()
         {
             if (!started)
                 return;
-
-            DeviceBuffer lightInfoBuffer = rf.CreateBuffer(new BufferDescription(LightInfo.VertexSize * lightCountLayer, BufferUsage.VertexBuffer | BufferUsage.Dynamic));
-            layerLightBuffers.Add(layerLightInfos.Count, lightInfoBuffer);
-            layerLightInfos.Add(layerLightInfos.Count, new List<LightInfo>());
         }
 
         //public bool LayerHasLights(int layerId)
@@ -94,19 +75,17 @@ namespace ABEngine.ABERuntime
             var query = new QueryDescription().WithAll<Transform, PointLight2D>();
 
             lightCount = 0;
+            lightInfos.Clear();
             Game.GameWorld.Query(in query, (ref Transform lightTrans, ref PointLight2D light) =>
             {
-                for (int i = 0; i <= light.renderLayerIndex; i++)
-                {
 
-                    layerLightInfos[i].Add(new LightInfo(lightTrans.worldPosition,
+                    lightInfos.Add(new LightInfo(lightTrans.worldPosition,
                                                         light.color,
                                                         light.radius,
                                                         light.intensity,
-                                                        light.volume
+                                                        light.volume,
+                                                        light.renderLayerIndex
                                                         ));
-                }
-
 
                 lightCount++;
             });
@@ -119,15 +98,18 @@ namespace ABEngine.ABERuntime
 
         public override void Render(int renderLayer)
         {
+            if (renderLayer > 0)
+                return;
+
             // Light pass
             pipelineAsset.BindPipeline();
             cl.SetGraphicsResourceSet(1, textureSet);
 
             // Light Infos
-            List<LightInfo> lightList = layerLightInfos[renderLayer];
+            List<LightInfo> lightList = lightInfos;
 
             // Light Buffer
-            DeviceBuffer lightInfoBuffer = layerLightBuffers[renderLayer];
+            DeviceBuffer lightInfoBuffer = lightBuffer;
            
             MappedResourceView<LightInfo> writemap = gd.Map<LightInfo>(lightInfoBuffer, MapMode.Write);
 
@@ -137,6 +119,7 @@ namespace ABEngine.ABERuntime
                                                         30,
                                                         GlobalLightIntensity,
                                                         0f,
+                                                        maxLightCount,
                                                         1);
             for (int i = 0; i < lightList.Count; i++)
             {
@@ -156,25 +139,25 @@ namespace ABEngine.ABERuntime
 
         public override void CleanUp(bool reload, bool newScene, bool resize)
         {
-            if (layerLightBuffers != null)
+            if (lightBuffer != null)
             {
-                foreach (var buffer in layerLightBuffers.Values)
-                {
-                    buffer.Dispose();
-                }
+                lightBuffer.Dispose();
             }
 
             if (resize)
             {
                 textureSet.Dispose();
-                lightRenderTexture.Dispose();
-                lightRenderFB.Dispose();
+            }
+            else
+            {
+                // Reload
+                base.pipelineAsset = null;
             }
         }
 
         internal override Texture GetMainColorAttachent()
         {
-            return lightRenderTexture;
+            return Game.resourceContext.lightRenderTexture;
         }
     }
 }

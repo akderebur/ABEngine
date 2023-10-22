@@ -5,7 +5,7 @@ namespace ABEngine.ABERuntime.Pipelines
 {
     public class ToonWaterPipeline : PipelineAsset
     {
-        public ToonWaterPipeline(Framebuffer fb) : base(fb, false, false, Game.mainRenderSystem.GetMainFramebuffer)
+        public ToonWaterPipeline() : base()
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
@@ -29,7 +29,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     },
                     shaders),
                 resourceLayouts.ToArray(),
-                fb.OutputDescription);
+                Game.resourceContext.mainRenderFB.OutputDescription);
             pipeline = rf.CreateGraphicsPipeline(ref toonWaterDesc);
         }
     }

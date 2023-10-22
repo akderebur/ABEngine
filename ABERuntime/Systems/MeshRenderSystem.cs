@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Components;
-using ABEngine.ABERuntime.Pipelines;
 using Arch.Core;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
-using Vortice.DXGI;
 
 namespace ABEngine.ABERuntime
 {
@@ -159,7 +154,7 @@ namespace ABEngine.ABERuntime
 
         public void LateRender(int renderLayer)
         {
-            if (renderLayer == 0)
+            if (renderLayer == 0 && lateRenderOrder.Count > 0)
                 LateRender();
         }
 
@@ -173,14 +168,6 @@ namespace ABEngine.ABERuntime
                 MeshRenderer mr = render.Item1;
                 Transform transform = render.Item2;
                 Mesh mesh = mr.mesh;
-
-                if (mr.material.isLateRender)
-                {
-                    cl.End();
-                    gd.SubmitCommands(cl);
-                    gd.WaitForIdle();
-                    cl.Begin();
-                }
 
                 // Update vertex uniform
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
@@ -261,6 +248,9 @@ namespace ABEngine.ABERuntime
             gd.WaitForIdle();
             cl.Begin();
 
+            cl.SetFramebuffer(Game.resourceContext.mainRenderFB);
+            cl.SetFullViewports();
+
             foreach (var render in lateRenderOrder)
             {
                 MeshRenderer mr = render.Item1;
@@ -278,7 +268,6 @@ namespace ABEngine.ABERuntime
 
                 cl.SetGraphicsResourceSet(0, Game.pipelineSet);
                 cl.SetGraphicsResourceSet(1, mr.vertexTransformSet);
-
 
                 // Material Resource Sets
                 foreach (var setKV in mr.material.bindableSets)

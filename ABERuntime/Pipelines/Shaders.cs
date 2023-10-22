@@ -230,6 +230,8 @@ Fragment
         internal const string UberPipelineAsset = @"
 Properties
 {
+    @StepMode:Instance
+
 	DissolveFade:float
     EnableFade:float
     EnableOutline:float
@@ -348,6 +350,10 @@ Fragment
     layout (set = 1, binding = 1) uniform sampler SpriteSampler;
     layout (set = 1, binding = 2) uniform texture2D NormalTex; 
     layout (set = 1, binding = 3) uniform sampler NormalSampler;
+    layout (set = 1, binding = 4) uniform LayerData
+    {
+        vec4 layerVec;
+    };
 
     layout (set = 2, binding = 0) uniform ShaderProps
     {
@@ -476,6 +482,7 @@ Fragment
         vec2 normalSample = texture(sampler2D(NormalTex, NormalSampler), fsin_TexCoords).rg * 2.0 - 1.0;
 
         float dummy = Time - Time;
+        float layer = layerVec.x;
         //vec3 dummy2 = DummyProp - DummyProp;
 
         // Sprite Color Tint
@@ -539,7 +546,7 @@ Fragment
         outputColor = color;
         normalSample *= vec2(sign(fsin_ObjScale.x), sign(fsin_ObjScale.y));
         normalSample = (normalSample + 1) * 0.5;
-        outputNormal = vec4(normalSample, 1, 1);
+        outputNormal = vec4(normalSample, layer / 255.0, 1);
     }
 }
 "
@@ -676,13 +683,16 @@ void main()
     layout(location = 2) in float Radius;
     layout(location = 3) in float Intensity;
     layout(location = 4) in float Volume;
-    layout(location = 5) in float Global;
+    layout(location = 5) in float Layer;
+    layout(location = 6) in float Global;
+
 
     layout(location = 0) out vec4 fs_LightColor;
     layout(location = 1) out float fs_Intensity;
     layout(location = 2) out float fs_Volume;
     layout(location = 3) out vec2 fs_UV;
-    layout(location = 4) out float fs_Global;
+    layout(location = 4) out float fs_Layer;
+    layout(location = 5) out float fs_Global;
 
     void main()
     {
@@ -702,6 +712,7 @@ void main()
         fs_Intensity = Intensity;
         fs_Volume = Volume;
         fs_UV = uv_pos;
+        fs_Layer = Layer;
         fs_Global = Global;
     }
 ";
@@ -727,7 +738,8 @@ layout(location = 0) in vec4 fs_LightColor;
 layout(location = 1) in float fs_Intensity;
 layout(location = 2) in float fs_Volume;
 layout(location = 3) in vec2 fs_UV;
-layout(location = 4) in float fs_Global;
+layout(location = 4) in float fs_Layer;
+layout(location = 5) in float fs_Global;
 
 layout(location = 0) out vec4 OutputColor;
 
@@ -738,6 +750,7 @@ void main()
 
     vec4 sampleColor = texture(sampler2D(MainTex, MainSampler), screenUV);
     vec4 normalSample =  texture(sampler2D(NormalTex, NormalSampler), screenUV);
+    int fragLayerInd = int(normalSample.z * 255.0 + 0.5);
     vec3 normal = normalSample.rgb * 2.0 - 1.0;  // Get normal from normal map
 
     vec2 circCoord = 2.0 * fs_UV - 1.0;  // Centered coordinates for the quad
@@ -755,7 +768,14 @@ void main()
 
     vec3 color = mix(sampleColor.rgb * endColor, sampleColor.rgb * fs_Intensity, fs_Global);  // Mix based on fs_Global flag
 
-    OutputColor = vec4(color, sampleColor.a);
+    if(fragLayerInd <= int(fs_Layer))
+    {
+        OutputColor = vec4(color, sampleColor.a);
+    }
+    else
+    {
+        OutputColor = vec4(vec3(0,0,0), sampleColor.a);
+    }
 }
 ";
 

@@ -7,7 +7,7 @@ namespace ABEngine.ABERuntime.Pipelines
 {
 	public class NormalsPipeline : PipelineAsset
     {
-        public NormalsPipeline(Framebuffer fb) : base(fb, true, true)
+        public NormalsPipeline() : base()
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
@@ -28,7 +28,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     },
                     shaders),
                 resourceLayouts.ToArray(),
-                fb.OutputDescription);
+                Game.resourceContext.normalsRenderFB.OutputDescription);
             pipeline = rf.CreateGraphicsPipeline(ref toonLitDesc);
         }
 

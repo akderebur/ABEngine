@@ -7,7 +7,7 @@ namespace ABEngine.ABERuntime.Pipelines
 {
 	public class LineDbgPipelineAsset : PipelineAsset
 	{
-        public LineDbgPipelineAsset(Framebuffer fb) : base(fb, false, false)
+        public LineDbgPipelineAsset() : base()
         {
             // Line Pipeline
 
@@ -40,7 +40,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     },
                     lightShaders),
                 new ResourceLayout[] { GraphicsManager.sharedPipelineLayout},
-                fb.OutputDescription);
+                Game.resourceContext.lightRenderFB.OutputDescription);
 
             pipeline = rf.CreateGraphicsPipeline(ref linePipelineDesc);
         }

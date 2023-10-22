@@ -7,7 +7,7 @@ namespace ABEngine.ABERuntime.Pipelines
 {
     public class WaterPipelineAsset : PipelineAsset
     {
-        public WaterPipelineAsset(Framebuffer fb) : base(fb, true, true)
+        public WaterPipelineAsset() : base()
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedTextureLayout);
@@ -28,7 +28,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     },
                     shaders),
                 resourceLayouts.ToArray(),
-                fb.OutputDescription);
+                Game.resourceContext.mainRenderFB.OutputDescription);
             pipeline = rf.CreateGraphicsPipeline(ref waterPipelineDesc);
         }
 

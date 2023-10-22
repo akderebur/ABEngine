@@ -644,7 +644,7 @@ Fragment
 	
 	    vec4 distortNoiseSample = texture(sampler2D(DistNoiseTex, DistNoiseSampler), distortUV);
 	    vec2 distortAmount = (distortNoiseSample.xy * 2.0 -1.0) * surface_distortion_amount;
-	
+        
 	    vec2 noise_uv = vec2(
 		    (noiseUV.x + Time * surface_noise_scroll.x) + distortAmount.x , 
 		    (noiseUV.y + Time * surface_noise_scroll.y + distortAmount.y)

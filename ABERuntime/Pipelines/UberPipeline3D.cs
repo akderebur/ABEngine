@@ -5,7 +5,7 @@ namespace ABEngine.ABERuntime.Pipelines
 {
     public class UberPipeline3D : PipelineAsset
     {
-        public UberPipeline3D(Framebuffer fb) : base(fb, false, false)
+        public UberPipeline3D() : base()
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
@@ -28,7 +28,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     },
                     shaders),
                 resourceLayouts.ToArray(),
-                fb.OutputDescription);
+                Game.resourceContext.mainRenderFB.OutputDescription);
             pipeline = rf.CreateGraphicsPipeline(ref uber3DDesc);
         }
     }
