@@ -178,7 +178,7 @@ namespace ABEngine.ABERuntime
                 cl.SetVertexBuffer(0, mesh.vertexBuffer);
                 cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
 
-                cl.SetGraphicsResourceSet(0, Game.pipelineSet);
+                //cl.SetGraphicsResourceSet(0, Game.pipelineSet);
                 cl.SetGraphicsResourceSet(1, mr.vertexTransformSet);
 
 
@@ -266,7 +266,7 @@ namespace ABEngine.ABERuntime
                 cl.SetVertexBuffer(0, mesh.vertexBuffer);
                 cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
 
-                cl.SetGraphicsResourceSet(0, Game.pipelineSet);
+                //cl.SetGraphicsResourceSet(0, Game.pipelineSet);
                 cl.SetGraphicsResourceSet(1, mr.vertexTransformSet);
 
                 // Material Resource Sets

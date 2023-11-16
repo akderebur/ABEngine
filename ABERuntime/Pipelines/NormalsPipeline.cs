@@ -11,10 +11,9 @@ namespace ABEngine.ABERuntime.Pipelines
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
-            shaderOptimised = false;
             defaultMatName = "NormalsPass";
 
-            PipelineAsset.ParseAsset(NormalsPipelineAsset, this);
+            base.ParseAsset(NormalsPipelineAsset, false);
 
             GraphicsPipelineDescription toonLitDesc = new GraphicsPipelineDescription(
                 BlendStateDescription.SingleAlphaBlend,
@@ -33,7 +32,7 @@ namespace ABEngine.ABERuntime.Pipelines
         }
 
         string NormalsPipelineAsset = @"
-Properties
+NormalsPass
 {
 	PropPad:vec4
 }

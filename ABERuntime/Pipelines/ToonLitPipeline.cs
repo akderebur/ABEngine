@@ -9,22 +9,21 @@ namespace ABEngine.ABERuntime.Pipelines
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
-            shaderOptimised = false;
             defaultMatName = "ToonLit";
 
-            PipelineAsset.ParseAsset(ToonLitPipelineAsset, this);
+            base.ParseAsset(ToonLitPipelineAsset, false);
 
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_FS);
 
             GraphicsPipelineDescription toonLitDesc = new GraphicsPipelineDescription(
-                new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AlphaBlend, BlendAttachmentDescription.AlphaBlend),
+                new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AlphaBlend, BlendAttachmentDescription.OverrideBlend),
                 DepthStencilStateDescription.DepthOnlyLessEqual,
                 RasterizerStateDescription.Default,
                 PrimitiveTopology.TriangleList,
                 new ShaderSetDescription(
                     new[]
                     {
-                      GraphicsManager.sharedMeshVertexLayout
+                      vertexLayout
                     },
                     shaders),
                 resourceLayouts.ToArray(),
@@ -33,7 +32,7 @@ namespace ABEngine.ABERuntime.Pipelines
         }
 
         string ToonLitPipelineAsset = @"
-Properties
+ToonLit
 {
 	PropPad:vec4
     AlbedoTex:texture2d
@@ -121,6 +120,7 @@ Fragment
     layout(location = 1) in vec3 Normal_WS;
 
     layout(location = 0) out vec4 outputColor;
+    layout(location = 1) out vec4 outputNormal;
    
     void main()
     {
@@ -136,6 +136,7 @@ Fragment
 
         vec4 col = texture(sampler2D(AlbedoTex, AlbedoTexSampler), UV);
         outputColor = (col) * (light + vec4(vec3(1) * 0.5, 1));
+        outputNormal = vec4(0);
     }
 }
 "

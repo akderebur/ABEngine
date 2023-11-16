@@ -338,7 +338,8 @@ namespace ABEngine.ABERuntime
             if (!renderGroups.ContainsKey(renderLayer))
                 return;
 
-            _cl.ClearDepthStencil(1f);
+            if(renderLayer > 0)
+                _cl.ClearDepthStencil(1f);
 
             int rendC = 0;
 

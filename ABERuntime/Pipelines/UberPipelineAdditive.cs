@@ -11,10 +11,9 @@ namespace ABEngine.ABERuntime.Pipelines
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedTextureLayout);
-            shaderOptimised = false;
             defaultMatName = "UberAdditive";
 
-            PipelineAsset.ParseAsset(Shaders.UberPipelineAsset, this);
+            base.ParseAsset(Shaders.UberPipelineAsset, false);
 
             GraphicsPipelineDescription uberPipelineDesc = new GraphicsPipelineDescription(
                 new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AdditiveBlend, BlendAttachmentDescription.AdditiveBlend),
@@ -30,14 +29,6 @@ namespace ABEngine.ABERuntime.Pipelines
                 resourceLayouts.ToArray(),
                 Game.resourceContext.mainRenderFB.OutputDescription);
             pipeline = rf.CreateGraphicsPipeline(ref uberPipelineDesc);
-        }
-
-        public override void BindPipeline()
-        {
-            base.BindPipeline();
-
-            // Resource sets
-            cl.SetGraphicsResourceSet(0, Game.pipelineSet);
         }
     }
 }

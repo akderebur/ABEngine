@@ -9,12 +9,10 @@ namespace ABEngine.ABERuntime.Pipelines
     {
         public WaterPipelineAsset() : base()
         {
-            resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedTextureLayout);
-            shaderOptimised = false;
             defaultMatName = "WaterMat";
 
-            PipelineAsset.ParseAsset(Shaders.WaterPipelineAsset, this);
+            base.ParseAsset(Shaders.WaterPipelineAsset, false);
 
             GraphicsPipelineDescription waterPipelineDesc = new GraphicsPipelineDescription(
                 BlendStateDescription.SingleAlphaBlend,
@@ -30,14 +28,6 @@ namespace ABEngine.ABERuntime.Pipelines
                 resourceLayouts.ToArray(),
                 Game.resourceContext.mainRenderFB.OutputDescription);
             pipeline = rf.CreateGraphicsPipeline(ref waterPipelineDesc);
-        }
-
-        public override void BindPipeline()
-        {
-            base.BindPipeline();
-
-            // Resource sets
-            cl.SetGraphicsResourceSet(0, Game.pipelineSet);
         }
     }
 }

@@ -92,9 +92,12 @@ namespace ABEngine.ABERuntime.Pipelines
 		";
 
         internal const string UberPipeline3DAsset = @"
-Properties
+Uber3D
 {
-	AlbedoColor:vec4
+    @Pipeline:3D
+    @Blend:Alpha
+
+    AlbedoColor:vec4
     MetallicFactor:float
     RoughnessFactor:float
     AOFactor:float

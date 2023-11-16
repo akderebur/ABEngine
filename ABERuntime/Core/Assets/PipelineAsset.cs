@@ -5,7 +5,6 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Xml.Linq;
 using Veldrid;
 using Veldrid.SPIRV;
 
@@ -29,7 +28,6 @@ namespace ABEngine.ABERuntime
         Dictionary<string, int> textureNames;
         internal PipelineMaterial refMaterial;
 
-        protected bool shaderOptimised;
         public int pipelineID;
 
         static int pipelineCount = 0;
@@ -52,6 +50,7 @@ namespace ABEngine.ABERuntime
         public virtual void BindPipeline()
         {
             cl.SetPipeline(pipeline);
+            cl.SetGraphicsResourceSet(0, Game.pipelineSet);
         }
 
         private static Type ShaderToNetType(string shaderType) => shaderType switch
@@ -72,7 +71,7 @@ namespace ABEngine.ABERuntime
             _ => VertexElementFormat.Float1
         };
 
-        public static void ParseAsset(string pipelineAsset, PipelineAsset dest)
+        protected void ParseAsset(string pipelineAsset, bool readDescriptor = true, bool shaderOptimised = false)
         {
             var rsFactory = GraphicsManager.rf;
 
@@ -84,11 +83,22 @@ namespace ABEngine.ABERuntime
 
             List<VertexElementDescription> vertexElements = new List<VertexElementDescription>();
             uint instanceStepRate = 0;
+            bool pipeline3d = false;
+
+            // Set 0 - Shared pipeline data
+            if(readDescriptor)
+                resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
+
+            // Descriptor Defaults
+            BlendStateDescription blendDesc = new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.OverrideBlend, BlendAttachmentDescription.OverrideBlend);
+            DepthStencilStateDescription depthDesc = DepthStencilStateDescription.DepthOnlyLessEqual;
+            RasterizerStateDescription rasterizerDesc = RasterizerStateDescription.Default;
+            PrimitiveTopology topology = PrimitiveTopology.TriangleList;
 
             string vertexShaderSrc = "", fragmentShaderSrc = "";
             string lastLine = "";
 
-            int sectionIndex = -1;
+            int sectionIndex = -2;
             int openBracketCount = 0;
             while (true)
             {
@@ -103,8 +113,12 @@ namespace ABEngine.ABERuntime
 
                     if (line.Equals("{") && openBracketCount == 1)
                     {
-                        if (lastLine.Equals("Properties"))
+                        if (sectionIndex == -2)
+                        {
+                            if(defaultMatName.Equals("NoName"))
+                                defaultMatName = lastLine;
                             sectionIndex = 0;
+                        }
                         else if (lastLine.Equals("Vertex"))
                             sectionIndex = 1;
                         else if (lastLine.Equals("Fragment"))
@@ -127,19 +141,69 @@ namespace ABEngine.ABERuntime
                                 if (string.IsNullOrEmpty(line))
                                     continue;
 
-                                if (line.StartsWith("@"))
+                                string[] split = line.Split(':');
+
+                                if (line.StartsWith("@") && readDescriptor)
                                 {
-                                    // Settings
-                                    if (line.Contains("StepMode:"))
-                                        instanceStepRate = 1;
+                                    // Pipeline Descriptor
+                                    string descName = split[0].Trim();
+                                    string value = split[1].Trim();
+
+                                    switch (descName)
+                                    {
+                                        case "@Pipeline":
+                                            // Set 1 - Reserved for pipeline specific data
+                                            if (value.Equals("3D"))
+                                            {
+                                                resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
+                                                pipeline3d = true;
+                                            }
+                                            else
+                                                resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
+                                            break;
+                                        case "@StepMode":
+                                            if (value.Equals("Instance"))
+                                                instanceStepRate = 1;
+                                            break;
+                                        case "@Blend":
+                                            if (value.Equals("Alpha"))
+                                                blendDesc = new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AlphaBlend, BlendAttachmentDescription.AlphaBlend);
+                                            else if (value.Equals("Additive"))
+                                                blendDesc = new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AdditiveBlend, BlendAttachmentDescription.AlphaBlend);
+                                            break;
+                                        case "@Depth":
+                                            if (value.Equals("GE"))
+                                                depthDesc = DepthStencilStateDescription.DepthOnlyGreaterEqual;
+                                            break;
+                                        case "@Cull":
+                                            if (value.Equals("None"))
+                                                rasterizerDesc.CullMode = FaceCullMode.None;
+                                            else if (value.Equals("Front"))
+                                                rasterizerDesc.CullMode = FaceCullMode.Front;
+                                            break;
+                                        case "@FrontFace":
+                                            if (value.Equals("CCW"))
+                                                rasterizerDesc.FrontFace = FrontFace.CounterClockwise;
+                                            break;
+                                        case "@Topology":
+                                            if (value.Equals("PointList"))
+                                                topology = PrimitiveTopology.PointList;
+                                            else if (value.Equals("LineList"))
+                                                topology = PrimitiveTopology.LineList;
+                                            else if (value.Equals("LineStrip"))
+                                                topology = PrimitiveTopology.LineStrip;
+                                            else if (value.Equals("TriangleStrio"))
+                                                topology = PrimitiveTopology.TriangleStrip;
+                                            break;
+                                        default:
+                                            break;
+                                    }
                                 }
                                 else
                                 {
                                     // Shader property
-                                    string[] split = line.Split(':');
-
-                                    string name = split[0];
-                                    string type = split[1];
+                                    string name = split[0].Trim();
+                                    string type = split[1].Trim();
 
                                     switch (type)
                                     {
@@ -232,14 +296,14 @@ namespace ABEngine.ABERuntime
             }
 
             // Vertex layout
-            dest.vertexLayout = new VertexLayoutDescription(vertexElements.ToArray());
-            dest.vertexLayout.InstanceStepRate = instanceStepRate;
+            vertexLayout = new VertexLayoutDescription(vertexElements.ToArray());
+            vertexLayout.InstanceStepRate = instanceStepRate;
 
             // Shader propery Uniforms
             var shaderPropUniform = rsFactory.CreateResourceLayout(
                new ResourceLayoutDescription(
                    new ResourceLayoutElementDescription("ShaderProps", ResourceKind.UniformBuffer, ShaderStages.Vertex | ShaderStages.Fragment)));
-            dest.resourceLayouts.Add(shaderPropUniform);
+            resourceLayouts.Add(shaderPropUniform);
 
             // Texture Uniforms
             ResourceLayout texUniform = null;
@@ -250,15 +314,18 @@ namespace ABEngine.ABERuntime
                 int index = 0;
                 foreach (var textureName in textureNames)
                 {
-                    dest.textureNames.Add(textureName, index / 2);
+                    this.textureNames.Add(textureName, index / 2);
                     layoutElements[index] = new ResourceLayoutElementDescription(textureName, ResourceKind.TextureReadOnly, ShaderStages.Fragment);
                     index++;
                     layoutElements[index] = new ResourceLayoutElementDescription(textureName + "Sampler", ResourceKind.Sampler, ShaderStages.Fragment);
                     index++;
                 }
                 texUniform = rsFactory.CreateResourceLayout(new ResourceLayoutDescription(layoutElements));
-                dest.resourceLayouts.Add(texUniform);
+                resourceLayouts.Add(texUniform);
             }
+
+            if(readDescriptor && pipeline3d)
+                resourceLayouts.Add(GraphicsManager.sharedMeshUniform_FS);
 
             // Shaders
             ShaderDescription vertexShader = new ShaderDescription(
@@ -271,7 +338,7 @@ namespace ABEngine.ABERuntime
                 Encoding.UTF8.GetBytes(fragmentShaderSrc),
                 "main");
 
-            //if (dest.defaultMatName.Equals("ToonWater"))
+            //if (defaultMatName.Equals("ToonWater"))
             //{
             //    SpecializationConstant[] specializations =
             //    {
@@ -292,15 +359,15 @@ namespace ABEngine.ABERuntime
             //}
 
 
-            if (dest.shaderOptimised)
-                dest.shaders = rsFactory.CreateFromSpirv(vertexShader, fragmentShader);
+            if (shaderOptimised)
+                shaders = rsFactory.CreateFromSpirv(vertexShader, fragmentShader);
             else
             {
-                dest.shaders = CompileShaderSet(vertexShader, fragmentShader);
+                shaders = CompileShaderSet(vertexShader, fragmentShader);
             }
 
-            dest.refMaterial = new PipelineMaterial(dest.defaultMatName.ToHash32(), dest, shaderPropUniform, texUniform);
-            dest.refMaterial.name = dest.defaultMatName;
+            refMaterial = new PipelineMaterial(defaultMatName.ToHash32(), this, shaderPropUniform, texUniform);
+            refMaterial.name = defaultMatName;
 
             // Shader Props Array
             uint vertBufferSize = 0;
@@ -336,14 +403,33 @@ namespace ABEngine.ABERuntime
                         break;
                 }
 
-                dest.propNames.Add(uniformElementNames[shaderVals.Count], shaderVals.Count);
+                propNames.Add(uniformElementNames[shaderVals.Count], shaderVals.Count);
                 shaderVals.Add(prop);
             }
 
-            dest.refMaterial.SetShaderPropBuffer(shaderVals, vertBufferSize);
-            dest.refMaterial.SetShaderTextureResources(textureNames);
+            refMaterial.SetShaderPropBuffer(shaderVals, vertBufferSize);
+            refMaterial.SetShaderTextureResources(textureNames);
 
-            GraphicsManager.AddPipelineAsset(dest);
+            if (readDescriptor)
+            {
+                // Create pipeline
+                GraphicsPipelineDescription pipelineDescription = new GraphicsPipelineDescription(
+                  blendDesc,
+                  depthDesc,
+                  rasterizerDesc,
+                  topology,
+                  new ShaderSetDescription(
+                      new[]
+                      {
+                        vertexLayout
+                      },
+                      shaders),
+                  resourceLayouts.ToArray(),
+                  Game.resourceContext.mainRenderFB.OutputDescription);
+                pipeline = GraphicsManager.rf.CreateGraphicsPipeline(ref pipelineDescription);
+            }
+
+            GraphicsManager.AddPipelineAsset(this);
         }
 
         private static Shader[] CompileShaderSet(ShaderDescription vertexDescription, ShaderDescription pixelDescription)

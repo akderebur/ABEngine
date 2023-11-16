@@ -9,10 +9,9 @@ namespace ABEngine.ABERuntime.Pipelines
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
-            shaderOptimised = false;
             defaultMatName = "ToonWater";
 
-            PipelineAsset.ParseAsset(Shaders3D.ToonWaterAsset, this);
+            base.ParseAsset(Shaders3D.ToonWaterAsset, false);
 
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_FS);
 

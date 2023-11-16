@@ -228,9 +228,12 @@ Fragment
 ;
 
         internal const string UberPipelineAsset = @"
-Properties
+UberStandard
 {
+    @Pipeline:2D
     @StepMode:Instance
+    @Blend:Alpha
+    @Cull:None
 
 	DissolveFade:float
     EnableFade:float
@@ -546,6 +549,8 @@ Fragment
         outputColor = color;
         normalSample *= vec2(sign(fsin_ObjScale.x), sign(fsin_ObjScale.y));
         normalSample = (normalSample + 1) * 0.5;
+
+        if(color.a > 0.99f)
         outputNormal = vec4(normalSample, layer / 255.0, 1);
     }
 }
