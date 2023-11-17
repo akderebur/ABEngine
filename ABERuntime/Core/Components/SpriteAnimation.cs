@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Collections.Generic;
 using ABEngine.ABERuntime.Animation;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABERuntime.Components
 {

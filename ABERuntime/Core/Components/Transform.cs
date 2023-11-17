@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Halak;
-using ABEngine.ABERuntime.Core.Math;
+using ABEngine.ABERuntime.Core.MathA;
 using Arch.Core;
 using Arch.Core.Extensions;
 

@@ -1,35 +1,35 @@
 ﻿using System;
-using Veldrid;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABERuntime.Pipelines
 {
-    public class ToonLitPipeline : PipelineAsset
+    public class ToonLitPipelineDefunct : PipelineAsset
     {
-        public ToonLitPipeline() : base()
-        {
-            resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
-            resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
-            defaultMatName = "ToonLit";
+        //public ToonLitPipeline() : base()
+        //{
+        //    resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
+        //    resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
+        //    defaultMatName = "ToonLit";
 
-            base.ParseAsset(ToonLitPipelineAsset, false);
+        //    base.ParseAsset(ToonLitPipelineAsset, false);
 
-            resourceLayouts.Add(GraphicsManager.sharedMeshUniform_FS);
+        //    resourceLayouts.Add(GraphicsManager.sharedMeshUniform_FS);
 
-            GraphicsPipelineDescription toonLitDesc = new GraphicsPipelineDescription(
-                new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AlphaBlend, BlendAttachmentDescription.OverrideBlend),
-                DepthStencilStateDescription.DepthOnlyLessEqual,
-                RasterizerStateDescription.Default,
-                PrimitiveTopology.TriangleList,
-                new ShaderSetDescription(
-                    new[]
-                    {
-                      vertexLayout
-                    },
-                    shaders),
-                resourceLayouts.ToArray(),
-                Game.resourceContext.mainRenderFB.OutputDescription);
-            pipeline = rf.CreateGraphicsPipeline(ref toonLitDesc);
-        }
+        //    GraphicsPipelineDescription toonLitDesc = new GraphicsPipelineDescription(
+        //        new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AlphaBlend, BlendAttachmentDescription.OverrideBlend),
+        //        DepthStencilStateDescription.DepthOnlyLessEqual,
+        //        RasterizerStateDescription.Default,
+        //        PrimitiveTopology.TriangleList,
+        //        new ShaderSetDescription(
+        //            new[]
+        //            {
+        //              vertexLayout
+        //            },
+        //            shaders),
+        //        resourceLayouts.ToArray(),
+        //        Game.resourceContext.mainRenderFB.OutputDescription);
+        //    pipeline = rf.CreateGraphicsPipeline(ref toonLitDesc);
+        //}
 
         string ToonLitPipelineAsset = @"
 ToonLit

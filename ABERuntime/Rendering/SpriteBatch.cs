@@ -3,22 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
-using Veldrid;
+using ABEngine.ABERuntime.Core.Assets;
+using WGIL;
+using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime.Rendering
 {
     public class SpriteBatch
     {
-        protected GraphicsDevice _gd;
-        protected CommandList _cl;
+        private WGILContext _wgil;
         public PipelineMaterial material;
 
-        public DeviceBuffer vertexBuffer;
-        public DeviceBuffer layerBuffer;
+        public Buffer vertexBuffer;
+        public Buffer layerBuffer;
    
-        protected ResourceFactory rsFactory;
-
-        public ResourceSet texSet;
+        public BindGroup texSet;
 
         public uint instanceCount;
         public bool isStatic { get; set; }
@@ -43,20 +42,19 @@ namespace ABEngine.ABERuntime.Rendering
 
         public SpriteBatch(Texture2D texture, PipelineMaterial pipelineMaterial, int renderLayerIndex, bool isStatic)
         {
+            _wgil = Game.wgil;
+
             this.texture2d = texture;
             imageSize = new Vector3(texture.imageSize.X, texture.imageSize.Y, 1f);
 
-            _gd = GraphicsManager.gd;
-            _cl = GraphicsManager.cl;
-            rsFactory = GraphicsManager.rf;
             this.material = pipelineMaterial;
             this.renderLayerIndex = renderLayerIndex;
             this.isStatic = isStatic;
 
             pipelineMaterial.onPipelineChanged += PipelineMaterial_onPipelineChanged;
 
-            layerBuffer = rsFactory.CreateBuffer(new BufferDescription(16, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
-            _gd.UpdateBuffer(layerBuffer, 0, new Vector4(renderLayerIndex, 0, 0, 0));
+            layerBuffer = _wgil.CreateBuffer(16, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
+            _wgil.WriteBuffer(layerBuffer, new Vector4(renderLayerIndex, 0, 0, 0));
         }
 
         private void PipelineMaterial_onPipelineChanged(PipelineAsset pipeline)
@@ -148,20 +146,34 @@ namespace ABEngine.ABERuntime.Rendering
                         }
                     }
 
-                    texSet = rsFactory.CreateResourceSet(new ResourceSetDescription(
-                         GraphicsManager.sharedSpriteNormalLayout,
-                         texture2d.texture,
-                         texture2d.textureSampler,
-                         normalTex.texture,
-                         normalTex.textureSampler,
-                         layerBuffer));
+                    var texSetDesc = new BindGroupDescriptor()
+                    {
+                        BindGroupLayout = GraphicsManager.sharedSpriteNormalLayout,
+                        Entries = new BindResource[]
+                        {
+                            texture2d.GetView(),
+                            texture2d.textureSampler,
+                            normalTex.GetView(),
+                            normalTex.textureSampler,
+                            layerBuffer
+                        }
+                    };
+
+                    texSet = _wgil.CreateBindGroup(ref texSetDesc);
                 }
                 else
                 {
-                    texSet = rsFactory.CreateResourceSet(new ResourceSetDescription(
-                       GraphicsManager.sharedTextureLayout,
-                       texture2d.texture,
-                       texture2d.textureSampler));
+                    var texSetDesc = new BindGroupDescriptor()
+                    {
+                        BindGroupLayout = GraphicsManager.sharedSpriteNormalLayout,
+                        Entries = new BindResource[]
+                        {
+                            texture2d.GetView(),
+                            texture2d.textureSampler,
+                        }
+                    };
+
+                    texSet = _wgil.CreateBindGroup(ref texSetDesc);
                 }
             }
 
@@ -191,9 +203,9 @@ namespace ABEngine.ABERuntime.Rendering
             // Buffer resources
             if(vertexBuffer != null)
                 vertexBuffer.Dispose();
-            vertexBuffer = rsFactory.CreateBuffer(new BufferDescription((uint)vertices.Length * QuadVertex.VertexSize, BufferUsage.VertexBuffer | BufferUsage.Dynamic));
 
-            _gd.UpdateBuffer(vertexBuffer, 0, vertices);           
+            vertexBuffer = _wgil.CreateBuffer(vertices.Length * (int)QuadVertex.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+            _wgil.WriteBuffer(vertexBuffer, vertices);
         }
 
         int runC = 0;
@@ -206,7 +218,7 @@ namespace ABEngine.ABERuntime.Rendering
             }
 
             // Write to GPU buffer
-            MappedResourceView<QuadVertex> writemap = _gd.Map<QuadVertex>(vertexBuffer, MapMode.Write);
+            QuadVertex[] writemap = new QuadVertex[sprites.Count];
 
             var sorted = sprites.Where(sp => sp.transform.enabled).OrderBy(sp => sp.transform.worldPosition.Z);
             int renderCount = sorted.Count();
@@ -244,8 +256,7 @@ namespace ABEngine.ABERuntime.Rendering
                                          Vector2.Zero);
             }
 
-            _gd.Unmap(vertexBuffer);
-
+            _wgil.WriteBuffer(vertexBuffer, writemap);
         }
     }
 

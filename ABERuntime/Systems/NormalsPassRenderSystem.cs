@@ -3,7 +3,7 @@ using System.Linq;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Pipelines;
 using Arch.Core;
-using Veldrid;
+using WGIL;
 
 namespace ABEngine.ABERuntime
 {
@@ -13,7 +13,7 @@ namespace ABEngine.ABERuntime
 
         SharedMeshVertex sharedVertexUniform;
 
-        public override void SetupResources(params Texture[] samplesTextures)
+        public override void SetupResources(params TextureView[] samplesTextures)
         {
            
         }
@@ -30,16 +30,15 @@ namespace ABEngine.ABERuntime
                 base.pipelineAsset = new NormalsPipeline();
         }
 
-        public override void Render(int renderLayer)
+        public override void Render(RenderPass pass, int renderLayer)
         {
             if (renderLayer == 0)
-                Render();
+                Render(pass);
         }
 
-        public override void Render()
+        public override void Render(RenderPass pass)
         {
-            pipelineAsset.BindPipeline();
-            cl.SetGraphicsResourceSet(0, Game.pipelineSet);
+            pipelineAsset.BindPipeline(pass);
 
             Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
             {
@@ -50,32 +49,32 @@ namespace ABEngine.ABERuntime
 
                 // Update vertex uniform
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
-                gd.UpdateBuffer(mr.vertexUniformBuffer, 0, sharedVertexUniform);
+                wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
 
-                cl.SetVertexBuffer(0, mesh.vertexBuffer);
-                cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
+                pass.SetVertexBuffer(0, mesh.vertexBuffer);
+                pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                cl.SetGraphicsResourceSet(1, mr.vertexTransformSet);
+                pass.SetBindGroup(1, mr.vertexTransformSet);
 
                 // Material Resource Sets
                 if (mr.material.bindableSets.Count > 0)
                 {
                     var entry = mr.material.bindableSets.ElementAt(0);
-                    cl.SetGraphicsResourceSet(entry.Key, entry.Value);
+                    pass.SetBindGroup(entry.Key, entry.Value);
                 }
 
-                cl.DrawIndexed((uint)mesh.indices.Length);
+                pass.DrawIndexed(mesh.indices.Length);
             });
         }
 
-        internal override Texture GetMainColorAttachent()
+        internal override TextureView GetMainColorAttachent()
         {
-            return Game.resourceContext.cameraNormalTexture;
+            return Game.resourceContext.cameraNormalView;
         }
 
-        internal override Texture GetDepthAttachment()
+        internal override TextureView GetDepthAttachment()
         {
-            return Game.resourceContext.normalsDepthTexture;
+            return Game.resourceContext.normalsDepthView;
         }
     }
 }

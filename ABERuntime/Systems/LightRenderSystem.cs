@@ -1,10 +1,11 @@
 ﻿using System;
-using Veldrid;
 using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using Arch.Core;
 using ABEngine.ABERuntime.Pipelines;
+using WGIL;
+using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime
 {
@@ -15,24 +16,32 @@ namespace ABEngine.ABERuntime
         uint lightCount = 0;
         public static float GlobalLightIntensity = 1f;
 
-        DeviceBuffer lightBuffer;
+        Buffer lightBuffer;
         List<LightInfo> lightInfos;
 
         // Rendering
-        ResourceSet textureSet;
+        BindGroup textureSet;
 
-        public override void SetupResources(params Texture[] sampledTextures)
+        public override void SetupResources(params TextureView[] sampledTextures)
         {
             base.pipelineAsset = new LightPipelineAsset();
 
             if (textureSet != null)
                 textureSet.Dispose();
 
-            textureSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
-              ((LightPipelineAsset)base.pipelineAsset).GetTexResourceLayout(),
-              sampledTextures[0], GraphicsManager.linearSamplerWrap, sampledTextures[1], GraphicsManager.linearSamplerWrap 
-              ));
-            
+            var textureSetDesc = new BindGroupDescriptor()
+            {
+                BindGroupLayout = ((LightPipelineAsset)base.pipelineAsset).GetTexResourceLayout(),
+                Entries = new BindResource[]
+                {
+                    sampledTextures[0],
+                    GraphicsManager.linearSamplerWrap,
+                    sampledTextures[1],
+                    GraphicsManager.linearSamplerWrap
+                }
+            };
+
+            textureSet = wgil.CreateBindGroup(ref textureSetDesc);
         }
 
         public override void SceneSetup()
@@ -51,7 +60,7 @@ namespace ABEngine.ABERuntime
             //renderLayerStep = lightLimit / (uint)GraphicsManager.renderLayers.Count;
             //layerLightCounts = new uint[GraphicsManager.renderLayers.Count];
 
-            lightBuffer = rf.CreateBuffer(new BufferDescription(LightInfo.VertexSize * maxLightCount, BufferUsage.VertexBuffer | BufferUsage.Dynamic));
+            lightBuffer = wgil.CreateBuffer((int)(LightInfo.VertexSize * maxLightCount), BufferUsages.VERTEX | BufferUsages.COPY_DST);
         }
 
         internal void AddLayer()
@@ -91,27 +100,27 @@ namespace ABEngine.ABERuntime
             });
         }
 
-        public override void Render()
+        public override void Render(RenderPass pass)
         {
-            Render(0);
+            Render(pass, 0);
         }
 
-        public override void Render(int renderLayer)
+        public override void Render(RenderPass pass, int renderLayer)
         {
             if (renderLayer > 0)
                 return;
 
             // Light pass
-            pipelineAsset.BindPipeline();
-            cl.SetGraphicsResourceSet(1, textureSet);
+            pipelineAsset.BindPipeline(pass);
+            pass.SetBindGroup(1, textureSet);
 
             // Light Infos
             List<LightInfo> lightList = lightInfos;
 
             // Light Buffer
-            DeviceBuffer lightInfoBuffer = lightBuffer;
+            Buffer lightInfoBuffer = lightBuffer;
            
-            MappedResourceView<LightInfo> writemap = gd.Map<LightInfo>(lightInfoBuffer, MapMode.Write);
+            LightInfo[] writemap = new LightInfo[lightList.Count + 1];
 
             // Global Light
             writemap[0] = new LightInfo(Game.activeCam.worldPosition - Vector3.UnitZ,
@@ -125,14 +134,15 @@ namespace ABEngine.ABERuntime
             {
                 writemap[i + 1] = lightList[i];
             }
-            gd.Unmap(lightInfoBuffer);
 
-            cl.SetVertexBuffer(0, lightInfoBuffer);
+            wgil.WriteBuffer(lightInfoBuffer, writemap, 0, (int)LightInfo.VertexSize * (lightList.Count + 1));
+
+            pass.SetVertexBuffer(0, lightInfoBuffer);
 
             //cl.Draw(lightCount, 1, 0, 0);
             //cl.Draw(layerLightCounts[renderLayer], 1, renderLayerStep * (uint)renderLayer, 0);
             //cl.Draw(6, layerLightCounts[renderLayer], renderLayerStep * (uint)renderLayer, 0);
-            cl.Draw(6, (uint)lightList.Count + 1, 0, 0);
+            pass.Draw(0, 6, 0, lightList.Count + 1);
 
             lightList.Clear();
         }
@@ -155,9 +165,9 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        internal override Texture GetMainColorAttachent()
+        internal override TextureView GetMainColorAttachent()
         {
-            return Game.resourceContext.lightRenderTexture;
+            return Game.resourceContext.lightRenderView;
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
-using Veldrid;
-using Veldrid.SPIRV;
+using ABEngine.ABERuntime.Core.Assets;
+using WGIL;
 
 namespace ABEngine.ABERuntime.Pipelines
 {
@@ -10,47 +10,25 @@ namespace ABEngine.ABERuntime.Pipelines
         public LineDbgPipelineAsset() : base()
         {
             // Line Pipeline
+            var linePipelineDesc = new PipelineDescriptor()
+            {
+                BlendStates = new BlendState[] { BlendState.OverrideBlend },
+                PrimitiveState = new PrimitiveState()
+                {
+                    Topology = PrimitiveTopology.LineStrip,
+                    PolygonMode = PolygonMode.Fill,
+                    FrontFace = FrontFace.Cw,
+                    CullFace = CullFace.None
+                },
+                VertexAttributes = new VertexAttribute[]
+                {
+                    new VertexAttribute() { format = VertexFormat.Float32x4, location = 0, offset = 0 },
+                    new VertexAttribute() { format = VertexFormat.Float32x3, location = 1, offset = 16 }
+                },
+                BindGroupLayouts = new BindGroupLayout[] { GraphicsManager.sharedPipelineLayout },
+            };
 
-            // Line shaders
-            ShaderDescription lineVS = new ShaderDescription(
-               ShaderStages.Vertex,
-               Encoding.UTF8.GetBytes(Shaders.LineDebugVertex),
-               "main");
-
-            ShaderDescription lineFS = new ShaderDescription(
-                ShaderStages.Fragment,
-                Encoding.UTF8.GetBytes(Shaders.LineDebugFragment),
-                "main");
-
-            var lightShaders = rf.CreateFromSpirv(lineVS, lineFS);
-
-            var vertLayout = new VertexLayoutDescription(
-                            new VertexElementDescription("Color", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float4),
-                            new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3));
-
-            GraphicsPipelineDescription linePipelineDesc = new GraphicsPipelineDescription(
-                BlendStateDescription.SingleOverrideBlend,
-                GraphicsManager.gd.IsDepthRangeZeroToOne ? DepthStencilStateDescription.DepthOnlyGreaterEqual : DepthStencilStateDescription.DepthOnlyLessEqual,
-                RasterizerStateDescription.CullNone,
-                PrimitiveTopology.LineStrip,
-                new ShaderSetDescription(
-                    new[]
-                    {
-                        vertLayout
-                    },
-                    lightShaders),
-                new ResourceLayout[] { GraphicsManager.sharedPipelineLayout},
-                Game.resourceContext.lightRenderFB.OutputDescription);
-
-            pipeline = rf.CreateGraphicsPipeline(ref linePipelineDesc);
-        }
-
-        public override void BindPipeline()
-        {
-            base.BindPipeline();
-
-            // Resource sets
-            cl.SetGraphicsResourceSet(0, Game.pipelineSet);
+            pipeline = Game.wgil.CreateRenderPipeline(Shaders.LineDebugVertex, Shaders.LineDebugFragment, ref linePipelineDesc);
         }
     }
 }

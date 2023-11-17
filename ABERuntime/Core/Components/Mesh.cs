@@ -4,7 +4,8 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using ABEngine.ABERuntime.Core.Assets;
 using Halak;
-using Veldrid;
+using Buffer = WGIL.Buffer;
+using WGIL;
 
 namespace ABEngine.ABERuntime
 {
@@ -17,8 +18,8 @@ namespace ABEngine.ABERuntime
         public Vector3 boundsMin;
         public Vector3 boundsMax;
 
-        internal DeviceBuffer vertexBuffer;
-        internal DeviceBuffer indexBuffer;
+        internal Buffer vertexBuffer;
+        internal Buffer indexBuffer;
 
         public Mesh()
         {
@@ -44,9 +45,9 @@ namespace ABEngine.ABERuntime
                 CalculateBounds();
                 if (vertexBuffer != null)
                     vertexBuffer.Dispose();
-                vertexBuffer = GraphicsManager.rf.CreateBuffer(
-                                new BufferDescription(_vertices[0].VertexSize * (uint)_vertices.Length, BufferUsage.VertexBuffer | BufferUsage.Dynamic));
-                GraphicsManager.gd.UpdateBuffer(vertexBuffer, 0, _vertices);
+
+                vertexBuffer = Game.wgil.CreateBuffer((int)_vertices[0].VertexSize * _vertices.Length, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+                Game.wgil.WriteBuffer(vertexBuffer, _vertices);
             }
         }
 
@@ -58,9 +59,9 @@ namespace ABEngine.ABERuntime
                 _indices = value;
                 if (indexBuffer != null)
                     indexBuffer.Dispose();
-                indexBuffer = GraphicsManager.rf.CreateBuffer(
-                             new BufferDescription(sizeof(ushort) * (uint)_indices.Length, BufferUsage.IndexBuffer | BufferUsage.Dynamic ));
-                GraphicsManager.gd.UpdateBuffer(indexBuffer, 0, _indices);
+
+                indexBuffer = Game.wgil.CreateBuffer(sizeof(ushort) * indices.Length, BufferUsages.INDEX | BufferUsages.COPY_DST);
+                Game.wgil.WriteBuffer(indexBuffer, _indices);
             }
         }
 

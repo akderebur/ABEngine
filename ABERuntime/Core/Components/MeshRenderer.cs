@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
 using Halak;
-using Veldrid;
+using WGIL;
+using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -11,8 +13,8 @@ namespace ABEngine.ABERuntime.Components
         public PipelineMaterial material { get; set; }
         public Mesh mesh { get; set; }
 
-        internal DeviceBuffer vertexUniformBuffer;
-        internal ResourceSet vertexTransformSet;
+        internal Buffer vertexUniformBuffer;
+        internal BindGroup vertexTransformSet;
 
         public MeshRenderer()
 		{
@@ -34,8 +36,17 @@ namespace ABEngine.ABERuntime.Components
 
         void SetupResources()
         {
-            vertexUniformBuffer = GraphicsManager.rf.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
-            vertexTransformSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_VS, vertexUniformBuffer));
+            vertexUniformBuffer = Game.wgil.CreateBuffer(64, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
+
+            var vertexTransformDesc = new BindGroupDescriptor()
+            {
+                BindGroupLayout = GraphicsManager.sharedMeshUniform_VS,
+                Entries = new BindResource[]
+                {
+                    vertexUniformBuffer
+                }
+            };
+            vertexTransformSet = Game.wgil.CreateBindGroup(ref vertexTransformDesc);
         }
 
         public JValue Serialize()

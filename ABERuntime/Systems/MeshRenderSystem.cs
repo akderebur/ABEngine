@@ -3,7 +3,8 @@ using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Components;
 using Arch.Core;
-using Veldrid;
+using WGIL;
+using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime
 {
@@ -48,23 +49,31 @@ namespace ABEngine.ABERuntime
         private readonly QueryDescription pointLightQuery = new QueryDescription().WithAll<Transform, PointLight>();
         private readonly QueryDescription directionalLightQuery = new QueryDescription().WithAll<Transform, DirectionalLight>();
 
-        DeviceBuffer fragmentUniformBuffer;
+        Buffer fragmentUniformBuffer;
 
-        ResourceSet sharedFragmentSet;
+        BindGroup sharedFragmentSet;
 
         SharedMeshVertex sharedVertexUniform;
         SharedMeshFragment sharedFragmentUniform;
 
         LightInfo3D[] lightInfos;
 
-        public override void SetupResources(params Texture[] sampledTextures)
+        public override void SetupResources(params TextureView[] sampledTextures)
         {
             lightInfos = new LightInfo3D[4];
 
             if (fragmentUniformBuffer == null)
             {
-                fragmentUniformBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(160, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
-                sharedFragmentSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedMeshUniform_FS, fragmentUniformBuffer));
+                fragmentUniformBuffer = wgil.CreateBuffer(160, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
+
+                var sharedFragmentDesc = new BindGroupDescriptor()
+                {
+                    BindGroupLayout = GraphicsManager.sharedMeshUniform_FS,
+                    Entries = new BindResource[]
+                    {
+                        fragmentUniformBuffer
+                    }
+                };
             }
 
             sharedVertexUniform = new SharedMeshVertex();
@@ -125,7 +134,7 @@ namespace ABEngine.ABERuntime
             sharedFragmentUniform.NumDirectionalLights = dirLightC;
             sharedFragmentUniform.NumPointLights = pointLightC;
 
-            gd.UpdateBuffer(fragmentUniformBuffer, 0, sharedFragmentUniform);
+            wgil.WriteBuffer(fragmentUniformBuffer, sharedFragmentUniform);
 
             // Mesh render order
             Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
@@ -146,19 +155,19 @@ namespace ABEngine.ABERuntime
             return 1.0f / (paramZ * z + paramW);
         }
 
-        public override void Render(int renderLayer)
+        public override void Render(RenderPass pass, int renderLayer)
         {
             if (renderLayer == 0)
-                Render();
+                Render(pass);
         }
 
-        public void LateRender(int renderLayer)
-        {
-            if (renderLayer == 0 && lateRenderOrder.Count > 0)
-                LateRender();
-        }
+        //public void LateRender(int renderLayer)
+        //{
+        //    if (renderLayer == 0 && lateRenderOrder.Count > 0)
+        //        LateRender();
+        //}
 
-        public override void Render()
+        public override void Render(RenderPass pass)
         {
             // TODO Render layers
             // TODO Pipeline batching
@@ -171,27 +180,25 @@ namespace ABEngine.ABERuntime
 
                 // Update vertex uniform
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
-                gd.UpdateBuffer(mr.vertexUniformBuffer, 0, sharedVertexUniform);
+                wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
 
-                mr.material.pipelineAsset.BindPipeline();
+                mr.material.pipelineAsset.BindPipeline(pass);
 
-                cl.SetVertexBuffer(0, mesh.vertexBuffer);
-                cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
+                pass.SetVertexBuffer(0, mesh.vertexBuffer);
+                pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
                 //cl.SetGraphicsResourceSet(0, Game.pipelineSet);
-                cl.SetGraphicsResourceSet(1, mr.vertexTransformSet);
-
+                pass.SetBindGroup(1, mr.vertexTransformSet);
 
                 // Material Resource Sets
                 foreach (var setKV in mr.material.bindableSets)
                 {
-                    cl.SetGraphicsResourceSet(setKV.Key, setKV.Value);
+                    pass.SetBindGroup(setKV.Key, setKV.Value);
                 }
 
-                cl.SetGraphicsResourceSet(4, sharedFragmentSet);
+                pass.SetBindGroup(4, sharedFragmentSet);
 
-
-                cl.DrawIndexed((uint)mesh.indices.Length);
+                pass.DrawIndexed(mesh.indices.Length);
 
                 //cl.End();
                 //gd.SubmitCommands(cl);
@@ -241,46 +248,46 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        private void LateRender()
-        {
-            cl.End();
-            gd.SubmitCommands(cl);
-            gd.WaitForIdle();
-            cl.Begin();
+        //private void LateRender()
+        //{
+        //    cl.End();
+        //    gd.SubmitCommands(cl);
+        //    gd.WaitForIdle();
+        //    cl.Begin();
 
-            cl.SetFramebuffer(Game.resourceContext.mainRenderFB);
-            cl.SetFullViewports();
+        //    cl.SetFramebuffer(Game.resourceContext.mainRenderFB);
+        //    cl.SetFullViewports();
 
-            foreach (var render in lateRenderOrder)
-            {
-                MeshRenderer mr = render.Item1;
-                Transform transform = render.Item2;
-                Mesh mesh = mr.mesh;
+        //    foreach (var render in lateRenderOrder)
+        //    {
+        //        MeshRenderer mr = render.Item1;
+        //        Transform transform = render.Item2;
+        //        Mesh mesh = mr.mesh;
 
-                // Update vertex uniform
-                sharedVertexUniform.transformMatrix = transform.worldMatrix;
-                gd.UpdateBuffer(mr.vertexUniformBuffer, 0, sharedVertexUniform);
+        //        // Update vertex uniform
+        //        sharedVertexUniform.transformMatrix = transform.worldMatrix;
+        //        gd.UpdateBuffer(mr.vertexUniformBuffer, 0, sharedVertexUniform);
 
-                mr.material.pipelineAsset.BindPipeline();
+        //        mr.material.pipelineAsset.BindPipeline();
 
-                cl.SetVertexBuffer(0, mesh.vertexBuffer);
-                cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
+        //        cl.SetVertexBuffer(0, mesh.vertexBuffer);
+        //        cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
 
-                //cl.SetGraphicsResourceSet(0, Game.pipelineSet);
-                cl.SetGraphicsResourceSet(1, mr.vertexTransformSet);
+        //        //cl.SetGraphicsResourceSet(0, Game.pipelineSet);
+        //        cl.SetGraphicsResourceSet(1, mr.vertexTransformSet);
 
-                // Material Resource Sets
-                foreach (var setKV in mr.material.bindableSets)
-                {
-                    cl.SetGraphicsResourceSet(setKV.Key, setKV.Value);
-                }
+        //        // Material Resource Sets
+        //        foreach (var setKV in mr.material.bindableSets)
+        //        {
+        //            cl.SetGraphicsResourceSet(setKV.Key, setKV.Value);
+        //        }
 
-                cl.SetGraphicsResourceSet(4, sharedFragmentSet);
+        //        cl.SetGraphicsResourceSet(4, sharedFragmentSet);
 
 
-                cl.DrawIndexed((uint)mesh.indices.Length);
-            }
-        }
+        //        cl.DrawIndexed((uint)mesh.indices.Length);
+        //    }
+        //}
 
         public override void CleanUp(bool reload, bool newScene, bool resize)
         {

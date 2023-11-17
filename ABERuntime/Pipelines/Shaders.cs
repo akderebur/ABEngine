@@ -708,7 +708,7 @@ void main()
         vec2 pos = unit_pos * Radius;
         pos += Position.xy;
 
-        vec3 cameraPosition = -transpose(mat3(View)) * View[3].xyz;
+        vec3 cameraPosition = transpose(mat3(View)) * -1.0 * View[3].xyz;
         vec3 endPos = vec3(pos, Position.z) - cameraPosition;
 
         gl_Position = Projection * vec4(endPos, 1);

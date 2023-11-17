@@ -1,98 +1,83 @@
 ﻿using System;
 using System.Numerics;
 using System.Text;
-using Veldrid;
-using Veldrid.SPIRV;
+using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
+using WGIL;
 
 namespace ABEngine.ABERuntime.Pipelines
 {
     public class LightPipelineAsset : PipelineAsset
     {
-        ResourceLayout texLayout;
+        BindGroupLayout texLayout;
 
         public LightPipelineAsset() : base()
         {
 
             // Light Pipeline
-
-            // Light shaders
-            ShaderDescription lightVS = new ShaderDescription(
-               ShaderStages.Vertex,
-               Encoding.UTF8.GetBytes(Shaders.PointLightVertex2),
-               "main");
-
-            ShaderDescription lightFS = new ShaderDescription(
-                ShaderStages.Fragment,
-                Encoding.UTF8.GetBytes(Shaders.PointLightFragment2),
-                "main");
-
-            var lightShaders = rf.CreateFromSpirv(lightVS, lightFS);
-
-            var vertLayout = new VertexLayoutDescription(
-                            new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
-                            new VertexElementDescription("Color", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float4),
-                            new VertexElementDescription("Radius", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
-                            new VertexElementDescription("Intensity", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
-                            new VertexElementDescription("Volume", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
-                            new VertexElementDescription("Layer", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
-                            new VertexElementDescription("Global", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1));
-            vertLayout.InstanceStepRate = 1;
+            var vertLayout = WGILUtils.GetVertexLayout<LightInfo>(out _);
 
             // Tex Layout
-            texLayout = rf.CreateResourceLayout(
-               new ResourceLayoutDescription(
-                   new ResourceLayoutElementDescription("MainTex", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
-                   new ResourceLayoutElementDescription("MainSampler", ResourceKind.Sampler, ShaderStages.Fragment),
-                   new ResourceLayoutElementDescription("NormalTex", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
-                   new ResourceLayoutElementDescription("NormalSampler", ResourceKind.Sampler, ShaderStages.Fragment)
-            ));
-
-            GraphicsPipelineDescription lightPipelineDesc = new GraphicsPipelineDescription(
-               new BlendStateDescription(RgbaFloat.White, false,
-               new BlendAttachmentDescription
-               (
-                   true,
-                   BlendFactor.One,
-                   BlendFactor.One,
-                   BlendFunction.Add,
-                   BlendFactor.One,
-                   BlendFactor.Zero,
-                   BlendFunction.Add
-               )),
-                DepthStencilStateDescription.Disabled,
-                //GraphicsManager.gd.IsDepthRangeZeroToOne ? DepthStencilStateDescription.DepthOnlyGreaterEqual : DepthStencilStateDescription.DepthOnlyLessEqual,
-                RasterizerStateDescription.Default,
-                PrimitiveTopology.TriangleList,
-                new ShaderSetDescription(
-                    new[]
+            var texLayoutDesc = new BindGroupLayoutDescriptor()
+            {
+                Entries = new[]
+               {
+                    new BindGroupLayoutEntry()
                     {
-                         //new VertexLayoutDescription(
-                         //   new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
-                         //   new VertexElementDescription("TexCoords", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2))
-
-                        vertLayout
+                        BindingType = BindingType.Texture,
+                        ShaderStages = ShaderStages.FRAGMENT
                     },
-                    lightShaders),
-                new ResourceLayout[] { GraphicsManager.sharedPipelineLayout, texLayout },
-                Game.resourceContext.lightRenderFB.OutputDescription);
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Sampler,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Texture,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Sampler,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    }
+                }
+            };
 
-            pipeline = rf.CreateGraphicsPipeline(ref lightPipelineDesc);
 
-            //LightInfo lightVertTest = new LightInfo(new Vector4(1f, 0f, 0f, 1f), 1f, 1f);
+            texLayout = Game.wgil.CreateBindGroupLayout(ref texLayoutDesc);
 
-            //lightTestVB = _gd.ResourceFactory.CreateBuffer(new BufferDescription(LightInfo.VertexSize, BufferUsage.VertexBuffer));
-            //_gd.UpdateBuffer(lightTestVB, 0, lightVertTest);
+            var lightPipeDesc = new PipelineDescriptor()
+            {
+                VertexStepMode = VertexStepMode.Instance,
+                BlendStates = new BlendState[]
+                {
+                    new BlendState()
+                    {
+                        color = new BlendComponent() { SrcFactor = BlendFactor.One, DstFactor = BlendFactor.One, Operation = BlendOperation.Add },
+                        alpha = new BlendComponent() { SrcFactor = BlendFactor.One, DstFactor = BlendFactor.Zero, Operation = BlendOperation.Add }
+                    }
+                },
+                PrimitiveState = new PrimitiveState()
+                {
+                    Topology = PrimitiveTopology.TriangleList,
+                    PolygonMode = PolygonMode.Fill,
+                    CullFace = CullFace.Back,
+                    FrontFace = FrontFace.Cw
+                },
+                BindGroupLayouts = new[] { GraphicsManager.sharedPipelineLayout, texLayout },
+                VertexAttributes = vertLayout,
+                AttachmentDescription = new AttachmentDescription()
+                {
+                    ColorFormats = new[] { GraphicsManager.surfaceFormat }
+                }
+            };
+
+            pipeline = Game.wgil.CreateRenderPipeline(Shaders.PointLightVertex2, Shaders.PointLightFragment2, ref lightPipeDesc);
         }
 
-        public override void BindPipeline()
-        {
-            base.BindPipeline();
-
-            // Resource sets
-            cl.SetGraphicsResourceSet(0, Game.pipelineSet);
-        }
-
-        public ResourceLayout GetTexResourceLayout()
+        public BindGroupLayout GetTexResourceLayout()
         {
             return texLayout;
         }

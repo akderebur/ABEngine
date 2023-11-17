@@ -3,22 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using Veldrid;
-using Veldrid.ImageSharp;
-using Veldrid.Utilities;
 using System.Text;
 using System.IO.Compression;
-using SixLabors.ImageSharp.PixelFormats;
-using Vulkan;
+using WGIL;
 using System.Net.NetworkInformation;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using Halak;
-using ABEngine.ABERuntime.Core.Assets;
 using System.Runtime.CompilerServices;
 using ABEngine.ABERuntime.Core.Components;
 
-namespace ABEngine.ABERuntime
+namespace ABEngine.ABERuntime.Core.Assets
 {
     class AssetEntry
     {
@@ -160,27 +155,8 @@ namespace ABEngine.ABERuntime
                         byte[] pixelData = br.ReadBytes((int)outputStream.Length - 12);
 
                         // Load texture
-                        var texDesc = TextureDescription.Texture2D(
-                        width, height, 1, 1, (PixelFormat)texIntType, TextureUsage.Sampled);
-                        tex = GraphicsManager.rf.CreateTexture(texDesc);
-                        unsafe
-                        {
-                            fixed (byte* pin = pixelData)
-                            {
-                               GraphicsManager.gd.UpdateTexture(
-                               tex,
-                               (IntPtr)pin,
-                               (uint)pixelData.Length,
-                               0,
-                               0,
-                               0,
-                               width,
-                               height,
-                               1,
-                               0,
-                               0);
-                            }
-                        }
+                        tex = Game.wgil.CreateTexture(width, height, (TextureFormat)texIntType, TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST);
+                        Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
                         s_textures.Add(hash, tex);
                     }
@@ -283,9 +259,8 @@ namespace ABEngine.ABERuntime
                 return defTexture;
 
             // Load texture
-            var texDesc = TextureDescription.Texture2D(
-            128, 128, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled);
-            var tex = GraphicsManager.rf.CreateTexture(texDesc);
+            Texture tex = Game.wgil.CreateTexture(128, 128, TextureFormat.Rgba8Unorm, TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST);
+
             var pixelData = new byte[128 * 128 * 4];
             byte data = 255;
             Array.Fill(pixelData, data);
@@ -303,7 +278,6 @@ namespace ABEngine.ABERuntime
                 }
             }
 
-
             for (int y = 0; y < 128 * 128 * 4; y += 128 * 4)
             {
                 if (y < offset * 128 * 4 || y > (128 * 128 * 4 - offset * 128 * 4))
@@ -316,24 +290,7 @@ namespace ABEngine.ABERuntime
                 }
             }
 
-            unsafe
-            {
-                fixed (byte* pin = pixelData)
-                {
-                    GraphicsManager.gd.UpdateTexture(
-                    tex,
-                    (IntPtr)pin,
-                    (uint)pixelData.Length,
-                    0,
-                    0,
-                    0,
-                    128,
-                    128,
-                    1,
-                    0,
-                    0);
-                }
-            }
+            Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
             defTexture = new Texture2D(1, tex, GraphicsManager.pointSamplerClamp, Vector2.Zero); ;
             return defTexture;
@@ -531,7 +488,7 @@ namespace ABEngine.ABERuntime
         {
             if (!s_textureViews.TryGetValue(texture, out TextureView view))
             {
-                view = GraphicsManager.rf.CreateTextureView(texture);
+                view = texture.CreateView();
                 s_textureViews.Add(texture, view);
             }
 
@@ -565,7 +522,7 @@ namespace ABEngine.ABERuntime
         {
             if (!s_textureViews.TryGetValue(texture, out TextureView view))
             {
-                view = GraphicsManager.rf.CreateTextureView(texture);
+                view = texture.CreateView();
                 s_textureViews.Add(texture, view);
             }
 
@@ -599,7 +556,7 @@ namespace ABEngine.ABERuntime
         {
             if (!s_textures_debug.TryGetValue(textureData, out Texture tex))
             {
-                tex = textureData.CreateDeviceTexture(GraphicsManager.gd, GraphicsManager.rf);
+                tex = textureData.CreateWGILTexture();
                 s_textures_debug.Add(textureData, tex);
             }
 

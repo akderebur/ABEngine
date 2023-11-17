@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
-using ABEngine.ABERuntime.Core.Assets;
 using Halak;
-using Veldrid.ImageSharp;
 
-namespace ABEngine.ABERuntime
+namespace ABEngine.ABERuntime.Core.Assets
 {
     public class SpriteClip : Asset
     {

@@ -5,19 +5,19 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using Newtonsoft.Json;
-using Veldrid;
 using System.Runtime.CompilerServices;
 using Halak;
-using ABEngine.ABERuntime.Core.Assets;
+using WGIL;
+using Buffer = WGIL.Buffer;
 
-namespace ABEngine.ABERuntime
+namespace ABEngine.ABERuntime.Core.Assets
 {
     public class PipelineMaterial : Asset
     {
         public int instanceID;
 
-        private ResourceLayout propLayout;
-        private ResourceLayout texLayout;
+        private BindGroupLayout propLayout;
+        private BindGroupLayout texLayout;
         public PipelineAsset pipelineAsset;
 
         internal List<ShaderProp> shaderProps;
@@ -25,19 +25,19 @@ namespace ABEngine.ABERuntime
 
         public uint shaderPropBufferSize;
 
-        private BindableResource[] texResources;
-        private DeviceBuffer propBuffer;
+        private BindResource[] texResources;
+        private Buffer propBuffer;
 
-        public Dictionary<uint, ResourceSet> bindableSets = new Dictionary<uint, ResourceSet>();
-        private ResourceSet propSet;
-        private ResourceSet textureSet;
+        public Dictionary<int, BindGroup> bindableSets = new Dictionary<int, BindGroup>();
+        private BindGroup propSet;
+        private BindGroup textureSet;
         public bool isLateRender = false;
 
         private byte[] shaderPropData;
 
         internal event Action<PipelineAsset> onPipelineChanged;
 
-        public PipelineMaterial(uint hash, PipelineAsset pipelineAsset, ResourceLayout propLayout, ResourceLayout texLayout)
+        public PipelineMaterial(uint hash, PipelineAsset pipelineAsset, BindGroupLayout propLayout, BindGroupLayout texLayout)
         {
             this.pipelineAsset = pipelineAsset;
             this.instanceID = GraphicsManager.GetPipelineMaterialCount();
@@ -69,11 +69,19 @@ namespace ABEngine.ABERuntime
                 }
             }
 
-            propBuffer = GraphicsManager.rf.CreateBuffer(new BufferDescription(this.shaderPropBufferSize, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
-            propSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(this.propLayout, propBuffer));
+            propBuffer = Game.wgil.CreateBuffer((int)this.shaderPropBufferSize, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
 
-            GraphicsManager.gd.UpdateBuffer(propBuffer, 0, this.shaderPropData);
+            BindGroupDescriptor propSetDesc = new BindGroupDescriptor()
+            {
+                BindGroupLayout = this.propLayout,
+                Entries = new[]
+                {
+                    propBuffer   
+                }
+            };
 
+            propSet = Game.wgil.CreateBindGroup(ref propSetDesc);
+            Game.wgil.WriteBuffer(propBuffer, this.shaderPropData, 0, this.shaderPropData.Length);
             bindableSets.Add(2, propSet);
         }
 
@@ -85,14 +93,14 @@ namespace ABEngine.ABERuntime
 
             if (textureNames.Count > 0)
             {
-                BindableResource[] resources = new BindableResource[textureNames.Count * 2];
+                BindResource[] resources = new BindResource[textureNames.Count * 2];
                 int index = 0;
                 foreach (var textureName in textureNames)
                 {
                     if (textureName.Equals("ScreenTex"))
                     {
                         isLateRender = true;
-                        resources[index] = Game.resourceContext.mainRenderTexture;
+                        resources[index] = Game.resourceContext.mainRenderView;
                     }
                     else if(textureName.Equals("DepthTex"))
                     {
@@ -106,7 +114,7 @@ namespace ABEngine.ABERuntime
                     }
                     else
                     {
-                        resources[index] = AssetCache.GetDefaultTexture().texture;
+                        resources[index] = AssetCache.GetDefaultTexture().GetView();
                     }
 
                     index++;
@@ -117,11 +125,15 @@ namespace ABEngine.ABERuntime
                 texResources = resources;
                 if(textureSet != null)
                     textureSet.Dispose();
-                textureSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(
-                    this.texLayout,
-                    texResources
-                    ));
-               
+
+                var textureSetDesc = new BindGroupDescriptor()
+                {
+                    BindGroupLayout = texLayout,
+                    Entries = texResources
+                };
+
+                textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
+   
                 bindableSets.Add(3, textureSet);
             }
             
@@ -133,15 +145,19 @@ namespace ABEngine.ABERuntime
             if(texNameInd > -1)
             {
                 int texInd = texNameInd * 2;
-                texResources[texInd] = tex2d.texture;
+                texResources[texInd] = tex2d.GetView();
                 texResources[texInd + 1] = tex2d.textureSampler;
                 texHashes[texNameInd] = tex2d.fPathHash;
                 if(textureSet != null)
                     textureSet.Dispose();
-                textureSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(
-                   this.texLayout,
-                   texResources
-                   ));
+
+                var textureSetDesc = new BindGroupDescriptor()
+                {
+                    BindGroupLayout = texLayout,
+                    Entries = texResources
+                };
+
+                textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
 
                 bindableSets[3] = textureSet;
             }
@@ -196,7 +212,7 @@ namespace ABEngine.ABERuntime
                 foreach (var textureName in textureNames)
                 {
                     if (textureName.Equals("ScreenTex"))
-                        texResources[index] = Game.resourceContext.mainRenderTexture;
+                        texResources[index] = Game.resourceContext.mainRenderView;
                     else if (textureName.Equals("DepthTex"))
                         texResources[index] = Game.normalsRenderSystem.GetDepthAttachment();
                     else if(textureName.Equals("CamNormalTex"))
@@ -208,10 +224,14 @@ namespace ABEngine.ABERuntime
 
                 if (textureSet != null)
                     textureSet.Dispose();
-                textureSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(
-                   this.texLayout,
-                   texResources
-                   ));
+
+                var textureSetDesc = new BindGroupDescriptor()
+                {
+                    BindGroupLayout = texLayout,
+                    Entries = texResources
+                };
+
+                textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
 
                 bindableSets[3] = textureSet;
             }
@@ -256,7 +276,7 @@ namespace ABEngine.ABERuntime
                 Unsafe.CopyBlock(tempPtr, data, size);
             }
 
-            GraphicsManager.gd.UpdateBuffer(propBuffer, 0, this.shaderPropData);
+            Game.wgil.WriteBuffer(propBuffer, this.shaderPropData);
         }
 
         internal override JValue SerializeAsset()

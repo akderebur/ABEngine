@@ -1,5 +1,5 @@
 ﻿using System;
-using Veldrid;
+using WGIL;
 
 namespace ABEngine.ABERuntime
 {
@@ -7,19 +7,24 @@ namespace ABEngine.ABERuntime
 	{
         // Passes
         // Normal
-        public Texture cameraNormalTexture;
-        public Texture normalsDepthTexture;
-        public Framebuffer normalsRenderFB;
+        private Texture cameraNormalTexture;
+        private Texture normalsDepthTexture;
+
+        public TextureView cameraNormalView;
+        public TextureView normalsDepthView;
 
         // Main
-        public Texture mainRenderTexture;
-        public Texture spriteNormalsTexture;
-        public Texture mainDepthTexture;
-        public Framebuffer mainRenderFB;
+        private Texture mainRenderTexture;
+        private Texture spriteNormalsTexture;
+        private Texture mainDepthTexture;
+
+        public TextureView mainRenderView;
+        public TextureView spriteNormalsView;
+        public TextureView mainDepthView;
 
         // Light
-        public Texture lightRenderTexture;
-        public Framebuffer lightRenderFB;
+        private Texture lightRenderTexture;
+        public TextureView lightRenderView;
 
         internal ResourceContext()
 		{
@@ -29,77 +34,63 @@ namespace ABEngine.ABERuntime
 		{
             DisposeFrameResources();
 
-            GraphicsDevice gd = GraphicsManager.gd;
-            Texture mainFBTexture = gd.MainSwapchain.Framebuffer.ColorTargets[0].Target;
+            var wgil = Game.wgil;
+
+            uint width = wgil.GetWidth();
+            uint height = wgil.GetHeight();
+            TextureFormat surfaceFormat = wgil.GetSurfaceFormat();
+
 
             // Normal
-            cameraNormalTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-               PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget | TextureUsage.Sampled));
+            cameraNormalTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba8Unorm,
+                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
 
-
-            normalsDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                        mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled, TextureSampleCount.Count1));
-
-            normalsRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(normalsDepthTexture, cameraNormalTexture));
+            normalsDepthTexture = wgil.CreateTexture(width, height, TextureFormat.Depth32Float,
+                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
 
             // Main
-            TextureSampleCount sampleCount = GraphicsManager.msaaSampleCount;
+            mainRenderTexture = wgil.CreateTexture(width, height, surfaceFormat,
+                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
 
-            mainRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled, sampleCount));
+            spriteNormalsTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba8Unorm,
+                                                      TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
 
-            spriteNormalsTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-               mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled, sampleCount));
-
-            mainDepthTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-                        mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-                        PixelFormat.R16_UNorm, TextureUsage.DepthStencil | TextureUsage.Sampled, sampleCount));
-
-            mainRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(mainDepthTexture, mainRenderTexture, spriteNormalsTexture));
+            mainDepthTexture = wgil.CreateTexture(width, height, TextureFormat.Depth32Float,
+                                                  TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
 
             // Light
-            lightRenderTexture = gd.ResourceFactory.CreateTexture(TextureDescription.Texture2D(
-            mainFBTexture.Width, mainFBTexture.Height, mainFBTexture.MipLevels, mainFBTexture.ArrayLayers,
-            mainFBTexture.Format, TextureUsage.RenderTarget | TextureUsage.Sampled));
+            lightRenderTexture = wgil.CreateTexture(width, height, surfaceFormat,
+                                                    TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
 
-            lightRenderFB = gd.ResourceFactory.CreateFramebuffer(new FramebufferDescription(null, lightRenderTexture));
+            cameraNormalView = cameraNormalTexture.CreateView();
+            normalsDepthView = normalsDepthTexture.CreateView();
+            mainRenderView = mainRenderTexture.CreateView();
+            spriteNormalsView = spriteNormalsTexture.CreateView();
+            mainDepthView = mainDepthTexture.CreateView();
+            lightRenderView = lightRenderTexture.CreateView();
         }
 
         internal void DisposeFrameResources()
         {
             cameraNormalTexture?.Dispose();
             normalsDepthTexture?.Dispose();
-            normalsRenderFB?.Dispose();
+
+            cameraNormalView?.Dispose();
+            normalsDepthView?.Dispose();
 
             mainRenderTexture?.Dispose();
             spriteNormalsTexture?.Dispose();
             mainDepthTexture?.Dispose();
-            mainRenderFB?.Dispose();
+
+            mainRenderView?.Dispose();
+            spriteNormalsView?.Dispose();
+            mainDepthView?.Dispose();
 
             lightRenderTexture?.Dispose();
-            lightRenderFB?.Dispose();
-        }
-
-        public Framebuffer GetMainFramebuffer()
-        {
-            return mainRenderFB;
+            lightRenderView?.Dispose();
         }
 
 
-        public Framebuffer GetNormalFramebuffer()
-        {
-            return normalsRenderFB;
-        }
-
-
-        public Framebuffer GetLightFramebuffer()
-        {
-            return lightRenderFB;
-        }
     }
 }
 

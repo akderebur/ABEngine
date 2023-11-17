@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Numerics;
 using System.Xml.Linq;
-using ABEngine.ABERuntime.Core.Assets;
 using Box2D.NetStandard.Common;
 using Halak;
-using Veldrid;
+using WGIL;
 
-namespace ABEngine.ABERuntime 
+namespace ABEngine.ABERuntime.Core.Assets
 {
 	public class Texture2D : Asset
 	{
@@ -52,6 +51,11 @@ namespace ABEngine.ABERuntime
                 this.rowCount = (int)(imageSize.Y / spriteSize.Y);
             }
 		}
+
+        internal TextureView GetView()
+        {
+            return AssetCache.GetOrCreateTextureView(texture);
+        }
 
         internal void RetileTexture(Vector2 spriteSize)
         {

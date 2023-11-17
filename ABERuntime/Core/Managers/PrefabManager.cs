@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Arch.Core;
 using Arch.Core.Extensions;
 using ABEngine.ABERuntime.ECS;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABERuntime
 {

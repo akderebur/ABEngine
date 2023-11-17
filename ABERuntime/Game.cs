@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
-using Veldrid;
-using Veldrid.Sdl2;
-using Veldrid.StartupUtilities;
+using WGIL;
+using Buffer = WGIL.Buffer;
 using Halak;
 using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 using ABEngine.ABERuntime.Pipelines;
-using Veldrid.Utilities;
 using ABEngine.ABERuntime.Debug;
 using ABEngine.ABERuntime.Physics;
 using ABEngine.ABERuntime.Components;
@@ -19,6 +17,8 @@ using Arch.Core.Extensions;
 using Arch.Core.Extensions.Internal;
 using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
+using ABEngine.ABERuntime.Core.Assets;
+using WGIL.IO;
 
 namespace ABEngine.ABERuntime
 {
@@ -30,12 +30,10 @@ namespace ABEngine.ABERuntime
 
     public class Game
     {
-        protected private  GraphicsDevice gd;
-        private DisposeCollectorResourceFactory rf;
+        internal static WGILContext wgil;
 
         // Resources
-        private protected CommandList _commandList;
-        protected Sdl2Window window;
+        //protected Sdl2Window window;
 
         // Worlds and Systems
         public static World GameWorld;
@@ -89,19 +87,18 @@ namespace ABEngine.ABERuntime
         public static NormalsPassRenderSystem normalsRenderSystem;
         protected MeshRenderSystem meshRenderSystem;
         public static SpriteBatchSystem spriteBatchSystem;
-        internal static MSAAResolveSystem msaaResolveSystem;
+        //internal static MSAAResolveSystem msaaResolveSystem;
         public static LightRenderSystem lightRenderSystem;
 
         public List<RenderSystem> internalRenders;
-        public List<RenderPass> renderPasses;
 
         // Framebuffer
-        protected ResourceSet finalQuadRSSet;
+        protected BindGroup finalQuadRSSet;
 
         public static PipelineData pipelineData;
 
-        public static DeviceBuffer pipelineBuffer;
-        public static ResourceSet pipelineSet;
+        public static Buffer pipelineBuffer;
+        public static BindGroup pipelineSet;
 
         protected private  static bool reload = false;
         protected private  static bool newScene = false;
@@ -113,6 +110,9 @@ namespace ABEngine.ABERuntime
 
         internal static Game Instance;
         internal static ResourceContext resourceContext;
+
+        // Render Passes
+        RenderPass normalsPass, mainPass, lightPass, fsPass;
 
         public Game(bool debug, List<Type> userTypes)
         {
@@ -144,66 +144,139 @@ namespace ABEngine.ABERuntime
 
         }
 
+        void NormalsPassWork(RenderPass pass)
+        {
+            // First pass setup
+            if (Game.activeCam != null)
+            {
+                var camEnt = Game.activeCam.entity;
+                if (camEnt != Entity.Null)
+                {
+                    Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
+                    Vector3 cameraPosition = Game.activeCam.worldPosition;
+                    Vector3 targetPosition = cameraPosition + forward;
+                    Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
+
+                    Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
+
+                    Game.pipelineData.View = view;
+                    wgil.WriteBuffer(pipelineBuffer, pipelineData);
+                }
+            }
+
+            normalsRenderSystem.Render(pass);
+        }
+
+        void MainPassWork(RenderPass pass)
+        {
+            meshRenderSystem.Render(pass);
+            for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
+            {
+                spriteBatchSystem.Render(pass, i);
+            }
+        }
+
+        void LightPassWork(RenderPass pass)
+        {
+            lightRenderSystem.Render(pass, 0);
+        }
+
+        void FinalPassWork(RenderPass pass)
+        {
+            pass.SetPipeline(GraphicsManager.FullScreenPipeline);
+            pass.SetBindGroup(0, finalQuadRSSet);
+            pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+            pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
+            pass.DrawIndexed(6);
+
+            //UIRender();
+        }
+
         protected private void CreateInternalRenders()
         { 
             normalsRenderSystem = new NormalsPassRenderSystem();
             meshRenderSystem = new MeshRenderSystem();
             spriteBatchSystem = new SpriteBatchSystem(null);
-            msaaResolveSystem = new MSAAResolveSystem();
+            //msaaResolveSystem = new MSAAResolveSystem();
             lightRenderSystem = new LightRenderSystem();
 
-            renderPasses = new List<RenderPass>()
+
+            // Create Passes
+            var normalsPassDesc = new RenderPassDescriptor()
             {
-                // Normals Pass
-                new RenderPass(new RenderPassDescriptor()
+                IsColorClear = true,
+                IsDepthClear = true,
+                ClearColor = new WGIL.Color(0, 0, 0, 0),
+                DepthValue = 1f,
+                DepthAttachment = resourceContext.normalsDepthView,
+                ColorAttachments = new TextureViewSet()
                 {
-                    framebufferFetch = resourceContext.GetNormalFramebuffer,
-                    clearColors = new () {
-                        new RgbaFloat(0,0,0,0)
-                    },
-                    depthClearValue = 1f,
-                    workOrder = new() {
-                        normalsRenderSystem.Render
+                    TextureViews = new[]
+                    {
+                        resourceContext.cameraNormalView
                     }
-                }),
-
-                // Main Pass
-                new RenderPass(new RenderPassDescriptor()
-                {
-                    framebufferFetch = resourceContext.GetMainFramebuffer,
-                    clearColors = new () {
-                        new RgbaFloat(0,0,0,0),
-                        new RgbaFloat(0,0,0,0)
-                    },
-                    depthClearValue = 1f,
-                    workOrder = new() {
-                        meshRenderSystem.Render,
-                        spriteBatchSystem.Render,
-                        msaaResolveSystem.ResolveDepth,
-                        meshRenderSystem.LateRender,
-                        msaaResolveSystem.Render
-                    }
-                }),
-
-                // Light Pass
-                new RenderPass(new RenderPassDescriptor()
-                {
-                    framebufferFetch = resourceContext.GetLightFramebuffer,
-                    clearColors = new () {
-                        new RgbaFloat(0,0,0,0),
-                    },
-                    workOrder = new() {
-                        lightRenderSystem.Render,
-                    }
-                }),
+                }
             };
+
+            normalsPass = wgil.CreateRenderPass(ref normalsPassDesc);
+            normalsPass.JoinRenderQueue(NormalsPassWork);
+
+            var mainPassDesc = new RenderPassDescriptor()
+            {
+                IsColorClear = true,
+                IsDepthClear = true,
+                ClearColor = new WGIL.Color(0, 0, 0, 0),
+                DepthValue = 1,
+                DepthAttachment = resourceContext.mainDepthView,
+                ColorAttachments = new TextureViewSet()
+                {
+                    TextureViews = new[]
+                    {
+                        resourceContext.mainRenderView,
+                        resourceContext.spriteNormalsView
+                    }
+                }
+            };
+
+            mainPass = wgil.CreateRenderPass(ref mainPassDesc);
+            mainPass.JoinRenderQueue(MainPassWork);
+
+            var lightPassDesc = new RenderPassDescriptor()
+            {
+                IsColorClear = true,
+                ClearColor = new WGIL.Color(0f, 0f, 0f, 0f),
+                ColorAttachments = new TextureViewSet()
+                {
+                    TextureViews = new[]
+                    {
+                        resourceContext.lightRenderView
+                    }
+                }
+            };
+
+            lightPass = wgil.CreateRenderPass(ref lightPassDesc);
+            lightPass.JoinRenderQueue(LightPassWork);
+
+            RenderPassDescriptor fsPassDesc = new()
+            {
+                IsColorClear = true,
+                ClearColor = new WGIL.Color(0f, 0f, 0f, 1f),
+                IsRenderSwapchain = true
+            };
+            fsPass = wgil.CreateRenderPass(ref fsPassDesc);
+            fsPass.JoinRenderQueue(FinalPassWork);
+
+            wgil.AddRenderPass(normalsPass);
+            wgil.AddRenderPass(mainPass);
+            wgil.AddRenderPass(lightPass);
+            wgil.AddRenderPass(fsPass);
 
             internalRenders = new List<RenderSystem>()
             {
                 normalsRenderSystem,
                 meshRenderSystem,
                 spriteBatchSystem,
-                msaaResolveSystem,
+                //msaaResolveSystem,
                 lightRenderSystem
             };
 
@@ -243,8 +316,8 @@ namespace ABEngine.ABERuntime
         protected private void SetupRenderResources()
         {
             meshRenderSystem.SetupResources();
-            msaaResolveSystem.SetupResources(resourceContext.mainRenderTexture, resourceContext.spriteNormalsTexture, resourceContext.mainDepthTexture);
-            lightRenderSystem.SetupResources(msaaResolveSystem.GetMainColorAttachent(), msaaResolveSystem.GetSecondaryColorAttachment());
+            //msaaResolveSystem.SetupResources(resourceContext.mainRenderTexture, resourceContext.spriteNormalsTexture, resourceContext.mainDepthTexture);
+            lightRenderSystem.SetupResources(resourceContext.mainRenderView, resourceContext.spriteNormalsView);
         }
 
         internal void Toggle3D(bool activate)
@@ -276,6 +349,22 @@ namespace ABEngine.ABERuntime
             //}
         }
 
+        void MainLoop(float newTime, float elapsed)
+        {
+            Time = newTime;
+            pipelineData.Time = Time;
+
+            EntityManager.CheckEntityChanges();
+
+            MainFixedUpdate(newTime, elapsed);
+            interpolation = accumulator / TimeStep;
+            MainUpdate(newTime, elapsed, interpolation);
+            foreach (var rendExt in renderExtensions)
+            {
+                rendExt.Update(newTime, elapsed);
+            }
+        }
+
 
         float accumulator;
         float interpolation;
@@ -288,370 +377,9 @@ namespace ABEngine.ABERuntime
             PhysicsManager.ResetPhysics();
             GraphicsManager.InitSettings();
 
-            // Veldrid 
+            // WGIL 
             SetupGraphics(windowName);
-            CreateInternalRenders();
-
-            foreach (var render in internalRenders)
-                render.SceneSetup();
-
-            AssetCache.InitAssetCache();
-
-            EntityManager.Init();
-
-            LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
-
-            // Systems
-            // Shared
-            camMoveSystem = new CameraMovementSystem();
-            b2dInitSystem = new B2DInitSystem();
-            spriteAnimatorSystem = new SpriteAnimatorSystem();
-            stateAnimatorSystem = new StateAnimatorSystem();
-            spriteAnimSystem = new SpriteAnimSystem();
-            rbMoveSystem = new RigidbodyMoveSystem();
-            renderExtensions = new List<RenderSystem>();
-            tweenSystem = new Tweening.TweenSystem();
-            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
-            particleSystem = new ParticleModuleSystem();
-
-
-            // Once in game lifetime
-            Game_Init();
-
-            Scene_Init();
-
-            // User systems _ Reflection
-            Scene_RegisterSystems();
-            SubscribeSystems();
-
-            Scene_Setup();
-            onSceneLoad?.Invoke();
-
-            RefreshProjection(Game.canvas);
-
-            InputSnapshot snapshot = window.PumpEvents();
-            Input.UpdateFrameInput(snapshot);
-
-            // Awake events
-            //if (debug)
-            //    colDebugSystem.Awake();
-
-            // Start Events
-            b2dInitSystem.Start();
-            rbMoveSystem.ResetSmoothStates();
-            foreach (var system in userSystems)
-            {
-                system.Start();
-            }
-
-            //spriteRenderer.Start();
-            spriteBatchSystem.Start();
-            if (!GraphicsManager.render2DOnly)
-            {
-                normalsRenderSystem.Start();
-                meshRenderSystem.Start();
-            }
-            spriteAnimatorSystem.Start();
-            stateAnimatorSystem.Start();
-            spriteAnimSystem.Start();
-            camMoveSystem.Start();
-            lightRenderSystem.Start();
-            particleSystem.Start();
-            if (debug)
-                colDebugSystem.Start();
-           
-
-            foreach (var rendExt in renderExtensions)
-            {
-                rendExt.Start();
-            }
-
-
-            // Game Loop
-            Stopwatch sw = Stopwatch.StartNew();
-
-            float previousTime = (float)sw.Elapsed.TotalSeconds;
-            float lastFps = previousTime;
-            int nbFrames = 0;
-
-            while (window.Exists)
-            {
-                float newTime = (float)sw.Elapsed.TotalSeconds;
-                float elapsed = newTime - previousTime;
-                Time = newTime;
-                pipelineData.Time = Time;
-
-                previousTime = newTime;
-                snapshot = window.PumpEvents();
-                Input.UpdateFrameInput(snapshot);
-
-                nbFrames++;
-                if (newTime - lastFps >= 1.0)
-                {
-                    float ms = 1000.0f / nbFrames;
-                    Console.WriteLine(ms);
-                    nbFrames = 0;
-                    lastFps += 1.0f;
-                }
-
-                EntityManager.CheckEntityChanges();
-
-                if (Input.GetKeyDown(Key.R))
-                {
-                    reload = true;
-                    newScene = true;
-                }
-
-                if (reload)
-                {
-                    reload = false;
-
-                    gd.WaitForIdle();
-
-                    // Clean extensions
-                    foreach (var rendExt in renderExtensions)
-                    {
-                        rendExt.CleanUp(true, newScene);
-                    }
-
-                    if (resize)
-                    {
-                        resize = false;
-
-                        // Resize render targets
-                        finalQuadRSSet.Dispose();
-                        foreach (var render in internalRenders)
-                            render.CleanUp(true, false, true);
-
-                        resourceContext.RecreateFrameResources();
-
-                        finalQuadRSSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
-                               GraphicsManager.sharedTextureLayout,
-                               resourceContext.lightRenderTexture, gd.LinearSampler
-                               ));
-
-                        SetupRenderResources();
-
-                        pipelineData = new PipelineData()
-                        {
-                            Projection = Matrix4x4.Identity,
-                            View = Matrix4x4.Identity,
-                            Resolution = screenSize,
-                            Time = elapsed,
-                            Padding = 0f
-                        };
-
-                        GraphicsManager.RefreshMaterials();
-
-                        //lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
-
-                        //if (debug)
-                        //    colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
-
-                        lightRenderSystem.Start();
-                        //if (debug)
-                        //    colDebugSystem.Start();
-
-                        RefreshProjection(Game.canvas);
-                    }
-                    else if(newScene)
-                    {
-                        newScene = false;
-                        EntityManager.SetImmediateDestroy(true);
-                        CoroutineManager.StopAllCoroutines();
-                        PrefabManager.ClearScene();
-
-                        // Recreate assets/worlds
-                        World.Destroy(GameWorld);
-                        CreateWorlds();
-                        PhysicsManager.ResetPhysics();
-
-                        EntityManager.SetImmediateDestroy(false);
-
-                        // Clean systems
-                        foreach (var system in userSystems)
-                        {
-                            system.CleanUp(true, newScene);
-                        }
-
-                        // Clean Resources
-                        AssetCache.DisposeResources();
-                        rf.DisposeCollector.DisposeAll();
-
-                        GraphicsManager.ResetPipelines();
-
-                        foreach (var render in internalRenders)
-                        {
-                            render.CleanUp(true, true, false);
-                            render.SceneSetup();
-                        }
-
-                        // Reset Camera
-                        Game.activeCam = null;
-                        TriggerCamCheck();
-
-                        //lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
-
-                        // Systems
-                        camMoveSystem = new CameraMovementSystem();
-                        b2dInitSystem = new B2DInitSystem();
-                        spriteAnimatorSystem = new SpriteAnimatorSystem();
-                        stateAnimatorSystem = new StateAnimatorSystem();
-                        spriteAnimSystem = new SpriteAnimSystem();
-                        rbMoveSystem = new RigidbodyMoveSystem();
-                        tweenSystem = new Tweening.TweenSystem();
-                        particleSystem = new ParticleModuleSystem();
-                        //if (debug)
-                        //    colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
-
-                        for (int i = renderExtensions.Count - 1; i >= 0; i--)
-                        {
-                            BaseSystem system = renderExtensions[i];
-                            if (!system.dontDestroyOnLoad)
-                            {
-                                renderExtensions.RemoveAt(i);
-                            }
-                        }
-
-                        for (int i = userSystems.Count - 1; i >= 0; i--)
-                        {
-                            BaseSystem system = userSystems[i];
-                            if (!system.dontDestroyOnLoad)
-                            {
-                                userSystems.RemoveAt(i);
-                                userSystemTypes.RemoveAt(i);
-                            }
-                        }
-
-                        notifySystems.Clear();
-                        notifyAnySystems.Clear();
-
-                        AssetCache.ClearSceneCache();
-                        EntityManager.frameSemaphore.Release();
-                        EntityManager.Init();
-
-                        Scene_Init();
-
-                        // User systems _ Reflection
-                        Scene_RegisterSystems();
-                        SubscribeSystems();
-
-                        Scene_Setup();
-                        onSceneLoad?.Invoke();
-
-                        //Start Events
-                        b2dInitSystem.Start();
-                        foreach (var system in userSystems)
-                        {
-                            system.Start();
-                        }
-
-                        spriteBatchSystem.Start();
-                        if(!GraphicsManager.render2DOnly)
-                        {
-                            normalsRenderSystem.Start();
-                            meshRenderSystem.Start();
-                        }
-                        spriteAnimatorSystem.Start();
-                        stateAnimatorSystem.Start();
-                        spriteAnimSystem.Start();
-                        camMoveSystem.Start();
-                        lightRenderSystem.Start();
-                        tweenSystem.Start();
-                        particleSystem.Start();
-                        //if (debug)
-                        //    colDebugSystem.Start();
-                    }
-
-
-                    //snapshot = window.PumpEvents();
-                    //Input.UpdateFrameInput(snapshot);
-
-                    foreach (var rendExt in renderExtensions)
-                    {
-                        rendExt.Start();
-                    }
-
-
-                    continue;
-
-                }
-
-                MainFixedUpdate(newTime, elapsed);
-                interpolation = accumulator / TimeStep;
-                MainUpdate(newTime, elapsed, interpolation);
-                foreach (var rendExt in renderExtensions)
-                {
-                    rendExt.Update(newTime, elapsed);
-                }
-
-                if(!window.Exists)
-                {
-                    break;
-                }
-
-                DrawBegin();
-                MainRender();
-                foreach (var rendExt in renderExtensions)
-                {
-                    rendExt.Render();
-                }
-
-                //_commandList.SetFramebuffer(compositeRenderFB);
-                //_commandList.SetFullViewports();
-
-                colDebugSystem.Render();
-
-                //DrawEnd();
-
-                // Copy frame buffer
-                //_commandList.Begin();
-                //_commandList.CopyTexture(mainRenderTexture, ScreenTexture);
-                //_commandList.End();
-                //gd.SubmitCommands(_commandList);
-                //gd.WaitForIdle();
-
-                //DrawBeginNoClear();
-                //lightRenderer.Render();
-                //DrawEnd();
-
-                //// Copy frame buffer
-                //_commandList.Begin();
-                //_commandList.CopyTexture(mainRenderTexture, ScreenTexture);
-                //_commandList.End();
-                //gd.SubmitCommands(_commandList);
-                //gd.WaitForIdle();
-
-                //LateDrawBegin();
-                //LateRender();
-                //foreach (var rendExt in renderExtensions)
-                //{
-                //    rendExt.LateRender();
-                //}
-                //LateDrawEnd();
-
-
-                FinalRender();
-
-                //next_game_tick += SKIP_TICKS;
-                //float sleepTime  = next_game_tick - newTime;
-
-                //if (sleepTime >= 0)
-                //{
-                //    Console.WriteLine("Sleep");
-                //    System.Threading.Thread.Sleep(sleepTime.ToMilliseconds());
-                //}
-            }
-
-            // Resource clean up
-            CleanUp();
-            gd.Dispose();
-
-            SDL2.SDL.SDL_VideoQuit();
-            SDL2.SDL.SDL_Quit();
         }
-
-
 
         private protected void MainFixedUpdate(float newTime, float elapsed)
         {
@@ -814,35 +542,15 @@ namespace ABEngine.ABERuntime
                 meshRenderSystem.Update(newTime, elapsed);
             }
             lightRenderSystem.Update(newTime, elapsed);
-            if(debug)
-                colDebugSystem.Update(newTime, elapsed);
+            //if(debug)
+            //    colDebugSystem.Update(newTime, elapsed);
         }
 
       
         private protected void MainRender()
         {
-            if (Game.activeCam == null)
-                return;
+          
 
-            var camEnt = Game.activeCam.entity;
-            if (camEnt == Entity.Null)
-                return;
-
-            Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
-            Vector3 cameraPosition = Game.activeCam.worldPosition;
-            Vector3 targetPosition = cameraPosition + forward;
-            Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
-
-            Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
-
-            Game.pipelineData.View = view;
-            gd.UpdateBuffer(Game.pipelineBuffer, 0, Game.pipelineData);
-
-
-            foreach (var renderPass in renderPasses)
-            {
-                renderPass.Render();
-            }
         }
 
         void LateRender()
@@ -873,31 +581,35 @@ namespace ABEngine.ABERuntime
 
         protected void SetupGraphics(string windowName)
         {
+            wgil = new WGILContext();
+            wgil.OnStart += SetupComplete;
+            wgil.OnUpdate += MainLoop;
+
             // Graphics
-            WindowCreateInfo windowCI = new WindowCreateInfo
+            WindowInfo windowInfo = new WindowInfo()
             {
-                X = 100,
-                Y = 100,
-                WindowWidth = (int)(1280 * 1f),
-                WindowHeight = (int)(720 * 1f),
-                WindowTitle = windowName,
+                Width = 1280,
+                Height = 720
             };
-            window = VeldridStartup.CreateWindow(ref windowCI);
-            screenSize = new Vector2(window.Width, window.Height);
-            canvas = new Canvas(window.Width, window.Height);
+            _ = wgil.Start(windowName, windowInfo);
+
+            wgil.DisposeResources();
+        }
+
+        void SetupComplete()
+        {
+            screenSize = new Vector2(wgil.GetWidth(), wgil.GetHeight());
+            canvas = new Canvas(screenSize.X, screenSize.Y);
             canvas.isDynamicSize = false;
             canvas.referenceSize = new Vector2(1280f, 720f);
 
-            
-            window.Resized += () =>
+            wgil.OnResize += () =>
             {
-                //canvas.canvasSize = new Vector2(window.Width, window.Height);
-                screenSize = new Vector2(window.Width, window.Height);
-                canvas.UpdateScreenSize(screenSize);
+                uint width = wgil.GetWidth();
+                uint height = wgil.GetHeight();
 
-                //pipelineData.Resolution = canvas.canvasSize;
-                //gd.UpdateBuffer(pipelineBuffer,0, pipelineData);
-                gd.MainSwapchain.Resize((uint)window.Width, (uint)window.Height);
+                screenSize = new Vector2(width, height);
+                canvas.UpdateScreenSize(screenSize);
 
                 onWindowResize?.Invoke();
 
@@ -905,41 +617,106 @@ namespace ABEngine.ABERuntime
                 resize = true;
             };
 
-            var backend = VeldridStartup.GetPlatformDefaultBackend();
-            gd = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions(
-                debug: false,
-                swapchainDepthFormat: null,
-                syncToVerticalBlank: true,
-                resourceBindingModel: ResourceBindingModel.Improved,
-                preferDepthRangeZeroToOne: true,
-                preferStandardClipSpaceYDirection: true,
-                swapchainSrgbFormat: false
-            ), backend);
-
-            
-            rf = new DisposeCollectorResourceFactory(gd.ResourceFactory);
-            _commandList = gd.ResourceFactory.CreateCommandList();
-
-            // Graphics Manager
-            GraphicsManager.gd = gd;
-            GraphicsManager.rf = rf;
-            GraphicsManager.cl = _commandList;
-
             CreateRenderResources();
+
+            CreateInternalRenders();
+
+            foreach (var render in internalRenders)
+                render.SceneSetup();
+
+            AssetCache.InitAssetCache();
+
+            EntityManager.Init();
+
+            //LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
+
+            // Systems
+            // Shared
+            camMoveSystem = new CameraMovementSystem();
+            b2dInitSystem = new B2DInitSystem();
+            spriteAnimatorSystem = new SpriteAnimatorSystem();
+            stateAnimatorSystem = new StateAnimatorSystem();
+            spriteAnimSystem = new SpriteAnimSystem();
+            rbMoveSystem = new RigidbodyMoveSystem();
+            renderExtensions = new List<RenderSystem>();
+            tweenSystem = new Tweening.TweenSystem();
+            //colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+            particleSystem = new ParticleModuleSystem();
+
+
+            // Once in game lifetime
+            Game_Init();
+
+            Scene_Init();
+
+            // User systems _ Reflection
+            Scene_RegisterSystems();
+            SubscribeSystems();
+
+            Scene_Setup();
+            onSceneLoad?.Invoke();
+
+            RefreshProjection(Game.canvas);
+
+            // Start Events
+            b2dInitSystem.Start();
+            rbMoveSystem.ResetSmoothStates();
+            foreach (var system in userSystems)
+            {
+                system.Start();
+            }
+
+            //spriteRenderer.Start();
+            spriteBatchSystem.Start();
+            if (!GraphicsManager.render2DOnly)
+            {
+                normalsRenderSystem.Start();
+                meshRenderSystem.Start();
+            }
+            spriteAnimatorSystem.Start();
+            stateAnimatorSystem.Start();
+            spriteAnimSystem.Start();
+            camMoveSystem.Start();
+            lightRenderSystem.Start();
+            particleSystem.Start();
+            //if (debug)
+            //    colDebugSystem.Start();
+
+
+            foreach (var rendExt in renderExtensions)
+            {
+                rendExt.Start();
+            }
         }
 
         void CreateRenderResources()
         {
-            GraphicsManager.LoadPipelines(gd, _commandList);
+            GraphicsManager.LoadPipelines();
             resourceContext.RecreateFrameResources();
 
-            finalQuadRSSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
-                   GraphicsManager.sharedTextureLayout,
-                   resourceContext.lightRenderTexture, gd.LinearSampler
-                   ));
+            var finalQuadDesc = new BindGroupDescriptor()
+            {
+                BindGroupLayout = GraphicsManager.sharedTextureLayout,
+                Entries = new BindResource[]
+                {
+                    resourceContext.lightRenderView,
+                    GraphicsManager.linearSampleClamp
+                }
+            };
 
-            pipelineBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription(144, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
-            pipelineSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(GraphicsManager.sharedPipelineLayout, pipelineBuffer));
+            finalQuadRSSet = wgil.CreateBindGroup(ref finalQuadDesc);
+
+            pipelineBuffer = wgil.CreateBuffer(144, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
+
+            var pipelineSetDesc = new BindGroupDescriptor()
+            {
+                BindGroupLayout = GraphicsManager.sharedPipelineLayout,
+                Entries = new BindResource[]
+                {
+                    pipelineBuffer
+                }
+            };
+            pipelineSet = wgil.CreateBindGroup(ref pipelineSetDesc);
 
             pipelineData = new PipelineData()
             {
@@ -1075,37 +852,35 @@ namespace ABEngine.ABERuntime
 
         protected void CleanUp()
         {
-            gd.WaitForIdle();
+            //CoroutineManager.StopAllCoroutines();
 
-            CoroutineManager.StopAllCoroutines();
+            //// Clean extensions
+            //foreach (var rendExt in renderExtensions)
+            //{
+            //    rendExt.CleanUp(false, false);
+            //}
 
-            // Clean extensions
-            foreach (var rendExt in renderExtensions)
-            {
-                rendExt.CleanUp(false, false);
-            }
-
-            // Clean systems
-            foreach (var system in userSystems)
-            {
-                system.CleanUp(false, false);
-            }
+            //// Clean systems
+            //foreach (var system in userSystems)
+            //{
+            //    system.CleanUp(false, false);
+            //}
 
 
-            // Clean up Veldrid resources
-            rf.DisposeCollector.DisposeAll();
-            GraphicsManager.DisposeResources();
-            AssetCache.DisposeResources();
-            _commandList.Dispose();
+            //// Clean up Veldrid resources
+            //rf.DisposeCollector.DisposeAll();
+            //GraphicsManager.DisposeResources();
+            //AssetCache.DisposeResources();
+            //_commandList.Dispose();
 
-            Console.WriteLine("Clean");
+            //Console.WriteLine("Clean");
 
-            foreach (var item in internalRenders)
-            {
-                item.CleanUp(false, false, true);
-            }
+            //foreach (var item in internalRenders)
+            //{
+            //    item.CleanUp(false, false, true);
+            //}
 
-            resourceContext.DisposeFrameResources();
+            //resourceContext.DisposeFrameResources();
         }
 
         void CleanRenderResources()
@@ -1334,32 +1109,10 @@ namespace ABEngine.ABERuntime
             return component;
         }
 
-      
-
-        protected virtual void DrawBegin()
-        {
-            _commandList.Begin();
-        }
-
-
+  
         private void FinalRender()
         {
-            _commandList.SetFramebuffer(gd.MainSwapchain.Framebuffer);
-            _commandList.SetFullViewports();
-            _commandList.ClearColorTarget(0, RgbaFloat.Black);
-            _commandList.SetPipeline(GraphicsManager.FullScreenPipeline);
-
-            _commandList.SetGraphicsResourceSet(0, finalQuadRSSet);
-            _commandList.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-            _commandList.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
-            _commandList.DrawIndexed(6, 1, 0, 0, 0);
-
-            UIRender();
-
-            _commandList.End();
-            gd.SubmitCommands(_commandList);
-            gd.WaitForIdle();
-            gd.SwapBuffers();
+          
         }
 
         private void UIRender()

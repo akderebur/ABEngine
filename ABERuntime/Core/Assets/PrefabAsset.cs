@@ -1,8 +1,7 @@
 ﻿using System;
-using ABEngine.ABERuntime.Core.Assets;
 using Halak;
 
-namespace ABEngine.ABERuntime
+namespace ABEngine.ABERuntime.Core.Assets
 {
 	public class PrefabAsset : Asset
 	{

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Veldrid;
+using ABEngine.ABERuntime.Core.Assets;
+using WGIL;
 
 namespace ABEngine.ABERuntime.Pipelines
 {
@@ -10,25 +11,40 @@ namespace ABEngine.ABERuntime.Pipelines
         public UberPipelineAdditive() : base()
         {
             resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
-            resourceLayouts.Add(GraphicsManager.sharedTextureLayout);
+            resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
             defaultMatName = "UberAdditive";
 
             base.ParseAsset(Shaders.UberPipelineAsset, false);
+            var uberAddPipeDesc = new PipelineDescriptor()
+            {
+                BlendStates = new BlendState[]
+                {
+                    BlendState.AdditiveBlend,
+                    BlendState.AdditiveBlend
+                },
+                DepthStencilState = new DepthStencilState()
+                {
+                    DepthTestEnabled = true,
+                    DepthWriteEnabled = true,
+                    DepthComparison = CompareFunction.LessEqual
+                },
+                PrimitiveState = new PrimitiveState()
+                {
+                    Topology = PrimitiveTopology.TriangleList,
+                    PolygonMode = PolygonMode.Fill,
+                    CullFace = CullFace.None,
+                    FrontFace = FrontFace.Cw
+                },
+                VertexAttributes = GraphicsManager.sharedVertexLayout,
+                BindGroupLayouts = resourceLayouts.ToArray(),
+                AttachmentDescription = new AttachmentDescription()
+                {
+                    DepthFormat = TextureFormat.Depth32Float,
+                    ColorFormats = new[] { GraphicsManager.surfaceFormat, TextureFormat.Rgba8Unorm }
+                }
+            };
 
-            GraphicsPipelineDescription uberPipelineDesc = new GraphicsPipelineDescription(
-                new BlendStateDescription(RgbaFloat.Black, BlendAttachmentDescription.AdditiveBlend, BlendAttachmentDescription.AdditiveBlend),
-                DepthStencilStateDescription.DepthOnlyLessEqual,
-                RasterizerStateDescription.CullNone,
-                PrimitiveTopology.TriangleList,
-                new ShaderSetDescription(
-                    new[]
-                    {
-                      GraphicsManager.sharedVertexLayout
-                    },
-                    shaders),
-                resourceLayouts.ToArray(),
-                Game.resourceContext.mainRenderFB.OutputDescription);
-            pipeline = rf.CreateGraphicsPipeline(ref uberPipelineDesc);
+            pipeline = Game.wgil.CreateRenderPipeline(shaders[0], shaders[1], ref uberAddPipeDesc);
         }
     }
 }

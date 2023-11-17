@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
 using Arch.Core.Extensions;
 
 namespace ABEngine.ABERuntime.Tweening

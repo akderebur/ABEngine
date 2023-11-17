@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
+using ABEngine.ABERuntime.Core.Assets;
 using Halak;
-using Veldrid;
+using WGIL;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -17,7 +18,7 @@ namespace ABEngine.ABERuntime.Components
         public Vector2 UvScale;
         public Vector2 Pivot;
 
-        public QuadVertex(Vector3 position, Vector2 scale, Vector3 worldScale) : this(position, scale, worldScale, RgbaFloat.White.ToVector4(), 0f, Vector2.Zero, Vector2.One, Vector2.Zero) { }
+        public QuadVertex(Vector3 position, Vector2 scale, Vector3 worldScale) : this(position, scale, worldScale, Vector4.One, 0f, Vector2.Zero, Vector2.One, Vector2.Zero) { }
         public QuadVertex(Vector3 position, Vector2 scale, Vector3 worldScale, Vector4 tint, float zRotation, Vector2 uvStart, Vector2 uvScale, Vector2 pivot)
         {
             Position = position;

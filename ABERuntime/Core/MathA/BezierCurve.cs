@@ -2,7 +2,7 @@
 using System.Net;
 using System.Numerics;
 
-namespace ABEngine.ABERuntime.Core.Math
+namespace ABEngine.ABERuntime.Core.MathA
 {
     public class BezierCurve : ABComponent
     {

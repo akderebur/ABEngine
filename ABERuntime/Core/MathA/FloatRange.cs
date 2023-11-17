@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Numerics;
 
-namespace ABEngine.ABERuntime.Core.Math
+namespace ABEngine.ABERuntime.Core.MathA
 {
 	public class FloatRange : ABComponent
 	{

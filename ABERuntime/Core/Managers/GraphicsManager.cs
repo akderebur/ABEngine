@@ -6,12 +6,11 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
+using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Pipelines;
-using SharpGen.Runtime;
-using Veldrid;
-using Veldrid.OpenGLBinding;
-using Veldrid.SPIRV;
-using Veldrid.Utilities;
+using WGIL;
+using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime
 {
@@ -28,7 +27,7 @@ namespace ABEngine.ABERuntime
     public static class GraphicsManager
     {
         // Settings
-        public static TextureSampleCount msaaSampleCount { get; set; }
+        //public static TextureSampleCount msaaSampleCount { get; set; }
 
         static bool _render2DOnly;
         public static bool render2DOnly
@@ -41,13 +40,11 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        public static GraphicsDevice gd;
-        public static CommandList cl;
-        public static DisposeCollectorResourceFactory rf;
+        public static TextureFormat surfaceFormat;
 
-        public static Pipeline SpritePipeline;
-        public static Pipeline EditorSpritePipeline;
-        public static Pipeline FullScreenPipeline;
+        public static RenderPipeline SpritePipeline;
+        public static RenderPipeline EditorSpritePipeline;
+        public static RenderPipeline FullScreenPipeline;
 
         public static List<Sampler> AllSamplers;
 
@@ -55,16 +52,16 @@ namespace ABEngine.ABERuntime
         public static Sampler linearSamplerWrap;
         public static Sampler linearSampleClamp;
 
-        public static Tuple<ResourceLayout, ResourceLayout> SpriteLayouts;
+        public static Tuple<BindGroupLayout, BindGroupLayout> SpriteLayouts;
 
-        public static VertexLayoutDescription sharedVertexLayout;
-        public static VertexLayoutDescription sharedMeshVertexLayout;
+        public static VertexAttribute[] sharedVertexLayout;
+        public static VertexAttribute[] sharedMeshVertexLayout;
 
-        public static ResourceLayout sharedPipelineLayout;
-        public static ResourceLayout sharedTextureLayout;
-        public static ResourceLayout sharedSpriteNormalLayout;
-        public static ResourceLayout sharedMeshUniform_VS;
-        public static ResourceLayout sharedMeshUniform_FS;
+        public static BindGroupLayout sharedPipelineLayout;
+        public static BindGroupLayout sharedTextureLayout;
+        public static BindGroupLayout sharedSpriteNormalLayout;
+        public static BindGroupLayout sharedMeshUniform_VS;
+        public static BindGroupLayout sharedMeshUniform_FS;
 
         public static TextureView defaultTexView;
 
@@ -72,8 +69,8 @@ namespace ABEngine.ABERuntime
         //private static List<Pipeline> pipelines = new List<Pipeline>();
         internal static Dictionary<string, PipelineAsset> pipelineAssets = new Dictionary<string, PipelineAsset>();
 
-        public static DeviceBuffer fullScreenVB;
-        public static DeviceBuffer fullScreenIB;
+        public static Buffer fullScreenVB;
+        public static Buffer fullScreenIB;
 
         static PipelineMaterial GetFirstMatByName(string name)
         {
@@ -175,30 +172,21 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        public static void LoadPipelines(GraphicsDevice gd, CommandList cl)
+        public static void LoadPipelines()
         {
+            WGILContext wgil = Game.wgil;
+
+            surfaceFormat = wgil.GetSurfaceFormat();
+
             // Samplers
             AllSamplers = new List<Sampler>();
-            var pointSampler = SamplerDescription.Point;
-            pointSampler.AddressModeU = SamplerAddressMode.Clamp;
-            pointSampler.AddressModeV = SamplerAddressMode.Clamp;
-
-            pointSamplerClamp = gd.ResourceFactory.CreateSampler(pointSampler);
+            pointSamplerClamp = wgil.CreateSampler(SamplerAddressMode.ClampToEdge, SamplerFilterMode.Nearest);
             pointSamplerClamp.Name = "PointClamp";
 
-
-            var wrapLinear = SamplerDescription.Linear;
-            wrapLinear.AddressModeU = SamplerAddressMode.Wrap;
-            wrapLinear.AddressModeV = SamplerAddressMode.Wrap;
-
-            linearSamplerWrap = gd.ResourceFactory.CreateSampler(wrapLinear);
+            linearSamplerWrap = wgil.CreateSampler(SamplerAddressMode.Repeat, SamplerFilterMode.Linear);
             linearSamplerWrap.Name = "LinearWrap";
 
-            var clampLinear = SamplerDescription.Linear;
-            clampLinear.AddressModeU = SamplerAddressMode.Clamp;
-            clampLinear.AddressModeV = SamplerAddressMode.Clamp;
-
-            linearSampleClamp = gd.ResourceFactory.CreateSampler(clampLinear);
+            linearSampleClamp = wgil.CreateSampler(SamplerAddressMode.ClampToEdge, SamplerFilterMode.Linear);
             linearSampleClamp.Name = "LinearClamp";
 
             AllSamplers.Add(linearSampleClamp);
@@ -206,104 +194,144 @@ namespace ABEngine.ABERuntime
             AllSamplers.Add(pointSamplerClamp);
 
             // Default Texture
-            Texture defTex = gd.ResourceFactory.CreateTexture(
-                            TextureDescription.Texture2D(100, 100, 1, 1, PixelFormat.R32_G32_B32_A32_Float, TextureUsage.Sampled));
-            defaultTexView = gd.ResourceFactory.CreateTextureView(defTex);
+            Texture defTex = wgil.CreateTexture(100, 100, TextureFormat.Rgba8UnormSrgb, TextureUsages.TEXTURE_BINDING);
+            defaultTexView = defTex.CreateView();
 
             // Shared Uniforms
-            var sharedPipelineResource = gd.ResourceFactory.CreateResourceLayout(
-               new ResourceLayoutDescription(
-                   new ResourceLayoutElementDescription("PipelineData", ResourceKind.UniformBuffer, ShaderStages.Vertex | ShaderStages.Fragment)));
-            sharedPipelineLayout = sharedPipelineResource;
+            var sharedPipelineLayoutDesc = new BindGroupLayoutDescriptor()
+            {
+                Entries = new[]
+                {
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Buffer,
+                        ShaderStages = ShaderStages.VERTEX | ShaderStages.FRAGMENT
+                    }
+                }
+            };
 
+            sharedPipelineLayout = wgil.CreateBindGroupLayout(ref sharedPipelineLayoutDesc);
 
             // Texture Layout
-            var texLayout = gd.ResourceFactory.CreateResourceLayout(
-                new ResourceLayoutDescription(
-                    new ResourceLayoutElementDescription("SpriteTex", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("SpriteSampler", ResourceKind.Sampler, ShaderStages.Fragment)
-            ));
-            sharedTextureLayout = texLayout;
+            var texLayoutDesc = new BindGroupLayoutDescriptor()
+            {
+                Entries = new[]
+                {
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Texture,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Sampler,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    }
+                }
+            };
+
+            sharedTextureLayout = wgil.CreateBindGroupLayout(ref texLayoutDesc);
 
             // Texture Layout Normals
-            var texLayoutNormal = gd.ResourceFactory.CreateResourceLayout(
-                new ResourceLayoutDescription(
-                    new ResourceLayoutElementDescription("SpriteTex", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("SpriteSampler", ResourceKind.Sampler, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("NormalTex", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("NormalSampler", ResourceKind.Sampler, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("LayerData", ResourceKind.UniformBuffer, ShaderStages.Fragment)
-            ));
-            sharedSpriteNormalLayout = texLayoutNormal;
+            var texLayoutNormalDesc = new BindGroupLayoutDescriptor()
+            {
+                Entries = new[]
+               {
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Texture,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Sampler,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Texture,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Sampler,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Buffer,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    }
+                }
+            };
+
+            sharedSpriteNormalLayout = wgil.CreateBindGroupLayout(ref texLayoutNormalDesc); ;
 
             // Shared vertex layouts
-            VertexLayoutDescription vertexLayout = new VertexLayoutDescription(
-                new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
-                new VertexElementDescription("Scale", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
-                new VertexElementDescription("WorldScale", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
-                new VertexElementDescription("Tint", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float4),
-                new VertexElementDescription("ZRotation", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float1),
-                new VertexElementDescription("uvStart", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
-                new VertexElementDescription("uvScale", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
-                new VertexElementDescription("Pivot", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2));
-            vertexLayout.InstanceStepRate = 1;
-            sharedVertexLayout = vertexLayout;
+            sharedVertexLayout = WGILUtils.GetVertexLayout<QuadVertex>(out _);
 
-            VertexLayoutDescription vertexLayout3D = new VertexLayoutDescription(
-              new VertexElementDescription("position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
-              new VertexElementDescription("vertexNormal", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
-              new VertexElementDescription("texCoord", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
-              new VertexElementDescription("tangent", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3));
-            sharedMeshVertexLayout = vertexLayout3D;
+            sharedMeshVertexLayout = WGILUtils.GetVertexLayout<VertexStandard>(out _);
 
             // 3D Shared
-            var meshVertexLayout = gd.ResourceFactory.CreateResourceLayout(
-               new ResourceLayoutDescription(
-                   new ResourceLayoutElementDescription("SharedMeshVertex", ResourceKind.UniformBuffer, ShaderStages.Vertex)));
-            sharedMeshUniform_VS = meshVertexLayout;
+            var meshVertexDesc = new BindGroupLayoutDescriptor()
+            {
+                Entries = new[]
+                {
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Buffer,
+                        ShaderStages = ShaderStages.VERTEX
+                    }
+                }
+            };
 
-            var meshFragmentLayout = gd.ResourceFactory.CreateResourceLayout(
-              new ResourceLayoutDescription(
-                  new ResourceLayoutElementDescription("SharedMeshFragment", ResourceKind.UniformBuffer, ShaderStages.Fragment)));
-            sharedMeshUniform_FS = meshFragmentLayout;
+
+            sharedMeshUniform_VS = wgil.CreateBindGroupLayout(ref meshVertexDesc);
+
+            var meshFragmentDesc = new BindGroupLayoutDescriptor()
+            {
+                Entries = new[]
+                {
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Buffer,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    }
+                }
+            };
+
+            sharedMeshUniform_FS = wgil.CreateBindGroupLayout(ref meshFragmentDesc);
 
             // Full screen pipeline
+            var fsPipelineDesc = new PipelineDescriptor()
+            {
+                BlendStates = new BlendState[]
+                {
+                    BlendState.OverrideBlend
+                },
+                PrimitiveState = new PrimitiveState()
+                {
+                    Topology = PrimitiveTopology.TriangleList,
+                    PolygonMode = PolygonMode.Fill,
+                    CullFace = CullFace.None,
+                    FrontFace = FrontFace.Cw
+                },
+                VertexAttributes = new VertexAttribute[]
+                {
+                    new VertexAttribute() { format = VertexFormat.Float32x2, location = 0, offset = 0 },
+                    new VertexAttribute() { format = VertexFormat.Float32x2, location = 1, offset = 8 }
+                },
+                BindGroupLayouts = new BindGroupLayout[]
+                {
+                    sharedTextureLayout
+                },
+                AttachmentDescription = new AttachmentDescription()
+                {
+                    ColorFormats = new[] { surfaceFormat }
+                }
+            };
 
-            // Shaders
-            ShaderDescription vertexShader = new ShaderDescription(
-                ShaderStages.Vertex,
-                Encoding.UTF8.GetBytes(FullScreenQuadVertex),
-                "main");
-
-            ShaderDescription fragmentShader = new ShaderDescription(
-                ShaderStages.Fragment,
-                Encoding.UTF8.GetBytes(FullScreenQuadFragmentPP),
-                "main");
-
-            var shaders = gd.ResourceFactory.CreateFromSpirv(vertexShader, fragmentShader);
-
-            //ResourceLayout resourceLayout = PipelineManager.gd.ResourceFactory.CreateResourceLayout(new ResourceLayoutDescription(
-            //    new ResourceLayoutElementDescription("SourceTexture", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
-            //    new ResourceLayoutElementDescription("SourceSampler", ResourceKind.Sampler, ShaderStages.Fragment)));
-
-            GraphicsPipelineDescription pd = new GraphicsPipelineDescription(
-                new BlendStateDescription(
-                    RgbaFloat.Black,
-                    BlendAttachmentDescription.OverrideBlend),
-                DepthStencilStateDescription.Disabled,
-                new RasterizerStateDescription(FaceCullMode.None, PolygonFillMode.Solid, FrontFace.Clockwise, true, false),
-                PrimitiveTopology.TriangleList,
-                new ShaderSetDescription(
-                    new[]
-                    {
-                        new VertexLayoutDescription(
-                            new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
-                            new VertexElementDescription("TexCoords", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2))
-                    },
-                    shaders),
-                new ResourceLayout[] { sharedTextureLayout },
-                gd.SwapchainFramebuffer.OutputDescription);
-            FullScreenPipeline = gd.ResourceFactory.CreateGraphicsPipeline(ref pd);
+            FullScreenPipeline = wgil.CreateRenderPipeline(FullScreenQuadVertex, FullScreenQuadFragmentPP, ref fsPipelineDesc);
 
             float[] verts = new float[]
                {
@@ -314,39 +342,11 @@ namespace ABEngine.ABERuntime
                };
             ushort[] s_quadIndices = new ushort[] { 0, 1, 2, 0, 2, 3 };
 
-            // Temp buffer
-            CommandList tmpCl = gd.ResourceFactory.CreateCommandList();
-            tmpCl.Begin();
+            fullScreenVB = wgil.CreateBuffer(verts.Length * sizeof(float), BufferUsages.VERTEX | BufferUsages.COPY_DST);
+            wgil.WriteBuffer(fullScreenVB, verts);
 
-            var stageBuffer = gd.ResourceFactory.CreateBuffer(new BufferDescription((uint)verts.Length * sizeof(float), BufferUsage.Staging));
-
-            tmpCl.UpdateBuffer(stageBuffer, 0, verts);
-            fullScreenVB = gd.ResourceFactory.CreateBuffer(new BufferDescription((uint)verts.Length * sizeof(float), BufferUsage.VertexBuffer));
-            tmpCl.CopyBuffer(stageBuffer, 0, fullScreenVB, 0, sizeof(float) * (uint)verts.Length);
-
-            tmpCl.UpdateBuffer(stageBuffer, 0, s_quadIndices);
-            fullScreenIB = gd.ResourceFactory.CreateBuffer(
-                new BufferDescription((uint)s_quadIndices.Length * sizeof(ushort), BufferUsage.IndexBuffer));
-            tmpCl.CopyBuffer(stageBuffer, 0, fullScreenIB, 0, (uint)s_quadIndices.Length * sizeof(ushort));
-
-            tmpCl.End();
-            gd.SubmitCommands(tmpCl);
-            gd.WaitForIdle();
-
-            tmpCl.Dispose();
-            stageBuffer.Dispose();
-
-
-            // Composite Pipeline
-            ShaderDescription fragmentShaderComposite = new ShaderDescription(
-               ShaderStages.Fragment,
-               Encoding.UTF8.GetBytes(FullScreenQuadFragment),
-               "main");
-
-            // MSAA
-            var maxSamples = gd.GetSampleCountLimit(PixelFormat.B8_G8_R8_A8_UNorm, false);
-            if (msaaSampleCount > maxSamples)
-                msaaSampleCount = maxSamples;
+            fullScreenIB = wgil.CreateBuffer(s_quadIndices.Length * sizeof(ushort), BufferUsages.INDEX | BufferUsages.COPY_DST);
+            wgil.WriteBuffer(fullScreenIB, s_quadIndices);
         }
 
         public static void ResetPipelines()
@@ -380,7 +380,7 @@ namespace ABEngine.ABERuntime
             FullScreenPipeline.Dispose();
         }
 
-        public static Pipeline GetOrCreateEditorSpritePipeline(Framebuffer buffer)
+        public static RenderPipeline GetOrCreateEditorSpritePipeline()
         {
             return EditorSpritePipeline;
         }
@@ -450,8 +450,8 @@ vec3 adjustContrast(vec3 color, float contrastFactor) {
 void main()
 { 
     vec4 color = texture(sampler2D(SceneTex, SceneSampler), fsTexCoord);
-    vec3 tonedColor = adjustSaturation(color.rgb, 1.2);
-    tonedColor = adjustContrast(tonedColor, 1.15);
+    vec3 tonedColor = adjustSaturation(color.rgb, 1.1);
+    tonedColor = adjustContrast(tonedColor, 1.0);
     OutputColor = vec4(tonedColor.rgb, color.a);
 }
 ";

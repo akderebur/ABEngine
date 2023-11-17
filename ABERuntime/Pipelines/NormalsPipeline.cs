@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
-using Veldrid;
-using Veldrid.SPIRV;
+using ABEngine.ABERuntime.Core.Assets;
+using WGIL;
 
 namespace ABEngine.ABERuntime.Pipelines
 {
@@ -15,20 +15,32 @@ namespace ABEngine.ABERuntime.Pipelines
 
             base.ParseAsset(NormalsPipelineAsset, false);
 
-            GraphicsPipelineDescription toonLitDesc = new GraphicsPipelineDescription(
-                BlendStateDescription.SingleAlphaBlend,
-                DepthStencilStateDescription.DepthOnlyLessEqual,
-                RasterizerStateDescription.Default,
-                PrimitiveTopology.TriangleList,
-                new ShaderSetDescription(
-                    new[]
-                    {
-                      GraphicsManager.sharedMeshVertexLayout
-                    },
-                    shaders),
-                resourceLayouts.ToArray(),
-                Game.resourceContext.normalsRenderFB.OutputDescription);
-            pipeline = rf.CreateGraphicsPipeline(ref toonLitDesc);
+            var normalsPipeDesc = new PipelineDescriptor()
+            {
+                BlendStates = new BlendState[] { BlendState.AlphaBlend },
+                DepthStencilState = new DepthStencilState()
+                {
+                    DepthTestEnabled = true,
+                    DepthWriteEnabled = true,
+                    DepthComparison = CompareFunction.LessEqual
+                },
+                PrimitiveState = new PrimitiveState()
+                {
+                    Topology = PrimitiveTopology.TriangleList,
+                    PolygonMode = PolygonMode.Fill,
+                    CullFace = CullFace.Back,
+                    FrontFace = FrontFace.Cw
+                },
+                VertexAttributes = GraphicsManager.sharedMeshVertexLayout,
+                BindGroupLayouts = resourceLayouts.ToArray(),
+                AttachmentDescription = new AttachmentDescription()
+                {
+                    DepthFormat = TextureFormat.Depth32Float,
+                    ColorFormats = new[] { TextureFormat.Rgba8Unorm }
+                }
+            };
+
+            pipeline = Game.wgil.CreateRenderPipeline(shaders[0], shaders[1], ref normalsPipeDesc);
         }
 
         string NormalsPipelineAsset = @"
@@ -54,6 +66,12 @@ Vertex
        mat4 transformationMatrix;
    };
 
+   layout (set = 2, binding = 0) uniform ShaderProps
+   {
+    vec4 PropPad;
+   };
+
+
    layout(location = 0) in vec3 position;
    layout(location = 1) in vec3 vertexNormal;
    layout(location = 2) in vec2 texCoord;
@@ -65,7 +83,8 @@ Vertex
    {
        gl_Position = Projection * View * transformationMatrix * vec4(position,1.0);
 
-        mat3 normalMatrix = transpose(inverse(mat3(View * transformationMatrix)));
+        //mat3 normalMatrix = transpose(inverse(mat3(View * transformationMatrix)));
+       mat3 normalMatrix = transpose(mat3(View * transformationMatrix));
 
        outNormal_VS = normalize(normalMatrix * vertexNormal);
    }
@@ -83,11 +102,6 @@ Fragment
         float Padding;
     };
 
-    layout (set = 1, binding = 0) uniform DummyVertex
-    {
-        mat4 dummyMatrix;
-    };
-
     layout (set = 2, binding = 0) uniform ShaderProps
     {
         vec4 PropPad;
@@ -100,7 +114,6 @@ Fragment
     void main()
     {
         float dummy = Time - Time;
-        dummy += (dummyMatrix[0][0] * vec3(1)).x - (dummyMatrix[0][0] * vec3(1)).x;
         dummy += PropPad.x - PropPad.x;
      
         outputColor = vec4(Normal_VS, 1.0);

@@ -10,7 +10,7 @@
   <InternalsVisibleTo Include="ABEditor" /> 
 </ItemGroup>
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <LangVersion>10.0</LangVersion>
     <RootNamespace>ABEngine.ABERuntime</RootNamespace>
     <PackOnBuild>true</PackOnBuild>
@@ -51,19 +51,15 @@
     <None Remove="Systems\Base\" />
     <None Remove="Crc32.NET" />
     <None Remove="System.IO.Hashing" />
-    <None Remove="Core\Math\" />
+    <None Remove="Core\MathA\" />
     <None Remove="Core\Animation\StateMatch\" />
     <None Remove="Systems\Rendering\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="Crc32.NET" Version="1.2.0" />
-    <PackageReference Include="ABEngine.Veldrid.StartupUtilities" Version="4.9.27-g79bf030160" />
-    <PackageReference Include="ABEngine.Veldrid.ImageSharp" Version="4.9.27-g79bf030160" />
-    <PackageReference Include="ABEngine.Veldrid.SPIRV" Version="1.0.16-g26fbe2a87f" />
-    <PackageReference Include="ABEngine.Veldrid.SDL2" Version="4.9.27-g79bf030160" />
     <PackageReference Include="ABEngine.Arch" Version="1.2.5.8-alpha" />
-    <PackageReference Include="ABEngine.Veldrid" Version="4.9.27-g79bf030160" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Tweening\" />
@@ -75,11 +71,12 @@
     <Folder Include="Core\Components\" />
     <Folder Include="Core\Assets\" />
     <Folder Include="Systems\Base\" />
-    <Folder Include="Core\Math\" />
+    <Folder Include="Core\MathA\" />
     <Folder Include="Core\Animation\StateMatch\" />
     <Folder Include="Systems\Rendering\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Box2D\Box2D.NetStandard.csproj" />
+    <ProjectReference Include="..\..\..\Projects\WGIL\WGIL\WGIL.csproj" />
   </ItemGroup>
 </Project>

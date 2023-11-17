@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
-using ABEngine.ABERuntime.Core.Math;
+using ABEngine.ABERuntime.Core.Assets;
+using ABEngine.ABERuntime.Core.MathA;
 using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
 using Box2D.NetStandard.Common;
 using Halak;
-using Veldrid;
+using WGIL;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -104,8 +105,8 @@ namespace ABEngine.ABERuntime.Components
             lifetimeColor = new ColorGradient()
             {
                 colorKeys = {
-                    new ColorKey(0f, RgbaFloat.White.ToVector4().ToVector3()),
-                    new ColorKey(1f, RgbaFloat.White.ToVector4().ToVector3())
+                    new ColorKey(0f, Vector3.One),
+                    new ColorKey(1f, Vector3.One)
                 },
                 alphaKeys = {
                     new AlphaKey(0f, 1f),

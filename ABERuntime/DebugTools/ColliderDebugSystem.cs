@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
 using Arch.Core;
 using Arch.Core.Extensions;
 using Box2D.NetStandard.Dynamics.World;
-using Veldrid;
+using WGIL;
+using WGIL.IO;
+using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime.Debug
 {
@@ -34,9 +37,9 @@ namespace ABEngine.ABERuntime.Debug
 
         int linePointCount = 73;
         int drawCount = 5;
-        DeviceBuffer linePointsBuffer;
+        Buffer linePointsBuffer;
 
-        Vector4 color = RgbaFloat.Green.ToVector4();
+        Vector4 color = new Vector4(0f, 1f, 0f, 1f);
 
         public ColliderDebugSystem(PipelineAsset asset) : base(asset) { }
 
@@ -49,14 +52,15 @@ namespace ABEngine.ABERuntime.Debug
         {
             base.Start();
 
-            linePointsBuffer = rf.CreateBuffer(new BufferDescription((uint)(linePointCount * LinePoint.VertexSize), BufferUsage.VertexBuffer | BufferUsage.Dynamic));
+            linePointsBuffer = wgil.CreateBuffer(linePointCount * (int)LinePoint.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST);
 
-            MappedResourceView<LinePoint> writemap = gd.Map<LinePoint>(linePointsBuffer, MapMode.Write);
+            LinePoint[] vertices = new LinePoint[linePointCount];
             for (int i = 0; i < linePointCount; i++)
             {
-                writemap[i] = new LinePoint(color, Vector3.Zero);
+                vertices[i] = new LinePoint(color, Vector3.Zero);
             }
-            gd.Unmap(linePointsBuffer);
+
+            wgil.WriteBuffer(linePointsBuffer, vertices);
         }
 
         public override void Update(float gameTime, float deltaTime)
@@ -66,7 +70,7 @@ namespace ABEngine.ABERuntime.Debug
             if(Input.GetMouseButtonDown(MouseButton.Left))
             {
                 bool hit = false;
-                clickPos = Input.GetMousePosition();
+                clickPos = Input.MousePosition;
                 lastPos = clickPos;
 
                 var query = new QueryDescription().WithAll<Transform>().WithAny<AABB, CircleCollider>();
@@ -75,7 +79,7 @@ namespace ABEngine.ABERuntime.Debug
                     if (ent.Has<AABB>())
                     {
                         var bbox = ent.Get<AABB>();
-                        if (bbox.CheckCollisionMouse(transform, Input.GetMousePosition()))
+                        if (bbox.CheckCollisionMouse(transform, Input.MousePosition))
                         {
                             SetupAABBBuffer(bbox, transform);
 
@@ -93,7 +97,7 @@ namespace ABEngine.ABERuntime.Debug
                     else if(ent.Has<CircleCollider>())
                     {
                         var circleCol = ent.Get<CircleCollider>();
-                        if (circleCol.CheckCollisionMouse(transform, Input.GetMousePosition()))
+                        if (circleCol.CheckCollisionMouse(transform, Input.MousePosition))
                         {
                             SetupCircleBuffer(circleCol, transform);
 
@@ -115,7 +119,7 @@ namespace ABEngine.ABERuntime.Debug
             }
             else if(Input.GetMouseButtonDown(MouseButton.Right))
             {
-                clickPos = Input.GetMousePosition();
+                clickPos = Input.MousePosition;
                 lastPos = clickPos;
 
             }
@@ -123,12 +127,13 @@ namespace ABEngine.ABERuntime.Debug
             {
                 if(lastTrans.entity == Entity.Null || !lastTrans.entity.IsAlive())
                 {
-                    MappedResourceView<LinePoint> writemap = gd.Map<LinePoint>(linePointsBuffer, MapMode.Write);
+                    LinePoint[] vertices = new LinePoint[linePointCount];
                     for (int i = 0; i < linePointCount; i++)
                     {
-                        writemap[i] = new LinePoint(color, Vector3.Zero);
+                        vertices[i] = new LinePoint(color, Vector3.Zero);
                     }
-                    gd.Unmap(linePointsBuffer);
+
+                    wgil.WriteBuffer(linePointsBuffer, vertices);
                     lastTrans = null;
                     return;
                 }
@@ -146,7 +151,7 @@ namespace ABEngine.ABERuntime.Debug
                     {
                         if (Input.GetMouseButton(MouseButton.Left))
                         {
-                            Vector2 curPos = Input.GetMousePosition();
+                            Vector2 curPos = Input.MousePosition;
                             Vector2 delta = (lastPos - curPos) / lastTrans.worldScale.ToVector2() / 100f;
 
                             bbox.size -= delta;
@@ -156,7 +161,7 @@ namespace ABEngine.ABERuntime.Debug
                         }
                         if (Input.GetMouseButton(MouseButton.Right))
                         {
-                            Vector2 curPos = Input.GetMousePosition();
+                            Vector2 curPos = Input.MousePosition;
                             Vector2 delta = (lastPos - curPos) / lastTrans.worldScale.ToVector2() / 100f;
 
                             bbox.center -= delta;
@@ -179,7 +184,7 @@ namespace ABEngine.ABERuntime.Debug
                     {
                         if (Input.GetMouseButton(MouseButton.Left))
                         {
-                            Vector2 curPos = Input.GetMousePosition();
+                            Vector2 curPos = Input.MousePosition;
                             Vector2 delta = (lastPos - curPos) / lastTrans.worldScale.ToVector2() / 100f;
 
                             circleCol.radius -= delta.X;
@@ -189,7 +194,7 @@ namespace ABEngine.ABERuntime.Debug
                         }
                         if (Input.GetMouseButton(MouseButton.Right))
                         {
-                            Vector2 curPos = Input.GetMousePosition();
+                            Vector2 curPos = Input.MousePosition;
                             Vector2 delta = (lastPos - curPos) / lastTrans.worldScale.ToVector2() / 100f;
 
                             circleCol.center -= delta;
@@ -204,22 +209,21 @@ namespace ABEngine.ABERuntime.Debug
 
         void SetupAABBBuffer(AABB bbox, Transform transform)
         {
-            MappedResourceView<LinePoint> writemap = gd.Map<LinePoint>(linePointsBuffer, MapMode.Write);
-
             Vector4 bboxPoints = bbox.GetMinMax(transform);
+
+            LinePoint[] writemap = new LinePoint[5];
             writemap[0] = new LinePoint(color, new Vector3(bboxPoints.X, bboxPoints.Z, 0));
             writemap[1] = new LinePoint(color, new Vector3(bboxPoints.X, bboxPoints.W, 0));
             writemap[2] = new LinePoint(color, new Vector3(bboxPoints.Y, bboxPoints.W, 0));
             writemap[3] = new LinePoint(color, new Vector3(bboxPoints.Y, bboxPoints.Z, 0));
             writemap[4] = new LinePoint(color, new Vector3(bboxPoints.X, bboxPoints.Z, 0));
 
-            gd.Unmap(linePointsBuffer);
+            wgil.WriteBuffer(linePointsBuffer, writemap, 0, (int)LinePoint.VertexSize * 5);
         }
 
         void SetupCircleBuffer(CircleCollider circleCol, Transform transform)
         {
-            MappedResourceView<LinePoint> writemap = gd.Map<LinePoint>(linePointsBuffer, MapMode.Write);
-
+            LinePoint[] writemap = new LinePoint[linePointCount];
             float step = MathF.PI * 2f / (linePointCount - 1);
 
             Vector3 centerOff = new Vector3(circleCol.center, 0f) * transform.worldScale;
@@ -241,21 +245,19 @@ namespace ABEngine.ABERuntime.Debug
                 writemap[i] = new LinePoint(color, centerWS + new Vector3(x, y, 0) * radiusWS);
             }
 
-            gd.Unmap(linePointsBuffer);
+            wgil.WriteBuffer(linePointsBuffer, writemap);
         }
 
-        public override void Render()
+        public override void Render(RenderPass pass)
         {
             if (lastTrans == null)
                 return;
 
-            // Light pass
-            pipelineAsset.BindPipeline();
+            pipelineAsset.BindPipeline(pass);
 
-            cl.SetVertexBuffer(0, linePointsBuffer);
+            pass.SetVertexBuffer(0, linePointsBuffer);
 
-            cl.Draw((uint)drawCount, 1, 0, 0);
-
+            pass.Draw(drawCount);
         }
 
         public override void CleanUp(bool reload, bool newScene, bool resize)

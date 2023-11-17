@@ -1,14 +1,12 @@
 ﻿using System;
-using Veldrid;
-using Veldrid.Utilities;
+using ABEngine.ABERuntime.Core.Assets;
+using WGIL;
 
 namespace ABEngine.ABERuntime
 {
     public class RenderSystem : BaseSystem
     {
-        protected GraphicsDevice gd;
-        protected DisposeCollectorResourceFactory rf;
-        protected CommandList cl;
+        protected WGILContext wgil;
 
         protected PipelineAsset pipelineAsset;
 
@@ -32,12 +30,10 @@ namespace ABEngine.ABERuntime
 
         void SetGraphics()
         {
-            this.gd = GraphicsManager.gd;
-            this.rf = GraphicsManager.rf;
-            this.cl = GraphicsManager.cl;
+            this.wgil = Game.wgil;
         }
 
-        public virtual void SetupResources(params Texture[] sampledTextures)
+        public virtual void SetupResources(params TextureView[] sampledTextures)
         {
 
         }
@@ -47,12 +43,12 @@ namespace ABEngine.ABERuntime
 
         }
 
-        public virtual void Render()
+        public virtual void Render(RenderPass pass)
         {
 
         }
 
-        public virtual void Render(int renderLayer)
+        public virtual void Render(RenderPass pass, int renderLayer)
         {
 
         }
@@ -68,24 +64,24 @@ namespace ABEngine.ABERuntime
 
         }
 
-        internal virtual Texture GetMainColorAttachent()
+        internal virtual TextureView GetMainColorAttachent()
         {
             return null;
         }
 
-        internal virtual Texture GetSecondaryColorAttachment()
+        internal virtual TextureView GetSecondaryColorAttachment()
         {
             return null;
         }
 
-        internal virtual Texture GetDepthAttachment()
+        internal virtual TextureView GetDepthAttachment()
         {
             return null;
         }
 
-        public virtual Framebuffer GetMainFramebuffer()
+        public virtual TextureView GetMainView()
         {
-            return Game.resourceContext.mainRenderFB;
+            return Game.resourceContext.mainRenderView;
         }
 
     }

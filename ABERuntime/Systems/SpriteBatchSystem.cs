@@ -2,11 +2,12 @@
 using System.Linq;
 using System.Numerics;
 using System.Collections.Generic;
-using Veldrid;
+using WGIL;
 using ABEngine.ABERuntime.Rendering;
 using ABEngine.ABERuntime.Components;
 using Arch.Core;
 using Arch.Core.Extensions;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABERuntime
 {
@@ -15,10 +16,6 @@ namespace ABEngine.ABERuntime
         Dictionary<string, SpriteBatch> batches = new Dictionary<string, SpriteBatch>();
         Dictionary<int, List<AssetBatchPair>> renderGroups = new Dictionary<int, List<AssetBatchPair>>();
 
-        private GraphicsDevice _gd;
-        private CommandList _cl;
-        private ResourceFactory _rsFactory;
-
         public SpriteBatchSystem(PipelineAsset asset) : base(asset) { }
 
 
@@ -26,10 +23,6 @@ namespace ABEngine.ABERuntime
         {
             batches = new Dictionary<string, SpriteBatch>();
             renderGroups = new Dictionary<int, List<AssetBatchPair>>();
-
-            _gd = GraphicsManager.gd;
-            _cl = GraphicsManager.cl;
-            _rsFactory = GraphicsManager.rf;
 
             // Create batch groups
             var query = new QueryDescription().WithAll<Sprite>();
@@ -333,19 +326,16 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        public override void Render(int renderLayer)
+        public override void Render(RenderPass pass, int renderLayer)
         {
             if (!renderGroups.ContainsKey(renderLayer))
                 return;
-
-            if(renderLayer > 0)
-                _cl.ClearDepthStencil(1f);
-
+       
             int rendC = 0;
 
             foreach (var group in renderGroups[renderLayer])
             {
-                group.pipelineAsset.BindPipeline();
+                group.pipelineAsset.BindPipeline(pass);
 
                 foreach (var sb in group.batches)
                 {
@@ -353,17 +343,17 @@ namespace ABEngine.ABERuntime
                         continue;
 
                     //rendC++;
-                    _cl.SetVertexBuffer(0, sb.vertexBuffer);
+                    pass.SetVertexBuffer(0, sb.vertexBuffer);
 
-                    _cl.SetGraphicsResourceSet(1, sb.texSet);
+                    pass.SetBindGroup(1, sb.texSet);
 
                     // Material Resource Sets
                     foreach (var setKV in sb.material.bindableSets)
                     {
-                        _cl.SetGraphicsResourceSet(setKV.Key, setKV.Value);
+                        pass.SetBindGroup(setKV.Key, setKV.Value);
                     }
 
-                    _cl.Draw(6, sb.instanceCount, 0, 0);
+                    pass.Draw(6, (int)sb.instanceCount);
                 }
             }
 

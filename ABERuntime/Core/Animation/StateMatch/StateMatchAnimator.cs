@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABERuntime.Core.Animation.StateMatch
 {
