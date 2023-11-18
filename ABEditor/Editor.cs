@@ -2,14 +2,11 @@
 using System.Diagnostics;
 using System.Reflection;
 using ABEngine.ABERuntime;
-using Veldrid;
-using Veldrid.StartupUtilities;
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using ImGuiNET;
 using System.Numerics;
-using Veldrid.ImageSharp;
 using ABEngine.ABERuntime.Pipelines;
 using ABEngine.ABERuntime.Physics;
 using ABEngine.ABERuntime.Debug;
@@ -21,6 +18,9 @@ using Halak;
 using Arch.Core;
 using Arch.Core.Extensions;
 using ABEngine.ABERuntime.ECS;
+using WGIL;
+using ABEngine.ABERuntime.Core.Assets;
+using WGIL.ImGuiSupport;
 
 namespace ABEngine.ABEditor
 {
@@ -71,19 +71,13 @@ namespace ABEngine.ABEditor
             return userTypes;
         }
 
-        public static IntPtr GetImGuiTexture(Texture texture)
+        public static IntPtr GetImGuiTexture(TextureView textureView)
         {
-            return imguiRenderer.GetOrCreateImGuiBinding(GraphicsManager.rf, texture);
-        }
-
-        public static IntPtr GetImGuiTexture(TextureView texture)
-        {
-            return imguiRenderer.GetOrCreateImGuiBinding(GraphicsManager.rf, texture);
+            return imguiRenderer.GetOrCreateImGuiBinding(textureView);
         }
 
         public Editor(string windowName) : base(true, new List<Type>())
         {
-            GraphicsManager.msaaSampleCount = TextureSampleCount.Count4;
             Init(windowName);
         }
 

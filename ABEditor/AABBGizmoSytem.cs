@@ -6,6 +6,7 @@ using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using Arch.Core.Extensions;
 using Arch.Core;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor
 {

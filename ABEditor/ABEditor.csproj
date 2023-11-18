@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>ABEngine.ABEditor</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
@@ -38,7 +38,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-    <PackageReference Include="ABEngine.Veldrid.ImGui" Version="5.89.26-gc30b37d0e5" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\" />
@@ -52,5 +51,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />
+    <ProjectReference Include="..\..\..\Projects\WGIL\WGIL.ImGui\WGIL.ImGui.csproj" />
   </ItemGroup>
 </Project>

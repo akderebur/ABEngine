@@ -3,11 +3,11 @@ using ImGuiNET;
 using System.Numerics;
 using System.Collections.Generic;
 using ABEngine.ABERuntime;
-using Veldrid;
 using System.Linq;
 using System.IO;
 using Halak;
 using ABEngine.ABERuntime.Animation;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor
 {
@@ -86,9 +86,6 @@ namespace ABEngine.ABEditor
         static int linkStartSlot;
         static bool drawingLink = false;
 
-        static CommandList _cl;
-        static ResourceFactory _rs;
-
         static List<string> comparerCombo = new List<string>() { "=", ">", "<" };
 
         static float scale = 1f;
@@ -97,9 +94,6 @@ namespace ABEngine.ABEditor
 
         public static void Init()
         {
-            _rs = GraphicsManager.rf;
-            _cl = GraphicsManager.cl;
-
             io = ImGui.GetIO();
 
             animator = new Animator();
@@ -225,7 +219,7 @@ namespace ABEngine.ABEditor
                         var exNode = nodes.FirstOrDefault(n => n.AnimState.stateUID.Equals(stateUID));
                         if (exNode == null)
                         {
-                            EditorSprite statePV = new EditorSprite(AssetCache.CreateTexture2D(newState.clip.imgPath), _rs);
+                            EditorSprite statePV = new EditorSprite(AssetCache.CreateTexture2D(newState.clip.imgPath));
                             newNode.pvTex = statePV;
                             newNode.pvTexPtr = Editor.GetImGuiTexture(statePV.frameView);
                         }
@@ -373,7 +367,7 @@ namespace ABEngine.ABEditor
                         SpriteClip newClip = new SpriteClip(clipFilePath);
                         AnimationState newState = new AnimationState(newClip);
                         Node newNode = new Node(nodes.Count, newState.name, ImGui.GetMousePos() / scale - offset / scale, newState, 1, 1);
-                        EditorSprite newPv = new EditorSprite(AssetCache.CreateTexture2D(newClip.imgPath), _rs);
+                        EditorSprite newPv = new EditorSprite(AssetCache.CreateTexture2D(newClip.imgPath));
                         newNode.pvTex = newPv;
                         newNode.pvTexPtr = Editor.GetImGuiTexture(newPv.frameView);
 

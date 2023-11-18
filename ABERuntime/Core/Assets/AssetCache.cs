@@ -846,7 +846,6 @@ namespace ABEngine.ABERuntime.Core.Assets
         }
 
 
-
         public static void DisposeResources()
         {
             if (Game.debug)

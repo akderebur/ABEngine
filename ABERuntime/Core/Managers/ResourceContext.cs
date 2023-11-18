@@ -41,31 +41,31 @@ namespace ABEngine.ABERuntime
 
             // Normal
             cameraNormalTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba8Unorm,
-                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
+                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
 
             normalsDepthTexture = wgil.CreateTexture(width, height, TextureFormat.Depth32Float,
-                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
+                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
 
             // Main
             mainRenderTexture = wgil.CreateTexture(width, height, surfaceFormat,
-                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
+                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
 
             spriteNormalsTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba8Unorm,
-                                                      TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
+                                                      TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
 
             mainDepthTexture = wgil.CreateTexture(width, height, TextureFormat.Depth32Float,
-                                                  TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
+                                                  TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
 
             // Light
             lightRenderTexture = wgil.CreateTexture(width, height, surfaceFormat,
-                                                    TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
+                                                    TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
 
-            cameraNormalView = cameraNormalTexture.CreateView();
-            normalsDepthView = normalsDepthTexture.CreateView();
-            mainRenderView = mainRenderTexture.CreateView();
-            spriteNormalsView = spriteNormalsTexture.CreateView();
-            mainDepthView = mainDepthTexture.CreateView();
-            lightRenderView = lightRenderTexture.CreateView();
+            cameraNormalView = cameraNormalTexture.CreateView().SetManualDispose(true);
+            normalsDepthView = normalsDepthTexture.CreateView().SetManualDispose(true);
+            mainRenderView = mainRenderTexture.CreateView().SetManualDispose(true);
+            spriteNormalsView = spriteNormalsTexture.CreateView().SetManualDispose(true);
+            mainDepthView = mainDepthTexture.CreateView().SetManualDispose(true);
+            lightRenderView = lightRenderTexture.CreateView().SetManualDispose(true);
         }
 
         internal void DisposeFrameResources()

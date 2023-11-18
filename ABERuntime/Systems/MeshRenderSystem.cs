@@ -64,7 +64,7 @@ namespace ABEngine.ABERuntime
 
             if (fragmentUniformBuffer == null)
             {
-                fragmentUniformBuffer = wgil.CreateBuffer(160, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
+                fragmentUniformBuffer = wgil.CreateBuffer(160, BufferUsages.UNIFORM | BufferUsages.COPY_DST).SetManualDispose(true);
 
                 var sharedFragmentDesc = new BindGroupDescriptor()
                 {
@@ -74,6 +74,8 @@ namespace ABEngine.ABERuntime
                         fragmentUniformBuffer
                     }
                 };
+
+                sharedFragmentSet = wgil.CreateBindGroup(ref sharedFragmentDesc).SetManualDispose(true);
             }
 
             sharedVertexUniform = new SharedMeshVertex();

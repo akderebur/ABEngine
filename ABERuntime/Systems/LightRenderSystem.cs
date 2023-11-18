@@ -41,7 +41,7 @@ namespace ABEngine.ABERuntime
                 }
             };
 
-            textureSet = wgil.CreateBindGroup(ref textureSetDesc);
+            textureSet = wgil.CreateBindGroup(ref textureSetDesc).SetManualDispose(true);
         }
 
         public override void SceneSetup()

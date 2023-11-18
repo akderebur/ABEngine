@@ -180,13 +180,13 @@ namespace ABEngine.ABERuntime
 
             // Samplers
             AllSamplers = new List<Sampler>();
-            pointSamplerClamp = wgil.CreateSampler(SamplerAddressMode.ClampToEdge, SamplerFilterMode.Nearest);
+            pointSamplerClamp = wgil.CreateSampler(SamplerAddressMode.ClampToEdge, SamplerFilterMode.Nearest).SetManualDispose(true);
             pointSamplerClamp.Name = "PointClamp";
 
-            linearSamplerWrap = wgil.CreateSampler(SamplerAddressMode.Repeat, SamplerFilterMode.Linear);
+            linearSamplerWrap = wgil.CreateSampler(SamplerAddressMode.Repeat, SamplerFilterMode.Linear).SetManualDispose(true);
             linearSamplerWrap.Name = "LinearWrap";
 
-            linearSampleClamp = wgil.CreateSampler(SamplerAddressMode.ClampToEdge, SamplerFilterMode.Linear);
+            linearSampleClamp = wgil.CreateSampler(SamplerAddressMode.ClampToEdge, SamplerFilterMode.Linear).SetManualDispose(true);
             linearSampleClamp.Name = "LinearClamp";
 
             AllSamplers.Add(linearSampleClamp);
@@ -194,8 +194,8 @@ namespace ABEngine.ABERuntime
             AllSamplers.Add(pointSamplerClamp);
 
             // Default Texture
-            Texture defTex = wgil.CreateTexture(100, 100, TextureFormat.Rgba8UnormSrgb, TextureUsages.TEXTURE_BINDING);
-            defaultTexView = defTex.CreateView();
+            Texture defTex = wgil.CreateTexture(100, 100, TextureFormat.Rgba8UnormSrgb, TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
+            defaultTexView = defTex.CreateView().SetManualDispose(true);
 
             // Shared Uniforms
             var sharedPipelineLayoutDesc = new BindGroupLayoutDescriptor()
@@ -210,7 +210,7 @@ namespace ABEngine.ABERuntime
                 }
             };
 
-            sharedPipelineLayout = wgil.CreateBindGroupLayout(ref sharedPipelineLayoutDesc);
+            sharedPipelineLayout = wgil.CreateBindGroupLayout(ref sharedPipelineLayoutDesc).SetManualDispose(true);
 
             // Texture Layout
             var texLayoutDesc = new BindGroupLayoutDescriptor()
@@ -230,7 +230,7 @@ namespace ABEngine.ABERuntime
                 }
             };
 
-            sharedTextureLayout = wgil.CreateBindGroupLayout(ref texLayoutDesc);
+            sharedTextureLayout = wgil.CreateBindGroupLayout(ref texLayoutDesc).SetManualDispose(true);
 
             // Texture Layout Normals
             var texLayoutNormalDesc = new BindGroupLayoutDescriptor()
@@ -265,7 +265,7 @@ namespace ABEngine.ABERuntime
                 }
             };
 
-            sharedSpriteNormalLayout = wgil.CreateBindGroupLayout(ref texLayoutNormalDesc); ;
+            sharedSpriteNormalLayout = wgil.CreateBindGroupLayout(ref texLayoutNormalDesc).SetManualDispose(true);
 
             // Shared vertex layouts
             sharedVertexLayout = WGILUtils.GetVertexLayout<QuadVertex>(out _);
@@ -286,7 +286,7 @@ namespace ABEngine.ABERuntime
             };
 
 
-            sharedMeshUniform_VS = wgil.CreateBindGroupLayout(ref meshVertexDesc);
+            sharedMeshUniform_VS = wgil.CreateBindGroupLayout(ref meshVertexDesc).SetManualDispose(true);
 
             var meshFragmentDesc = new BindGroupLayoutDescriptor()
             {
@@ -300,7 +300,7 @@ namespace ABEngine.ABERuntime
                 }
             };
 
-            sharedMeshUniform_FS = wgil.CreateBindGroupLayout(ref meshFragmentDesc);
+            sharedMeshUniform_FS = wgil.CreateBindGroupLayout(ref meshFragmentDesc).SetManualDispose(true);
 
             // Full screen pipeline
             var fsPipelineDesc = new PipelineDescriptor()
@@ -331,7 +331,7 @@ namespace ABEngine.ABERuntime
                 }
             };
 
-            FullScreenPipeline = wgil.CreateRenderPipeline(FullScreenQuadVertex, FullScreenQuadFragmentPP, ref fsPipelineDesc);
+            FullScreenPipeline = wgil.CreateRenderPipeline(FullScreenQuadVertex, FullScreenQuadFragmentPP, ref fsPipelineDesc).SetManualDispose(true);
 
             float[] verts = new float[]
                {
@@ -342,10 +342,10 @@ namespace ABEngine.ABERuntime
                };
             ushort[] s_quadIndices = new ushort[] { 0, 1, 2, 0, 2, 3 };
 
-            fullScreenVB = wgil.CreateBuffer(verts.Length * sizeof(float), BufferUsages.VERTEX | BufferUsages.COPY_DST);
+            fullScreenVB = wgil.CreateBuffer(verts.Length * sizeof(float), BufferUsages.VERTEX | BufferUsages.COPY_DST).SetManualDispose(true);
             wgil.WriteBuffer(fullScreenVB, verts);
 
-            fullScreenIB = wgil.CreateBuffer(s_quadIndices.Length * sizeof(ushort), BufferUsages.INDEX | BufferUsages.COPY_DST);
+            fullScreenIB = wgil.CreateBuffer(s_quadIndices.Length * sizeof(ushort), BufferUsages.INDEX | BufferUsages.COPY_DST).SetManualDispose(true);
             wgil.WriteBuffer(fullScreenIB, s_quadIndices);
         }
 
@@ -363,11 +363,6 @@ namespace ABEngine.ABERuntime
 
         public static void DisposeResources()
         {
-            //SpritePipeline.Dispose();
-            //SpriteLayouts.Item1.Dispose();
-            //SpriteLayouts.Item2.Dispose();
-            //SpriteLayouts.Item3.Dispose();
-
             sharedPipelineLayout.Dispose();
             sharedTextureLayout.Dispose();
 
@@ -377,7 +372,15 @@ namespace ABEngine.ABERuntime
             defaultTexView.Dispose();
             pointSamplerClamp.Dispose();
 
+            fullScreenIB.Dispose();
+            fullScreenVB.Dispose();
+
             FullScreenPipeline.Dispose();
+
+            foreach (var sampler in AllSamplers)
+            {
+                sampler.Dispose();
+            }
         }
 
         public static RenderPipeline GetOrCreateEditorSpritePipeline()

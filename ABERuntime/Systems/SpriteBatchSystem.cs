@@ -16,7 +16,7 @@ namespace ABEngine.ABERuntime
         Dictionary<string, SpriteBatch> batches = new Dictionary<string, SpriteBatch>();
         Dictionary<int, List<AssetBatchPair>> renderGroups = new Dictionary<int, List<AssetBatchPair>>();
 
-        public SpriteBatchSystem(PipelineAsset asset) : base(asset) { }
+        public SpriteBatchSystem() : base() { }
 
 
         public override void Start()

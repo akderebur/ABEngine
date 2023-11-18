@@ -15,6 +15,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Box2D.NetStandard", "Box2D\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WGIL", "..\..\Projects\WGIL\WGIL\WGIL.csproj", "{8A40A927-FA74-4CFB-B819-67D78D4B228E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WGIL.ImGui", "..\..\Projects\WGIL\WGIL.ImGui\WGIL.ImGui.csproj", "{5FC36B9D-8D6A-4D1B-A254-E26EBC481B68}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{8A40A927-FA74-4CFB-B819-67D78D4B228E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8A40A927-FA74-4CFB-B819-67D78D4B228E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8A40A927-FA74-4CFB-B819-67D78D4B228E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5FC36B9D-8D6A-4D1B-A254-E26EBC481B68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FC36B9D-8D6A-4D1B-A254-E26EBC481B68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5FC36B9D-8D6A-4D1B-A254-E26EBC481B68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5FC36B9D-8D6A-4D1B-A254-E26EBC481B68}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

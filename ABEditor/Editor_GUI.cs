@@ -14,12 +14,13 @@ using ABEngine.ABEditor.ImGuiPlugins;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Components;
-using Veldrid;
 using ImGuiNET;
 using ABEngine.ABEditor.PropertyDrawers;
 using Arch.Core;
 using Arch.Core.Extensions;
 using ABEngine.ABERuntime.ECS;
+using WGIL;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor
 {

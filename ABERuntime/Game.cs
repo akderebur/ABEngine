@@ -201,7 +201,7 @@ namespace ABEngine.ABERuntime
         { 
             normalsRenderSystem = new NormalsPassRenderSystem();
             meshRenderSystem = new MeshRenderSystem();
-            spriteBatchSystem = new SpriteBatchSystem(null);
+            spriteBatchSystem = new SpriteBatchSystem();
             //msaaResolveSystem = new MSAAResolveSystem();
             lightRenderSystem = new LightRenderSystem();
 
@@ -391,7 +391,7 @@ namespace ABEngine.ABERuntime
                     }
                 };
 
-                finalQuadRSSet = wgil.CreateBindGroup(ref finalQuadDesc);
+                finalQuadRSSet = wgil.CreateBindGroup(ref finalQuadDesc).SetManualDispose(true);
 
                 SetupRenderResources();
 
@@ -419,6 +419,118 @@ namespace ABEngine.ABERuntime
             }
         }
 
+        void CheckNewScene()
+        {
+            if(newScene)
+            {
+                newScene = false;
+
+                EntityManager.SetImmediateDestroy(true);
+                CoroutineManager.StopAllCoroutines();
+                PrefabManager.ClearScene();
+
+                // Recreate assets/worlds
+                World.Destroy(GameWorld);
+                CreateWorlds();
+                PhysicsManager.ResetPhysics();
+
+                EntityManager.SetImmediateDestroy(false);
+
+                // Clean systems
+                foreach (var system in userSystems)
+                {
+                    system.CleanUp(true, newScene);
+                }
+
+                // Clean Resources
+                AssetCache.DisposeResources();
+                wgil.DisposeResources(false);
+
+                GraphicsManager.ResetPipelines();
+
+                foreach (var render in internalRenders)
+                {
+                    render.CleanUp(true, true, false);
+                    render.SceneSetup();
+                }
+
+                // Reset Camera
+                Game.activeCam = null;
+                TriggerCamCheck();
+
+                //lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
+
+                // Systems
+                camMoveSystem = new CameraMovementSystem();
+                b2dInitSystem = new B2DInitSystem();
+                spriteAnimatorSystem = new SpriteAnimatorSystem();
+                stateAnimatorSystem = new StateAnimatorSystem();
+                spriteAnimSystem = new SpriteAnimSystem();
+                rbMoveSystem = new RigidbodyMoveSystem();
+                tweenSystem = new Tweening.TweenSystem();
+                particleSystem = new ParticleModuleSystem();
+                spriteBatchSystem = new SpriteBatchSystem();
+                //if (debug)
+                //    colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+
+                for (int i = renderExtensions.Count - 1; i >= 0; i--)
+                {
+                    BaseSystem system = renderExtensions[i];
+                    if (!system.dontDestroyOnLoad)
+                    {
+                        renderExtensions.RemoveAt(i);
+                    }
+                }
+
+                for (int i = userSystems.Count - 1; i >= 0; i--)
+                {
+                    BaseSystem system = userSystems[i];
+                    if (!system.dontDestroyOnLoad)
+                    {
+                        userSystems.RemoveAt(i);
+                        userSystemTypes.RemoveAt(i);
+                    }
+                }
+
+                notifySystems.Clear();
+                notifyAnySystems.Clear();
+
+                AssetCache.ClearSceneCache();
+                EntityManager.frameSemaphore.Release();
+                EntityManager.Init();
+
+                Scene_Init();
+
+                // User systems _ Reflection
+                Scene_RegisterSystems();
+                SubscribeSystems();
+
+                Scene_Setup();
+                onSceneLoad?.Invoke();
+
+                //Start Events
+                b2dInitSystem.Start();
+                foreach (var system in userSystems)
+                {
+                    system.Start();
+                }
+
+                spriteBatchSystem.Start();
+                if (!GraphicsManager.render2DOnly)
+                {
+                    normalsRenderSystem.Start();
+                    meshRenderSystem.Start();
+                }
+                spriteAnimatorSystem.Start();
+                stateAnimatorSystem.Start();
+                spriteAnimSystem.Start();
+                camMoveSystem.Start();
+                lightRenderSystem.Start();
+                //tweenSystem.Start();
+                particleSystem.Start();
+            }
+        }
+
         void MainLoop(float newTime, float elapsed)
         {
             // SDL2 Poll
@@ -429,7 +541,19 @@ namespace ABEngine.ABERuntime
             pipelineData.Time = Time;
 
             EntityManager.CheckEntityChanges();
-            CheckResize();
+
+            if (Input.GetKeyDown(Key.KeyR))
+            {
+                reload = true;
+                newScene = true;
+            }
+
+            if (reload)
+            {
+                reload = false;
+                CheckResize();
+                CheckNewScene();
+            }
 
             MainFixedUpdate(newTime, elapsed);
             interpolation = accumulator / TimeStep;
@@ -669,7 +793,7 @@ namespace ABEngine.ABERuntime
 
             wgil.Start(ref rawWindowInfo);
 
-            wgil.DisposeResources();
+            wgil.DisposeResources(true);
         }
 
         private void Window_Resized()
@@ -685,6 +809,7 @@ namespace ABEngine.ABERuntime
             onWindowResize?.Invoke();
 
             resize = true;
+            reload = true;
         }
 
         private void Window_Closing()
@@ -790,9 +915,9 @@ namespace ABEngine.ABERuntime
                 }
             };
 
-            finalQuadRSSet = wgil.CreateBindGroup(ref finalQuadDesc);
+            finalQuadRSSet = wgil.CreateBindGroup(ref finalQuadDesc).SetManualDispose(true);
 
-            pipelineBuffer = wgil.CreateBuffer(144, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
+            pipelineBuffer = wgil.CreateBuffer(144, BufferUsages.UNIFORM | BufferUsages.COPY_DST).SetManualDispose(true);
 
             var pipelineSetDesc = new BindGroupDescriptor()
             {
@@ -802,7 +927,7 @@ namespace ABEngine.ABERuntime
                     pipelineBuffer
                 }
             };
-            pipelineSet = wgil.CreateBindGroup(ref pipelineSetDesc);
+            pipelineSet = wgil.CreateBindGroup(ref pipelineSetDesc).SetManualDispose(true);
 
             pipelineData = new PipelineData()
             {
@@ -936,53 +1061,8 @@ namespace ABEngine.ABERuntime
             return lightRenderSystem;
         }
 
-        protected void CleanUp()
-        {
-            //CoroutineManager.StopAllCoroutines();
-
-            //// Clean extensions
-            //foreach (var rendExt in renderExtensions)
-            //{
-            //    rendExt.CleanUp(false, false);
-            //}
-
-            //// Clean systems
-            //foreach (var system in userSystems)
-            //{
-            //    system.CleanUp(false, false);
-            //}
-
-
-            //// Clean up Veldrid resources
-            //rf.DisposeCollector.DisposeAll();
-            //GraphicsManager.DisposeResources();
-            //AssetCache.DisposeResources();
-            //_commandList.Dispose();
-
-            //Console.WriteLine("Clean");
-
-            //foreach (var item in internalRenders)
-            //{
-            //    item.CleanUp(false, false, true);
-            //}
-
-            //resourceContext.DisposeFrameResources();
-        }
-
-        void CleanRenderResources()
-        {
-            foreach (var item in internalRenders)
-            {
-                item.CleanUp(false, false, true);
-            }
-
-            resourceContext.DisposeFrameResources();
-        }
-
         protected void PhysicsUpdate()
         {
-           
-
             // Instruct the world to perform a single step of simulation. It is
             // generally best to keep the time step and iterations fixed.
 
