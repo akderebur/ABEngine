@@ -419,7 +419,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                     AttachmentDescription = new AttachmentDescription()
                     {
                         DepthFormat = TextureFormat.Depth32Float,
-                        ColorFormats = new[] { GraphicsManager.surfaceFormat, TextureFormat.Rgba8Unorm }
+                        ColorFormats = new[] { Game.resourceContext.mainRenderView.Format, Game.resourceContext.spriteNormalsView.Format }
                     }
                 };
 

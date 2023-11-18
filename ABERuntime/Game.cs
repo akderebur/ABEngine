@@ -177,6 +177,12 @@ namespace ABEngine.ABERuntime
             meshRenderSystem.Render(pass);
             for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
             {
+                // Dpeth Clear
+                pass.SetPipeline(GraphicsManager.DepthClearPipeline);
+                pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+                pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
+                pass.DrawIndexed(6);
+
                 spriteBatchSystem.Render(pass, i);
             }
         }
@@ -902,8 +908,8 @@ namespace ABEngine.ABERuntime
 
         void CreateRenderResources(uint pixelWidth, uint pixelHeight)
         {
-            GraphicsManager.LoadPipelines();
             resourceContext.RecreateFrameResources(pixelWidth, pixelHeight);
+            GraphicsManager.LoadPipelines();
 
             var finalQuadDesc = new BindGroupDescriptor()
             {

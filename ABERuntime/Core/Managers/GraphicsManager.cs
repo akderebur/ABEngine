@@ -42,9 +42,8 @@ namespace ABEngine.ABERuntime
 
         public static TextureFormat surfaceFormat;
 
-        public static RenderPipeline SpritePipeline;
-        public static RenderPipeline EditorSpritePipeline;
         public static RenderPipeline FullScreenPipeline;
+        public static RenderPipeline DepthClearPipeline;
 
         public static List<Sampler> AllSamplers;
 
@@ -56,6 +55,7 @@ namespace ABEngine.ABERuntime
 
         public static VertexAttribute[] sharedVertexLayout;
         public static VertexAttribute[] sharedMeshVertexLayout;
+        public static VertexAttribute[] fullScreenVertexLayout;
 
         public static BindGroupLayout sharedPipelineLayout;
         public static BindGroupLayout sharedTextureLayout;
@@ -303,6 +303,12 @@ namespace ABEngine.ABERuntime
             sharedMeshUniform_FS = wgil.CreateBindGroupLayout(ref meshFragmentDesc).SetManualDispose(true);
 
             // Full screen pipeline
+            fullScreenVertexLayout = new VertexAttribute[]
+            {
+                new VertexAttribute() { format = VertexFormat.Float32x2, location = 0, offset = 0 },
+                new VertexAttribute() { format = VertexFormat.Float32x2, location = 1, offset = 8 }
+            };
+
             var fsPipelineDesc = new PipelineDescriptor()
             {
                 BlendStates = new BlendState[]
@@ -316,11 +322,7 @@ namespace ABEngine.ABERuntime
                     CullFace = CullFace.None,
                     FrontFace = FrontFace.Cw
                 },
-                VertexAttributes = new VertexAttribute[]
-                {
-                    new VertexAttribute() { format = VertexFormat.Float32x2, location = 0, offset = 0 },
-                    new VertexAttribute() { format = VertexFormat.Float32x2, location = 1, offset = 8 }
-                },
+                VertexAttributes = fullScreenVertexLayout,
                 BindGroupLayouts = new BindGroupLayout[]
                 {
                     sharedTextureLayout
@@ -347,6 +349,38 @@ namespace ABEngine.ABERuntime
 
             fullScreenIB = wgil.CreateBuffer(s_quadIndices.Length * sizeof(ushort), BufferUsages.INDEX | BufferUsages.COPY_DST).SetManualDispose(true);
             wgil.WriteBuffer(fullScreenIB, s_quadIndices);
+
+            // Depth Clear Pipeline
+            PipelineDescriptor depthPipeDesc = new()
+            {
+                VertexStepMode = VertexStepMode.Vertex,
+                PrimitiveState = new PrimitiveState()
+                {
+                    Topology = PrimitiveTopology.TriangleList,
+                    PolygonMode = PolygonMode.Fill,
+                    FrontFace = FrontFace.Cw,
+                    CullFace = CullFace.None
+                },
+                DepthStencilState = new DepthStencilState()
+                {
+                    DepthTestEnabled = true,
+                    DepthWriteEnabled = true,
+                    DepthComparison = CompareFunction.Always
+                },
+                BlendStates = new[]
+                {
+                    BlendState.OverrideBlend,
+                    BlendState.OverrideBlend
+                },
+                VertexAttributes = fullScreenVertexLayout,
+                AttachmentDescription = new AttachmentDescription()
+                {
+                    DepthFormat = Game.resourceContext.mainDepthView.Format,
+                    ColorFormats = new [] { Game.resourceContext.mainRenderView.Format, Game.resourceContext.spriteNormalsView.Format }
+                }
+            };
+            DepthClearPipeline = wgil.CreateRenderPipeline(DepthVertex, DepthFragment, ref depthPipeDesc);
+
         }
 
         public static void ResetPipelines()
@@ -363,31 +397,47 @@ namespace ABEngine.ABERuntime
 
         public static void DisposeResources()
         {
-            sharedPipelineLayout.Dispose();
-            sharedTextureLayout.Dispose();
+            sharedPipelineLayout?.Dispose();
+            sharedTextureLayout?.Dispose();
 
-            sharedMeshUniform_VS.Dispose();
-            sharedMeshUniform_FS.Dispose();
+            sharedMeshUniform_VS?.Dispose();
+            sharedMeshUniform_FS?.Dispose();
 
-            defaultTexView.Dispose();
-            pointSamplerClamp.Dispose();
+            defaultTexView?.Dispose();
+            pointSamplerClamp?.Dispose();
 
-            fullScreenIB.Dispose();
-            fullScreenVB.Dispose();
+            fullScreenIB?.Dispose();
+            fullScreenVB?.Dispose();
 
-            FullScreenPipeline.Dispose();
+            FullScreenPipeline?.Dispose();
+            DepthClearPipeline?.Dispose();
 
             foreach (var sampler in AllSamplers)
             {
-                sampler.Dispose();
+                sampler?.Dispose();
             }
         }
 
-        public static RenderPipeline GetOrCreateEditorSpritePipeline()
-        {
-            return EditorSpritePipeline;
-        }
+        private const string DepthVertex = @"
+#version 450
 
+layout(location = 0) in vec2 Position;
+layout(location = 1) in vec2 TexCoords;
+
+void main()
+{
+    gl_Position = vec4(Position, 0.0, 1.0);
+}
+";
+
+        private const string DepthFragment = @"
+#version 450
+
+void main()
+{
+    gl_FragDepth = 1.0;
+}
+";
 
         private const string FullScreenQuadVertex = @"
 #version 450

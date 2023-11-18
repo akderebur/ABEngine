@@ -36,7 +36,7 @@ namespace ABEngine.ABERuntime.Pipelines
                 AttachmentDescription = new AttachmentDescription()
                 {
                     DepthFormat = TextureFormat.Depth32Float,
-                    ColorFormats = new[] { TextureFormat.Rgba8Unorm }
+                    ColorFormats = new[] { Game.resourceContext.cameraNormalView.Format }
                 }
             };
 
