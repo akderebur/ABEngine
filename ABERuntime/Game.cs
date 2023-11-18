@@ -19,6 +19,8 @@ using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
 using ABEngine.ABERuntime.Core.Assets;
 using WGIL.IO;
+using ABEngine.ABERuntime.Windowing;
+using static SDL2.SDL;
 
 namespace ABEngine.ABERuntime
 {
@@ -33,7 +35,7 @@ namespace ABEngine.ABERuntime
         internal static WGILContext wgil;
 
         // Resources
-        //protected Sdl2Window window;
+        protected Sdl2Window window;
 
         // Worlds and Systems
         public static World GameWorld;
@@ -110,6 +112,8 @@ namespace ABEngine.ABERuntime
 
         internal static Game Instance;
         internal static ResourceContext resourceContext;
+
+        static InputDataSdl inputData = new InputDataSdl();
 
         // Render Passes
         RenderPass normalsPass, mainPass, lightPass, fsPass;
@@ -351,6 +355,10 @@ namespace ABEngine.ABERuntime
 
         void MainLoop(float newTime, float elapsed)
         {
+            // SDL2 Poll
+            window.ProcessEvents(inputData);
+            Input.UpdateFrameInput(inputData);
+
             Time = newTime;
             pipelineData.Time = Time;
 
@@ -363,8 +371,9 @@ namespace ABEngine.ABERuntime
             {
                 rendExt.Update(newTime, elapsed);
             }
-        }
 
+            inputData.Clear();
+        }
 
         float accumulator;
         float interpolation;
@@ -585,15 +594,19 @@ namespace ABEngine.ABERuntime
             wgil.OnStart += SetupComplete;
             wgil.OnUpdate += MainLoop;
 
-            // Graphics
-            WindowInfo windowInfo = new WindowInfo()
-            {
-                Width = 1280,
-                Height = 720
-            };
-            _ = wgil.Start(windowName, windowInfo);
+            // Window and Graphics
+            var flags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE | SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI;
+            window = new Sdl2Window(windowName, 0, 0, 1280, 720, flags, out RawWindowInfo rawWindowInfo);
+            window.Closing += Window_Closing;
+
+            wgil.Start(ref rawWindowInfo);
 
             wgil.DisposeResources();
+        }
+
+        private void Window_Closing()
+        {
+            wgil.Stop();
         }
 
         void SetupComplete()

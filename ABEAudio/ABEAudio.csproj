@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <PackageVersion>0.1</PackageVersion>
     <Authors>Burak Akdere</Authors>
     <Copyright>Burak Akdere</Copyright>
@@ -17,7 +17,7 @@
     <None Remove="NetCoreAudio" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ppy.SDL2-CS" Version="1.0.652-alpha" />
+    <PackageReference Include="ppy.SDL2-CS" Version="1.0.671-alpha" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />
