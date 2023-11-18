@@ -30,14 +30,12 @@ namespace ABEngine.ABERuntime
 		{
 		}
 
-        internal void RecreateFrameResources()
+        internal void RecreateFrameResources(uint width, uint height)
 		{
             DisposeFrameResources();
 
             var wgil = Game.wgil;
 
-            uint width = wgil.GetWidth();
-            uint height = wgil.GetHeight();
             TextureFormat surfaceFormat = wgil.GetSurfaceFormat();
 
 

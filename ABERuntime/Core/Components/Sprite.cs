@@ -36,7 +36,7 @@ namespace ABEngine.ABERuntime.Components
     {
         public Matrix4x4 Projection;
         public Matrix4x4 View;
-        public Vector2 Resolution;
+        public Vector2 PixelSize;
         public float Time;
         public float Padding;
     }

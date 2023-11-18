@@ -51,7 +51,8 @@ namespace ABEngine.ABERuntime
         public static string AssetPath;
         public static Transform activeCam;
         public static Canvas canvas;
-        public static Vector2 screenSize;
+        public static Vector2 pixelSize;
+        public static Vector2 virtualSize;
         public static Matrix4x4 projectionMatrix;
         public static float Time;
         internal static List<Type> UserTypes;
@@ -353,6 +354,71 @@ namespace ABEngine.ABERuntime
             //}
         }
 
+        private void CheckResize()
+        {
+            if (resize)
+            {
+                resize = false;
+
+                // Resize render targets
+                finalQuadRSSet.Dispose();
+                foreach (var render in internalRenders)
+                    render.CleanUp(true, false, true);
+
+                resourceContext.RecreateFrameResources((uint)pixelSize.X, (uint)pixelSize.Y);
+
+                // Update pass attachments
+                TextureViewSet newSet = new TextureViewSet();
+
+                normalsPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
+                newSet.TextureViews = new[] { resourceContext.cameraNormalView };
+                normalsPass.UpdateColorAttachments(ref newSet);
+
+                mainPass.UpdateDepthAttachment(resourceContext.mainDepthView);
+                newSet.TextureViews = new[] { resourceContext.mainRenderView, resourceContext.spriteNormalsView };
+                mainPass.UpdateColorAttachments(ref newSet);
+
+                newSet.TextureViews = new[] { resourceContext.lightRenderView };
+                lightPass.UpdateColorAttachments(ref newSet);
+
+                var finalQuadDesc = new BindGroupDescriptor()
+                {
+                    BindGroupLayout = GraphicsManager.sharedTextureLayout,
+                    Entries = new BindResource[]
+                    {
+                        resourceContext.lightRenderView,
+                        GraphicsManager.linearSampleClamp
+                    }
+                };
+
+                finalQuadRSSet = wgil.CreateBindGroup(ref finalQuadDesc);
+
+                SetupRenderResources();
+
+                pipelineData = new PipelineData()
+                {
+                    Projection = Matrix4x4.Identity,
+                    View = Matrix4x4.Identity,
+                    PixelSize = pixelSize,
+                    Time = 0,
+                    Padding = 0f
+                };
+
+                GraphicsManager.RefreshMaterials();
+
+                //lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
+
+                //if (debug)
+                //    colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+
+                lightRenderSystem.Start();
+                //if (debug)
+                //    colDebugSystem.Start();
+
+                RefreshProjection(Game.canvas);
+            }
+        }
+
         void MainLoop(float newTime, float elapsed)
         {
             // SDL2 Poll
@@ -363,6 +429,7 @@ namespace ABEngine.ABERuntime
             pipelineData.Time = Time;
 
             EntityManager.CheckEntityChanges();
+            CheckResize();
 
             MainFixedUpdate(newTime, elapsed);
             interpolation = accumulator / TimeStep;
@@ -598,10 +665,26 @@ namespace ABEngine.ABERuntime
             var flags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE | SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI;
             window = new Sdl2Window(windowName, 0, 0, 1280, 720, flags, out RawWindowInfo rawWindowInfo);
             window.Closing += Window_Closing;
+            window.Resized += Window_Resized;
 
             wgil.Start(ref rawWindowInfo);
 
             wgil.DisposeResources();
+        }
+
+        private void Window_Resized()
+        {
+            // Physical Size
+            SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
+            pixelSize = new Vector2(pw, ph);
+            wgil.Resize((uint)pw, (uint)ph);
+
+            SDL_GetWindowSize(window.Handle, out int w, out int h);
+            virtualSize = new Vector2(w, h);
+            canvas.UpdateScreenSize(virtualSize);
+            onWindowResize?.Invoke();
+
+            resize = true;
         }
 
         private void Window_Closing()
@@ -611,26 +694,16 @@ namespace ABEngine.ABERuntime
 
         void SetupComplete()
         {
-            screenSize = new Vector2(wgil.GetWidth(), wgil.GetHeight());
-            canvas = new Canvas(screenSize.X, screenSize.Y);
+            SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
+            SDL_GetWindowSize(window.Handle, out int w, out int h);
+
+            pixelSize = new Vector2(pw, ph);
+            virtualSize = new Vector2(w, h);
+            canvas = new Canvas(w, h);
             canvas.isDynamicSize = false;
             canvas.referenceSize = new Vector2(1280f, 720f);
 
-            wgil.OnResize += () =>
-            {
-                uint width = wgil.GetWidth();
-                uint height = wgil.GetHeight();
-
-                screenSize = new Vector2(width, height);
-                canvas.UpdateScreenSize(screenSize);
-
-                onWindowResize?.Invoke();
-
-                reload = true;
-                resize = true;
-            };
-
-            CreateRenderResources();
+            CreateRenderResources((uint)pw, (uint)ph);
 
             CreateInternalRenders();
 
@@ -702,10 +775,10 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        void CreateRenderResources()
+        void CreateRenderResources(uint pixelWidth, uint pixelHeight)
         {
             GraphicsManager.LoadPipelines();
-            resourceContext.RecreateFrameResources();
+            resourceContext.RecreateFrameResources(pixelWidth, pixelHeight);
 
             var finalQuadDesc = new BindGroupDescriptor()
             {
@@ -735,7 +808,7 @@ namespace ABEngine.ABERuntime
             {
                 Projection = Matrix4x4.Identity,
                 View = Matrix4x4.Identity,
-                Resolution = screenSize,
+                PixelSize = pixelSize,
                 Time = 0f,
                 Padding = 0f
             };
@@ -1068,7 +1141,7 @@ namespace ABEngine.ABERuntime
                 if (isCanvasEnt)
                 {
                     canvas = newEnt.Get<Canvas>();
-                    canvas.UpdateScreenSize(screenSize);
+                    canvas.UpdateScreenSize(virtualSize);
                     Game.canvas.UpdateCanvasSize(canvas.canvasSize);
                 }
             }

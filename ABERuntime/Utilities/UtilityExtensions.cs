@@ -92,13 +92,13 @@ namespace ABEngine.ABERuntime
 
         public static Vector2 ScreenToCanvas(this Vector2 screenPos)
         {
-            Vector2 ratio = screenPos / Game.screenSize;
+            Vector2 ratio = screenPos / Game.pixelSize;
             return Game.canvas.canvasSize * ratio;
         }
 
         public static Vector3 ScreenToWorld(this Vector2 screenPoint)
         {
-            return UnprojectOrtho(screenPoint, Game.pipelineData.Projection, Game.pipelineData.View, Game.screenSize.X, Game.screenSize.Y);
+            return UnprojectOrtho(screenPoint, Game.pipelineData.Projection, Game.pipelineData.View, Game.pixelSize.X, Game.pixelSize.Y);
         }
 
         public static Vector3 UnprojectOrtho(Vector2 screenPoint, Matrix4x4 projection, Matrix4x4 view, float viewportWidth, float viewportHeight)
@@ -130,8 +130,8 @@ namespace ABEngine.ABERuntime
 
         public static Vector2 MouseToZoomed(this Vector2 mousePos)
         {
-            return new Vector2((mousePos.X - Game.screenSize.X / 2f) * Game.zoomFactor + Game.screenSize.X / 2f,
-                               (mousePos.Y - Game.screenSize.Y / 2f) * Game.zoomFactor + Game.screenSize.Y / 2f);
+            return new Vector2((mousePos.X - Game.pixelSize.X / 2f) * Game.zoomFactor + Game.pixelSize.X / 2f,
+                               (mousePos.Y - Game.pixelSize.Y / 2f) * Game.zoomFactor + Game.pixelSize.Y / 2f);
         }
 
         public static Vector2 RoundTo2Dec(this Vector2 vec)
@@ -225,12 +225,12 @@ namespace ABEngine.ABERuntime
         #region ImGui
         public static Vector2 ToImGuiVector2(this Vector3 vec)
         {
-            return new Vector2(vec.X, Game.screenSize.Y - vec.Y);
+            return new Vector2(vec.X, Game.pixelSize.Y - vec.Y);
         }
 
         public static Vector2 ToImGuiVector2(this Vector2 vec)
         {
-            return new Vector2(vec.X, Game.screenSize.Y - vec.Y);
+            return new Vector2(vec.X, Game.pixelSize.Y - vec.Y);
         }
 
         public static Vector2 ToImGuiRefVector2(this Vector3 vec)

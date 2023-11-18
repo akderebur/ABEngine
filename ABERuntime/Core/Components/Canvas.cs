@@ -75,7 +75,7 @@ namespace ABEngine.ABERuntime.Components
 
         public Vector2 ScreenToCanvas(Vector2 screenPos)
         {
-            Vector2 factor = canvasSize / Game.screenSize;
+            Vector2 factor = canvasSize / Game.pixelSize;
             return screenPos * factor - canvasSize / 2f; ;
         }
 
