@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Numerics;
 
-namespace ABEngine.ABERuntime.Core.Components
+namespace ABEngine.ABERuntime.Components
 {
 	public class DirectionalLight : ABComponent
 	{

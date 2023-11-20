@@ -14,7 +14,7 @@ namespace ABEngine.ABERuntime.Debug
 {
     public struct LinePoint
     {
-        public const uint VertexSize = 28;
+        public const int VertexSize = 28;
 
         public Vector4 Color;
         public Vector3 Position;
@@ -52,7 +52,7 @@ namespace ABEngine.ABERuntime.Debug
         {
             base.Start();
 
-            linePointsBuffer = wgil.CreateBuffer(linePointCount * (int)LinePoint.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+            linePointsBuffer = wgil.CreateBuffer(linePointCount * (int)LinePoint.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST).SetManualDispose(true);
 
             LinePoint[] vertices = new LinePoint[linePointCount];
             for (int i = 0; i < linePointCount; i++)
@@ -70,7 +70,7 @@ namespace ABEngine.ABERuntime.Debug
             if(Input.GetMouseButtonDown(MouseButton.Left))
             {
                 bool hit = false;
-                clickPos = Input.MousePosition;
+                clickPos = Input.GetMousePosition();
                 lastPos = clickPos;
 
                 var query = new QueryDescription().WithAll<Transform>().WithAny<AABB, CircleCollider>();
@@ -79,7 +79,7 @@ namespace ABEngine.ABERuntime.Debug
                     if (ent.Has<AABB>())
                     {
                         var bbox = ent.Get<AABB>();
-                        if (bbox.CheckCollisionMouse(transform, Input.MousePosition))
+                        if (bbox.CheckCollisionMouse(transform, Input.GetMousePosition()))
                         {
                             SetupAABBBuffer(bbox, transform);
 
@@ -97,7 +97,7 @@ namespace ABEngine.ABERuntime.Debug
                     else if(ent.Has<CircleCollider>())
                     {
                         var circleCol = ent.Get<CircleCollider>();
-                        if (circleCol.CheckCollisionMouse(transform, Input.MousePosition))
+                        if (circleCol.CheckCollisionMouse(transform, Input.GetMousePosition()))
                         {
                             SetupCircleBuffer(circleCol, transform);
 
@@ -119,7 +119,7 @@ namespace ABEngine.ABERuntime.Debug
             }
             else if(Input.GetMouseButtonDown(MouseButton.Right))
             {
-                clickPos = Input.MousePosition;
+                clickPos = Input.GetMousePosition();
                 lastPos = clickPos;
 
             }
@@ -151,7 +151,7 @@ namespace ABEngine.ABERuntime.Debug
                     {
                         if (Input.GetMouseButton(MouseButton.Left))
                         {
-                            Vector2 curPos = Input.MousePosition;
+                            Vector2 curPos = Input.GetMousePosition();
                             Vector2 delta = (lastPos - curPos) / lastTrans.worldScale.ToVector2() / 100f;
 
                             bbox.size -= delta;
@@ -161,7 +161,7 @@ namespace ABEngine.ABERuntime.Debug
                         }
                         if (Input.GetMouseButton(MouseButton.Right))
                         {
-                            Vector2 curPos = Input.MousePosition;
+                            Vector2 curPos = Input.GetMousePosition();
                             Vector2 delta = (lastPos - curPos) / lastTrans.worldScale.ToVector2() / 100f;
 
                             bbox.center -= delta;
@@ -184,7 +184,7 @@ namespace ABEngine.ABERuntime.Debug
                     {
                         if (Input.GetMouseButton(MouseButton.Left))
                         {
-                            Vector2 curPos = Input.MousePosition;
+                            Vector2 curPos = Input.GetMousePosition();
                             Vector2 delta = (lastPos - curPos) / lastTrans.worldScale.ToVector2() / 100f;
 
                             circleCol.radius -= delta.X;
@@ -194,7 +194,7 @@ namespace ABEngine.ABERuntime.Debug
                         }
                         if (Input.GetMouseButton(MouseButton.Right))
                         {
-                            Vector2 curPos = Input.MousePosition;
+                            Vector2 curPos = Input.GetMousePosition();
                             Vector2 delta = (lastPos - curPos) / lastTrans.worldScale.ToVector2() / 100f;
 
                             circleCol.center -= delta;
@@ -262,7 +262,7 @@ namespace ABEngine.ABERuntime.Debug
 
         public override void CleanUp(bool reload, bool newScene, bool resize)
         {
-            linePointsBuffer.Dispose();
+            lastTrans = null;
         }
     }
 }

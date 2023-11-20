@@ -1,26 +1,24 @@
 ﻿using System;
-using Veldrid;
+using WGIL;
 using System.IO;
 using ImGuiNET;
 using System.Numerics;
 using ABEngine.ABERuntime;
 using ABEngine.ABEditor.Assets;
 using ABEngine.ABEditor.Assets.Meta;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor
 {
     public class ClipEditor
     {
         public static bool isActive;
-
-        static CommandList _cl;
-        static ResourceFactory _rs;
       
         static EditorSprite clipSprite;
         static IntPtr texPtr = IntPtr.Zero;
         static SpriteClip clip;
 
-        static Pipeline _drawPipeline;
+        static RenderPipeline _drawPipeline;
 
         // Temp clip values
         static float _sampleFreq = 10f;
@@ -29,8 +27,7 @@ namespace ABEngine.ABEditor
 
         public static void Init()
         {
-            _cl = GraphicsManager.cl;
-            _rs = GraphicsManager.rf;
+
         }
 
         public static void SetClip(string path)
@@ -46,7 +43,7 @@ namespace ABEngine.ABEditor
             TextureMeta texMeta = AssetHandler.GetMeta(clip.imgPath) as TextureMeta;
             Texture2D tempTex2d = new Texture2D(0, tex, texMeta.sampler, texMeta.spriteSize);
 
-            clipSprite = new EditorSprite(tempTex2d, _rs);
+            clipSprite = new EditorSprite(tempTex2d);
             texPtr = Editor.GetImGuiTexture(clipSprite.frameView);
             isActive = true;
         }
@@ -64,9 +61,6 @@ namespace ABEngine.ABEditor
                 return;
             }
 
-            _cl.SetFramebuffer(clipSprite.spriteFB);
-            _cl.SetFullViewports();
-            _cl.ClearColorTarget(0, RgbaFloat.Black);
             if ((gameTime - clip.sampleFreq) > _lastFrameTime)
             {
                 _curFrame++;
@@ -76,11 +70,10 @@ namespace ABEngine.ABEditor
 
                 clipSprite.SetUVPosScale(clip.uvPoses[_curFrame], clip.uvScales[_curFrame]);
             }
-            clipSprite.DrawEditor();
 
             ImGui.Begin("Clip Editor");
             if (texPtr != IntPtr.Zero)
-                ImGui.Image(texPtr, new Vector2(100, 100));
+                ImGui.Image(texPtr, new Vector2(100, 100), clipSprite.uvPos, clipSprite.uvPos + clipSprite.uvScale);
             if (clip != null)
             {
                 float sampleRate = clip.sampleRate;

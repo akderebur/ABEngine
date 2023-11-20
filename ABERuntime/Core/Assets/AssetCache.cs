@@ -11,7 +11,6 @@ using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using Halak;
 using System.Runtime.CompilerServices;
-using ABEngine.ABERuntime.Core.Components;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
@@ -33,6 +32,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         // Debug - Hash to path
         private static readonly Dictionary<uint, string> hashToFName = new Dictionary<uint, string>();
+        private static readonly Dictionary<string, uint> pipelineNameToHash = new Dictionary<string, uint>();
 
         // Release - ABPK
         private static readonly Dictionary<uint, Texture> s_textures = new Dictionary<uint, Texture>();
@@ -81,6 +81,21 @@ namespace ABEngine.ABERuntime.Core.Assets
                 hashParser(".abmat");
                 hashParser(".abprefab");
                 hashParser(".abmesh");
+
+                // Get user pipelines
+                var files = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories)
+                   .Where(s => s.ToLower().EndsWith(".abpipeline"));
+                foreach (var file in files)
+                {
+                    string localPath = file.ToCommonPath().Replace(commonAssetPath, "");
+                    uint hash = localPath.ToHash32();
+                    hashToFName.Add(hash, localPath);
+
+                    string content = File.ReadAllText(file);
+                    int bracketInd = content.IndexOf("{");
+                    string pipelineName = content.Substring(0, bracketInd).Trim();
+                    pipelineNameToHash.Add(pipelineName, hash);
+                }
 
                 return;
             }
@@ -251,6 +266,22 @@ namespace ABEngine.ABERuntime.Core.Assets
         public static Mesh CreateMesh(string meshFilePath)
         {
             return GetOrCreateMesh(meshFilePath);
+        }
+
+        public static PipelineAsset CreatePipelineAsset(string pipelineName)
+        {
+            var pipeline = GraphicsManager.GetPipelineAssetByName(pipelineName);
+            if(pipeline == null)
+            {
+                // Try user pipeline
+                if(pipelineNameToHash.TryGetValue(pipelineName, out uint hash))
+                {
+                    string filePath = hashToFName[hash];
+                    pipeline = new UserPipelineAsset(File.ReadAllText(Game.AssetPath.ToCommonPath() + filePath));
+                }
+            }
+
+            return pipeline;
         }
 
         internal static Texture2D GetDefaultTexture()
@@ -520,6 +551,9 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public static TextureView GetOrCreateTextureView(Texture texture)
         {
+            if (texture == null)
+                return defTexture.GetView();
+
             if (!s_textureViews.TryGetValue(texture, out TextureView view))
             {
                 view = texture.CreateView();
@@ -571,10 +605,17 @@ namespace ABEngine.ABERuntime.Core.Assets
                 string matName = br.ReadString();
                 string pipelineName = br.ReadString();
 
-                PipelineAsset pipelineAsset = GraphicsManager.GetPipelineAssetByName(pipelineName);
+                PipelineAsset pipelineAsset = CreatePipelineAsset(pipelineName);
                 var layouts = pipelineAsset.GetResourceLayouts();
 
-                PipelineMaterial mat = new PipelineMaterial(hash, pipelineAsset, layouts[2], layouts.Count > 3 ? layouts[3] : null);
+                bool hasProps = pipelineAsset.HasProperties();
+                bool hasTexs = pipelineAsset.HasTextures();
+
+                int texLayoutId = 3;
+                if (!hasProps)
+                    texLayoutId--;
+
+                PipelineMaterial mat = new PipelineMaterial(hash, pipelineAsset, hasProps ? layouts[2] : null, hasTexs ? layouts[texLayoutId] : null);
                 mat.name = matName;
 
                 // Shader props
@@ -812,12 +853,15 @@ namespace ABEngine.ABERuntime.Core.Assets
             // Default Materials
             var uberMat = GraphicsManager.GetUberMaterial();
             var additiveMat = GraphicsManager.GetUberAdditiveMaterial();
+            var uber3d = GraphicsManager.GetUber3D();
 
             s_materials.Add(uberMat);
             s_materials.Add(additiveMat);
+            s_materials.Add(uber3d);
 
             assetDict.Add(uberMat.fPathHash, uberMat);
             assetDict.Add(additiveMat.fPathHash, additiveMat);
+            assetDict.Add(uber3d.fPathHash, uber3d);
         }
 
         private static Texture2D DeserializeTexture(JValue texAsset, uint hash)

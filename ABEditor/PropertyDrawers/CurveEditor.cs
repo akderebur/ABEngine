@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Numerics;
-using ABEngine.ABERuntime.Core.Math;
+using ABEngine.ABERuntime.Core.MathA;
 using ImGuiNET;
 
 namespace ABEngine.ABEditor.PropertyDrawers

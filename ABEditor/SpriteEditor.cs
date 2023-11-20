@@ -3,11 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
-using Veldrid;
 using System.Numerics;
 using System.Linq;
 using Halak;
 using ABEngine.ABERuntime;
+using WGIL;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor
 {
@@ -110,7 +111,7 @@ namespace ABEngine.ABEditor
                 quads.Clear();
                 quads.Add(new CutQuad() { startX = 0, StartY = 0 });
 
-                texPtr = Editor.GetImGuiTexture(texture);
+                texPtr = Editor.GetImGuiTexture(AssetCache.GetOrCreateTextureView(texture));
                 isActive = true;
 
                 // Settings

@@ -5,10 +5,11 @@ using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
 using ImGuiNET;
 using System.Numerics;
-using Veldrid;
+using WGIL;
 using ABEngine.ABEditor.Assets;
 using ABEngine.ABEditor.Assets.Meta;
 using ABEngine.ABERuntime.Animation;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor.ComponentDrawers
 {
@@ -19,7 +20,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             ImGui.Text("Image");
             ImGui.Spacing();
 
-            IntPtr imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, sprite.texture.texture);
+            IntPtr imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(sprite.texture.GetView());
             ImGui.Image(imgPtr, new Vector2(100f, 100f));
 
             CheckSpriteDrop(sprite);

@@ -21,6 +21,8 @@ using ABEngine.ABERuntime.ECS;
 using WGIL;
 using ABEngine.ABERuntime.Core.Assets;
 using WGIL.ImGuiSupport;
+using WGIL.IO;
+using static SDL2.SDL;
 
 namespace ABEngine.ABEditor
 {
@@ -32,6 +34,8 @@ namespace ABEngine.ABEditor
 
         public static Entity selectedEntity = Entity.Null;
         public static string selectedAsset = null;
+
+        RenderPass editorPass;
 
         // Imgui
         static ImGuiRenderer imguiRenderer;
@@ -123,6 +127,101 @@ namespace ABEngine.ABEditor
             File.WriteAllText(settingsPath, settingsJObj.Build().Serialize());
         }
 
+        void EditorPassWork(RenderPass pass)
+        {
+            colDebugSystem.Render(pass);
+        }
+
+        private protected override void MainLoop(float newTime, float elapsed)
+        {
+            // SDL2 Poll
+            window.ProcessEvents(inputData);
+            Input.UpdateFrameInput(inputData);
+
+            Time = newTime;
+            pipelineData.Time = Time;
+
+            imguiRenderer.Update(elapsed, inputData);
+
+            EntityManager.CheckEntityChanges();
+
+            UpdateEditorUI();
+
+            MainEditorUpdate(newTime, elapsed);
+
+            inputData.Clear();
+        }
+
+        private protected override void SetupComplete()
+        {
+            SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
+            SDL_GetWindowSize(window.Handle, out int w, out int h);
+
+            pixelSize = new Vector2(pw, ph);
+            virtualSize = new Vector2(w, h);
+            canvas = new Canvas(w, h);
+            canvas.isDynamicSize = false;
+            canvas.referenceSize = new Vector2(1280f, 720f);
+            wgil.logicalSize = virtualSize;
+
+            CreateRenderResources((uint)pw, (uint)ph);
+
+            CreateInternalRenders();
+
+            // ImGui / Editor render
+            imguiRenderer = new ImGuiRenderer(wgil, (uint)pixelSize.X, (uint)pixelSize.Y, false);
+            imguiRenderer.scaleFactor = pixelSize / virtualSize;
+            SetupImGuiStyle();
+
+            // Editor Pass
+            var editorPassDesc = new RenderPassDescriptor()
+            {
+                IsColorClear = false,
+                IsRenderSwapchain = true
+            };
+            editorPass = wgil.CreateRenderPass(ref editorPassDesc);
+            editorPass.JoinRenderQueue(EditorPassWork);
+            editorPass.JoinRenderQueue(imguiRenderer.Render);
+
+            wgil.AddRenderPass(editorPass);
+
+            foreach (var render in internalRenders)
+                render.SceneSetup();
+
+            EntityManager.Init();
+
+            TMColliderPipelineAsset tmColPipelineAsset = new TMColliderPipelineAsset();
+            LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
+
+            // Systems
+            // Shared
+            particleSystem = new ParticleModuleSystem();
+            spriteAnimSystem = new SpriteAnimSystem();
+            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+
+            TMColliderGizmo = new TilemapColliderGizmo(tmColPipelineAsset);
+            sharedSystems = new List<BaseSystem> { spriteBatchSystem, lightRenderSystem, particleSystem, spriteAnimSystem };
+            renderExtensions = new List<RenderSystem>();
+
+            // Editor
+            editorSystems = new List<BaseSystem>();
+            editorSystems.Add(new MouseDragSystem());
+            editorSystems.Add(new EditorCamMoveSystem());
+
+            // Editor UI Inits
+            SpriteEditor.Init();
+            ClipEditor.Init();
+
+            SubscribeSystems();
+
+            TMColliderGizmo.Start();
+
+            foreach (var system in editorSystems)
+            {
+                system.Start();
+            }
+        }
+
         protected override void Init(string windowName)
         {
             gameMode = GameMode.Editor;
@@ -139,83 +238,54 @@ namespace ABEngine.ABEditor
 
             // Graphics
             base.SetupGraphics(windowName);
-            CreateInternalRenders();
-
-            foreach (var render in internalRenders)
-                render.SceneSetup();
-
-            EntityManager.Init();
-
+          
 
             // ImGui
-            imguiRenderer = new ImGuiRenderer(
-              GraphicsManager.gd,
-              GraphicsManager.gd.MainSwapchain.Framebuffer.OutputDescription,
-              window.Width,
-              window.Height);
-            SetupImGuiStyle();
-            ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+            //imguiRenderer = new ImGuiRenderer(
+            //  GraphicsManager.gd,
+            //  GraphicsManager.gd.MainSwapchain.Framebuffer.OutputDescription,
+            //  window.Width,
+            //  window.Height);
+            //SetupImGuiStyle();
+            //ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
 
-            LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
-            TMColliderPipelineAsset tmColPipelineAsset = new TMColliderPipelineAsset();
+            //LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
+            //TMColliderPipelineAsset tmColPipelineAsset = new TMColliderPipelineAsset();
 
-            window.Resized += () =>
-            {
-                imguiRenderer.WindowResized(window.Width, window.Height);
-            };
+            //window.Resized += () =>
+            //{
+            //    imguiRenderer.WindowResized(window.Width, window.Height);
+            //};
 
 
-            // Systems
-            // Shared
-            particleSystem = new ParticleModuleSystem();
-            spriteAnimSystem = new SpriteAnimSystem();
+           
 
-            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
-            TMColliderGizmo = new TilemapColliderGizmo(tmColPipelineAsset);
-            sharedSystems = new List<BaseSystem> { spriteBatchSystem, lightRenderSystem, particleSystem, spriteAnimSystem };
-            renderExtensions = new List<RenderSystem>();
+            //InputSnapshot snapshot = window.PumpEvents();
+            //Input.UpdateFrameInput(snapshot);
 
-            // Editor
-            editorSystems = new List<BaseSystem>();
-            editorSystems.Add(new MouseDragSystem());
-            editorSystems.Add(new EditorCamMoveSystem());
-
-            // Editor UI Inits
-            SpriteEditor.Init();
-            ClipEditor.Init();
-
-            SubscribeSystems();
-
-            InputSnapshot snapshot = window.PumpEvents();
-            Input.UpdateFrameInput(snapshot);
-
-            colDebugSystem.Start();
-            TMColliderGizmo.Start();
+            //colDebugSystem.Start();
+            //TMColliderGizmo.Start();
 
             //aabbGizmo.Start();
-            foreach (var system in editorSystems)
-            {
-                system.Start();
-            }
-
+  
             // Game Loop
-            Stopwatch sw = Stopwatch.StartNew();
-            float previousTime = (float)sw.Elapsed.TotalSeconds;
-            while (window.Exists)
-            {
-                float newTime = (float)sw.Elapsed.TotalSeconds;
-                float elapsed = newTime - previousTime;
-                Time = newTime;
+            //Stopwatch sw = Stopwatch.StartNew();
+            //float previousTime = (float)sw.Elapsed.TotalSeconds;
+            //while (window.Exists)
+            //{
+                //float newTime = (float)sw.Elapsed.TotalSeconds;
+                //float elapsed = newTime - previousTime;
+                //Time = newTime;
 
-                previousTime = newTime;
-                snapshot = window.PumpEvents();
-                Input.UpdateFrameInput(snapshot);
+                //previousTime = newTime;
+                //snapshot = window.PumpEvents();
+                //Input.UpdateFrameInput(snapshot);
 
-                imguiRenderer.Update(elapsed, snapshot); // [2]
+                //imguiRenderer.Update(elapsed, snapshot); // [2]
 
-                EntityManager.CheckEntityChanges();
+                //EntityManager.CheckEntityChanges();
 
-                UpdateEditorUI();
+                //UpdateEditorUI();
 
                 // TODO reload later
                 //if (reload && !isPlaying)
@@ -233,102 +303,102 @@ namespace ABEngine.ABEditor
                 //    reload = false;
                 //}
 
-                if (reload)
-                {
-                    reload = false;
+                //if (reload)
+                //{
+                //    reload = false;
 
-                    gd.WaitForIdle();
+                //    gd.WaitForIdle();
 
-                    if (resize)
-                    {
-                        resize = false;
+                //    if (resize)
+                //    {
+                //        resize = false;
 
-                        // Resize render targets
-                        finalQuadRSSet.Dispose();
-                        foreach (var render in internalRenders)
-                            render.CleanUp(true, false, true);
+                //        // Resize render targets
+                //        finalQuadRSSet.Dispose();
+                //        foreach (var render in internalRenders)
+                //            render.CleanUp(true, false, true);
 
-                        resourceContext.RecreateFrameResources();
+                //        resourceContext.RecreateFrameResources();
 
                       
-                        finalQuadRSSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
-                               GraphicsManager.sharedTextureLayout,
-                                resourceContext.lightRenderTexture, gd.LinearSampler
-                                ));
+                //        finalQuadRSSet = gd.ResourceFactory.CreateResourceSet(new ResourceSetDescription(
+                //               GraphicsManager.sharedTextureLayout,
+                //                resourceContext.lightRenderTexture, gd.LinearSampler
+                //                ));
 
-                        SetupRenderResources();
+                //        SetupRenderResources();
 
-                        pipelineData = new PipelineData()
-                        {
-                            Projection = Matrix4x4.Identity,
-                            View = Matrix4x4.Identity,
-                            Resolution = screenSize,
-                            Time = elapsed,
-                            Padding = 0f
-                        };
+                //        pipelineData = new PipelineData()
+                //        {
+                //            Projection = Matrix4x4.Identity,
+                //            View = Matrix4x4.Identity,
+                //            Resolution = screenSize,
+                //            Time = elapsed,
+                //            Padding = 0f
+                //        };
 
 
-                        GraphicsManager.RefreshMaterials();
+                //        GraphicsManager.RefreshMaterials();
 
-                        lightRenderSystem.Start();
+                //        lightRenderSystem.Start();
 
-                        lineDbgPipelineAsset = new LineDbgPipelineAsset();
-                        tmColPipelineAsset = new TMColliderPipelineAsset();
+                //        lineDbgPipelineAsset = new LineDbgPipelineAsset();
+                //        tmColPipelineAsset = new TMColliderPipelineAsset();
 
-                        if (debug)
-                        {
-                            colDebugSystem.CleanUp(true, false);
-                            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
-                            colDebugSystem.Start();
-                        }
+                //        if (debug)
+                //        {
+                //            colDebugSystem.CleanUp(true, false);
+                //            colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+                //            colDebugSystem.Start();
+                //        }
 
-                        TMColliderGizmo.UpdatePipeline(tmColPipelineAsset);
+                //        TMColliderGizmo.UpdatePipeline(tmColPipelineAsset);
 
-                        RefreshProjection(Game.canvas);
-                    }
-                    continue;
+                //        RefreshProjection(Game.canvas);
+                //    }
+                //    continue;
 
-                }
+                //}
 
                 // TODO Enter play mode
-                if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.P))
-                {
-                    isPlaying = !isPlaying;
-                    if (isPlaying)
-                    {
-                        tmpJson = base.SaveScene();
-                        foreach (var system in sharedSystems)
-                        {
-                            system.Start();
-                        }
+                //if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.P))
+                //{
+                //    isPlaying = !isPlaying;
+                //    if (isPlaying)
+                //    {
+                //        tmpJson = base.SaveScene();
+                //        foreach (var system in sharedSystems)
+                //        {
+                //            system.Start();
+                //        }
 
-                        foreach (var system in userSystems)
-                        {
-                            system.Start();
-                        }
-                        camMoveSystem.Start();
+                //        foreach (var system in userSystems)
+                //        {
+                //            system.Start();
+                //        }
+                //        camMoveSystem.Start();
 
-                        window.Title = "ABEngine - Play Mode";
-                    }
-                    else
-                    {
-                        window.Title = "ABEngine - Editor";
-                        ResetWorld();
-                        base.LoadScene(tmpJson);
-                        DepthSearch();
-                        //spriteRenderer.Start();
-                        spriteBatchSystem.Start();
-                    }
-                }
+                //        window.Title = "ABEngine - Play Mode";
+                //    }
+                //    else
+                //    {
+                //        window.Title = "ABEngine - Editor";
+                //        ResetWorld();
+                //        base.LoadScene(tmpJson);
+                //        DepthSearch();
+                //        //spriteRenderer.Start();
+                //        spriteBatchSystem.Start();
+                //    }
+                //}
 
 
                 // TODO Render extensions
 
-                if (isPlaying) // TODO Play Mode
-                {
-                    MainFixedUpdate(newTime, elapsed);
-                    float interpolation = accumulator / TimeStep;
-                    MainUpdate(newTime, elapsed, interpolation);
+                //if (isPlaying) // TODO Play Mode
+                //{
+                //    MainFixedUpdate(newTime, elapsed);
+                //    float interpolation = accumulator / TimeStep;
+                //    MainUpdate(newTime, elapsed, interpolation);
 
                     //float fixedElapsed = newTime - previousFixedTime;
                     //if (fixedElapsed >= fixedTimeStep)
@@ -350,100 +420,100 @@ namespace ABEngine.ABEditor
                     //}
                     //spriteAnim.Update(newTime, elapsed);
                     //camMove.Update(newTime, elapsed);
-                }
-                else // Editor
-                {
-                    if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.S))
-                    {
-                        //tmpJson = base.SaveScene();
+                //}
+                //else // Editor
+                //{
+                //    if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.S))
+                //    {
+                //        //tmpJson = base.SaveScene();
 
-                        if (loadedScenePath != null)
-                        {
-                            File.WriteAllText(loadedScenePath, base.SaveScene());
-                        }
-                        else
-                        {
-                            fileDialogType = FileDialogType.SaveFile;
-                        }
-                    }
-                    else if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.Z))
-                    {
-                        EditorActions.Undo();
-                    }
-                    else if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.Y))
-                    {
-                        EditorActions.Redo();
-                    }
-                    else if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.BackSpace))
-                    {
-                        var ent = Editor.selectedEntity;
-                        if (ent != Entity.Null)
-                            DeleteRecursive(ent.Get<Transform>());
-                    }
+                //        if (loadedScenePath != null)
+                //        {
+                //            File.WriteAllText(loadedScenePath, base.SaveScene());
+                //        }
+                //        else
+                //        {
+                //            fileDialogType = FileDialogType.SaveFile;
+                //        }
+                //    }
+                //    else if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.KeyZ))
+                //    {
+                //        EditorActions.Undo();
+                //    }
+                //    else if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.KeyY))
+                //    {
+                //        EditorActions.Redo();
+                //    }
+                //    else if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.Backspace))
+                //    {
+                //        var ent = Editor.selectedEntity;
+                //        if (ent != Entity.Null)
+                //            DeleteRecursive(ent.Get<Transform>());
+                //    }
 
-                    if (!ImGui.GetIO().WantCaptureKeyboard)
-                    {
-                        if (Input.GetKey(Key.Up))
-                        {
-                            zoomFactor = Math.Clamp(zoomFactor - elapsed * zoomSpeed, 0.2f, 1.8f);
-                            Zoom();
-                        }
-                        else if (Input.GetKey(Key.Down))
-                        {
-                            zoomFactor = Math.Clamp(zoomFactor + elapsed * zoomSpeed, 0.2f, 1.8f);
-                            Zoom();
-                        }
-                    }
+                //    if (!ImGui.GetIO().WantCaptureKeyboard)
+                //    {
+                //        if (Input.GetKey(Key.Up))
+                //        {
+                //            zoomFactor = Math.Clamp(zoomFactor - elapsed * zoomSpeed, 0.2f, 1.8f);
+                //            Zoom();
+                //        }
+                //        else if (Input.GetKey(Key.Down))
+                //        {
+                //            zoomFactor = Math.Clamp(zoomFactor + elapsed * zoomSpeed, 0.2f, 1.8f);
+                //            Zoom();
+                //        }
+                //    }
 
-                    if (!ImGui.GetIO().WantCaptureMouse)
-                    {
-                        if (Input.MouseScrollDelta != 0)
-                        {
-                            zoomFactor = Math.Clamp(zoomFactor - elapsed * -Input.MouseScrollDelta, 0.2f, 1.8f);
-                            Zoom();
-                        }
-                    }
+                //    if (!ImGui.GetIO().WantCaptureMouse)
+                //    {
+                //        if (Input.MouseScrollDelta != 0)
+                //        {
+                //            zoomFactor = Math.Clamp(zoomFactor - elapsed * -Input.MouseScrollDelta, 0.2f, 1.8f);
+                //            Zoom();
+                //        }
+                //    }
 
-                    MainEditorUpdate(newTime, elapsed);
-                }
+                //    MainEditorUpdate(newTime, elapsed);
+                //}
 
-                if (!window.Exists)
-                {
-                    break;
-                }
+                //if (!window.Exists)
+                //{
+                //    break;
+                //}
 
-                // Render
+                //// Render
 
-                DrawBegin();
-                MainRender();
+                //DrawBegin();
+                //MainRender();
 
-                //_commandList.ClearDepthStencil(0f);
-                colDebugSystem.Render();
-                TMColliderGizmo.Render();
-                // TODO Render extensions
+                ////_commandList.ClearDepthStencil(0f);
+                //colDebugSystem.Render();
+                //TMColliderGizmo.Render();
+                //// TODO Render extensions
 
          
-                if(!isPlaying)
-                {
-                    //Editor draws
-                    ClipEditor.Draw(newTime);
-                    AnimGraphEditor.Draw(newTime);
-                    //GraphicsManager.cl.SetFramebuffer(mainRenderFB);
-                    //GraphicsManager.cl.SetFullViewports();
-                }
+                //if(!isPlaying)
+                //{
+                //    //Editor draws
+                //    ClipEditor.Draw(newTime);
+                //    AnimGraphEditor.Draw(newTime);
+                //    //GraphicsManager.cl.SetFramebuffer(mainRenderFB);
+                //    //GraphicsManager.cl.SetFullViewports();
+                //}
 
-                ImGui.PopFont();
+                //ImGui.PopFont();
 
-                FinalRender();
+                //FinalRender();
 
-            }
+            //}
 
             // Clean up Veldrid resources
-            CleanUp();
-            imguiRenderer.Dispose();
-            gd.Dispose();
+            //CleanUp();
+            //imguiRenderer.Dispose();
+            //gd.Dispose();
 
-            SaveEditorSettings();
+            //SaveEditorSettings();
 
             //_commandList.Dispose();
             //gd.Dispose();
@@ -477,6 +547,9 @@ namespace ABEngine.ABEditor
 
         private void MainEditorUpdate(float newTime, float elapsed)
         {
+            if (!isGameOpen)
+                return;
+
             // Active Cam Update
             if (_checkCamUpdate)
             {
@@ -507,26 +580,6 @@ namespace ABEngine.ABEditor
             spriteBatchSystem.Update(newTime, elapsed);
             meshRenderSystem.Update(newTime, elapsed);
             lightRenderSystem.Update(newTime, elapsed);
-        }
-
-        private void FinalRender()
-        {
-            GraphicsManager.cl.SetFramebuffer(GraphicsManager.gd.MainSwapchain.Framebuffer);
-            GraphicsManager.cl.SetFullViewports();
-            GraphicsManager.cl.ClearColorTarget(0, RgbaFloat.Black);
-            GraphicsManager.cl.SetPipeline(GraphicsManager.FullScreenPipeline);
-
-            GraphicsManager.cl.SetGraphicsResourceSet(0, finalQuadRSSet);
-            GraphicsManager.cl.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-            GraphicsManager.cl.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.UInt16);
-            GraphicsManager.cl.DrawIndexed(6, 1, 0, 0, 0);
-
-            imguiRenderer.Render(GraphicsManager.gd, GraphicsManager.cl);
-
-            GraphicsManager.cl.End();
-            GraphicsManager.gd.SubmitCommands(GraphicsManager.cl);
-            GraphicsManager.gd.WaitForIdle();
-            GraphicsManager.gd.SwapBuffers();
         }
 
         protected override string SaveScene()
@@ -661,6 +714,7 @@ namespace ABEngine.ABEditor
             lightRenderSystem.Start();
             particleSystem.Start();
             spriteAnimSystem.Start();
+            colDebugSystem.Start();
             isGameOpen = true;
 
             EditorActions = new EditorActionStack();

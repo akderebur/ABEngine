@@ -57,11 +57,11 @@ namespace ABEngine.ABERuntime
                 pass.SetBindGroup(1, mr.vertexTransformSet);
 
                 // Material Resource Sets
-                if (mr.material.bindableSets.Count > 0)
-                {
-                    var entry = mr.material.bindableSets.ElementAt(0);
-                    pass.SetBindGroup(entry.Key, entry.Value);
-                }
+                //if (mr.material.bindableSets.Count > 0)
+                //{
+                //    var entry = mr.material.bindableSets.ElementAt(0);
+                //    pass.SetBindGroup(entry.Key, entry.Value);
+                //}
 
                 pass.DrawIndexed(mesh.indices.Length);
             });

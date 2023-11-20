@@ -1,7 +1,8 @@
 ﻿using System;
 using ABEngine.ABERuntime;
 using System.Numerics;
-using Veldrid;
+using ABEngine.ABERuntime.Core.Assets;
+using WGIL;
 
 namespace ABEngine.ABEditor
 {
@@ -16,9 +17,7 @@ namespace ABEngine.ABEditor
                 return gridTexture;
 
             // Load texture
-            var texDesc = TextureDescription.Texture2D(
-            128, 128, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled);
-            var tex = GraphicsManager.rf.CreateTexture(texDesc);
+            Texture tex = Game.wgil.CreateTexture(128, 128, TextureFormat.Rgba8UnormSrgb, TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST);
             var pixelData = new byte[128 * 128 * 4];
             for (int i = 0; i < pixelData.Length; i += 4)
             {
@@ -28,24 +27,7 @@ namespace ABEngine.ABEditor
                 pixelData[i + 3] = 255;
             }
 
-            unsafe
-            {
-                fixed (byte* pin = pixelData)
-                {
-                    GraphicsManager.gd.UpdateTexture(
-                    tex,
-                    (IntPtr)pin,
-                    (uint)pixelData.Length,
-                    0,
-                    0,
-                    0,
-                    128,
-                    128,
-                    1,
-                    0,
-                    0);
-                }
-            }
+            Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
             gridTexture = new Texture2D(1, tex, GraphicsManager.linearSampleClamp, Vector2.Zero); ;
             return gridTexture;
@@ -57,9 +39,7 @@ namespace ABEngine.ABEditor
                 return gridLineTexture;
 
             // Load texture
-            var texDesc = TextureDescription.Texture2D(
-            3000, 1, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled);
-            var tex = GraphicsManager.rf.CreateTexture(texDesc);
+            Texture tex = Game.wgil.CreateTexture(3000, 1, TextureFormat.Rgba8UnormSrgb, TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST);
             var pixelData = new byte[3000 * 1 * 4];
             for (int i = 0; i < pixelData.Length; i += 4)
             {
@@ -69,24 +49,7 @@ namespace ABEngine.ABEditor
                 pixelData[i + 3] = 255;
             }
 
-            unsafe
-            {
-                fixed (byte* pin = pixelData)
-                {
-                    GraphicsManager.gd.UpdateTexture(
-                    tex,
-                    (IntPtr)pin,
-                    (uint)pixelData.Length,
-                    0,
-                    0,
-                    0,
-                    3000,
-                    1,
-                    1,
-                    0,
-                    0);
-                }
-            }
+            Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
             gridLineTexture = new Texture2D(2, tex, GraphicsManager.linearSampleClamp, Vector2.Zero); ;
             return gridLineTexture;

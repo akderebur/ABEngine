@@ -26,6 +26,10 @@ namespace ABEngine.ABERuntime.Pipelines
                     new VertexAttribute() { format = VertexFormat.Float32x3, location = 1, offset = 16 }
                 },
                 BindGroupLayouts = new BindGroupLayout[] { GraphicsManager.sharedPipelineLayout },
+                AttachmentDescription = new AttachmentDescription()
+                {
+                    ColorFormats = new TextureFormat[] { GraphicsManager.surfaceFormat }
+                }
             };
 
             pipeline = Game.wgil.CreateRenderPipeline(Shaders.LineDebugVertex, Shaders.LineDebugFragment, ref linePipelineDesc);

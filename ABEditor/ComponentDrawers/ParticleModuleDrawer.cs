@@ -5,11 +5,11 @@ using ABEngine.ABERuntime;
 using ImGuiNET;
 using System.Net.NetworkInformation;
 using ABEngine.ABERuntime.Components;
-using Veldrid;
 using ABEngine.ABEditor.Assets;
 using ABEngine.ABEditor.Assets.Meta;
 using System.Numerics;
-using ABEngine.ABERuntime.Core.Math;
+using ABEngine.ABERuntime.Core.MathA;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor.ComponentDrawers
 {
@@ -103,7 +103,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 gradientEditOpen = false;
                 firstGradientOpen = false;
                 lastPM = pm;
-                imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, pm.particleTexture.texture);
+                imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(pm.particleTexture.GetView());
             }
 
             int maxParticles = pm.maxParticles;
@@ -227,7 +227,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                     TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;
                     pm.particleTexture = AssetHandler.GetAssetBinding(texMeta) as Texture2D;
-                    imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, pm.particleTexture.texture);
+                    imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(pm.particleTexture.GetView());
                 }
 
                 ImGui.EndDragDropTarget();

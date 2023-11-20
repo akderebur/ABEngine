@@ -36,7 +36,7 @@ namespace ABEngine.ABERuntime
             set
             {
                 _render2DOnly = value;
-                Game.Instance.Toggle3D(!value);
+                //Game.Instance.Toggle3D(!value);
             }
         }
 
@@ -61,7 +61,7 @@ namespace ABEngine.ABERuntime
         public static BindGroupLayout sharedTextureLayout;
         public static BindGroupLayout sharedSpriteNormalLayout;
         public static BindGroupLayout sharedMeshUniform_VS;
-        public static BindGroupLayout sharedMeshUniform_FS;
+        public static BindGroupLayout sharedPipelineLightLayout;
 
         public static TextureView defaultTexView;
 
@@ -116,14 +116,17 @@ namespace ABEngine.ABERuntime
             return pipelineMaterials.Count;
         }
 
-        public static PipelineAsset GetPipelineAssetByName(string name)
+        internal static PipelineAsset GetPipelineAssetByName(string name)
         {
-            return pipelineAssets[name];
+            if (pipelineAssets.TryGetValue(name, out PipelineAsset asset))
+                return asset;
+
+            return null;
         }
 
-        internal static void AddPipelineAsset(PipelineAsset pipelineAsset)
+        internal static void AddPipelineAsset(string name, PipelineAsset pipelineAsset)
         {
-            pipelineAssets.Add(pipelineAsset.ToString(), pipelineAsset);
+            pipelineAssets.Add(name, pipelineAsset);
         }
 
         internal static void AddPipelineMaterial(PipelineMaterial pipelineMaterial)
@@ -288,10 +291,15 @@ namespace ABEngine.ABERuntime
 
             sharedMeshUniform_VS = wgil.CreateBindGroupLayout(ref meshVertexDesc).SetManualDispose(true);
 
-            var meshFragmentDesc = new BindGroupLayoutDescriptor()
+            var pipeLightDesc = new BindGroupLayoutDescriptor()
             {
                 Entries = new[]
                 {
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Buffer,
+                        ShaderStages = ShaderStages.VERTEX | ShaderStages.FRAGMENT
+                    },
                     new BindGroupLayoutEntry()
                     {
                         BindingType = BindingType.Buffer,
@@ -300,7 +308,7 @@ namespace ABEngine.ABERuntime
                 }
             };
 
-            sharedMeshUniform_FS = wgil.CreateBindGroupLayout(ref meshFragmentDesc).SetManualDispose(true);
+            sharedPipelineLightLayout = wgil.CreateBindGroupLayout(ref pipeLightDesc).SetManualDispose(true);
 
             // Full screen pipeline
             fullScreenVertexLayout = new VertexAttribute[]
@@ -379,7 +387,7 @@ namespace ABEngine.ABERuntime
                     ColorFormats = new [] { Game.resourceContext.mainRenderView.Format, Game.resourceContext.spriteNormalsView.Format }
                 }
             };
-            DepthClearPipeline = wgil.CreateRenderPipeline(DepthVertex, DepthFragment, ref depthPipeDesc);
+            DepthClearPipeline = wgil.CreateRenderPipeline(DepthVertex, DepthFragment, ref depthPipeDesc).SetManualDispose(true);
 
         }
 
@@ -401,7 +409,7 @@ namespace ABEngine.ABERuntime
             sharedTextureLayout?.Dispose();
 
             sharedMeshUniform_VS?.Dispose();
-            sharedMeshUniform_FS?.Dispose();
+            sharedPipelineLightLayout?.Dispose();
 
             defaultTexView?.Dispose();
             pointSamplerClamp?.Dispose();

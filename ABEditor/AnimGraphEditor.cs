@@ -8,6 +8,7 @@ using System.IO;
 using Halak;
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Core.Assets;
+using WGIL;
 
 namespace ABEngine.ABEditor
 {
@@ -392,7 +393,7 @@ namespace ABEngine.ABEditor
 
         static string renameParamKey;
 
-        public static void Draw(float gameTime)
+        public static void Draw(RenderPass pass, float gameTime)
         {
             if (!isActive)
                 return;
@@ -573,14 +574,11 @@ namespace ABEngine.ABEditor
                 ImGui.PushID(node.ID);
                 Vector2 node_rect_min = offset + node.Pos * scale;
 
-                // Draw pv offscreen
+                // Update preview
                 if (node.pvTex != null)
                 {
                     var state = node.AnimState;
                     var clip = state.clip;
-                    _cl.SetFramebuffer(node.pvTex.spriteFB);
-                    _cl.SetFullViewports();
-                    _cl.ClearColorTarget(0, RgbaFloat.Black);
                     if ((gameTime - state.sampleFreq) > state.lastFrameTime)
                     {
                         state.curFrame++;
@@ -590,7 +588,6 @@ namespace ABEngine.ABEditor
 
                         node.pvTex.SetUVPosScale(clip.uvPoses[state.curFrame], clip.uvScales[state.curFrame]);
                     }
-                    node.pvTex.DrawEditor();
                 }
 
                 // Display node contents first
@@ -605,7 +602,7 @@ namespace ABEngine.ABEditor
                 ImGui.Text(node.Name);
 
                 if (node.pvTexPtr != IntPtr.Zero)
-                    ImGui.Image(node.pvTexPtr, pvSize);
+                    ImGui.Image(node.pvTexPtr, pvSize, node.pvTex.uvPos, node.pvTex.uvPos + node.pvTex.uvScale);
                 //ImGui.SliderFloat("##value", ref node.Value, 0.0f, 1.0f, "Alpha %.2f");
                 //ImGui.ColorEdit3("##color", ref node.Color.X);
                 ImGui.EndGroup();

@@ -71,13 +71,21 @@ namespace ABEngine.ABERuntime.Windowing
                         Close();
                         break;
                     case SDL_EventType.SDL_WINDOWEVENT:
-                        SDL_WindowEvent windowEvent = ev.window;
-                        HandleWindowEvent(windowEvent);
+                        HandleWindowEvent(ev.window);
                         break;
                     case SDL_EventType.SDL_KEYDOWN:
                     case SDL_EventType.SDL_KEYUP:
-                        SDL_KeyboardEvent keyboardEvent = ev.key;
-                        inputData.HandleKeyEvent(keyboardEvent);
+                        inputData.HandleKeyEvent(ev.key);
+                        break;
+                    case SDL_EventType.SDL_MOUSEMOTION:
+                        inputData.HandleMouseMotionEvent(ev.motion);
+                        break;
+                    case SDL_EventType.SDL_MOUSEBUTTONDOWN:
+                    case SDL_EventType.SDL_MOUSEBUTTONUP:
+                        inputData.HandleMouseButtonEvent(ev.button);
+                        break;
+                    case SDL_EventType.SDL_TEXTINPUT:
+                        inputData.HandleTextInputEvent(ev.text);
                         break;
                     default:
                         break;
@@ -85,7 +93,7 @@ namespace ABEngine.ABERuntime.Windowing
             }
         }
 
-        void HandleWindowEvent(SDL_WindowEvent e)
+        void HandleWindowEvent(in SDL_WindowEvent e)
         {
             switch (e.windowEvent)
             {

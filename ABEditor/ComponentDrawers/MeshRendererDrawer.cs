@@ -5,6 +5,7 @@ using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
 using ImGuiNET;
 using System.Numerics;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor.ComponentDrawers
 {

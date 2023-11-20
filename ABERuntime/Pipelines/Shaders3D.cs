@@ -122,6 +122,15 @@ Vertex
        mat4 transformationMatrix;
    };
 
+    layout (set = 2, binding = 0) uniform ShaderProps
+    {
+        vec4 AlbedoColor;
+        float MetallicFactor;
+        float RoughnessFactor;
+        float AOFactor;
+        float PropPad;
+    };
+
    layout(location = 0) in vec3 position;
    layout(location = 1) in vec3 vertexNormal;
    layout(location = 2) in vec2 texCoord;
@@ -130,7 +139,7 @@ Vertex
    layout(location = 0) out vec2 pass_textureCoordinates;
    layout(location = 1) out vec3 pass_position;
    layout(location = 2) out vec3 pass_normalVector;
-   layout(location = 3) out mat3 tangentBasis;
+   //layout(location = 3) out mat3 tangentBasis;
 
    void main()
    {
@@ -139,11 +148,11 @@ Vertex
        pass_position = vec3( transformationMatrix * vec4(position,1));
        pass_normalVector = normalize(mat3(transformationMatrix) * vertexNormal);
 
-       vec3 N = normalize(vec3(transformationMatrix * vec4(vertexNormal,0)));
-       vec3 T = normalize(vec3(transformationMatrix * vec4(tangent,   0.0)));
-       vec3 B = normalize(cross(N,T));
+       //vec3 N = normalize(vec3(transformationMatrix * vec4(vertexNormal,0)));
+       //vec3 T = normalize(vec3(transformationMatrix * vec4(tangent,   0.0)));
+       //vec3 B = normalize(cross(N,T));
 
-       tangentBasis = mat3(T,B,N);
+       //tangentBasis = mat3(T,B,N);
    }
 }
 Fragment
@@ -159,9 +168,26 @@ Fragment
         float Padding;
     };
 
-    layout (set = 1, binding = 0) uniform DummyVertex
+    // Lighting
+    struct Light
     {
-        mat4 dummyMatrix;
+        vec3 Position;
+        float Range;
+        vec3 Color;
+        float Intensity;
+    };
+
+
+
+    layout (set = 0, binding = 1) uniform SharedMeshFragment
+    {
+        Light Lights[4];
+        vec3 camPos;
+        float _padding_0;
+        int NumDirectionalLights;
+        int NumPointLights;
+        float _padding_2;
+        float _padding_3;
     };
 
     layout (set = 2, binding = 0) uniform ShaderProps
@@ -176,30 +202,10 @@ Fragment
     layout (set = 3, binding = 0) uniform texture2D AlbedoTex;
     layout (set = 3, binding = 1) uniform sampler AlbedoSampler;
 
-    // Lighting
-    struct Light
-    {
-        vec3 Position;
-        float Range;
-        vec3 Color;
-        float Intensity;
-    };
-
-    layout (set = 4, binding = 0) uniform SharedMeshFragment
-    {
-        Light Lights[4];
-        vec3 camPos;
-        float _padding_0;
-        int NumDirectionalLights;
-        int NumPointLights;
-        float _padding_2;
-        float _padding_3;
-    };
-
     layout(location = 0) in vec2 TexCoords;
     layout(location = 1) in vec3 WorldPos;
     layout(location = 2) in vec3 Normal;
-    layout(location = 3) in mat3 tangentBasis;
+    //layout(location = 3) in mat3 tangentBasis;
 
     layout(location = 0) out vec4 outputColor;
 
@@ -363,7 +369,6 @@ Fragment
     void main()
     {
         float dummy = Time - Time;
-        dummy += (dummyMatrix[0][0] * vec3(1)).x - (dummyMatrix[0][0] * vec3(1)).x;
         dummy += MetallicFactor - MetallicFactor;
         vec3 albedo = vec3(texture(sampler2D(AlbedoTex, AlbedoSampler), TexCoords));
 

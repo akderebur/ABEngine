@@ -4,8 +4,8 @@ using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
 using Arch.Core.Extensions;
 using ImGuiNET;
-using Veldrid;
-using ABEngine.ABERuntime.Core.Math;
+using ABEngine.ABERuntime.Core.MathA;
+using WGIL.IO;
 
 namespace ABEngine.ABEditor
 {
@@ -43,25 +43,25 @@ namespace ABEngine.ABEditor
 
                 if (cam.cameraProjection == CameraProjection.Orthographic)
                 {
-                    if (Input.GetKey(Key.D))
+                    if (Input.GetKey(Key.KeyD))
                     {
                         if (!modKey)
                             endPos += new Vector3(Vector2.UnitX, 0f);
                     }
 
-                    if (Input.GetKey(Key.A))
+                    if (Input.GetKey(Key.KeyA))
                     {
                         if (!modKey)
                             endPos -= new Vector3(Vector2.UnitX, 0f);
                     }
 
-                    if (Input.GetKey(Key.W))
+                    if (Input.GetKey(Key.KeyW))
                     {
                         if (!modKey)
                             endPos += new Vector3(Vector2.UnitY, 0f);
                     }
 
-                    if (Input.GetKey(Key.S))
+                    if (Input.GetKey(Key.KeyS))
                     {
                         if (!modKey)
                             endPos -= new Vector3(Vector2.UnitY, 0f);

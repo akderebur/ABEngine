@@ -3,7 +3,6 @@ using ABEngine.ABERuntime;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ImGuiNET;
-using Veldrid;
 using ABEngine.ABEditor.Assets;
 using ABEngine.ABEditor.Assets.Meta;
 using static ABEngine.ABEditor.SpriteEditor;
@@ -14,6 +13,9 @@ using ABEngine.ABEditor.TilemapExtension;
 using Arch.Core;
 using Arch.Core.Extensions;
 using ABEngine.ABERuntime.ECS;
+using WGIL.IO;
+using ABEngine.ABERuntime.Core.Assets;
+using WGIL;
 
 namespace ABEngine.ABEditor.ComponentDrawers
 {
@@ -186,7 +188,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             }
             else // Single tile placement
             {
-                if (brushRecord.Count < 1 || recording || Input.GetKey(Key.R))
+                if (brushRecord.Count < 1 || recording || Input.GetKey(Key.KeyR))
                 {
                     if(!brushRecord.ContainsKey(placePosRound))
                         brushRecord.Add(placePosRound, curSelection);
@@ -348,7 +350,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 savedQuad = null;
             }
 
-            if (Input.GetKey(Key.R))
+            if (Input.GetKey(Key.KeyR))
                 recordLeave = true;
             else
                 recordLeave = false;
@@ -436,7 +438,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                 var tmpTex2d = tilemap.tileImage;
                 texture = tilemap.tileImage.texture;
-                imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, texture);
+                imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(tmpTex2d.GetView());
                
                 lastTilemap = tilemap;
                 lastTilemapTrans = tilemapTrans;
@@ -483,14 +485,14 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 cursorSprite.Get<Transform>().localPosition = Input.GetMousePosition().ScreenToWorld();
                 spr = cursorSprite.Get<Sprite>();
 
-                if (Input.GetKeyDown(Key.Q))
+                if (Input.GetKeyDown(Key.KeyQ))
                     cursorSprite.Get<Transform>().localEulerAngles -= Vector3.UnitZ * MathF.PI / 2f;
-                else if (Input.GetKeyDown(Key.E))
+                else if (Input.GetKeyDown(Key.KeyE))
                     cursorSprite.Get<Transform>().localEulerAngles += Vector3.UnitZ * MathF.PI / 2f;
 
             }
 
-            if (Input.GetKeyDown(Key.X)) // Selection. Remove brush
+            if (Input.GetKeyDown(Key.KeyX)) // Selection. Remove brush
             {
                 if (curSelection != null)
                     curSelection.selected = false;
@@ -587,7 +589,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 RefreshCutQuads();
             }
 
-            if (imgPtr != null)
+            if (imgPtr != IntPtr.Zero)
             {
                 Vector2 pos = ImGui.GetCursorScreenPos();
                 var draw = ImGui.GetWindowDrawList();
@@ -713,7 +715,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     ImGui.InputText("##ChunkColLayer", ref selectedChunk.collisionLayer, 100);
                 }
 
-                if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.X))
+                if (Input.GetKey(Key.ControlLeft) && Input.GetKeyDown(Key.KeyX))
                 {
                     lastTilemap.DeleteChunk(selectedChunk);
                     onCollisionUpdate?.Invoke(selectedChunk);
@@ -736,7 +738,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     spriteFilePath = AssetsFolderView.files[srcIndex];
 
                     texture = AssetCache.GetTextureDebug(Game.AssetPath + spriteFilePath);
-                    imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, texture);
+                    imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(AssetCache.GetOrCreateTextureView(texture));
                     init = false;
 
                     TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;

@@ -7,9 +7,9 @@ using System.Security.Principal;
 using Arch.Core;
 using Arch.Core.Extensions;
 using ABEngine.ABERuntime.Rendering;
-using ABEngine.ABERuntime.Core.Components;
 using System.Collections.Generic;
 using ABEngine.ABERuntime.ECS;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor
 {
@@ -101,7 +101,7 @@ namespace ABEngine.ABEditor
                 if (dirLightCount == 0)
                 {
                     var sunLight = EntityManager.CreateEntity("DirLight", "", new DirectionalLight()
-                    { color = Color.White.ToVector4(), direction = Vector3.Normalize(-Vector3.UnitZ), Intensity = 1f });
+                    { color = Vector4.One, direction = Vector3.Normalize(-Vector3.UnitZ), Intensity = 1f });
                     Editor.AddToHierList(sunLight.Get<Transform>());
                 }
             }

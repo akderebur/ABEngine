@@ -72,31 +72,31 @@ namespace ABEngine.ABEditor
            
         }
 
-        public void DrawEditor()
-        {
-            ////ort.projection = Matrix4x4.CreateOrthographicOffCenter(0, 100, 0, 100, 0, 1);
-            ////ort.model = Matrix4x4.Identity;
+        //public void DrawEditor()
+        //{
+        //    ////ort.projection = Matrix4x4.CreateOrthographicOffCenter(0, 100, 0, 100, 0, 1);
+        //    ////ort.model = Matrix4x4.Identity;
 
-            //if (disposed)
-            //    return;
+        //    //if (disposed)
+        //    //    return;
 
-            //var newVert = new QuadVertex(drawPos,
-            //                                base.GetSize(),
-            //                                Vector3.Zero,
-            //                                RgbaFloat.White.ToVector4(),
-            //                                0f,
-            //                                base.uvPos,
-            //                                base.uvScale,
-            //                                base.pivot);
-            //GraphicsManager.gd.UpdateBuffer(_vertexBuffer, 0, newVert);
+        //    //var newVert = new QuadVertex(drawPos,
+        //    //                                base.GetSize(),
+        //    //                                Vector3.Zero,
+        //    //                                RgbaFloat.White.ToVector4(),
+        //    //                                0f,
+        //    //                                base.uvPos,
+        //    //                                base.uvScale,
+        //    //                                base.pivot);
+        //    //GraphicsManager.gd.UpdateBuffer(_vertexBuffer, 0, newVert);
 
 
-            //GraphicsManager.cl.SetPipeline(_pipeline);
-            //GraphicsManager.cl.SetGraphicsResourceSet(0, _drawSet);
-            //GraphicsManager.cl.SetGraphicsResourceSet(1, _texSet);
-            //GraphicsManager.cl.SetVertexBuffer(0, _vertexBuffer);
-            //GraphicsManager.cl.Draw(6, 1, 0, 0);
-        }
+        //    //GraphicsManager.cl.SetPipeline(_pipeline);
+        //    //GraphicsManager.cl.SetGraphicsResourceSet(0, _drawSet);
+        //    //GraphicsManager.cl.SetGraphicsResourceSet(1, _texSet);
+        //    //GraphicsManager.cl.SetVertexBuffer(0, _vertexBuffer);
+        //    //GraphicsManager.cl.Draw(6, 1, 0, 0);
+        //}
 
         public void DestroyResources()
         {

@@ -23,7 +23,7 @@ namespace ABEngine.ABERuntime.Components
 
     public struct LightInfo
     {
-        public const uint VertexSize = 48;
+        public const int VertexSize = 48;
 
         public Vector3 Position;
         public Vector4 Color;

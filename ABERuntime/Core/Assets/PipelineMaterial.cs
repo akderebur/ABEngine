@@ -53,6 +53,10 @@ namespace ABEngine.ABERuntime.Core.Assets
         internal void SetShaderPropBuffer(List<ShaderProp> shaderProps, uint bufferSize)
         {
             this.shaderProps = shaderProps;
+
+            if (propLayout == null)
+                return;
+
             this.shaderPropBufferSize = (uint)(MathF.Ceiling(bufferSize / 16f) * 16);
             this.shaderPropData = new byte[this.shaderPropBufferSize];
 
@@ -133,10 +137,13 @@ namespace ABEngine.ABERuntime.Core.Assets
                 };
 
                 textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
-   
-                bindableSets.Add(3, textureSet);
+
+                if(propLayout != null)
+                    bindableSets.Add(3, textureSet);
+                else
+                    bindableSets.Add(2, textureSet);
             }
-            
+
         }
 
         public void SetTexture(string textureName, Texture2D tex2d)
@@ -159,20 +166,23 @@ namespace ABEngine.ABERuntime.Core.Assets
 
                 textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
 
-                bindableSets[3] = textureSet;
+                if(propLayout != null)
+                    bindableSets[3] = textureSet;
+                else
+                    bindableSets[2] = textureSet;
             }
         }
 
-        internal Texture GetRawTexture(string textureName)
+        internal TextureView GetRawTextureView(string textureName)
         {
             int texNameInd = pipelineAsset.GetTextureID(textureName);
             if (texNameInd > -1)
             {
                 int texInd = texNameInd * 2;
-                return texResources[texInd] as Texture;
+                return texResources[texInd] as TextureView;
             }
 
-            return null;
+            return AssetCache.GetDefaultTexture().GetView();
         }
 
         public PipelineMaterial GetCopy()
@@ -186,7 +196,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public void ChangePipeline(PipelineAsset pipeline)
         {
-            propBuffer.Dispose();
+            propBuffer?.Dispose();
             foreach (var resourceSet in bindableSets.Values)
                 resourceSet.Dispose();
             bindableSets.Clear();

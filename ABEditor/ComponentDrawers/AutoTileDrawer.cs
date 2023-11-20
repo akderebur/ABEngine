@@ -9,7 +9,6 @@ using ABEngine.ABEditor.Assets;
 using ABEngine.ABEditor.Assets.Meta;
 using System.IO;
 using Newtonsoft.Json;
-using Veldrid;
 
 namespace ABEngine.ABEditor.ComponentDrawers
 {
@@ -37,7 +36,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
 				SaveConfiguration();
                 tilemap = newTilemap;
 
-                imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, tilemap.tileImage.texture);
+                imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(tilemap.tileImage.GetView());
 
                 // Load auto tile configuration
                 autoTiles.Clear();

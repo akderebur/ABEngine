@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Text;
 using ABEngine.ABERuntime;
+using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
+using ABEngine.ABERuntime.Debug;
 using ABEngine.ABERuntime.Pipelines;
-using Veldrid;
-using Veldrid.SPIRV;
+using WGIL;
 
 namespace ABEditor.Debug
 {
@@ -12,47 +14,36 @@ namespace ABEditor.Debug
         public TMColliderPipelineAsset() : base()
         {
             // Line Pipeline
+            var lineVertLayout = WGILUtils.GetVertexLayout<LinePoint>(out _);
 
-            // Line shaders
-            ShaderDescription lineVS = new ShaderDescription(
-               ShaderStages.Vertex,
-               Encoding.UTF8.GetBytes(Shaders.LineDebugVertex),
-               "main");
+            var linePipeDesc = new PipelineDescriptor()
+            {
+                BlendStates = new BlendState[]
+                {
+                    BlendState.OverrideBlend
+                },
+                //DepthStencilState = new DepthStencilState()
+                //{
+                //    DepthTestEnabled = true,
+                //    DepthWriteEnabled = false,
+                //    DepthComparison = CompareFunction.LessEqual
+                //},
+                PrimitiveState = new PrimitiveState()
+                {
+                    Topology = PrimitiveTopology.LineList,
+                    PolygonMode = PolygonMode.Fill,
+                    CullFace = CullFace.None,
+                    FrontFace = FrontFace.Cw
+                },
+                VertexAttributes = lineVertLayout,
+                BindGroupLayouts = new[] { GraphicsManager.sharedPipelineLayout },
+                AttachmentDescription = new AttachmentDescription()
+                {
+                    ColorFormats = new[] { GraphicsManager.surfaceFormat }
+                }
+            };
 
-            ShaderDescription lineFS = new ShaderDescription(
-                ShaderStages.Fragment,
-                Encoding.UTF8.GetBytes(Shaders.LineDebugFragment),
-                "main");
-
-            var lightShaders = rf.CreateFromSpirv(lineVS, lineFS);
-
-            var vertLayout = new VertexLayoutDescription(
-                            new VertexElementDescription("Color", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float4),
-                            new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3));
-
-            GraphicsPipelineDescription linePipelineDesc = new GraphicsPipelineDescription(
-                BlendStateDescription.SingleOverrideBlend,
-                GraphicsManager.gd.IsDepthRangeZeroToOne ? DepthStencilStateDescription.DepthOnlyGreaterEqual : DepthStencilStateDescription.DepthOnlyLessEqual,
-                RasterizerStateDescription.Default,
-                PrimitiveTopology.LineList,
-                new ShaderSetDescription(
-                    new[]
-                    {
-                        vertLayout
-                    },
-                    lightShaders),
-                new ResourceLayout[] { GraphicsManager.sharedPipelineLayout },
-                Game.resourceContext.lightRenderFB.OutputDescription);
-
-            pipeline = rf.CreateGraphicsPipeline(ref linePipelineDesc);
-        }
-
-        public override void BindPipeline()
-        {
-            base.BindPipeline();
-
-            // Resource sets
-            cl.SetGraphicsResourceSet(0, Game.pipelineSet);
+            pipeline = Game.wgil.CreateRenderPipeline(Shaders.LineDebugVertex, Shaders.LineDebugFragment, ref linePipeDesc);
         }
     }
 }

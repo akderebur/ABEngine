@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
-using ABEngine.ABERuntime.Core.Components;
 using Arch.Core;
 using WGIL;
 using Buffer = WGIL.Buffer;
@@ -68,9 +67,10 @@ namespace ABEngine.ABERuntime
 
                 var sharedFragmentDesc = new BindGroupDescriptor()
                 {
-                    BindGroupLayout = GraphicsManager.sharedMeshUniform_FS,
+                    BindGroupLayout = GraphicsManager.sharedPipelineLightLayout,
                     Entries = new BindResource[]
                     {
+                        Game.pipelineBuffer,
                         fragmentUniformBuffer
                     }
                 };
@@ -184,7 +184,7 @@ namespace ABEngine.ABERuntime
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
                 wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
 
-                mr.material.pipelineAsset.BindPipeline(pass);
+                mr.material.pipelineAsset.BindPipeline(pass, 1, sharedFragmentSet);
 
                 pass.SetVertexBuffer(0, mesh.vertexBuffer);
                 pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
@@ -198,7 +198,7 @@ namespace ABEngine.ABERuntime
                     pass.SetBindGroup(setKV.Key, setKV.Value);
                 }
 
-                pass.SetBindGroup(4, sharedFragmentSet);
+                //pass.SetBindGroup(4, sharedFragmentSet);
 
                 pass.DrawIndexed(mesh.indices.Length);
 

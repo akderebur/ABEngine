@@ -4,7 +4,6 @@ using System.IO;
 using System.Runtime.Intrinsics.X86;
 using ABEngine.ABERuntime;
 using ImGuiNET;
-using Veldrid;
 using Num = System.Numerics;
 
 namespace ABEngine.ABEditor

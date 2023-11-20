@@ -92,13 +92,13 @@ namespace ABEngine.ABERuntime
 
         public static Vector2 ScreenToCanvas(this Vector2 screenPos)
         {
-            Vector2 ratio = screenPos / Game.pixelSize;
+            Vector2 ratio = screenPos / Game.virtualSize;
             return Game.canvas.canvasSize * ratio;
         }
 
         public static Vector3 ScreenToWorld(this Vector2 screenPoint)
         {
-            return UnprojectOrtho(screenPoint, Game.pipelineData.Projection, Game.pipelineData.View, Game.pixelSize.X, Game.pixelSize.Y);
+            return UnprojectOrtho(screenPoint, Game.pipelineData.Projection, Game.pipelineData.View, Game.virtualSize.X, Game.virtualSize.Y);
         }
 
         public static Vector3 UnprojectOrtho(Vector2 screenPoint, Matrix4x4 projection, Matrix4x4 view, float viewportWidth, float viewportHeight)
@@ -130,8 +130,8 @@ namespace ABEngine.ABERuntime
 
         public static Vector2 MouseToZoomed(this Vector2 mousePos)
         {
-            return new Vector2((mousePos.X - Game.pixelSize.X / 2f) * Game.zoomFactor + Game.pixelSize.X / 2f,
-                               (mousePos.Y - Game.pixelSize.Y / 2f) * Game.zoomFactor + Game.pixelSize.Y / 2f);
+            return new Vector2((mousePos.X - Game.virtualSize.X / 2f) * Game.zoomFactor + Game.virtualSize.X / 2f,
+                               (mousePos.Y - Game.virtualSize.Y / 2f) * Game.zoomFactor + Game.virtualSize.Y / 2f);
         }
 
         public static Vector2 RoundTo2Dec(this Vector2 vec)

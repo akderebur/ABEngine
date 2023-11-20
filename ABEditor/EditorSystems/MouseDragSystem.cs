@@ -8,6 +8,7 @@ using ABEngine.ABERuntime.Debug;
 using Arch.Core;
 using Arch.Core.Extensions;
 using ImGuiNET;
+using WGIL.IO;
 
 namespace ABEngine.ABEditor
 {
@@ -166,10 +167,10 @@ namespace ABEngine.ABEditor
 
                 //    Game.GameWorld.Query(in query, (in Entity entity, ref AABB bbox, ref Transform transform) =>
                 //    {
-                //        if (bbox.CheckCollisionMouse(transform, Input.GetMousePosition()))
+                //        if (bbox.CheckCollisionMouse(transform, Input.MousePosition))
                 //        {
                 //            selectedTransform = transform;
-                //            dragDelta = selectedTransform.worldPosition - Input.GetMousePosition().ScreenToWorld();
+                //            dragDelta = selectedTransform.worldPosition - Input.MousePosition.ScreenToWorld();
                 //            Editor.selectedEntity = entity;
 
                 //            return; ;
@@ -179,7 +180,7 @@ namespace ABEngine.ABEditor
                 //else
 
 
-                if(!Input.GetKey(Veldrid.Key.ControlLeft) && Input.GetMouseButtonDown(Veldrid.MouseButton.Left))
+                if(!Input.GetKey(Key.ControlLeft) && Input.GetMouseButtonDown(MouseButton.Left))
                 {
                     if(selectedTransform != ColliderDebugSystem.lastTrans)
                     {
@@ -188,7 +189,7 @@ namespace ABEngine.ABEditor
                         Editor.selectedEntity = selectedTransform.entity;
                     }
                 }
-                if (Input.GetMouseButton(Veldrid.MouseButton.Left))
+                if (Input.GetMouseButton(MouseButton.Left))
                 {
                     if (selectedTransform != null)
                     {
@@ -201,10 +202,10 @@ namespace ABEngine.ABEditor
             else
             {
                 // Perspective
-                if (!Input.GetKey(Veldrid.Key.ControlLeft) && Input.GetMouseButtonDown(Veldrid.MouseButton.Left))
+                if (!Input.GetKey(Key.ControlLeft) && Input.GetMouseButtonDown(MouseButton.Left))
                 {
                     Vector2 mousePos = Input.MousePosition;
-                    Ray ray = GenerateRay(mousePos.X, mousePos.Y, Game.pipelineData.View, Game.pipelineData.Projection, Game.screenSize.X, Game.screenSize.Y);
+                    Ray ray = GenerateRay(mousePos.X, mousePos.Y, Game.pipelineData.View, Game.pipelineData.Projection, Game.virtualSize.X, Game.virtualSize.Y);
 
                     var query = new QueryDescription().WithAll<MeshRenderer>();
 

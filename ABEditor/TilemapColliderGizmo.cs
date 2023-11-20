@@ -1,20 +1,21 @@
 ﻿using System;
 using ABEngine.ABERuntime.Debug;
 using System.Numerics;
-using Veldrid;
 using System.Collections.Generic;
-using Vortice.Mathematics;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABEditor.ComponentDrawers;
 using System.Linq;
+using WGIL;
+using Buffer = WGIL.Buffer;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEditor.Debug
 {
     class ChunkBufferInfo
     {
-        public DeviceBuffer buffer { get; set; }
-        public uint drawC { get; set; }
+        public Buffer buffer { get; set; }
+        public int drawC { get; set; }
     }
 
     internal class TilemapColliderGizmo : RenderSystem
@@ -23,10 +24,9 @@ namespace ABEditor.Debug
 
         public TilemapColliderGizmo(PipelineAsset asset) : base(asset) { }
 
-        Vector4 normalColor = RgbaFloat.Green.ToVector4();
-        Vector4 selColor = RgbaFloat.Red.ToVector4();
-        Vector4 noCollisionColor = RgbaFloat.Blue.ToVector4();
-
+        Vector4 normalColor = new Vector4(0, 1, 0, 1);
+        Vector4 selColor = new Vector4(1, 0, 0, 1);
+        Vector4 noCollisionColor = new Vector4(0, 0, 1, 1);
 
         public bool render = false;
 
@@ -63,7 +63,6 @@ namespace ABEditor.Debug
             }
         }
 
-
         internal void UpdateChunk(CollisionChunk chunk)
         {
             if (chunk == null)
@@ -87,44 +86,46 @@ namespace ABEditor.Debug
                 return;
             }
 
-            DeviceBuffer linePointsBuffer = null;
+            Buffer linePointsBuffer = null;
             if (chunkBuffers.ContainsKey(chunk))
             {
                 linePointsBuffer = chunkBuffers[chunk].buffer;
                 linePointsBuffer.Dispose();
 
-                linePointsBuffer = rf.CreateBuffer(new BufferDescription((uint)((points.Count) * LinePoint.VertexSize), BufferUsage.VertexBuffer | BufferUsage.Dynamic));
-                chunkBuffers[chunk] = new ChunkBufferInfo() { buffer = linePointsBuffer, drawC = (uint)(points.Count)};
+                linePointsBuffer = wgil.CreateBuffer(LinePoint.VertexSize * points.Count, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+                chunkBuffers[chunk] = new ChunkBufferInfo() { buffer = linePointsBuffer, drawC = (points.Count)};
             }
             else
             {
-                linePointsBuffer = rf.CreateBuffer(new BufferDescription((uint)((points.Count) * LinePoint.VertexSize), BufferUsage.VertexBuffer | BufferUsage.Dynamic));
-                chunkBuffers.Add(chunk, new ChunkBufferInfo() { buffer = linePointsBuffer, drawC = (uint)(points.Count) });
+                linePointsBuffer = wgil.CreateBuffer(LinePoint.VertexSize * points.Count, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+                chunkBuffers[chunk] = new ChunkBufferInfo() { buffer = linePointsBuffer, drawC = (points.Count) };
             }
 
-            MappedResourceView<LinePoint> writemap = gd.Map<LinePoint>(linePointsBuffer, MapMode.Write);
-
-            for (int i = 0; i < points.Count; i++)
+            unsafe
             {
-                Vector2 point = points[i];
-                writemap[i] = new LinePoint(color, new Vector3(point.X, point.Y, 0f));
-            }
+                LinePoint* writemap = stackalloc LinePoint[points.Count];
+                for (int i = 0; i < points.Count; i++)
+                {
+                    Vector2 point = points[i];
+                    writemap[i] = new LinePoint(color, new Vector3(point.X, point.Y, 0f));
+                }
 
-            gd.Unmap(linePointsBuffer);
+                wgil.WriteBuffer(linePointsBuffer, writemap);
+            }
         }
 
-        public override void Render()
+        public override void Render(RenderPass pass)
         {
             if (!render || !TilemapDrawer.renderGizmo)
                 return;
 
-            pipelineAsset.BindPipeline();
+            pipelineAsset.BindPipeline(pass);
 
             foreach (var chunkKV in chunkBuffers)
             {
-                cl.SetVertexBuffer(0, chunkKV.Value.buffer);
+                pass.SetVertexBuffer(0, chunkKV.Value.buffer);
 
-                cl.Draw(chunkKV.Value.drawC - 1, 1, 0, 0);
+                pass.Draw(chunkKV.Value.drawC - 1, 1);
             }
           
         }

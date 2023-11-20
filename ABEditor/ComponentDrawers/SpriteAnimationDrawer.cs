@@ -6,7 +6,7 @@ using System.Numerics;
 using static ABEngine.ABEditor.SpriteEditor;
 using System.Collections.Generic;
 using System.Linq;
-using Veldrid;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor.ComponentDrawers
 {
@@ -112,7 +112,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
             {
                 selFrames.Clear();
                 RefreshCutQuads(tex, checkSize, true);
-                imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, tex.texture);
+                imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(tex.GetView());
 
                 if (texReset)
                 {

@@ -9,11 +9,14 @@ namespace ABEngine.ABERuntime.Pipelines
     {
         public NormalsPipeline() : base()
         {
-            resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
-            resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
             defaultMatName = "NormalsPass";
 
             base.ParseAsset(NormalsPipelineAsset, false);
+
+            resourceLayouts.Clear();
+
+            resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
+            resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
 
             var normalsPipeDesc = new PipelineDescriptor()
             {
@@ -46,7 +49,6 @@ namespace ABEngine.ABERuntime.Pipelines
         string NormalsPipelineAsset = @"
 NormalsPass
 {
-	PropPad:vec4
 }
 Vertex
 {
@@ -65,12 +67,6 @@ Vertex
    {
        mat4 transformationMatrix;
    };
-
-   layout (set = 2, binding = 0) uniform ShaderProps
-   {
-    vec4 PropPad;
-   };
-
 
    layout(location = 0) in vec3 position;
    layout(location = 1) in vec3 vertexNormal;
@@ -102,10 +98,6 @@ Fragment
         float Padding;
     };
 
-    layout (set = 2, binding = 0) uniform ShaderProps
-    {
-        vec4 PropPad;
-    };
 
     layout(location = 0) in vec3 Normal_VS;
 
@@ -113,9 +105,6 @@ Fragment
    
     void main()
     {
-        float dummy = Time - Time;
-        dummy += PropPad.x - PropPad.x;
-     
         outputColor = vec4(Normal_VS, 1.0);
     }
 }

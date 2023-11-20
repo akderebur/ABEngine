@@ -21,6 +21,7 @@ using Arch.Core.Extensions;
 using ABEngine.ABERuntime.ECS;
 using WGIL;
 using ABEngine.ABERuntime.Core.Assets;
+using WGIL.IO;
 
 namespace ABEngine.ABEditor
 {
@@ -195,7 +196,7 @@ namespace ABEngine.ABEditor
                         {
                             for (int st = 0; st < GraphicsManager.AllSamplers.Count; st++)
                             {
-                                Veldrid.Sampler curSampler = GraphicsManager.AllSamplers[st];
+                                Sampler curSampler = GraphicsManager.AllSamplers[st];
                                 bool is_selected = texMeta.sampler == curSampler;
                                 if (ImGui.Selectable(curSampler.Name, is_selected))
                                     texMeta.sampler = curSampler;
@@ -231,16 +232,16 @@ namespace ABEngine.ABEditor
 
                         ImGui.Begin("Details");
 
-                        ImGui.Text(matMeta.pipelineAsset.ToString());
+                        ImGui.Text(matMeta.pipelineAsset.name);
 
                         ImGui.Text("Pipeline Asset");
                         ImGui.SameLine();
-                        if (ImGui.BeginCombo("##Pipeline", matMeta.pipelineAsset.ToString()))
+                        if (ImGui.BeginCombo("##Pipeline", matMeta.pipelineAsset.name))
                         {
                             foreach (var pipelineKV in GraphicsManager.pipelineAssets)
                             {
-                                bool is_selected = matMeta.pipelineAsset == pipelineKV.Value;
-                                if (ImGui.Selectable(pipelineKV.Value.ToString(), is_selected))
+                                bool is_selected = matMeta.pipelineAsset.name.Equals(pipelineKV.Value.name);
+                                if (ImGui.Selectable(pipelineKV.Value.name, is_selected))
                                 {
                                     matMeta.pipelineAsset = pipelineKV.Value;
                                     matMeta.changedPipeline = pipelineKV.Value;
@@ -305,8 +306,8 @@ namespace ABEngine.ABEditor
                                 continue;
 
                             ImGui.Text(texName);
-                            Texture rawTex = editMat.GetRawTexture(texName);
-                            IntPtr imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(GraphicsManager.rf, rawTex);
+                            TextureView rawTexView = editMat.GetRawTextureView(texName);
+                            IntPtr imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(rawTexView);
                             ImGui.Image(imgPtr, new Vector2(100f, 100f));
                             CheckTextureDropMaterial(editMat, texName);
                         }
@@ -363,12 +364,12 @@ namespace ABEngine.ABEditor
             if (lastCell != null)
                 lastCell.entity.Get<Sprite>().tintColor = new Vector4(1f, 1f, 1f, 0.3f);
 
-            tilemapCollision = Input.GetKey(Key.C);
+            tilemapCollision = Input.GetKey(Key.KeyC);
             Vector2 worldMouse = Input.GetMousePosition().ScreenToWorld().ToVector2();
             var selCell = gridCells.OrderBy(c => Vector2.Distance(c.worldPosition.ToVector2(), worldMouse)).First();
             if (selCell != null)
             {
-                selCell.entity.Get<Sprite>().tintColor = RgbaFloat.Green.ToVector4();
+                selCell.entity.Get<Sprite>().tintColor = new Vector4(0, 1, 0, 1);
 
                 if (!ImGui.GetIO().WantCaptureMouse)
                 {
@@ -378,7 +379,7 @@ namespace ABEngine.ABEditor
                         if(!tilemapCollision)
                         {
                             lastPlaced = selCell;
-                            TilemapDrawer.LeftClickDown(selCell, Input.GetKey(Key.Z));
+                            TilemapDrawer.LeftClickDown(selCell, Input.GetKey(Key.KeyZ));
                         }
                     }
                     else if (Input.GetMouseButton(MouseButton.Left))
@@ -399,7 +400,7 @@ namespace ABEngine.ABEditor
                                 TilemapDrawer.UpdateTile(normDir);
                                 lastPlaced = selCell;
                             }
-                            else if (Input.GetKey(Key.Z)) // Duplicate Brush
+                            else if (Input.GetKey(Key.KeyZ)) // Duplicate Brush
                                 dupe = true;
 
                             TilemapDrawer.PlaceTile(selCell, dupe);
@@ -578,7 +579,7 @@ namespace ABEngine.ABEditor
                         AssetCache.ClearSceneCache();
                         AssetHandler.ResetScene();
 
-                        canvas = new Canvas(screenSize.X, screenSize.Y);
+                        canvas = new Canvas(virtualSize.X, virtualSize.Y);
                         canvas.isDynamicSize = false;
 
                         GameWorld.Create("Canvas", Guid.NewGuid(), new Transform(), canvas);

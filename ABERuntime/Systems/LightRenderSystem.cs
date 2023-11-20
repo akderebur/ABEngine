@@ -11,7 +11,7 @@ namespace ABEngine.ABERuntime
 {
     public class LightRenderSystem : RenderSystem
     {
-        const uint maxLightCount = 30;
+        const int maxLightCount = 30;
 
         uint lightCount = 0;
         public static float GlobalLightIntensity = 1f;
@@ -21,6 +21,12 @@ namespace ABEngine.ABERuntime
 
         // Rendering
         BindGroup textureSet;
+
+        public LightRenderSystem()
+        {
+            lightInfos = new List<LightInfo>();
+            lightBuffer = wgil.CreateBuffer(LightInfo.VertexSize * maxLightCount, BufferUsages.VERTEX | BufferUsages.COPY_DST).SetManualDispose(true);
+        }
 
         public override void SetupResources(params TextureView[] sampledTextures)
         {
@@ -52,15 +58,12 @@ namespace ABEngine.ABERuntime
         public override void Start()
         {
             base.Start();
-            lightInfos = new List<LightInfo>();
 
-            if(pipelineAsset == null )
+            if (pipelineAsset == null)
                 pipelineAsset = new LightPipelineAsset();
 
             //renderLayerStep = lightLimit / (uint)GraphicsManager.renderLayers.Count;
             //layerLightCounts = new uint[GraphicsManager.renderLayers.Count];
-
-            lightBuffer = wgil.CreateBuffer((int)(LightInfo.VertexSize * maxLightCount), BufferUsages.VERTEX | BufferUsages.COPY_DST);
         }
 
         internal void AddLayer()
@@ -88,13 +91,13 @@ namespace ABEngine.ABERuntime
             Game.GameWorld.Query(in query, (ref Transform lightTrans, ref PointLight2D light) =>
             {
 
-                    lightInfos.Add(new LightInfo(lightTrans.worldPosition,
-                                                        light.color,
-                                                        light.radius,
-                                                        light.intensity,
-                                                        light.volume,
-                                                        light.renderLayerIndex
-                                                        ));
+                lightInfos.Add(new LightInfo(lightTrans.worldPosition,
+                                                    light.color,
+                                                    light.radius,
+                                                    light.intensity,
+                                                    light.volume,
+                                                    light.renderLayerIndex
+                                                    ));
 
                 lightCount++;
             });
@@ -102,12 +105,7 @@ namespace ABEngine.ABERuntime
 
         public override void Render(RenderPass pass)
         {
-            Render(pass, 0);
-        }
-
-        public override void Render(RenderPass pass, int renderLayer)
-        {
-            if (renderLayer > 0)
+            if (Game.activeCam == null)
                 return;
 
             // Light pass
@@ -119,7 +117,7 @@ namespace ABEngine.ABERuntime
 
             // Light Buffer
             Buffer lightInfoBuffer = lightBuffer;
-           
+
             LightInfo[] writemap = new LightInfo[lightList.Count + 1];
 
             // Global Light
@@ -135,7 +133,7 @@ namespace ABEngine.ABERuntime
                 writemap[i + 1] = lightList[i];
             }
 
-            wgil.WriteBuffer(lightInfoBuffer, writemap, 0, (int)LightInfo.VertexSize * (lightList.Count + 1));
+            wgil.WriteBuffer(lightInfoBuffer, writemap, 0, LightInfo.VertexSize * (lightList.Count + 1));
 
             pass.SetVertexBuffer(0, lightInfoBuffer);
 
@@ -149,11 +147,6 @@ namespace ABEngine.ABERuntime
 
         public override void CleanUp(bool reload, bool newScene, bool resize)
         {
-            if (lightBuffer != null)
-            {
-                lightBuffer.Dispose();
-            }
-
             if (resize)
             {
                 textureSet.Dispose();

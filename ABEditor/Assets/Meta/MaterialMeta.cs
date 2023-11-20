@@ -7,7 +7,6 @@ using System.Text;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Core.Assets;
 using Halak;
-using Veldrid;
 
 namespace ABEngine.ABEditor.Assets.Meta
 {
@@ -27,16 +26,15 @@ namespace ABEngine.ABEditor.Assets.Meta
         public override JValue Serialize()
         {
             base.Serialize();
-            jObj.Put("PipelineAsset", pipelineAsset.ToString());
+            jObj.Put("PipelineAsset", pipelineAsset.name);
             return jObj.Build();
         }
 
         public override void Deserialize(string json)
         {
             base.Deserialize(json);
-            pipelineAsset = GraphicsManager.GetPipelineAssetByName(data["PipelineAsset"]);
+            pipelineAsset = AssetCache.CreatePipelineAsset(data["PipelineAsset"]);
         }
-
 
         public override void SetReferences()
         {
@@ -74,7 +72,7 @@ namespace ABEngine.ABEditor.Assets.Meta
             using(BinaryWriter bw = new BinaryWriter(ms))
             {
                 bw.Write(mat.name);
-                bw.Write(mat.pipelineAsset.ToString());
+                bw.Write(mat.pipelineAsset.name);
                 bw.Write(mat.shaderProps.Count);
                 foreach (ShaderProp prop in mat.shaderProps)
                 {

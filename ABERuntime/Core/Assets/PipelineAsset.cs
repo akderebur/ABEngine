@@ -11,6 +11,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 {
     public abstract class PipelineAsset
     {
+        public string name;
         protected string defaultMatName;
 
         protected RenderPipeline pipeline;
@@ -45,6 +46,18 @@ namespace ABEngine.ABERuntime.Core.Assets
             pass.SetBindGroup(0, Game.pipelineSet);
         }
 
+        public virtual void BindPipeline(RenderPass pass, int bindC, params BindGroup[] bindGroups)
+        {
+            pass.SetPipeline(pipeline);
+
+            int i = 0;
+            while(i < bindC)
+            {
+                pass.SetBindGroup(i, bindGroups[i]);
+                i++;
+            }
+        }
+
         private static Type ShaderToNetType(string shaderType) => shaderType switch
         {
             "float" => typeof(float),
@@ -76,9 +89,6 @@ namespace ABEngine.ABERuntime.Core.Assets
             List<VertexAttribute> vertexElements = new List<VertexAttribute>();
             bool pipeline3d = false;
 
-            // Set 0 - Shared pipeline data
-            if(readDescriptor)
-                resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
 
             // Descriptor Defaults
             VertexStepMode stepMode = VertexStepMode.Vertex;
@@ -166,11 +176,16 @@ namespace ABEngine.ABERuntime.Core.Assets
                                             // Set 1 - Reserved for pipeline specific data
                                             if (value.Equals("3D"))
                                             {
+                                                // Set 0 - Shared pipeline data
+                                                resourceLayouts.Add(GraphicsManager.sharedPipelineLightLayout);
                                                 resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
                                                 pipeline3d = true;
                                             }
                                             else
+                                            {
+                                                resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
                                                 resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
+                                            }
                                             break;
                                         case "@StepMode":
                                             if (value.Equals("Instance"))
@@ -314,20 +329,23 @@ namespace ABEngine.ABERuntime.Core.Assets
             vertexLayout = vertexElements.ToArray();
 
             // Shader propery Uniforms
-            var shaderPropLayoutDesc = new BindGroupLayoutDescriptor()
+            BindGroupLayout shaderPropUniform = null;
+            if (uniformElements.Count > 0)
             {
-                Entries = new[]
+                var shaderPropLayoutDesc = new BindGroupLayoutDescriptor()
                 {
+                    Entries = new[]
+                    {
                     new BindGroupLayoutEntry()
                     {
                         BindingType = BindingType.Buffer,
                         ShaderStages = ShaderStages.VERTEX | ShaderStages.FRAGMENT,
                     }
                 }
-            };
-
-            var shaderPropUniform = wgil.CreateBindGroupLayout(ref shaderPropLayoutDesc);
-            resourceLayouts.Add(shaderPropUniform);
+                };
+                shaderPropUniform = wgil.CreateBindGroupLayout(ref shaderPropLayoutDesc);
+                resourceLayouts.Add(shaderPropUniform);
+            }
 
             // Texture Uniforms
             BindGroupLayout texUniform = null;
@@ -354,8 +372,8 @@ namespace ABEngine.ABERuntime.Core.Assets
                 resourceLayouts.Add(texUniform);
             }
 
-            if(readDescriptor && pipeline3d)
-                resourceLayouts.Add(GraphicsManager.sharedMeshUniform_FS);
+            //if(readDescriptor && pipeline3d)
+            //    resourceLayouts.Add(GraphicsManager.sharedMeshUniform_FS);
 
             // Shaders
             shaders[0] = vertexShaderSrc;
@@ -426,7 +444,8 @@ namespace ABEngine.ABERuntime.Core.Assets
                 pipeline = wgil.CreateRenderPipeline(shaders[0], shaders[1], ref pipelineDesc);
             }
 
-            GraphicsManager.AddPipelineAsset(this);
+            name = defaultMatName;
+            GraphicsManager.AddPipelineAsset(defaultMatName, this);
         }
 
         public int GetPropID(string propName)
@@ -463,6 +482,16 @@ namespace ABEngine.ABERuntime.Core.Assets
         public PipelineMaterial GetDefaultMaterial()
         {
             return refMaterial;
+        }
+
+        public bool HasProperties()
+        {
+            return propNames.Count > 0;
+        }
+
+        public bool HasTextures()
+        {
+            return textureNames.Count > 0;
         }
     }
 }
