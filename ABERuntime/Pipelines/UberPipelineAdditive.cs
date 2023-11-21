@@ -17,6 +17,7 @@ namespace ABEngine.ABERuntime.Pipelines
             base.ParseAsset(Shaders.UberPipelineAsset, false);
             var uberAddPipeDesc = new PipelineDescriptor()
             {
+                VertexStepMode = VertexStepMode.Instance,
                 BlendStates = new BlendState[]
                 {
                     BlendState.AdditiveBlend,
@@ -35,7 +36,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     CullFace = CullFace.None,
                     FrontFace = FrontFace.Cw
                 },
-                VertexAttributes = GraphicsManager.sharedVertexLayout,
+                VertexAttributes = vertexLayout,
                 BindGroupLayouts = resourceLayouts.ToArray(),
                 AttachmentDescription = new AttachmentDescription()
                 {

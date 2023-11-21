@@ -40,6 +40,8 @@ namespace ABEngine.ABERuntime.Rendering
 
         Vector3 imageSize;
 
+        public string key;
+
         public SpriteBatch(Texture2D texture, PipelineMaterial pipelineMaterial, int renderLayerIndex, bool isStatic)
         {
             _wgil = Game.wgil;

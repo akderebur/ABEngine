@@ -383,6 +383,8 @@ namespace ABEngine.ABERuntime.Components
             int matSceneIndex = data["Material"];
 
             var tex2d = AssetCache.GetAssetFromSceneIndex(texSceneIndex) as Texture2D;
+            if (tex2d == null)
+                tex2d = AssetCache.GetDefaultTexture();
             var material = AssetCache.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
 
             this._particleTexture = tex2d;

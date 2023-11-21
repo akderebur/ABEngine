@@ -198,6 +198,7 @@ namespace ABEngine.ABERuntime
             else
             {
                 SpriteBatch sb = new SpriteBatch(sprite.texture, mat, sprite.renderLayerIndex, spriteTrans.isStatic);
+                sb.key = key;
                 sb.AddSpriteEntity(spriteTrans, sprite);
                 sb.InitBatch();
                 batches.Add(key, sb);
