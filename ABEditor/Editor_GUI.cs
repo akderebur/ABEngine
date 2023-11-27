@@ -312,9 +312,13 @@ namespace ABEngine.ABEditor
                             CheckTextureDropMaterial(editMat, texName);
                         }
 
-                        ImGui.Text("Late Render");
+                        int renderOrder = editMat.renderOrder;
+                        ImGui.Text("Render Order");
                         ImGui.SameLine();
-                        ImGui.Checkbox("##LateRender", ref editMat.isLateRender);
+                        if(ImGui.InputInt("##RenderOrder", ref renderOrder))
+                        {
+                            editMat.SetRenderOrder(renderOrder);
+                        }
 
                         if (changed)
                             matMeta.RefreshAsset();

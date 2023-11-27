@@ -519,7 +519,7 @@ Fragment
         }
 
 
-        if(color.a < 0.1f)
+        if(color.a < 0.01f)
             discard;
 
         // SHINE
@@ -546,6 +546,8 @@ Fragment
 
        
 	    //vec4 tint = blend_color(color, vec4(1, 1, 1, 1), 0.0);
+        //color.rgb *= color.a;
+        //color.a = 1;
         outputColor = color;
         normalSample *= vec2(sign(fsin_ObjScale.x), sign(fsin_ObjScale.y));
         normalSample = (normalSample + 1) * 0.5;

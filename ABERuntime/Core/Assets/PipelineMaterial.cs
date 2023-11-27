@@ -32,6 +32,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         private BindGroup propSet;
         private BindGroup textureSet;
         public bool isLateRender = false;
+        public int renderOrder { get; private set; }
 
         private byte[] shaderPropData;
 
@@ -47,7 +48,14 @@ namespace ABEngine.ABERuntime.Core.Assets
             fPathHash = hash;
 
             GraphicsManager.AddPipelineMaterial(this);
+            this.renderOrder = (int)pipelineAsset.renderOrder;
             //Console.WriteLine(this.instanceID);
+        }
+
+        public void SetRenderOrder(int renderOrder)
+        {
+            this.renderOrder = renderOrder;
+            onPipelineChanged?.Invoke(this.pipelineAsset);
         }
 
         internal void SetShaderPropBuffer(List<ShaderProp> shaderProps, uint bufferSize)
@@ -104,7 +112,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                     if (textureName.Equals("ScreenTex"))
                     {
                         isLateRender = true;
-                        resources[index] = Game.resourceContext.mainRenderView;
+                        resources[index] = Game.resourceContext.mainPPView;
                     }
                     else if(textureName.Equals("DepthTex"))
                     {
@@ -190,12 +198,16 @@ namespace ABEngine.ABERuntime.Core.Assets
             var matCopy = new PipelineMaterial(0, this.pipelineAsset, this.propLayout, this.texLayout);
             matCopy.SetShaderPropBuffer(this.shaderProps.ToList(), this.shaderPropBufferSize);
             matCopy.SetShaderTextureResources(this.pipelineAsset.GetTextureNames());
+            matCopy.renderOrder = this.renderOrder;
 
             return matCopy;
         }
 
         public void ChangePipeline(PipelineAsset pipeline)
         {
+            //bool 
+            //if((int)this.pipelineAsset.renderOrder == renderOrder)
+
             propBuffer?.Dispose();
             foreach (var resourceSet in bindableSets.Values)
                 resourceSet.Dispose();
@@ -222,7 +234,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 foreach (var textureName in textureNames)
                 {
                     if (textureName.Equals("ScreenTex"))
-                        texResources[index] = Game.resourceContext.mainRenderView;
+                        texResources[index] = Game.resourceContext.mainPPView;
                     else if (textureName.Equals("DepthTex"))
                         texResources[index] = Game.normalsRenderSystem.GetDepthAttachment();
                     else if(textureName.Equals("CamNormalTex"))
@@ -243,7 +255,10 @@ namespace ABEngine.ABERuntime.Core.Assets
 
                 textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
 
-                bindableSets[3] = textureSet;
+                if (propLayout != null)
+                    bindableSets[3] = textureSet;
+                else
+                    bindableSets[2] = textureSet;
             }
         }
 

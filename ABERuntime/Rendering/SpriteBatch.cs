@@ -16,7 +16,7 @@ namespace ABEngine.ABERuntime.Rendering
 
         public Buffer vertexBuffer;
         public Buffer layerBuffer;
-   
+
         public BindGroup texSet;
 
         public uint instanceCount;
@@ -31,8 +31,13 @@ namespace ABEngine.ABERuntime.Rendering
 
         public event Action onPropertyChanged;
 
-        public float maxZ = 0f;
+        internal bool isTransparent = false;
+        internal bool isDynamicSort = false;
+
+        public float maxZ;
+        public int renderOrder = 0;
         public int renderLayerIndex = 0;
+        public float zValue = 0;
 
         internal event Action<SpriteBatch> onDelete;
         bool autoDestroy = true;
@@ -42,7 +47,7 @@ namespace ABEngine.ABERuntime.Rendering
 
         public string key;
 
-        public SpriteBatch(Texture2D texture, PipelineMaterial pipelineMaterial, int renderLayerIndex, bool isStatic)
+        public SpriteBatch(Texture2D texture, PipelineMaterial pipelineMaterial, int renderLayerIndex, bool isStatic, float zValue)
         {
             _wgil = Game.wgil;
 
@@ -57,6 +62,12 @@ namespace ABEngine.ABERuntime.Rendering
 
             layerBuffer = _wgil.CreateBuffer(16, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
             _wgil.WriteBuffer(layerBuffer, new Vector4(renderLayerIndex, 0, 0, 0));
+
+            renderOrder = pipelineMaterial.renderOrder;
+            if (pipelineMaterial.pipelineAsset.renderType == RenderType.Transparent)
+                isTransparent = true;
+
+            this.zValue = zValue;
         }
 
         private void PipelineMaterial_onPipelineChanged(PipelineAsset pipeline)
@@ -64,30 +75,40 @@ namespace ABEngine.ABERuntime.Rendering
             // Signal remove from  Pipeline Asset Pairs
             onDelete?.Invoke(this);
 
+            bool oldTrans = isTransparent;
+            if (pipeline.renderType == RenderType.Transparent)
+                isTransparent = true;
+            else
+                isTransparent = false;
+            if (oldTrans != isTransparent)
+                InitBatch();
+
+            renderOrder = material.renderOrder;
+
             Game.spriteBatchSystem.UpdateBatchPipeline(this);
         }
 
         public void AddSpriteEntity(Transform trans, Sprite spriteData)
         {
-            if(!spriteData.sizeSet)
+            if (!spriteData.sizeSet)
                 spriteData.Resize(imageSize.ToVector2());
 
             QuadVertex quad = new QuadVertex(trans.worldPosition, spriteData.GetSize(), trans.worldScale);
             verticesList.Add(quad);
 
-            sprites.Add(new SpriteTransformPair {  spriteData = spriteData, transform = trans});
+            sprites.Add(new SpriteTransformPair { spriteData = spriteData, transform = trans });
             active = true;
         }
 
         public int RemoveSpriteEntity(Sprite sprite)
         {
             var spriteEntry = sprites.FirstOrDefault(sp => sp.spriteData == sprite);
-            if(spriteEntry != null)
+            if (spriteEntry != null)
             {
                 verticesList.RemoveAt(sprites.IndexOf(spriteEntry));
                 sprites.Remove(spriteEntry);
 
-                if(sprites.Count == 0) // Deactivate batch
+                if (sprites.Count == 0) // Deactivate batch
                 {
                     active = false;
 
@@ -179,11 +200,22 @@ namespace ABEngine.ABERuntime.Rendering
                 }
             }
 
-            if (isStatic)
+            // Init sort
+            if (isTransparent)
             {
-                // Static one time sort
+                // Back to front - Transparent
                 sprites = sprites.OrderBy(sp => sp.transform.worldPosition.Z).ToList();
                 maxZ = sprites.Last().transform.worldPosition.Z;
+            }
+            else
+            {
+                // Front to back - Opaque
+                sprites = sprites.OrderByDescending(sp => sp.transform.worldPosition.Z).ToList();
+                maxZ = -sprites.First().transform.worldPosition.Z;
+            }
+
+            if (isStatic)
+            {
                 int index = 0;
                 for (int i = 0; i < sprites.Count; i++)
                 {
@@ -203,7 +235,7 @@ namespace ABEngine.ABERuntime.Rendering
             }
 
             // Buffer resources
-            if(vertexBuffer != null)
+            if (vertexBuffer != null)
                 vertexBuffer.Dispose();
 
             vertexBuffer = _wgil.CreateBuffer(vertices.Length * (int)QuadVertex.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST);
@@ -222,13 +254,18 @@ namespace ABEngine.ABERuntime.Rendering
             // Write to GPU buffer
             QuadVertex[] writemap = new QuadVertex[sprites.Count];
 
-            var sorted = sprites.Where(sp => sp.transform.enabled).OrderBy(sp => sp.transform.worldPosition.Z);
+            var sorted = sprites.Where(sp => sp.transform.enabled);
+
             int renderCount = sorted.Count();
             int index = 0;
 
             if (renderCount > 0)
             {
-                maxZ = sorted.Last().transform.worldPosition.Z;
+                if (isDynamicSort) // Update sort
+                {
+                    sorted = sorted.OrderBy(sp => sp.transform.worldPosition.Z);
+                }
+
                 foreach (var spritePair in sorted)
                 {
                     Transform spriteTrans = spritePair.transform;

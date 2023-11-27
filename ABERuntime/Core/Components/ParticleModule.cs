@@ -132,6 +132,7 @@ namespace ABEngine.ABERuntime.Components
             trans.localPosition = new Vector3(0f, 0f, -10f);
             Game.spriteBatchSystem.AddSpriteToBatch(trans, sprite, batchGuid);
             particleBatch = Game.spriteBatchSystem.GetBatchFromSprite(trans, sprite, batchGuid);
+            particleBatch.isDynamicSort = true;
 
             Particle particle = new Particle()
             {
@@ -218,9 +219,10 @@ namespace ABEngine.ABERuntime.Components
                     particles.AddFirst(particle);
 
                     particle.Transform.parent = null;
-                    Vector3 pos = particle.Transform.worldPosition;
-                    pos.Z = -1001;
-                    particle.Transform.localPosition = pos;
+                    particle.Transform.enabled = false;
+                    //Vector3 pos = particle.Transform.worldPosition;
+                    //pos.Z = -1001;
+                    //particle.Transform.localPosition = pos;
                 }
 
                 curNode = nextNode;
@@ -290,6 +292,7 @@ namespace ABEngine.ABERuntime.Components
                     float spawnMid = spawnRange * scale / 2f;
 
                     Transform trans = reusePart.Transform;
+                    trans.enabled = true;
 
                     Vector2 startSizePoint = lifetimeSize.Evaluate(0f);
                     trans.localPosition = moduleTrans.worldPosition + spawnVec * rnd.NextFloat(-spawnMid, spawnMid);
@@ -344,7 +347,9 @@ namespace ABEngine.ABERuntime.Components
             }
 
             if (spawnC > 0)
+            {
                 particleBatch.InitBatch();
+            }
 
             if (intervalPassed)
             {

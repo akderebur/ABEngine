@@ -83,6 +83,7 @@ namespace ABEngine.ABERuntime
                     "UberStandard" => new UberPipelineAsset().refMaterial,
                     "UberAdditive" => new UberPipelineAdditive().refMaterial,
                     "Uber3D" => new UberPipeline3D().refMaterial,
+                    "UberTransparent" => new UberPipelineTransparent().refMaterial,
                     _ => null
                 };
             }
@@ -104,6 +105,11 @@ namespace ABEngine.ABERuntime
         public static PipelineMaterial GetUber3D()
         {
             return GetFirstMatByName("Uber3D");
+        }
+
+        public static PipelineMaterial GetUberTransparentMaterial()
+        {
+            return GetFirstMatByName("UberTransparent");
         }
 
         public static int GetPipelineCount()
@@ -511,7 +517,7 @@ vec3 adjustContrast(vec3 color, float contrastFactor) {
 void main()
 { 
     vec4 color = texture(sampler2D(SceneTex, SceneSampler), fsTexCoord);
-    vec3 tonedColor = adjustSaturation(color.rgb, 1.1);
+    vec3 tonedColor = adjustSaturation(color.rgb, 1.0);
     tonedColor = adjustContrast(tonedColor, 1.0);
     OutputColor = vec4(tonedColor.rgb, color.a);
 }

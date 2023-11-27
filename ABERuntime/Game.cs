@@ -96,6 +96,7 @@ namespace ABEngine.ABERuntime
         public List<RenderSystem> internalRenders;
 
         // Framebuffer
+        protected BindGroup mainPPQuadRSSet;
         protected BindGroup finalQuadRSSet;
 
         public static PipelineData pipelineData;
@@ -117,7 +118,7 @@ namespace ABEngine.ABERuntime
         protected private static InputDataSdl inputData = new InputDataSdl();
 
         // Render Passes
-        RenderPass normalsPass, mainPass, lightPass, fsPass, debugPass;
+        RenderPass normalsPass, mainPass, mainPPPass, lightPass, fsPass, debugPass;
 
         public Game(bool debug, List<Type> userTypes)
         {
@@ -185,6 +186,20 @@ namespace ABEngine.ABERuntime
                 pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
                 pass.DrawIndexed(6);
             }
+
+        }
+
+        void MainPPWork(RenderPass pass)
+        {
+            resourceContext.CopyScreenTexture(pass);
+
+            //pass.SetPipeline(GraphicsManager.FullScreenPipeline);
+            //pass.SetBindGroup(0, mainPPQuadRSSet);
+            //pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+            //pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
+            //pass.DrawIndexed(6);
+
+            spriteBatchSystem.RenderPP(pass, GraphicsManager.renderLayers.Count - 1);
         }
 
         void LightPassWork(RenderPass pass)
@@ -257,6 +272,27 @@ namespace ABEngine.ABERuntime
             mainPass = wgil.CreateRenderPass(ref mainPassDesc);
             mainPass.JoinRenderQueue(MainPassWork);
 
+            // Main PostProcess
+
+            var mainPPDesc = new RenderPassDescriptor()
+            {
+                IsColorClear = false,
+                IsDepthClear = false,
+                ClearColor = new WGIL.Color(0, 0, 0, 0),
+                DepthAttachment = resourceContext.mainDepthView,
+                ColorAttachments = new TextureViewSet()
+                {
+                    TextureViews = new[]
+                    {
+                        resourceContext.mainRenderView,
+                        resourceContext.spriteNormalsView
+                    }
+                }
+            };
+
+            mainPPPass = wgil.CreateRenderPass(ref mainPPDesc);
+            mainPPPass.JoinRenderQueue(MainPPWork);
+
             var lightPassDesc = new RenderPassDescriptor()
             {
                 IsColorClear = true,
@@ -284,6 +320,7 @@ namespace ABEngine.ABERuntime
 
             wgil.AddRenderPass(normalsPass);
             wgil.AddRenderPass(mainPass);
+            wgil.AddRenderPass(mainPPPass);
             wgil.AddRenderPass(lightPass);
             wgil.AddRenderPass(fsPass);
 
@@ -329,6 +366,9 @@ namespace ABEngine.ABERuntime
                 mainPass.UpdateDepthAttachment(resourceContext.mainDepthView);
                 newSet.TextureViews = new[] { resourceContext.mainRenderView, resourceContext.spriteNormalsView };
                 mainPass.UpdateColorAttachments(ref newSet);
+
+                mainPPPass.UpdateDepthAttachment(resourceContext.mainDepthView);
+                mainPPPass.UpdateColorAttachments(ref newSet);
 
                 newSet.TextureViews = new[] { resourceContext.lightRenderView };
                 lightPass.UpdateColorAttachments(ref newSet);
@@ -891,6 +931,18 @@ namespace ABEngine.ABERuntime
             };
 
             finalQuadRSSet = wgil.CreateBindGroup(ref finalQuadDesc).SetManualDispose(true);
+
+            var ppQuadDesc = new BindGroupDescriptor()
+            {
+                BindGroupLayout = GraphicsManager.sharedTextureLayout,
+                Entries = new BindResource[]
+                {
+                    resourceContext.mainRenderView,
+                    GraphicsManager.linearSampleClamp
+                }
+            };
+
+            mainPPQuadRSSet = wgil.CreateBindGroup(ref ppQuadDesc).SetManualDispose(true);
 
             pipelineBuffer = wgil.CreateBuffer(144, BufferUsages.UNIFORM | BufferUsages.COPY_DST).SetManualDispose(true);
 

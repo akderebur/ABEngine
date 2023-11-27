@@ -22,6 +22,10 @@ namespace ABEngine.ABERuntime
         public TextureView spriteNormalsView;
         public TextureView mainDepthView;
 
+        // Main PP
+        private Texture mainPPTexture;
+        public TextureView mainPPView;
+
         // Light
         private Texture lightRenderTexture;
         public TextureView lightRenderView;
@@ -48,13 +52,16 @@ namespace ABEngine.ABERuntime
 
             // Main
             mainRenderTexture = wgil.CreateTexture(width, height, surfaceFormat,
-                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
+                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_SRC).SetManualDispose(true);
 
             spriteNormalsTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba8Unorm,
                                                       TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
 
             mainDepthTexture = wgil.CreateTexture(width, height, TextureFormat.Depth32Float,
                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
+
+            mainPPTexture = wgil.CreateTexture(width, height, surfaceFormat,
+                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST).SetManualDispose(true);
 
             // Light
             lightRenderTexture = wgil.CreateTexture(width, height, surfaceFormat,
@@ -65,6 +72,7 @@ namespace ABEngine.ABERuntime
             mainRenderView = mainRenderTexture.CreateView().SetManualDispose(true);
             spriteNormalsView = spriteNormalsTexture.CreateView().SetManualDispose(true);
             mainDepthView = mainDepthTexture.CreateView().SetManualDispose(true);
+            mainPPView = mainPPTexture.CreateView().SetManualDispose(true);
             lightRenderView = lightRenderTexture.CreateView().SetManualDispose(true);
         }
 
@@ -79,16 +87,21 @@ namespace ABEngine.ABERuntime
             mainRenderTexture?.Dispose();
             spriteNormalsTexture?.Dispose();
             mainDepthTexture?.Dispose();
+            mainPPTexture?.Dispose();
 
             mainRenderView?.Dispose();
             spriteNormalsView?.Dispose();
             mainDepthView?.Dispose();
+            mainPPView?.Dispose();
 
             lightRenderTexture?.Dispose();
             lightRenderView?.Dispose();
         }
 
-
+        public void CopyScreenTexture(RenderPass pass)
+        {
+            pass.CopyTexture(mainRenderTexture, mainPPTexture);
+        }
     }
 }
 

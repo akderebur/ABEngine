@@ -854,14 +854,17 @@ namespace ABEngine.ABERuntime.Core.Assets
             var uberMat = GraphicsManager.GetUberMaterial();
             var additiveMat = GraphicsManager.GetUberAdditiveMaterial();
             var uber3d = GraphicsManager.GetUber3D();
+            var uberTransparent = GraphicsManager.GetUberTransparentMaterial();
 
             s_materials.Add(uberMat);
             s_materials.Add(additiveMat);
             s_materials.Add(uber3d);
+            s_materials.Add(uberTransparent);
 
             assetDict.Add(uberMat.fPathHash, uberMat);
             assetDict.Add(additiveMat.fPathHash, additiveMat);
             assetDict.Add(uber3d.fPathHash, uber3d);
+            assetDict.Add(uberTransparent.fPathHash, uberTransparent);
         }
 
         private static Texture2D DeserializeTexture(JValue texAsset, uint hash)

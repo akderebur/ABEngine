@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using ABEngine.ABERuntime.Rendering;
 using WGIL;
 
 namespace ABEngine.ABERuntime.Core.Assets
@@ -29,6 +30,9 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         static int pipelineCount = 0;
 
+        public RenderOrder renderOrder { get; protected set; }
+        public RenderType renderType { get; protected set; }
+
         public PipelineAsset()
         {
             pipelineID = pipelineCount;
@@ -38,6 +42,9 @@ namespace ABEngine.ABERuntime.Core.Assets
             propNames = new Dictionary<string, int>();
             textureNames = new Dictionary<string, int>();
             defaultMatName = "NoName";
+
+            renderOrder = RenderOrder.Opaque;
+            renderType = RenderType.Opaque;
         }
 
         public virtual void BindPipeline(RenderPass pass)
