@@ -19,7 +19,6 @@ namespace ABEngine.ABERuntime.Core.Assets
         public uint hash { get; set; }
         public int size { get; set; }
         public long offset { get; set; }
-        public int streamId { get; set; }
     }
 
     public static class AssetCache
@@ -33,6 +32,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         // Debug - Hash to path
         private static readonly Dictionary<uint, string> hashToFName = new Dictionary<uint, string>();
         private static readonly Dictionary<string, uint> pipelineNameToHash = new Dictionary<string, uint>();
+        private static readonly Dictionary<string, uint> sceneNameToHash = new Dictionary<string, uint>();
 
         // Release - ABPK
         private static readonly Dictionary<uint, Texture> s_textures = new Dictionary<uint, Texture>();
@@ -45,7 +45,6 @@ namespace ABEngine.ABERuntime.Core.Assets
         private static readonly List<SpriteClip> s_clips = new List<SpriteClip>();
         private static readonly List<Mesh> s_meshes = new List<Mesh>();
 
-
         private static Texture2D defTexture = null;
 
         // Serialize
@@ -55,14 +54,15 @@ namespace ABEngine.ABERuntime.Core.Assets
         // Scene specific serialize
         static List<Asset> sceneAssets = new List<Asset>();
 
-        static List<BinaryReader> pkReaders; 
+        static BinaryReader pr; // ABPK reader
+
         public static void InitAssetCache()
         {
             assetDict = new Dictionary<uint, Asset>();
 
             LoadDefaultMaterials();
 
-            string commonAssetPath = Game.AssetPath.ToCommonPath();
+            string commonAssetPath = Game.AssetPath;
 
             if (Game.debug)
             {
@@ -99,43 +99,59 @@ namespace ABEngine.ABERuntime.Core.Assets
 
                 return;
             }
-          
-            var pks = Directory.GetFiles(Game.AssetPath, "*.abpk", SearchOption.TopDirectoryOnly);
-            pkReaders = new List<BinaryReader>();
-            assetDictPK  = new Dictionary<uint, AssetEntry>();
 
-            for (int i = 0; i < pks.Length; i++)
+            // ABPK
+            FileStream fs = new FileStream(Game.AssetPath + "Assets.abhd", FileMode.Open);
+            BinaryReader br = new BinaryReader(fs);
+
+            assetDictPK = new Dictionary<uint, AssetEntry>();
+
+            int magic = br.ReadInt32();
+
+            if (magic != 1263551041) // ABPK
             {
-                FileStream fs = new FileStream(pks[i], FileMode.Open);
-                BinaryReader br = new BinaryReader(fs);
-
-                // Read Header
-                int magic = br.ReadInt32();
-                if (magic != 1263551041) // ABPK
-                {
-                    br.Close();
-                    continue;
-                }
-
-                int streamId = pkReaders.Count;
-                int assetC = br.ReadInt32();
-                int offset = 8 + assetC * 8;
-
-                for (int a = 0; a < assetC; a++)
-                {
-                    AssetEntry asset = new AssetEntry()
-                    {
-                        hash = br.ReadUInt32(),
-                        size = br.ReadInt32(),
-                        offset = offset,
-                        streamId = streamId
-                    };
-                    offset += asset.size;
-                    assetDictPK.Add(asset.hash, asset);
-                }
-
-                pkReaders.Add(br);
+                br.Close();
+                return;
             }
+
+            int sceneCount = br.ReadInt32();
+            int pipelineCount = br.ReadInt32();
+            int assetCount = br.ReadInt32();
+
+            // Scene name to hash
+            for (int i = 0; i < sceneCount; i++)
+            {
+                string sceneName = br.ReadString();
+                uint sceneHash = br.ReadUInt32();
+
+                sceneNameToHash.Add(sceneName, sceneHash);
+            }
+
+            // Pipeline name to hash
+            for (int i = 0; i < pipelineCount; i++)
+            {
+                string pipeName = br.ReadString();
+                uint pipeHash = br.ReadUInt32();
+
+                pipelineNameToHash.Add(pipeName, pipeHash);
+            }
+
+            // Assets
+            int offset = 0;
+            for (int a = 0; a < assetCount; a++)
+            {
+                AssetEntry asset = new AssetEntry()
+                {
+                    hash = br.ReadUInt32(),
+                    size = br.ReadInt32(),
+                    offset = offset,
+                };
+                offset += asset.size;
+                assetDictPK.Add(asset.hash, asset);
+            }
+
+
+            pr = new BinaryReader(new FileStream(Game.AssetPath + "Assets.abpk", FileMode.Open));
         }
 
         private static Texture GetTextureFromPK(uint hash)
@@ -145,8 +161,6 @@ namespace ABEngine.ABERuntime.Core.Assets
                 // Create Texture from asset dictionary
 
                 AssetEntry texAsset = assetDictPK[hash];
-                BinaryReader pr = pkReaders[texAsset.streamId];
-
                 pr.BaseStream.Position = texAsset.offset;
                 byte[] compressed = pr.ReadBytes(texAsset.size);
 
@@ -184,33 +198,19 @@ namespace ABEngine.ABERuntime.Core.Assets
         private static PipelineMaterial GetMaterialFromPK(uint hash)
         {
             // Find material in asset dictionary
-
             AssetEntry matAsset = assetDictPK[hash];
-            BinaryReader pr = pkReaders[matAsset.streamId];
 
             pr.BaseStream.Position = matAsset.offset;
-            byte[] compressed = pr.ReadBytes(matAsset.size);
+            return LoadMaterialRAW(hash, pr.ReadBytes(matAsset.size));
+        }
 
-            // Decompress Data
-            using (var inputStream = new MemoryStream(compressed))
-            {
-                using (var outputStream = new MemoryStream())
-                {
-                    using (var compressionStream = new BrotliStream(inputStream, CompressionMode.Decompress))
-                    {
-                        compressionStream.CopyTo(outputStream);
-                    }
+        private static PipelineAsset GetPipelineFromPK(uint hash)
+        {
+            // Find material in asset dictionary
+            AssetEntry pipeAsset = assetDictPK[hash];
 
-                    // Parse material data
-                    BinaryReader br = new BinaryReader(outputStream);
-                    br.BaseStream.Position = 0;
-
-                   
-                }
-            }
-
-
-            return null;
+            pr.BaseStream.Position = pipeAsset.offset;
+            return new UserPipelineAsset(Encoding.UTF8.GetString(pr.ReadBytes(pipeAsset.size)));
         }
 
         //General purpose
@@ -276,8 +276,15 @@ namespace ABEngine.ABERuntime.Core.Assets
                 // Try user pipeline
                 if(pipelineNameToHash.TryGetValue(pipelineName, out uint hash))
                 {
-                    string filePath = hashToFName[hash];
-                    pipeline = new UserPipelineAsset(File.ReadAllText(Game.AssetPath.ToCommonPath() + filePath));
+                    if (Game.debug)
+                    {
+                        string filePath = hashToFName[hash];
+                        pipeline = new UserPipelineAsset(File.ReadAllText(Game.AssetPath.ToCommonPath() + filePath));
+                    }
+                    else
+                    {
+                        pipeline = GetPipelineFromPK(hash);
+                    }
                 }
             }
 

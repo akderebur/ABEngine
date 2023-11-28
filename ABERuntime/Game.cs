@@ -130,6 +130,7 @@ namespace ABEngine.ABERuntime
             userSystemTypes = new List<Type>();
             AppPath = System.IO.Directory.GetCurrentDirectory() + "/";
             AssetPath = AppPath + "Assets/";
+            AssetPath = AssetPath.ToCommonPath();
             Game.debug = debug;
             gameMode = GameMode.Runtime;
         }
