@@ -19,6 +19,8 @@ using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
 using ABEngine.ABERuntime.Core.Assets;
 using WGIL.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace ABEngine.ABERuntime
 {
@@ -110,13 +112,18 @@ namespace ABEngine.ABERuntime
         internal static Game Instance;
         internal static ResourceContext resourceContext;
 
+        private HttpClient _httpClient;
+
+        internal static bool initDone = false;
+
         // Render Passes
         RenderPass normalsPass, mainPass, mainPPPass, lightPass, fsPass; //debugPass
 
-        public Game(bool debug, List<Type> userTypes)
+        public Game(bool debug, List<Type> userTypes, HttpClient httpClient)
         {
             Instance = this;
             resourceContext = new ResourceContext();
+            _httpClient = httpClient;
 
             UserTypes = userTypes;
             userSystems = new List<BaseSystem>();
@@ -147,7 +154,7 @@ namespace ABEngine.ABERuntime
         void NormalsPassWork(RenderPass pass)
         {
             // First pass setup
-            if (Game.activeCam != null)
+            if (Game.activeCam != null && initDone)
             {
                 var camEnt = Game.activeCam.entity;
                 if (camEnt != Entity.Null)
@@ -169,6 +176,9 @@ namespace ABEngine.ABERuntime
 
         void MainPassWork(RenderPass pass)
         {
+            if (!initDone)
+                return;
+
             meshRenderSystem.Render(pass);
             for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
             {
@@ -185,6 +195,9 @@ namespace ABEngine.ABERuntime
 
         void MainPPWork(RenderPass pass)
         {
+            if (!initDone)
+                return;
+
             resourceContext.CopyScreenTexture(pass);
 
             //pass.SetPipeline(GraphicsManager.FullScreenPipeline);
@@ -198,11 +211,17 @@ namespace ABEngine.ABERuntime
 
         void LightPassWork(RenderPass pass)
         {
+            if (!initDone)
+                return;
+
             lightRenderSystem.Render(pass);
         }
 
         void FinalPassWork(RenderPass pass)
         {
+            if (!initDone)
+                return;
+
             pass.SetPipeline(GraphicsManager.FullScreenPipeline);
             pass.SetBindGroup(0, finalQuadRSSet);
             pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
@@ -525,6 +544,9 @@ namespace ABEngine.ABERuntime
 
         private protected virtual void MainLoop(float newTime, float elapsed)
         {
+            if (!initDone)
+                return;
+
             Time = newTime;
             pipelineData.Time = Time;
 
@@ -772,10 +794,11 @@ namespace ABEngine.ABERuntime
             wgil.OnResize += Window_Resized;
 
             // Window and Graphics
+
             _ = wgil.Start(windowName, new WindowInfo()
             {
-                Width = 800,
-                Height = 600,
+                Width = 1024,
+                Height = 576,
                 CSSFullSize = true
             });
 
@@ -805,7 +828,7 @@ namespace ABEngine.ABERuntime
             wgil.Stop();
         }
 
-        private protected virtual void SetupComplete()
+        private protected virtual async void SetupComplete()
         {
             uint pw = wgil.GetWidth();
             uint ph = wgil.GetHeight();
@@ -840,8 +863,7 @@ namespace ABEngine.ABERuntime
             foreach (var render in internalRenders)
                 render.SceneSetup();
 
-            AssetCache.InitAssetCache();
-
+            await AssetCache.InitAssetCache(_httpClient);
             EntityManager.Init();
 
             // Systems
@@ -872,7 +894,7 @@ namespace ABEngine.ABERuntime
             Scene_RegisterSystems();
             SubscribeSystems();
 
-            Scene_Setup();
+            await Scene_Setup();
             onSceneLoad?.Invoke();
 
             RefreshProjection(Game.canvas);
@@ -906,6 +928,8 @@ namespace ABEngine.ABERuntime
             {
                 rendExt.Start();
             }
+
+            initDone = true;
         }
 
         private protected void CreateRenderResources(uint pixelWidth, uint pixelHeight)
@@ -1095,7 +1119,7 @@ namespace ABEngine.ABERuntime
             renderExtensions.Add(renderSystem);
         }
    
-        protected virtual void Scene_Setup()
+        protected virtual async Task Scene_Setup()
         {
 
         }
@@ -1172,7 +1196,7 @@ namespace ABEngine.ABERuntime
             return scene.Build().ToString();
         }
 
-        protected void LoadScene(string json)
+        protected async Task LoadScene(string json)
         {
 
             JValue scene = JValue.Parse(json);
@@ -1184,7 +1208,7 @@ namespace ABEngine.ABERuntime
             // Assets
             var jAssets = scene["Assets"];
             AssetCache.ClearSerializeDependencies();
-            AssetCache.DeserializeAssets(jAssets);
+            await AssetCache.DeserializeAssets(jAssets);
 
             //canvas.Deserialize(scene["Canvas"].ToString());
             //projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1, -1);
