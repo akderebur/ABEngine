@@ -552,11 +552,11 @@ namespace ABEngine.ABERuntime
 
             EntityManager.CheckEntityChanges();
 
-            if (Input.GetKeyDown(Key.KeyR))
-            {
-                reload = true;
-                newScene = true;
-            }
+            //if (Input.GetKeyDown(Key.KeyR))
+            //{
+            //    reload = true;
+            //    newScene = true;
+            //}
 
             if (reload)
             {
@@ -832,6 +832,9 @@ namespace ABEngine.ABERuntime
         {
             uint pw = wgil.GetWidth();
             uint ph = wgil.GetHeight();
+
+            pw = 1280;
+            ph = 720;
 
             uint w = wgil.GetWidthLogical();
             uint h = wgil.GetHeightLogical();
