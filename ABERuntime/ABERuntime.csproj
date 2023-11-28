@@ -54,14 +54,12 @@
     <None Remove="Core\MathA\" />
     <None Remove="Core\Animation\StateMatch\" />
     <None Remove="Systems\Rendering\" />
-    <None Remove="Windowing\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="Crc32.NET" Version="1.2.0" />
     <PackageReference Include="ABEngine.Arch" Version="1.2.5.8-alpha" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
-    <PackageReference Include="Ryujinx.SDL2-CS" Version="2.28.3-build30" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Tweening\" />
@@ -76,7 +74,6 @@
     <Folder Include="Core\MathA\" />
     <Folder Include="Core\Animation\StateMatch\" />
     <Folder Include="Systems\Rendering\" />
-    <Folder Include="Windowing\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Box2D\Box2D.NetStandard.csproj" />

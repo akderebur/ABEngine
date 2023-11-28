@@ -19,8 +19,6 @@ using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
 using ABEngine.ABERuntime.Core.Assets;
 using WGIL.IO;
-using ABEngine.ABERuntime.Windowing;
-using static SDL2.SDL;
 
 namespace ABEngine.ABERuntime
 {
@@ -33,9 +31,6 @@ namespace ABEngine.ABERuntime
     public class Game
     {
         internal static WGILContext wgil;
-
-        // Resources
-        protected Sdl2Window window;
 
         // Worlds and Systems
         public static World GameWorld;
@@ -83,7 +78,7 @@ namespace ABEngine.ABERuntime
         protected SpriteAnimSystem spriteAnimSystem;
         protected RigidbodyMoveSystem rbMoveSystem;
         protected Tweening.TweenSystem tweenSystem;
-        protected private ColliderDebugSystem colDebugSystem;
+        //protected private ColliderDebugSystem colDebugSystem;
         protected private ParticleModuleSystem particleSystem;
 
         // Render Systems
@@ -115,10 +110,8 @@ namespace ABEngine.ABERuntime
         internal static Game Instance;
         internal static ResourceContext resourceContext;
 
-        protected private static InputDataSdl inputData = new InputDataSdl();
-
         // Render Passes
-        RenderPass normalsPass, mainPass, mainPPPass, lightPass, fsPass, debugPass;
+        RenderPass normalsPass, mainPass, mainPPPass, lightPass, fsPass; //debugPass
 
         public Game(bool debug, List<Type> userTypes)
         {
@@ -181,10 +174,10 @@ namespace ABEngine.ABERuntime
                 spriteBatchSystem.Render(pass, i);
 
                 // Dpeth Clear
-                pass.SetPipeline(GraphicsManager.DepthClearPipeline);
-                pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-                pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
-                pass.DrawIndexed(6);
+                //pass.SetPipeline(GraphicsManager.DepthClearPipeline);
+                //pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+                //pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
+                //pass.DrawIndexed(6);
             }
 
         }
@@ -218,10 +211,10 @@ namespace ABEngine.ABERuntime
             //UIRender();
         }
 
-        void DebugPassWork(RenderPass pass)
-        {
-            colDebugSystem.Render(pass);
-        }
+        //void DebugPassWork(RenderPass pass)
+        //{
+        //    colDebugSystem.Render(pass);
+        //}
 
         protected private void CreateInternalRenders()
         { 
@@ -290,8 +283,8 @@ namespace ABEngine.ABERuntime
                 }
             };
 
-            mainPPPass = wgil.CreateRenderPass(ref mainPPDesc);
-            mainPPPass.JoinRenderQueue(MainPPWork);
+            //mainPPPass = wgil.CreateRenderPass(ref mainPPDesc);
+            //mainPPPass.JoinRenderQueue(MainPPWork);
 
             var lightPassDesc = new RenderPassDescriptor()
             {
@@ -320,7 +313,7 @@ namespace ABEngine.ABERuntime
 
             wgil.AddRenderPass(normalsPass);
             wgil.AddRenderPass(mainPass);
-            wgil.AddRenderPass(mainPPPass);
+            //wgil.AddRenderPass(mainPPPass);
             wgil.AddRenderPass(lightPass);
             wgil.AddRenderPass(fsPass);
 
@@ -345,6 +338,7 @@ namespace ABEngine.ABERuntime
 
         private void CheckResize()
         {
+            return;
             if (resize)
             {
                 resize = false;
@@ -434,8 +428,8 @@ namespace ABEngine.ABERuntime
                     system.CleanUp(true, newScene);
                 }
 
-                if (debug)
-                    colDebugSystem.CleanUp(true, true);
+                //if (debug)
+                //    colDebugSystem.CleanUp(true, true);
 
                 // Clean Resources
                 AssetCache.DisposeResources();
@@ -453,7 +447,7 @@ namespace ABEngine.ABERuntime
                 Game.activeCam = null;
                 TriggerCamCheck();
 
-                LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
+                //LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
 
                 // Systems
                 camMoveSystem = new CameraMovementSystem();
@@ -465,8 +459,8 @@ namespace ABEngine.ABERuntime
                 tweenSystem = new Tweening.TweenSystem();
                 particleSystem = new ParticleModuleSystem();
                 spriteBatchSystem = new SpriteBatchSystem();
-                if (debug)
-                    colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+                //if (debug)
+                //    colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
 
                 for (int i = renderExtensions.Count - 1; i >= 0; i--)
                 {
@@ -523,17 +517,13 @@ namespace ABEngine.ABERuntime
                 lightRenderSystem.Start();
                 tweenSystem.Start();
                 particleSystem.Start();
-                if (debug)
-                    colDebugSystem.Start();
+                //if (debug)
+                //    colDebugSystem.Start();
             }
         }
 
         private protected virtual void MainLoop(float newTime, float elapsed)
         {
-            // SDL2 Poll
-            window.ProcessEvents(inputData);
-            Input.UpdateFrameInput(inputData);
-
             Time = newTime;
             pipelineData.Time = Time;
 
@@ -559,8 +549,6 @@ namespace ABEngine.ABERuntime
             {
                 rendExt.Update(newTime, elapsed);
             }
-
-            inputData.Clear();
         }
 
         float accumulator;
@@ -739,8 +727,8 @@ namespace ABEngine.ABERuntime
                 meshRenderSystem.Update(newTime, elapsed);
             }
             lightRenderSystem.Update(newTime, elapsed);
-            if(debug)
-                colDebugSystem.Update(newTime, elapsed);
+            //if(debug)
+            //    colDebugSystem.Update(newTime, elapsed);
         }
 
       
@@ -759,7 +747,6 @@ namespace ABEngine.ABERuntime
         {
             if (canvas == null || Game.canvas != canvas || Game.activeCam == null)
                 return;
-
 
             Camera camera = Game.activeCam.entity.Get<Camera>();
             if (camera.cameraProjection == CameraProjection.Orthographic)
@@ -781,26 +768,28 @@ namespace ABEngine.ABERuntime
             wgil = new WGILContext();
             wgil.OnStart += SetupComplete;
             wgil.OnUpdate += MainLoop;
+            wgil.OnResize += Window_Resized;
 
             // Window and Graphics
-            var flags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE | SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI;
-            window = new Sdl2Window(windowName, 0, 0, 1280, 720, flags, out RawWindowInfo rawWindowInfo);
-            window.Closing += Window_Closing;
-            window.Resized += Window_Resized;
+            _ = wgil.Start(windowName, new WindowInfo()
+            {
+                Width = 800,
+                Height = 600,
+                CSSFullSize = true
+            });
 
-            wgil.Start(ref rawWindowInfo);
-
-            wgil.DisposeResources(true);
+            //wgil.DisposeResources(true);
         }
 
         private void Window_Resized()
         {
             // Physical Size
-            SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
+            uint pw = wgil.GetWidth();
+            uint ph = wgil.GetHeight();
             pixelSize = new Vector2(pw, ph);
-            wgil.Resize((uint)pw, (uint)ph);
 
-            SDL_GetWindowSize(window.Handle, out int w, out int h);
+            uint w = wgil.GetWidthLogical();
+            uint h = wgil.GetHeightLogical();
             virtualSize = new Vector2(w, h);
             canvas.UpdateScreenSize(virtualSize);
             onWindowResize?.Invoke();
@@ -817,8 +806,11 @@ namespace ABEngine.ABERuntime
 
         private protected virtual void SetupComplete()
         {
-            SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
-            SDL_GetWindowSize(window.Handle, out int w, out int h);
+            uint pw = wgil.GetWidth();
+            uint ph = wgil.GetHeight();
+
+            uint w = wgil.GetWidthLogical();
+            uint h = wgil.GetHeightLogical();
 
             pixelSize = new Vector2(pw, ph);
             virtualSize = new Vector2(w, h);
@@ -831,18 +823,18 @@ namespace ABEngine.ABERuntime
 
             CreateInternalRenders();
 
-            if(debug)
-            {
-                // Debug Pass
-                var debugPassDesc = new RenderPassDescriptor()
-                {
-                    IsColorClear = false,
-                    IsRenderSwapchain = true
-                };
-                debugPass = wgil.CreateRenderPass(ref debugPassDesc);
-                debugPass.JoinRenderQueue(DebugPassWork);
-                wgil.AddRenderPass(debugPass);
-            }
+            //if(debug)
+            //{
+            //    // Debug Pass
+            //    var debugPassDesc = new RenderPassDescriptor()
+            //    {
+            //        IsColorClear = false,
+            //        IsRenderSwapchain = true
+            //    };
+            //    debugPass = wgil.CreateRenderPass(ref debugPassDesc);
+            //    debugPass.JoinRenderQueue(DebugPassWork);
+            //    wgil.AddRenderPass(debugPass);
+            //}
 
             foreach (var render in internalRenders)
                 render.SceneSetup();
@@ -863,11 +855,11 @@ namespace ABEngine.ABERuntime
             tweenSystem = new Tweening.TweenSystem();
             particleSystem = new ParticleModuleSystem();
 
-            if(debug)
-            {
-                LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
-                colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
-            }
+            //if(debug)
+            //{
+            //    LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
+            //    colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+            //}
 
 
             // Once in game lifetime
@@ -905,8 +897,8 @@ namespace ABEngine.ABERuntime
             camMoveSystem.Start();
             lightRenderSystem.Start();
             particleSystem.Start();
-            if (debug)
-                colDebugSystem.Start();
+            //if (debug)
+            //    colDebugSystem.Start();
 
 
             foreach (var rendExt in renderExtensions)

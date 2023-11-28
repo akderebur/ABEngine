@@ -447,6 +447,9 @@ void main()
         private const string DepthFragment = @"
 #version 450
 
+layout(location = 0) out vec4 OutputColor;
+layout(location = 1) out vec4 OutputNormal;
+
 void main()
 {
     gl_FragDepth = 1.0;
