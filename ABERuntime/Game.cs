@@ -114,8 +114,6 @@ namespace ABEngine.ABERuntime
 
         private HttpClient _httpClient;
 
-        internal static bool initDone = false;
-
         // Render Passes
         RenderPass normalsPass, mainPass, mainPPPass, lightPass, fsPass; //debugPass
 
@@ -154,7 +152,7 @@ namespace ABEngine.ABERuntime
         void NormalsPassWork(RenderPass pass)
         {
             // First pass setup
-            if (Game.activeCam != null && initDone)
+            if (Game.activeCam != null)
             {
                 var camEnt = Game.activeCam.entity;
                 if (camEnt != Entity.Null)
@@ -176,9 +174,6 @@ namespace ABEngine.ABERuntime
 
         void MainPassWork(RenderPass pass)
         {
-            if (!initDone)
-                return;
-
             meshRenderSystem.Render(pass);
             for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
             {
@@ -195,9 +190,6 @@ namespace ABEngine.ABERuntime
 
         void MainPPWork(RenderPass pass)
         {
-            if (!initDone)
-                return;
-
             resourceContext.CopyScreenTexture(pass);
 
             //pass.SetPipeline(GraphicsManager.FullScreenPipeline);
@@ -211,17 +203,11 @@ namespace ABEngine.ABERuntime
 
         void LightPassWork(RenderPass pass)
         {
-            if (!initDone)
-                return;
-
             lightRenderSystem.Render(pass);
         }
 
         void FinalPassWork(RenderPass pass)
         {
-            if (!initDone)
-                return;
-
             pass.SetPipeline(GraphicsManager.FullScreenPipeline);
             pass.SetBindGroup(0, finalQuadRSSet);
             pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
@@ -347,7 +333,7 @@ namespace ABEngine.ABERuntime
             };
 
             SetupRenderResources();
-        }  
+        }
 
         protected private void SetupRenderResources()
         {
@@ -544,9 +530,6 @@ namespace ABEngine.ABERuntime
 
         private protected virtual void MainLoop(float newTime, float elapsed)
         {
-            if (!initDone)
-                return;
-
             Time = newTime;
             pipelineData.Time = Time;
 
@@ -790,8 +773,7 @@ namespace ABEngine.ABERuntime
         {
             wgil = new WGILContext();
             wgil.OnStart += SetupComplete;
-            wgil.OnUpdate += MainLoop;
-            wgil.OnResize += Window_Resized;
+            //wgil.OnResize += Window_Resized;
 
             // Window and Graphics
 
@@ -932,7 +914,7 @@ namespace ABEngine.ABERuntime
                 rendExt.Start();
             }
 
-            initDone = true;
+            wgil.OnUpdate += MainLoop;
         }
 
         private protected void CreateRenderResources(uint pixelWidth, uint pixelHeight)
