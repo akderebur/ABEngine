@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
@@ -46,6 +47,8 @@ namespace ABEngine.ABERuntime.Rendering
         Vector3 imageSize;
 
         public string key;
+        bool reinit = false;
+        bool firstInit = true;
 
         public SpriteBatch(Texture2D texture, PipelineMaterial pipelineMaterial, int renderLayerIndex, bool isStatic, float zValue)
         {
@@ -149,7 +152,6 @@ namespace ABEngine.ABERuntime.Rendering
         public void InitBatch()
         {
             vertices = verticesList.ToArray();
-            instanceCount = (uint)verticesList.Count;
             //indices = indicesList.ToArray();
 
             // Texture
@@ -214,58 +216,77 @@ namespace ABEngine.ABERuntime.Rendering
                 maxZ = -sprites.First().transform.worldPosition.Z;
             }
 
-            if (isStatic)
+            reinit = true;
+            if (firstInit)
             {
-                int index = 0;
-                for (int i = 0; i < sprites.Count; i++)
+                instanceCount = (uint)verticesList.Count;
+
+                if (isStatic)
                 {
-                    SpriteTransformPair spritePair = sprites[i];
-                    Transform spriteTrans = spritePair.transform;
-                    Sprite spriteData = spritePair.spriteData;
+                    int index = 0;
+                    for (int i = 0; i < sprites.Count; i++)
+                    {
+                        SpriteTransformPair spritePair = sprites[i];
+                        Transform spriteTrans = spritePair.transform;
+                        Sprite spriteData = spritePair.spriteData;
 
-                    vertices[index++] = new QuadVertex(spriteTrans.worldPosition,
-                                               spriteData.GetSize(),
-                                               spriteTrans.worldScale,
-                                               spriteData.tintColor,
-                                               spriteTrans.localEulerAngles.Z,
-                                               spriteData.uvPos,
-                                               spriteData.uvScale,
-                                               spriteData.pivot);
+                        vertices[index++] = new QuadVertex(spriteTrans.worldPosition,
+                                                   spriteData.GetSize(),
+                                                   spriteTrans.worldScale,
+                                                   spriteData.tintColor,
+                                                   spriteTrans.localEulerAngles.Z,
+                                                   spriteData.uvPos,
+                                                   spriteData.uvScale,
+                                                   spriteData.pivot);
+                    }
+
+                    vertexBuffer = _wgil.CreateBuffer(vertices.Length * (int)QuadVertex.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+                    _wgil.WriteBuffer(vertexBuffer, vertices);
                 }
+
+                firstInit = false;
             }
-
-            // Buffer resources
-            if (vertexBuffer != null)
-                vertexBuffer.Dispose();
-
-            vertexBuffer = _wgil.CreateBuffer(vertices.Length * (int)QuadVertex.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST);
-            _wgil.WriteBuffer(vertexBuffer, vertices);
         }
 
-        int runC = 0;
+        IEnumerable<SpriteTransformPair> sortSprites = new List<SpriteTransformPair>();
         public void UpdateBatch()
+        {
+            if (isDynamicSort) // Update sort
+                sortSprites = sprites.OrderBy(sp => sp.transform.worldPosition.Z);
+            else
+                sortSprites = sprites;
+        }
+
+        public void RenderUpdateBatch()
         {
             // Dynamic batches only
             if (!active || isStatic)
             {
                 return;
             }
+            if (reinit)
+            {
+                // Buffer resources
+                if (vertexBuffer != null)
+                    vertexBuffer.Dispose();
+
+                vertexBuffer = _wgil.CreateBuffer(vertices.Length * (int)QuadVertex.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+                instanceCount = (uint)verticesList.Count;
+
+
+                reinit = false;
+            }
 
             // Write to GPU buffer
             QuadVertex[] writemap = new QuadVertex[sprites.Count];
 
-            var sorted = sprites.Where(sp => sp.transform.enabled);
+            var sorted = sortSprites.Where(sp => sp.transform.enabled);
 
             int renderCount = sorted.Count();
             int index = 0;
 
             if (renderCount > 0)
             {
-                if (isDynamicSort) // Update sort
-                {
-                    sorted = sorted.OrderBy(sp => sp.transform.worldPosition.Z);
-                }
-
                 foreach (var spritePair in sorted)
                 {
                     Transform spriteTrans = spritePair.transform;

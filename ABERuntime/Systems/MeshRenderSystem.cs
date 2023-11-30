@@ -94,7 +94,7 @@ namespace ABEngine.ABERuntime
         List<(MeshRenderer, Transform)> renderOrder = new List<(MeshRenderer, Transform)>();
         List<(MeshRenderer, Transform)> lateRenderOrder = new List<(MeshRenderer, Transform)>();
 
-        public override void Update(float gameTime, float deltaTime)
+        public override void RenderUpdate()
         {
             if (Game.activeCam == null)
                 return;
@@ -141,7 +141,7 @@ namespace ABEngine.ABERuntime
             // Mesh render order
             Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
             {
-                if(mr.material.isLateRender)
+                if (mr.material.isLateRender)
                     lateRenderOrder.Add((mr, transform));
                 else
                     renderOrder.Add((mr, transform));

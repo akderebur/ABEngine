@@ -21,6 +21,8 @@ using ABEngine.ABERuntime.Core.Assets;
 using WGIL.IO;
 using ABEngine.ABERuntime.Windowing;
 using static SDL2.SDL;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ABEngine.ABERuntime
 {
@@ -107,6 +109,7 @@ namespace ABEngine.ABERuntime
         protected private  static bool reload = false;
         protected private  static bool newScene = false;
         protected private bool resize = false;
+        bool isRendering = false;
 
         internal static bool debug = false;
 
@@ -116,6 +119,7 @@ namespace ABEngine.ABERuntime
         internal static ResourceContext resourceContext;
 
         protected private static InputDataSdl inputData = new InputDataSdl();
+        private SemaphoreSlim updateSemaphore = new SemaphoreSlim(1);
 
         // Render Passes
         RenderPass normalsPass, mainPass, mainPPPass, lightPass, fsPass, debugPass;
@@ -153,23 +157,7 @@ namespace ABEngine.ABERuntime
 
         void NormalsPassWork(RenderPass pass)
         {
-            // First pass setup
-            if (Game.activeCam != null)
-            {
-                var camEnt = Game.activeCam.entity;
-                if (camEnt != Entity.Null)
-                {
-                    Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
-                    Vector3 cameraPosition = Game.activeCam.worldPosition;
-                    Vector3 targetPosition = cameraPosition + forward;
-                    Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
-
-                    Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
-
-                    Game.pipelineData.View = view;
-                    wgil.WriteBuffer(pipelineBuffer, pipelineData);
-                }
-            }
+           
 
             normalsRenderSystem.Render(pass);
         }
@@ -529,14 +517,26 @@ namespace ABEngine.ABERuntime
             }
         }
 
+        float updateMinInterval = 0.0016f;
+        float updateAcc = 0;
+
         private protected virtual void MainLoop(float newTime, float elapsed)
         {
+            updateAcc += elapsed;
+
+
+            //if (updateAcc >= updateMinInterval)
+            //{
+            //elapsed = updateAcc;
             // SDL2 Poll
+
             window.ProcessEvents(inputData);
             Input.UpdateFrameInput(inputData);
 
             Time = newTime;
             pipelineData.Time = Time;
+
+            updateSemaphore.Wait();
 
             EntityManager.CheckEntityChanges();
 
@@ -560,8 +560,59 @@ namespace ABEngine.ABERuntime
             {
                 rendExt.Update(newTime, elapsed);
             }
+            updateSemaphore.Release();
+
 
             inputData.Clear();
+
+            updateAcc = 0;
+
+            //}
+
+
+            //Thread.Sleep(0);
+
+
+        }
+
+        async Task RenderTask()
+        {
+            await Task.Run(() =>
+            {
+                while (isRendering)
+                {
+                    updateSemaphore.Wait();
+
+                    // First pass setup
+                    if (Game.activeCam != null)
+                    {
+                        var camEnt = Game.activeCam.entity;
+                        if (camEnt != Entity.Null)
+                        {
+                            Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
+                            Vector3 cameraPosition = Game.activeCam.worldPosition;
+                            Vector3 targetPosition = cameraPosition + forward;
+                            Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
+
+                            Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
+
+                            Game.pipelineData.View = view;
+                            wgil.WriteBuffer(pipelineBuffer, pipelineData);
+                        }
+                    }
+
+                    spriteBatchSystem.RenderUpdate();
+                    if (!GraphicsManager.render2DOnly)
+                    {
+                        meshRenderSystem.RenderUpdate();
+                    }
+                    lightRenderSystem.RenderUpdate();
+
+                    updateSemaphore.Release();
+
+                    wgil.Render();
+                }
+            });
         }
 
         float accumulator;
@@ -791,6 +842,8 @@ namespace ABEngine.ABERuntime
 
             wgil.Start(ref rawWindowInfo);
 
+            // WGIL Loop Ended
+            isRendering = false;
             wgil.DisposeResources(true);
         }
 
@@ -913,6 +966,13 @@ namespace ABEngine.ABERuntime
             foreach (var rendExt in renderExtensions)
             {
                 rendExt.Start();
+            }
+
+            // Render task
+            if (!isRendering)
+            {
+                isRendering = true;
+                _ = RenderTask();
             }
         }
 
