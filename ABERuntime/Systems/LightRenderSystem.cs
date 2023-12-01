@@ -77,12 +77,12 @@ namespace ABEngine.ABERuntime
         //    return layerLightCounts[layerId] > 0;
         //}
 
-
-
-        public override void RenderUpdate()
+        public override void Update(float gameTime, float deltaTime)
         {
             if (!started)
                 return;
+
+            base.Update(gameTime, deltaTime);
 
             var query = new QueryDescription().WithAll<Transform, PointLight2D>();
 

@@ -51,14 +51,6 @@ namespace ABEngine.ABERuntime
                     pair.UpdateBatches();
                 }
             }
-
-            public void RenderUpdateOrder()
-            {
-                foreach (var pair in pairList)
-                {
-                    pair.RenderUpdateBatches();
-                }
-            }
         }
          
 
@@ -113,14 +105,6 @@ namespace ABEngine.ABERuntime
                 foreach (var order in orderRenders.Values)
                 {
                     order.UpdateOrder();
-                }
-            }
-
-            public void RenderUpdateLayer()
-            {
-                foreach (var order in orderRenders.Values)
-                {
-                    order.RenderUpdateOrder();
                 }
             }
         }
@@ -540,14 +524,6 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        public override void RenderUpdate()
-        {
-            foreach (var layerContext in layerRenderGroups.Values)
-            {
-                layerContext.RenderUpdateLayer();
-            }
-        }
-
         public void RenderPP(RenderPass pass, int renderLayer)
         {
             if (!layerRenderGroups.ContainsKey(renderLayer))
@@ -638,14 +614,6 @@ namespace ABEngine.ABERuntime
             foreach (var batch in batches)
             {
                 batch.UpdateBatch();
-            }
-        }
-
-        public void RenderUpdateBatches()
-        {
-            foreach (var batch in batches)
-            {
-                batch.RenderUpdateBatch();
             }
         }
 

@@ -21,8 +21,6 @@ using ABEngine.ABERuntime.Core.Assets;
 using WGIL.IO;
 using ABEngine.ABERuntime.Windowing;
 using static SDL2.SDL;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace ABEngine.ABERuntime
 {
@@ -109,7 +107,6 @@ namespace ABEngine.ABERuntime
         protected private  static bool reload = false;
         protected private  static bool newScene = false;
         protected private bool resize = false;
-        bool isRendering = false;
 
         internal static bool debug = false;
 
@@ -119,7 +116,6 @@ namespace ABEngine.ABERuntime
         internal static ResourceContext resourceContext;
 
         protected private static InputDataSdl inputData = new InputDataSdl();
-        private SemaphoreSlim updateSemaphore = new SemaphoreSlim(1);
 
         // Render Passes
         RenderPass normalsPass, mainPass, mainPPPass, lightPass, fsPass, debugPass;
@@ -157,6 +153,24 @@ namespace ABEngine.ABERuntime
 
         void NormalsPassWork(RenderPass pass)
         {
+            // First pass setup
+            if (Game.activeCam != null)
+            {
+                var camEnt = Game.activeCam.entity;
+                if (camEnt != Entity.Null)
+                {
+                    Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
+                    Vector3 cameraPosition = Game.activeCam.worldPosition;
+                    Vector3 targetPosition = cameraPosition + forward;
+                    Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
+
+                    Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
+
+                    Game.pipelineData.View = view;
+                    wgil.WriteBuffer(pipelineBuffer, pipelineData);
+                }
+            }
+
             normalsRenderSystem.Render(pass);
         }
 
@@ -332,21 +346,9 @@ namespace ABEngine.ABERuntime
 
         private void CheckResize()
         {
-            if (resize && renderPaused)
+            if (resize)
             {
-                reload = false;
                 resize = false;
-
-                // Physical Size
-                SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
-                pixelSize = new Vector2(pw, ph);
-                wgil.Resize((uint)pw, (uint)ph);
-
-                SDL_GetWindowSize(window.Handle, out int w, out int h);
-                virtualSize = new Vector2(w, h);
-                canvas.UpdateScreenSize(virtualSize);
-                onWindowResize?.Invoke();
-                wgil.logicalSize = virtualSize;
 
                 // Resize render targets
                 finalQuadRSSet.Dispose();
@@ -407,17 +409,13 @@ namespace ABEngine.ABERuntime
                 //    colDebugSystem.Start();
 
                 RefreshProjection(Game.canvas);
-
-                isRendering = true;
-                currentRenderTask = RenderTask();
             }
         }
 
         void CheckNewScene()
         {
-            if(newScene && renderPaused)
+            if(newScene)
             {
-                reload = false;
                 newScene = false;
 
                 EntityManager.SetImmediateDestroy(true);
@@ -528,14 +526,9 @@ namespace ABEngine.ABERuntime
                 particleSystem.Start();
                 if (debug)
                     colDebugSystem.Start();
-
-                isRendering = true;
-                currentRenderTask = RenderTask();
             }
         }
 
-        int updateC = 0;
-        int renderC = 0;
         private protected virtual void MainLoop(float newTime, float elapsed)
         {
             // SDL2 Poll
@@ -545,18 +538,19 @@ namespace ABEngine.ABERuntime
             Time = newTime;
             pipelineData.Time = Time;
 
-            updateSemaphore.Wait();
-
             EntityManager.CheckEntityChanges();
+
+            if (Input.GetKeyDown(Key.KeyR))
+            {
+                reload = true;
+                newScene = true;
+            }
 
             if (reload)
             {
+                reload = false;
                 CheckResize();
                 CheckNewScene();
-            }
-            else if (Input.GetKeyDown(Key.KeyR))
-            {
-                RequestSceneReload();
             }
 
             MainFixedUpdate(newTime, elapsed);
@@ -566,64 +560,8 @@ namespace ABEngine.ABERuntime
             {
                 rendExt.Update(newTime, elapsed);
             }
-            updateSemaphore.Release();
 
             inputData.Clear();
-
-            updateC++;
-            Thread.Sleep(16);
-        }
-
-        async void RequestSceneReload()
-        {
-            // Stop rendering
-            reload = true;
-            newScene = true;
-            renderPaused = false;
-            isRendering = false;
-            await currentRenderTask;
-            renderPaused = true;
-        }
-
-        async Task RenderTask()
-        {
-            await Task.Run(() =>
-            {
-                while (isRendering)
-                {
-                    updateSemaphore.Wait();
-
-                    // First pass setup
-                    if (Game.activeCam != null)
-                    {
-                        var camEnt = Game.activeCam.entity;
-                        if (camEnt != Entity.Null)
-                        {
-                            Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
-                            Vector3 cameraPosition = Game.activeCam.worldPosition;
-                            Vector3 targetPosition = cameraPosition + forward;
-                            Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
-
-                            Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
-
-                            Game.pipelineData.View = view;
-                            wgil.WriteBuffer(pipelineBuffer, pipelineData);
-                        }
-                    }
-
-                    spriteBatchSystem.RenderUpdate();
-                    if (!GraphicsManager.render2DOnly)
-                    {
-                        meshRenderSystem.RenderUpdate();
-                    }
-                    lightRenderSystem.RenderUpdate();
-
-                    updateSemaphore.Release();
-
-                    wgil.Render();
-                    renderC++;
-                }
-            });
         }
 
         float accumulator;
@@ -853,33 +791,31 @@ namespace ABEngine.ABERuntime
 
             wgil.Start(ref rawWindowInfo);
 
-            // WGIL Loop Ended
-            isRendering = false;
             wgil.DisposeResources(true);
-
         }
 
-        bool renderPaused = false;
-        private async void Window_Resized()
+        private void Window_Resized()
         {
-            // Stop rendering
-            reload = true;
+            // Physical Size
+            SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
+            pixelSize = new Vector2(pw, ph);
+            wgil.Resize((uint)pw, (uint)ph);
+
+            SDL_GetWindowSize(window.Handle, out int w, out int h);
+            virtualSize = new Vector2(w, h);
+            canvas.UpdateScreenSize(virtualSize);
+            onWindowResize?.Invoke();
+            wgil.logicalSize = virtualSize;
+
             resize = true;
-            renderPaused = false;
-            isRendering = false;
-            await currentRenderTask;
-            renderPaused = true;
+            reload = true;
         }
 
         private void Window_Closing()
         {
-
-            Console.WriteLine(updateC);
-            Console.WriteLine(renderC);
             wgil.Stop();
         }
 
-        Task currentRenderTask = null;
         private protected virtual void SetupComplete()
         {
             SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
@@ -977,13 +913,6 @@ namespace ABEngine.ABERuntime
             foreach (var rendExt in renderExtensions)
             {
                 rendExt.Start();
-            }
-
-            // Render task
-            if (!isRendering)
-            {
-                isRendering = true;
-                currentRenderTask = RenderTask();
             }
         }
 

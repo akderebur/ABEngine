@@ -43,11 +43,6 @@ namespace ABEngine.ABERuntime
 
         }
 
-        public virtual void RenderUpdate()
-        {
-
-        }
-
         public virtual void Render(RenderPass pass)
         {
 
