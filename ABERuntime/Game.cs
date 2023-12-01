@@ -157,8 +157,6 @@ namespace ABEngine.ABERuntime
 
         void NormalsPassWork(RenderPass pass)
         {
-           
-
             normalsRenderSystem.Render(pass);
         }
 
@@ -334,9 +332,21 @@ namespace ABEngine.ABERuntime
 
         private void CheckResize()
         {
-            if (resize)
+            if (resize && renderPaused)
             {
+                reload = false;
                 resize = false;
+
+                // Physical Size
+                SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
+                pixelSize = new Vector2(pw, ph);
+                wgil.Resize((uint)pw, (uint)ph);
+
+                SDL_GetWindowSize(window.Handle, out int w, out int h);
+                virtualSize = new Vector2(w, h);
+                canvas.UpdateScreenSize(virtualSize);
+                onWindowResize?.Invoke();
+                wgil.logicalSize = virtualSize;
 
                 // Resize render targets
                 finalQuadRSSet.Dispose();
@@ -397,13 +407,17 @@ namespace ABEngine.ABERuntime
                 //    colDebugSystem.Start();
 
                 RefreshProjection(Game.canvas);
+
+                isRendering = true;
+                currentRenderTask = RenderTask();
             }
         }
 
         void CheckNewScene()
         {
-            if(newScene)
+            if(newScene && renderPaused)
             {
+                reload = false;
                 newScene = false;
 
                 EntityManager.SetImmediateDestroy(true);
@@ -514,22 +528,17 @@ namespace ABEngine.ABERuntime
                 particleSystem.Start();
                 if (debug)
                     colDebugSystem.Start();
+
+                isRendering = true;
+                currentRenderTask = RenderTask();
             }
         }
 
-        float updateMinInterval = 0.0016f;
-        float updateAcc = 0;
-
+        int updateC = 0;
+        int renderC = 0;
         private protected virtual void MainLoop(float newTime, float elapsed)
         {
-            updateAcc += elapsed;
-
-
-            //if (updateAcc >= updateMinInterval)
-            //{
-            //elapsed = updateAcc;
             // SDL2 Poll
-
             window.ProcessEvents(inputData);
             Input.UpdateFrameInput(inputData);
 
@@ -540,17 +549,14 @@ namespace ABEngine.ABERuntime
 
             EntityManager.CheckEntityChanges();
 
-            if (Input.GetKeyDown(Key.KeyR))
-            {
-                reload = true;
-                newScene = true;
-            }
-
             if (reload)
             {
-                reload = false;
                 CheckResize();
                 CheckNewScene();
+            }
+            else if (Input.GetKeyDown(Key.KeyR))
+            {
+                RequestSceneReload();
             }
 
             MainFixedUpdate(newTime, elapsed);
@@ -562,17 +568,21 @@ namespace ABEngine.ABERuntime
             }
             updateSemaphore.Release();
 
-
             inputData.Clear();
 
-            updateAcc = 0;
+            updateC++;
+            Thread.Sleep(16);
+        }
 
-            //}
-
-
-            //Thread.Sleep(0);
-
-
+        async void RequestSceneReload()
+        {
+            // Stop rendering
+            reload = true;
+            newScene = true;
+            renderPaused = false;
+            isRendering = false;
+            await currentRenderTask;
+            renderPaused = true;
         }
 
         async Task RenderTask()
@@ -611,6 +621,7 @@ namespace ABEngine.ABERuntime
                     updateSemaphore.Release();
 
                     wgil.Render();
+                    renderC++;
                 }
             });
         }
@@ -845,30 +856,30 @@ namespace ABEngine.ABERuntime
             // WGIL Loop Ended
             isRendering = false;
             wgil.DisposeResources(true);
+
         }
 
-        private void Window_Resized()
+        bool renderPaused = false;
+        private async void Window_Resized()
         {
-            // Physical Size
-            SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
-            pixelSize = new Vector2(pw, ph);
-            wgil.Resize((uint)pw, (uint)ph);
-
-            SDL_GetWindowSize(window.Handle, out int w, out int h);
-            virtualSize = new Vector2(w, h);
-            canvas.UpdateScreenSize(virtualSize);
-            onWindowResize?.Invoke();
-            wgil.logicalSize = virtualSize;
-
-            resize = true;
+            // Stop rendering
             reload = true;
+            resize = true;
+            renderPaused = false;
+            isRendering = false;
+            await currentRenderTask;
+            renderPaused = true;
         }
 
         private void Window_Closing()
         {
+
+            Console.WriteLine(updateC);
+            Console.WriteLine(renderC);
             wgil.Stop();
         }
 
+        Task currentRenderTask = null;
         private protected virtual void SetupComplete()
         {
             SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
@@ -972,7 +983,7 @@ namespace ABEngine.ABERuntime
             if (!isRendering)
             {
                 isRendering = true;
-                _ = RenderTask();
+                currentRenderTask = RenderTask();
             }
         }
 
