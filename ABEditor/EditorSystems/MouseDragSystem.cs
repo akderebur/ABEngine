@@ -211,7 +211,7 @@ namespace ABEngine.ABEditor
 
                     SortedDictionary<float, Transform> hits = new SortedDictionary<float, Transform>();
 
-                    Game.GameWorld.Query(in query, (in Entity entity, ref MeshRenderer mr, ref Transform transform) =>
+                    Game.GameWorld.Query(in query, (Entity entity, ref MeshRenderer mr, ref Transform transform) =>
                     {
                         if (selectedTransform == transform)
                             return;

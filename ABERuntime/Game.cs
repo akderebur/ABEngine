@@ -703,7 +703,7 @@ namespace ABEngine.ABERuntime
             {
                 activeCam = null;
                 var camQ = new QueryDescription().WithAll<Camera, Transform>();
-                GameWorld.Query(in camQ, (in Entity camEnt) =>
+                GameWorld.Query(in camQ, (Entity camEnt) =>
                 {
                     if (camEnt != Entity.Null)
                     {
@@ -986,7 +986,7 @@ namespace ABEngine.ABERuntime
             {
                 if (rb.transform != null)
                     return;
-                rb.SetEntity(entity.Get<Transform>());
+                rb.SetTransform(entity.Get<Transform>());
                 if (b2dInitSystem.started)
                     PhysicsManager.CreateBody(rb);
             });

@@ -58,7 +58,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="Crc32.NET" Version="1.2.0" />
-    <PackageReference Include="ABEngine.Arch" Version="1.2.5.8-alpha" />
+    <PackageReference Include="ABEngine.Arch" Version="1.2.7.1-alpha" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
   </ItemGroup>
   <ItemGroup>

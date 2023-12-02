@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Numerics;
+using System.Threading.Tasks;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
+using ABEngine.ABERuntime.ECS;
 using Arch.Core.Extensions;
 
 namespace ABEngine.ABERuntime.Tweening
@@ -19,7 +21,61 @@ namespace ABEngine.ABERuntime.Tweening
             return tweener;
         }
 
-		public static Tween TweenPosition(this Transform transform, Vector3 endPos, float duration)
+        private static async Task<Tweener> GetTweenerAsync(Transform transform)
+        {
+            if (transform.entity.Has<Tweener>())
+                return transform.entity.Get<Tweener>();
+
+            Tweener tweener = new Tweener();
+
+            bool gotAccess = false;
+
+            try
+            {
+                await EntityManager.frameSemaphore.WaitAsync();
+                gotAccess = true;
+                transform.entity.Add<Tweener>(tweener);
+            }
+            finally
+            {
+                if(gotAccess)
+                    EntityManager.frameSemaphore.Release();
+            }
+
+            return tweener;
+        }
+
+        public static async Task<Tween> TweenPosition(this AsyncEntity asyncEnt, Vector3 endPos, float duration)
+        {
+            Transform transform = asyncEnt.Get<Transform>();
+            Tweener tweener = await GetTweenerAsync(transform);
+            Vector3 startPos = transform.localPosition;
+
+            var tween = new Tween((float time) =>
+            {
+                transform.localPosition = Vector3.Lerp(startPos, endPos, time);
+            }, duration);
+            tweener.SetTween(tween);
+            tween.Start();
+            return tween;
+        }
+
+        public static async Task<Tween> TweenScale(this AsyncEntity asyncEnt, Vector3 endScale, float duration)
+        {
+            Transform transform = asyncEnt.Get<Transform>();
+            Tweener tweener = await GetTweenerAsync(transform);
+            Vector3 startScale = transform.localScale;
+
+            var tween = new Tween((float time) =>
+            {
+                transform.localScale = Vector3.Lerp(startScale, endScale, time);
+            }, duration);
+            tweener.SetTween(tween);
+            tween.Start();
+            return tween;
+        }
+
+        public static Tween TweenPosition(this Transform transform, Vector3 endPos, float duration)
 		{
 			Tweener tweener = GetTweener(transform);
 			Vector3 startPos = transform.localPosition;

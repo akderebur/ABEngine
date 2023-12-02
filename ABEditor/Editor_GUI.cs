@@ -647,10 +647,10 @@ namespace ABEngine.ABEditor
                     AssetCache.ClearSceneCache();
                     AssetHandler.ResetScene();
 
-                    spriteBatchSystem.Start();
-
                     TMColliderGizmo.ResetGizmo();
                     LoadScene(File.ReadAllText(sceneFile));
+
+                    spriteBatchSystem.Start();
 
                     RemakeGrid();
                     DepthSearch();
