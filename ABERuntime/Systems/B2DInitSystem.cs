@@ -109,7 +109,7 @@ namespace ABEngine.ABERuntime
         public override void Start()
         {
             var rbQuery = new QueryDescription().WithAll<Rigidbody>();
-            Game.GameWorld.Query(in rbQuery, (in Entity rbEnt) =>
+            Game.GameWorld.Query(in rbQuery, (Entity rbEnt) =>
             {
                 CreateBody(rbEnt);
             });

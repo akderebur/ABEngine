@@ -555,7 +555,7 @@ namespace ABEngine.ABEditor
             {
                 activeCam = null;
                 var camQ = new QueryDescription().WithAll<Camera, Transform>();
-                GameWorld.Query(in camQ, (in Entity camEnt) =>
+                GameWorld.Query(in camQ, (Entity camEnt) =>
                 {
                     if (camEnt != Entity.Null)
                     {
@@ -636,7 +636,7 @@ namespace ABEngine.ABEditor
                 if (rb == null || rb.transform != null)
                     return;
 
-                rb.SetEntity(entity.Get<Transform>());
+                rb.SetTransform(entity.Get<Transform>());
             });
 
             GameWorld.SubscribeComponentAdded((in Entity entity, ref Sprite sprite) =>
@@ -710,7 +710,7 @@ namespace ABEngine.ABEditor
             AnimGraphEditor.Init();
 
             // Start systems
-            spriteBatchSystem.Start();
+            //spriteBatchSystem.Start();
             lightRenderSystem.Start();
             particleSystem.Start();
             spriteAnimSystem.Start();

@@ -80,7 +80,6 @@ namespace ABEngine.ABERuntime
                     taskInfo.cancelTokenSource.Cancel();
                     taskInfos.Remove(taskInfo);
                 }
-
             }
         }
 

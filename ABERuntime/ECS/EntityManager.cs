@@ -40,20 +40,23 @@ namespace ABEngine.ABERuntime.ECS
 
         public static void CheckEntityChanges()
         {
-            foreach (var entID in destroyMap.Keys)
+            if(destroyMap.Count > 0)
             {
-                var destroyInfo = destroyMap[entID];
-                bool canDestroy = destroyInfo.rb == null ? true : destroyInfo.rb.destroyed;
-
-                if (canDestroy)
+                foreach (var entID in destroyMap.Keys.ToList())
                 {
-                    var entity = destroyInfo.entity;
-                    CheckSubscribers(in entity, false);
-                    Game.GameWorld.Destroy(entity);
-                    destroyMap.Remove(entID);
+                    var destroyInfo = destroyMap[entID];
+                    bool canDestroy = destroyInfo.rb == null ? true : destroyInfo.rb.destroyed;
+
+                    if (canDestroy)
+                    {
+                        var entity = destroyInfo.entity;
+                        CheckSubscribers(in entity, false);
+                        Game.GameWorld.Destroy(entity);
+                        destroyMap.Remove(entID);
+                    }
                 }
             }
-
+           
             creationSemaphore.Wait();
             if (cmdBuffer.Size > 0)
             {
@@ -62,6 +65,8 @@ namespace ABEngine.ABERuntime.ECS
             creationSemaphore.Release();
 
             frameSemaphore.Release();
+            // Operations that can't disturb the update will wait and run here
+            // e.g. Tweener addition
             frameSemaphore.Wait();
         }
 

@@ -98,7 +98,7 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
-        internal void SetEntity(Transform transform)
+        internal void SetTransform(Transform transform)
         {
             this.transform = transform;
         }

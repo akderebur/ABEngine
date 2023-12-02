@@ -74,7 +74,7 @@ namespace ABEngine.ABERuntime.Debug
                 lastPos = clickPos;
 
                 var query = new QueryDescription().WithAll<Transform>().WithAny<AABB, CircleCollider>();
-                Game.GameWorld.Query(in query, (in Entity ent, ref Transform transform) =>
+                Game.GameWorld.Query(in query, (Entity ent, ref Transform transform) =>
                 {
                     if (ent.Has<AABB>())
                     {
