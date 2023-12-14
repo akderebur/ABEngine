@@ -120,6 +120,7 @@ Vertex
    layout (set = 1, binding = 0) uniform SharedMeshVertex
    {
        mat4 transformationMatrix;
+       mat4 normalMatrix;
    };
 
     layout (set = 2, binding = 0) uniform ShaderProps
@@ -145,8 +146,8 @@ Vertex
    {
        gl_Position = Projection * View * transformationMatrix * vec4(position,1.0);
        pass_textureCoordinates = texCoord;
-       pass_position = vec3( transformationMatrix * vec4(position,1));
-       pass_normalVector = normalize(mat3(transformationMatrix) * vertexNormal);
+       pass_position = vec3(transformationMatrix * vec4(position, 1));
+       pass_normalVector = normalize(mat3(normalMatrix) * vertexNormal);
 
        //vec3 N = normalize(vec3(transformationMatrix * vec4(vertexNormal,0)));
        //vec3 T = normalize(vec3(transformationMatrix * vec4(tangent,   0.0)));
@@ -176,8 +177,6 @@ Fragment
         vec3 Color;
         float Intensity;
     };
-
-
 
     layout (set = 0, binding = 1) uniform SharedMeshFragment
     {

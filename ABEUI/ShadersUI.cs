@@ -29,8 +29,8 @@ layout (set = 0, binding = 0) uniform SliderInfo
     vec4 SliderColor;
 };
 
-layout(set = 1, binding = 0) uniform texture2D SpriteTex;
-layout(set = 1, binding = 1) uniform sampler SpriteSampler;
+layout(set = 0, binding = 1) uniform texture2D SpriteTex;
+layout(set = 0, binding = 2) uniform sampler SpriteSampler;
 
 layout(location = 0) in vec2 fsin_TexCoords;
 layout(location = 0) out vec4 OutputColor;

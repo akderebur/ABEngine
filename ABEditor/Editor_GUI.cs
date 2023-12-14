@@ -251,6 +251,21 @@ namespace ABEngine.ABEditor
                                     ImGui.SetItemDefaultFocus();
                             }
 
+                            // User types
+                            foreach (var userPipeline in AssetCache.GetUserPipelines())
+                            {
+                                bool is_selected = matMeta.pipelineAsset.name.Equals(userPipeline);
+                                if (ImGui.Selectable(userPipeline, is_selected))
+                                {
+                                    var pipeline = AssetCache.CreatePipelineAsset(userPipeline);
+                                    matMeta.pipelineAsset = pipeline;
+                                    matMeta.changedPipeline = pipeline;
+                                    changed = true;
+                                }
+                                if (is_selected)
+                                    ImGui.SetItemDefaultFocus();
+                            }
+
                             ImGui.EndCombo();
                         }
 
@@ -593,6 +608,7 @@ namespace ABEngine.ABEditor
 
                         TMColliderGizmo.ResetGizmo();
                         spriteBatchSystem.Start();
+                        particleSystem.Start();
                         RemakeGrid();
 
                         DepthSearch();
@@ -651,6 +667,7 @@ namespace ABEngine.ABEditor
                     LoadScene(File.ReadAllText(sceneFile));
 
                     spriteBatchSystem.Start();
+                    particleSystem.Start();
 
                     RemakeGrid();
                     DepthSearch();

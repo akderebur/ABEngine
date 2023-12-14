@@ -12,6 +12,8 @@ namespace ABEngine.ABERuntime
 
         public override void Start()
         {
+            base.Start();
+
             var query = new QueryDescription().WithAll<Transform, ParticleModule>();
 
             Game.GameWorld.Query(in query, (ref ParticleModule pm, ref Transform transform) =>

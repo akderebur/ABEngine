@@ -2,6 +2,7 @@
 using System.Numerics;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
 using ImGuiNET;
 
 namespace ABEngine.ABEUI
@@ -34,7 +35,7 @@ namespace ABEngine.ABEUI
 
         private void GetTextureBindings()
         {
-            imgPtr = UIRenderer.Instance.GetImGuiTextureBinding(texture2d.texture);
+            imgPtr = UIRenderer.Instance.GetImGuiTextureBinding(texture2d.GetView());
         }
 
         internal override void Render()

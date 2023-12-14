@@ -52,7 +52,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
 		}
 
-        internal TextureView GetView()
+        public TextureView GetView()
         {
             return AssetCache.GetOrCreateTextureView(texture);
         }

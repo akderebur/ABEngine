@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Runtime.Intrinsics;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
 using ImGuiNET;
 
 namespace ABEngine.ABEUI
@@ -70,10 +71,10 @@ namespace ABEngine.ABEUI
         {
             curColor = this.hoverColor;
 
-            imgPtr = UIRenderer.Instance.GetImGuiTextureBinding(texture2d.texture);
+            imgPtr = UIRenderer.Instance.GetImGuiTextureBinding(texture2d.GetView());
             imgDefPtr = imgPtr;
-            imgHoverPtr = UIRenderer.Instance.GetImGuiTextureBinding(hoverTexture.texture);
-            imgClickPtr = UIRenderer.Instance.GetImGuiTextureBinding(clickTexture.texture);
+            imgHoverPtr = UIRenderer.Instance.GetImGuiTextureBinding(hoverTexture.GetView());
+            imgClickPtr = UIRenderer.Instance.GetImGuiTextureBinding(clickTexture.GetView());
         }
 
         internal void ButtonClickEvent()

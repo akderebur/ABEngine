@@ -59,7 +59,7 @@ namespace ABEngine.ABERuntime
         }
 
 
-        public virtual void UIRender()
+        public virtual void UIRender(RenderPass pass)
         {
 
         }

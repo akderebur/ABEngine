@@ -516,8 +516,6 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float deltaTime)
         {
-            Game.pipelineData.Time = gameTime;
-
             foreach (var layerContext in layerRenderGroups.Values)
             {
                 layerContext.UpdateLayer();

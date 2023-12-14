@@ -78,7 +78,7 @@ namespace ABEngine.ABERuntime.Physics
             defaultLayer = new CollisionLayer("Default");
         }
 
-        internal static void RegisterCollision(CollisionData collision)
+        internal static void RegisterCollision(in CollisionData collision)
         {
             BitSet typeSig1 = collision.rigidbodyA.transform.entity.GetArchetype().BitSet;
             BitSet typeSig2 = collision.rigidbodyB.transform.entity.GetArchetype().BitSet;

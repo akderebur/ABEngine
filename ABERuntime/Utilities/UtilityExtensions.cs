@@ -49,6 +49,11 @@ namespace ABEngine.ABERuntime
         {
             return (int)TimeSpan.FromSeconds(seconds).TotalMilliseconds;
         }
+
+        public static float ToRadians(this float degrees)
+        {
+            return degrees * MathF.PI / 180f;
+        }
         #endregion
 
         #region Vectors

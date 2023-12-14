@@ -150,6 +150,15 @@ namespace ABEngine.ABEditor
             MainEditorUpdate(newTime, elapsed);
 
             inputData.Clear();
+
+            RenderSetup(newTime);
+            wgil.BeginRender();
+        }
+
+        private protected override void Render()
+        {
+            base.Render();
+            editorPass.BeginPass();
         }
 
         private protected override void SetupComplete()
@@ -182,8 +191,6 @@ namespace ABEngine.ABEditor
             editorPass = wgil.CreateRenderPass(ref editorPassDesc);
             editorPass.JoinRenderQueue(EditorPassWork);
             editorPass.JoinRenderQueue(imguiRenderer.Render);
-
-            wgil.AddRenderPass(editorPass);
 
             foreach (var render in internalRenders)
                 render.SceneSetup();
@@ -655,7 +662,11 @@ namespace ABEngine.ABEditor
             });
 
 
-            GameWorld.SubscribeComponentAdded((in Entity entity, ref ParticleModule pm) => pm.Init(entity.Get<Transform>()));
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref ParticleModule pm) =>
+            {
+                if(particleSystem.started)
+                    pm.Init(entity.Get<Transform>());
+            });
 
             GameWorld.SubscribeComponentAdded((in Entity entity, ref Camera cam) => TriggerCamCheck());
 
@@ -712,7 +723,6 @@ namespace ABEngine.ABEditor
             // Start systems
             //spriteBatchSystem.Start();
             lightRenderSystem.Start();
-            particleSystem.Start();
             spriteAnimSystem.Start();
             colDebugSystem.Start();
             isGameOpen = true;

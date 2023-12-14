@@ -36,7 +36,7 @@ namespace ABEngine.ABERuntime.Components
 
         void SetupResources()
         {
-            vertexUniformBuffer = Game.wgil.CreateBuffer(64, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
+            vertexUniformBuffer = Game.wgil.CreateBuffer(128, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
 
             var vertexTransformDesc = new BindGroupDescriptor()
             {

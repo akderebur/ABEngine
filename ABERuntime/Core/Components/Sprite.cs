@@ -32,15 +32,6 @@ namespace ABEngine.ABERuntime.Components
         }
     }
 
-    public struct PipelineData
-    {
-        public Matrix4x4 Projection;
-        public Matrix4x4 View;
-        public Vector2 PixelSize;
-        public float Time;
-        public float Padding;
-    }
-
     public class Sprite : JSerializable
     {
         //private Vector2 defSize = new Vector2(100f, 100f);

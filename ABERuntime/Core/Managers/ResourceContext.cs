@@ -45,35 +45,35 @@ namespace ABEngine.ABERuntime
 
             // Normal
             cameraNormalTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba8Unorm,
-                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
+                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
             normalsDepthTexture = wgil.CreateTexture(width, height, TextureFormat.Depth32Float,
-                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
+                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
             // Main
             mainRenderTexture = wgil.CreateTexture(width, height, surfaceFormat,
-                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_SRC).SetManualDispose(true);
+                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_SRC, true);
 
             spriteNormalsTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba8Unorm,
-                                                      TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
+                                                      TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
             mainDepthTexture = wgil.CreateTexture(width, height, TextureFormat.Depth32Float,
-                                                  TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
+                                                  TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
             mainPPTexture = wgil.CreateTexture(width, height, surfaceFormat,
-                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST).SetManualDispose(true);
+                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST, true);
 
             // Light
             lightRenderTexture = wgil.CreateTexture(width, height, surfaceFormat,
-                                                    TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING).SetManualDispose(true);
+                                                    TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
-            cameraNormalView = cameraNormalTexture.CreateView().SetManualDispose(true);
-            normalsDepthView = normalsDepthTexture.CreateView().SetManualDispose(true);
-            mainRenderView = mainRenderTexture.CreateView().SetManualDispose(true);
-            spriteNormalsView = spriteNormalsTexture.CreateView().SetManualDispose(true);
-            mainDepthView = mainDepthTexture.CreateView().SetManualDispose(true);
-            mainPPView = mainPPTexture.CreateView().SetManualDispose(true);
-            lightRenderView = lightRenderTexture.CreateView().SetManualDispose(true);
+            cameraNormalView = cameraNormalTexture.CreateView(true);
+            normalsDepthView = normalsDepthTexture.CreateView(true);
+            mainRenderView = mainRenderTexture.CreateView(true);
+            spriteNormalsView = spriteNormalsTexture.CreateView(true);
+            mainDepthView = mainDepthTexture.CreateView(true);
+            mainPPView = mainPPTexture.CreateView(true);
+            lightRenderView = lightRenderTexture.CreateView(true);
         }
 
         internal void DisposeFrameResources()
@@ -98,9 +98,9 @@ namespace ABEngine.ABERuntime
             lightRenderView?.Dispose();
         }
 
-        public void CopyScreenTexture(RenderPass pass)
+        public void CopyScreenTexture()
         {
-            pass.CopyTexture(mainRenderTexture, mainPPTexture);
+            Game.wgil.CopyTexture(mainRenderTexture, mainPPTexture);
         }
     }
 }

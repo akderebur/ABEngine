@@ -10,6 +10,7 @@ namespace ABEngine.ABERuntime
     public struct SharedMeshVertex
     {
         public Matrix4x4 transformMatrix;
+        public Matrix4x4 normalMatrix;
     }
 
     public struct LightInfo3D
@@ -182,6 +183,11 @@ namespace ABEngine.ABERuntime
 
                 // Update vertex uniform
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
+                Matrix4x4 MV = transform.worldMatrix;
+                Matrix4x4 MVInv;
+                Matrix4x4.Invert(MV, out MVInv);
+                sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
+
                 wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
 
                 mr.material.pipelineAsset.BindPipeline(pass, 1, sharedFragmentSet);

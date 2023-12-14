@@ -78,8 +78,11 @@ namespace ABEngine.ABERuntime.Core.Assets
             {
                 Image<Rgba32> image = Images[level];
 
-                if (image.DangerousTryGetSinglePixelMemory(out Memory<Rgba32> pixelMemory))
-                    Game.wgil.WriteTexture(tex, pixelMemory.Span, (int)(image.Width * image.Height * PixelSizeInBytes), PixelSizeInBytes, (uint)level);
+                Rgba32[] copyArr = new Rgba32[Width * Height];
+                var copySpan = new Span<Rgba32>(copyArr);
+                image.CopyPixelDataTo(copySpan);
+                //if (image.DangerousTryGetSinglePixelMemory(out Memory<Rgba32> pixelMemory))
+                Game.wgil.WriteTexture(tex, copySpan, (int)(image.Width * image.Height * PixelSizeInBytes), PixelSizeInBytes, (uint)level);
             }
 
             return tex;

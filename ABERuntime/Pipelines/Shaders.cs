@@ -752,7 +752,6 @@ layout(location = 0) out vec4 OutputColor;
 
 void main()
 {
-
     vec2 screenUV = gl_FragCoord.xy / Resolution;
 
     vec4 sampleColor = texture(sampler2D(MainTex, MainSampler), screenUV);
@@ -763,14 +762,15 @@ void main()
     vec2 circCoord = 2.0 * fs_UV - 1.0;  // Centered coordinates for the quad
     float distance = length(circCoord);  // Distance from the center of the quad
 
-    float radialFalloff = 1.0 - smoothstep(-0.2, 1, distance) * (1 - fs_Global);  // Adjusted falloff
+    float distanceAtt = 1.0 - smoothstep(0, 1, distance);  // Distance attenuation
 
     vec2 lightDir = normalize(circCoord * vec2(-1,1));  // Light direction from quad center to fragment
     float NdotL = max(dot(normal.xy, lightDir), 0.0);  // Compute dot product
 
-    float normStep = step(length(normal.xy), 1.4);
-    float nrmAtt = mix(1, NdotL, normStep);
-    float finalInt = fs_Intensity * radialFalloff * nrmAtt;  // Multiply by NdotL for normal-based attenuation
+    float normStep = step(length(normal.xy), 1.4); // Filter for invalid normal values
+    float nrmAtt = mix(1, NdotL, normStep); // Set normal attenuation to 1 for invalid normals
+
+    float finalInt = fs_Intensity * distanceAtt * nrmAtt;  // Multiply by NdotL for normal-based attenuation
     vec3 endColor = fs_LightColor.rgb * finalInt;
 
     vec3 color = mix(sampleColor.rgb * endColor, sampleColor.rgb * fs_Intensity, fs_Global);  // Mix based on fs_Global flag

@@ -26,6 +26,8 @@ namespace ABEngine.ABEditor.ComponentDrawers
             ImGui.Text("Mesh");
             ImGui.SameLine();
             string meshTxt = cachedMeshMeta == null ? "Cube" : cachedMeshMeta.displayName;
+            if (meshTxt == null)
+                meshTxt = "Null";
             ImGui.InputText("##MeshName", ref meshTxt, 100, ImGuiInputTextFlags.ReadOnly);
             CheckMeshDrop(mr);
 

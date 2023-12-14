@@ -8,16 +8,7 @@ namespace ABEngine.ABERuntime
 {
     public class SpriteAnimatorSystem : BaseSystem
     {
-        public override void Start()
-        {
-            //var query = _world.CreateQuery().Has<Animator>();
-            //foreach (var animEnt in query.GetEntities())
-            //{
-            //    var animator = animEnt.Get<Animator>();
-            //    animator.animGraph = animator.animGraph;
-            //}
-        }
-
+       
         public override void Update(float gameTime, float deltaTime)
         {
             var query = new QueryDescription().WithAll<Animator, Sprite>();

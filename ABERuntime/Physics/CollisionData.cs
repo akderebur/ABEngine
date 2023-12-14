@@ -3,7 +3,7 @@ using ABEngine.ABERuntime.Components;
 
 namespace ABEngine.ABERuntime.Physics
 {
-	public class CollisionData
+	public struct CollisionData
 	{
 		public Rigidbody rigidbodyA { get; set; }
         public Rigidbody rigidbodyB { get; set; }

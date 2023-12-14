@@ -153,24 +153,6 @@ namespace ABEngine.ABERuntime
 
         void NormalsPassWork(RenderPass pass)
         {
-            // First pass setup
-            if (Game.activeCam != null)
-            {
-                var camEnt = Game.activeCam.entity;
-                if (camEnt != Entity.Null)
-                {
-                    Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
-                    Vector3 cameraPosition = Game.activeCam.worldPosition;
-                    Vector3 targetPosition = cameraPosition + forward;
-                    Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
-
-                    Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
-
-                    Game.pipelineData.View = view;
-                    wgil.WriteBuffer(pipelineBuffer, pipelineData);
-                }
-            }
-
             normalsRenderSystem.Render(pass);
         }
 
@@ -192,7 +174,7 @@ namespace ABEngine.ABERuntime
 
         void MainPPWork(RenderPass pass)
         {
-            resourceContext.CopyScreenTexture(pass);
+            resourceContext.CopyScreenTexture();
 
             //pass.SetPipeline(GraphicsManager.FullScreenPipeline);
             //pass.SetBindGroup(0, mainPPQuadRSSet);
@@ -216,7 +198,7 @@ namespace ABEngine.ABERuntime
             pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
             pass.DrawIndexed(6);
 
-            //UIRender();
+            UIRender(pass);
         }
 
         void DebugPassWork(RenderPass pass)
@@ -318,12 +300,6 @@ namespace ABEngine.ABERuntime
             };
             fsPass = wgil.CreateRenderPass(ref fsPassDesc);
             fsPass.JoinRenderQueue(FinalPassWork);
-
-            wgil.AddRenderPass(normalsPass);
-            wgil.AddRenderPass(mainPass);
-            wgil.AddRenderPass(mainPPPass);
-            wgil.AddRenderPass(lightPass);
-            wgil.AddRenderPass(fsPass);
 
             internalRenders = new List<RenderSystem>()
             {
@@ -563,7 +539,31 @@ namespace ABEngine.ABERuntime
 
             inputData.Clear();
 
-            wgil.Render(); // Sleep
+            RenderSetup(newTime);
+            wgil.BeginRender(); // Sleep
+        }
+
+        protected private void RenderSetup(float time)
+        {
+            // First pass setup
+            if (Game.activeCam != null)
+            {
+                var camEnt = Game.activeCam.entity;
+                if (camEnt != Entity.Null)
+                {
+                    Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
+                    Vector3 cameraPosition = Game.activeCam.worldPosition;
+                    Vector3 targetPosition = cameraPosition + forward;
+                    Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
+
+                    Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
+
+                    pipelineData.View = view;
+                    pipelineData.Time = time;
+
+                    wgil.WriteBuffer(pipelineBuffer, pipelineData);
+                }
+            }
         }
 
         float accumulator;
@@ -746,6 +746,17 @@ namespace ABEngine.ABERuntime
                 colDebugSystem.Update(newTime, elapsed);
         }
 
+        private protected virtual void Render()
+        {
+            normalsPass.BeginPass();
+            mainPass.BeginPass();
+            mainPPPass.BeginPass();
+            lightPass.BeginPass();
+            fsPass.BeginPass();
+            if (debugPass != null)
+                debugPass.BeginPass();
+        }
+
       
         private protected void MainRender()
         {
@@ -784,6 +795,7 @@ namespace ABEngine.ABERuntime
             wgil = new WGILContext();
             wgil.OnStart += SetupComplete;
             wgil.OnUpdate += MainLoop;
+            wgil.OnRender += Render;
 
             // Window and Graphics
             var flags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE | SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI;
@@ -844,7 +856,6 @@ namespace ABEngine.ABERuntime
                 };
                 debugPass = wgil.CreateRenderPass(ref debugPassDesc);
                 debugPass.JoinRenderQueue(DebugPassWork);
-                wgil.AddRenderPass(debugPass);
             }
 
             foreach (var render in internalRenders)
@@ -1311,13 +1322,21 @@ namespace ABEngine.ABERuntime
           
         }
 
-        private void UIRender()
+        private void UIRender(RenderPass pass)
         {
             foreach (var rendExt in renderExtensions)
             {
-                rendExt.UIRender();
+                rendExt.UIRender(pass);
             }
         }
+    }
 
+    public struct PipelineData
+    {
+        public Matrix4x4 Projection;
+        public Matrix4x4 View;
+        public Vector2 PixelSize;
+        public float Time;
+        public float Padding;
     }
 }

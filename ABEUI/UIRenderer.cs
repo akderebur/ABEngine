@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using ABEngine.ABERuntime;
 using ImGuiNET;
-using Veldrid;
 using System.Numerics;
 using System.Linq;
 using System.Collections;
@@ -12,6 +11,9 @@ using System.Runtime.InteropServices;
 using System.IO;
 using Arch.Core;
 using Arch.Core.Extensions;
+using WGIL.ImGuiSupport;
+using WGIL;
+using WGIL.IO;
 
 namespace ABEngine.ABEUI
 {
@@ -27,6 +29,9 @@ namespace ABEngine.ABEUI
 
         private byte[] openSansData;
         private ImFontConfigPtr openSansConf;
+
+        // Shared
+        BindGroupLayout sliderInfoLayout;
 
         protected override void OnEntityCreated(in Entity entity)
         {
@@ -70,6 +75,8 @@ namespace ABEngine.ABEUI
 
         private UIRenderer() : base(true)
         {
+            UISliderImage.InitSliderAssets();
+
             LoadDefaultFontData();
 
             ResetRenderer();
@@ -87,8 +94,6 @@ namespace ABEngine.ABEUI
                 if (instance == null)
                 {
                     // Once in app lifetime
-                    UISliderImage.InitSliderAssets();
-
                     instance = new UIRenderer();
                 }
              
@@ -103,17 +108,16 @@ namespace ABEngine.ABEUI
             if (imguiRenderer != null)
             {
                 imguiRenderer.ClearCachedImageResources();
-                imguiRenderer.DestroyDeviceObjects();
                 imguiRenderer.Dispose();
             }
 
             imguiRenderer = new ImGuiRenderer(
-            GraphicsManager.gd,
-            GraphicsManager.gd.MainSwapchain.Framebuffer.OutputDescription,
-            (int)Game.screenSize.X,
-            (int)Game.screenSize.Y);
+            wgil,
+            (uint)Game.pixelSize.X,
+            (uint)Game.pixelSize.Y);
 
-            screenScale = Game.screenSize / Game.canvas.referenceSize;
+            screenScale = Game.virtualSize / Game.canvas.referenceSize;
+            imguiRenderer.scaleFactor = Game.pixelSize / Game.virtualSize;
 
             uiComponents.Clear();
             RemakeFonts();
@@ -170,7 +174,6 @@ namespace ABEngine.ABEUI
                 Game.onCanvasResize -= Game_onCanvasResize;
 
                 imguiRenderer.ClearCachedImageResources();
-                imguiRenderer.DestroyDeviceObjects();
                 imguiRenderer.Dispose();
 
                 UISliderImage.DisposeResources();
@@ -189,8 +192,8 @@ namespace ABEngine.ABEUI
 
         private void Game_onWindowResize()
         {
-            imguiRenderer.WindowResized((int)Game.screenSize.X, (int)Game.screenSize.Y);
-            screenScale = Game.screenSize / Game.canvas.referenceSize;
+            imguiRenderer.WindowResized((uint)Game.pixelSize.X, (uint)Game.pixelSize.Y);
+            screenScale = Game.virtualSize / Game.canvas.referenceSize;
 
             //uiComponents.Clear();
 
@@ -201,7 +204,7 @@ namespace ABEngine.ABEUI
 
         private void Game_onCanvasResize()
         {
-            screenScale = Game.screenSize / Game.canvas.referenceSize;
+            screenScale = Game.virtualSize / Game.canvas.referenceSize;
 
             ImGui.GetIO().Fonts.Clear();
             ImGui.GetIO().Fonts.AddFontDefault();
@@ -249,9 +252,9 @@ namespace ABEngine.ABEUI
             return defaultFont;
         }
 
-        internal IntPtr GetImGuiTextureBinding(Texture texture)
+        internal IntPtr GetImGuiTextureBinding(TextureView textureView)
         {
-            return imguiRenderer.GetOrCreateImGuiBinding(GraphicsManager.rf, texture);
+            return imguiRenderer.GetOrCreateImGuiBinding(textureView);
         }
 
         public override void Update(float gameTime, float deltaTime)
@@ -261,7 +264,7 @@ namespace ABEngine.ABEUI
             var orderedComps = uiComponents.OrderBy(c => c.transform.worldPosition.Z);
 
             ImGui.SetNextWindowPos(Vector2.Zero);
-            ImGui.SetNextWindowSize(Game.screenSize);
+            ImGui.SetNextWindowSize(Game.virtualSize);
             ImGui.Begin("Canvas", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoBackground);
 
             foreach (UIComponent component in orderedComps)
@@ -287,9 +290,14 @@ namespace ABEngine.ABEUI
             return anchor.anchorPos * screenScale + dif * screenScale;
         }
 
-        public override void UIRender()
+        public override void UIRender(RenderPass pass)
         {
-            imguiRenderer.Render(GraphicsManager.gd, GraphicsManager.cl);
+            imguiRenderer.Render(pass);
+        }
+
+        internal WGILContext GetWGIL()
+        {
+            return wgil;
         }
 
         #region EmbeddedFonts

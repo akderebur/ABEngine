@@ -462,6 +462,11 @@ namespace ABEngine.ABERuntime.Core.Assets
             return "";
         }
 
+        internal static List<string> GetUserPipelines()
+        {
+            return pipelineNameToHash.Keys.ToList();
+        }
+
         // Editor ONLY remove later
         internal static Texture2D GetTextureEditorBinding(string texPath)
         {

@@ -8,9 +8,6 @@ namespace ABEngine.ABERuntime
 {
     public class SpriteAnimSystem : BaseSystem
     {
-        public override void Start()
-        {
-        }
 
         public override void Update(float gameTime, float deltaTime)
         {

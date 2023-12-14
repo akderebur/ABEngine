@@ -3,17 +3,17 @@ using System.Numerics;
 using System.Text;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
 using ImGuiNET;
 using SixLabors.ImageSharp.ColorSpaces;
-using Veldrid;
-using Veldrid.SPIRV;
-using Vulkan;
+using WGIL;
+using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABEUI
 {
 	struct SliderInfo
 	{
-        public const uint BufferSize = 32;
+        public const int BufferSize = 32;
 
         public float percentage;
         public float dummy;
@@ -51,23 +51,16 @@ namespace ABEngine.ABEUI
 
 
         // GPU Resources
-
         private Texture sliderTexture;
-        private Framebuffer _sliderFB;
-        private Pipeline _sliderPipeline;
+        private RenderPass _pass;
 
-        private DeviceBuffer _infoBuffer;
+        private Buffer _infoBuffer;
 
-        private ResourceSet _texSet;
-        private ResourceSet _sliderInfoSet;
-        private CommandList _sliderCL;
+        private BindGroup _sliderGroup;
 
-        // Static shared
-        static Shader[] _shaders;
-        static DeviceBuffer sliderVB;
-        static DeviceBuffer sliderIB;
-        static ResourceLayout sliderInfoLayout;
-
+        // Shared
+        static BindGroupLayout sliderInfoLayout;
+        static RenderPipeline sliderPipeline;
 
         public UISliderImage(Texture2D texture)
 		{
@@ -117,65 +110,54 @@ namespace ABEngine.ABEUI
             ImGui.Image(uiSliderImage.imgPtr, uiSliderImage.size * imgTrans.localScale.ToVector2() * UIRenderer.Instance.screenScale);
         }
 
-
-        private void UpdateGraphics()
+        private void OnPassRender(RenderPass pass)
         {
-            GraphicsManager.gd.UpdateBuffer(_infoBuffer, 0, _sliderInfo);
-
-            _sliderCL.Begin();
-
-            _sliderCL.SetFramebuffer(_sliderFB);
-            _sliderCL.SetFullViewports();
-            _sliderCL.ClearColorTarget(0, RgbaFloat.Black);
-            _sliderCL.SetPipeline(_sliderPipeline);
-
-            _sliderCL.SetGraphicsResourceSet(0, _sliderInfoSet);
-            _sliderCL.SetGraphicsResourceSet(1, _texSet);
-
-            _sliderCL.SetVertexBuffer(0, sliderVB);
-            _sliderCL.SetIndexBuffer(sliderIB, IndexFormat.UInt16);
-            _sliderCL.DrawIndexed(6, 1, 0, 0, 0);
-
-            _sliderCL.End();
-            GraphicsManager.gd.SubmitCommands(_sliderCL);
+            pass.SetPipeline(sliderPipeline);
+            pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+            pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
+            pass.SetBindGroup(0, _sliderGroup);
+            pass.DrawIndexed(6);
         }
-
 
         private void LoadGraphics()
         {
-            // Framebuffer
-            sliderTexture = GraphicsManager.rf.CreateTexture(TextureDescription.Texture2D(
-               (uint)texture2d.imageSize.X, (uint)texture2d.imageSize.Y, 1, 1,
-                PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.RenderTarget | TextureUsage.Sampled));
-            _sliderFB = GraphicsManager.rf.CreateFramebuffer(new FramebufferDescription(null, sliderTexture));
+            // Pass
+            var wgil = UIRenderer.Instance.GetWGIL();
 
-            GraphicsPipelineDescription pd = new GraphicsPipelineDescription(
-              new BlendStateDescription(
-                  RgbaFloat.Black,
-                  BlendAttachmentDescription.OverrideBlend),
-              DepthStencilStateDescription.Disabled,
-              new RasterizerStateDescription(FaceCullMode.None, PolygonFillMode.Solid, FrontFace.Clockwise, true, false),
-              PrimitiveTopology.TriangleList,
-              new ShaderSetDescription(
-                  new[]
-                  {
-                        new VertexLayoutDescription(
-                            new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2),
-                            new VertexElementDescription("TexCoords", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2))
-                  },
-                  _shaders),
-              new ResourceLayout[] { sliderInfoLayout, GraphicsManager.sharedTextureLayout },
-              _sliderFB.OutputDescription);
-            _sliderPipeline = GraphicsManager.rf.CreateGraphicsPipeline(ref pd);
+            sliderTexture = wgil.CreateTexture((uint)texture2d.imageSize.X, (uint)texture2d.imageSize.Y,
+                                               TextureFormat.Rgba8UnormSrgb, TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING);
+            var sliderView = sliderTexture.CreateView();
+            var sliderPassDesc = new RenderPassDescriptor()
+            {
+                IsColorClear = true,
+                ClearColor = new WGIL.Color(0f, 0f, 0f, 0f),
+                ColorAttachments = new TextureViewSet
+                {
+                    TextureViews = new TextureView[]
+                    {
+                        sliderView
+                    }
+                }
+            };
+            _pass = wgil.CreateRenderPass(ref sliderPassDesc);
+            wgil.AddRenderPass(_pass);
+            _pass.JoinRenderQueue(OnPassRender);
 
+            _infoBuffer = wgil.CreateBuffer(SliderInfo.BufferSize, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
 
-            _texSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(
-                   GraphicsManager.sharedTextureLayout,
-                   texture2d.texture, GraphicsManager.linearSampleClamp
-                   ));
+            var sliderGroupDesc = new BindGroupDescriptor()
+            {
+                BindGroupLayout = sliderInfoLayout,
+                Entries = new BindResource[]
+                {
+                    _infoBuffer,
+                    texture2d.GetView(),
+                    GraphicsManager.pointSamplerClamp
 
-            _sliderCL = GraphicsManager.rf.CreateCommandList();
-
+                }
+            };
+            _sliderGroup = wgil.CreateBindGroup(ref sliderGroupDesc);
+        
             _sliderInfo = new SliderInfo
             {
                 percentage = percentage,
@@ -184,60 +166,67 @@ namespace ABEngine.ABEUI
                 dummy = 0f
             };
 
-            _infoBuffer = GraphicsManager.rf.CreateBuffer(new BufferDescription(SliderInfo.BufferSize, BufferUsage.UniformBuffer));
-            _sliderInfoSet = GraphicsManager.rf.CreateResourceSet(new ResourceSetDescription(sliderInfoLayout, _infoBuffer));
+            wgil.WriteBuffer(_infoBuffer, _sliderInfo);
 
-            GraphicsManager.gd.UpdateBuffer(_infoBuffer, 0, _sliderInfo);
-
-            imgPtr = UIRenderer.Instance.GetImGuiTextureBinding(sliderTexture);
+            imgPtr = UIRenderer.Instance.GetImGuiTextureBinding(sliderView);
         }
 
-		internal static void InitSliderAssets()
-		{
+        internal static void InitSliderAssets()
+        {
+            var wgil = UIRenderer.Instance.GetWGIL();
+
             // Shaders
-            ShaderDescription vertexShader = new ShaderDescription(
-                ShaderStages.Vertex,
-                Encoding.UTF8.GetBytes(ShadersUI.SliderVertex),
-                "main");
+            var sliderLayoutDesc = new BindGroupLayoutDescriptor()
+            {
+                Entries = new BindGroupLayoutEntry[]
+                {
+                    new BindGroupLayoutEntry
+                    {
+                        ShaderStages = ShaderStages.FRAGMENT,
+                        BindingType = BindingType.Buffer
+                    },
+                    new BindGroupLayoutEntry
+                    {
+                        ShaderStages = ShaderStages.FRAGMENT,
+                        BindingType = BindingType.Texture
+                    },
+                    new BindGroupLayoutEntry
+                    {
+                        ShaderStages = ShaderStages.FRAGMENT,
+                        BindingType = BindingType.Sampler
+                    }
+                }
+            };
 
-            ShaderDescription fragmentShader = new ShaderDescription(
-                ShaderStages.Fragment,
-                Encoding.UTF8.GetBytes(ShadersUI.SliderFragment),
-                "main");
+            sliderInfoLayout = wgil.CreateBindGroupLayout(ref sliderLayoutDesc);
 
-            _shaders = GraphicsManager.gd.ResourceFactory.CreateFromSpirv(vertexShader, fragmentShader);
+            var sliderPipeDesc = new PipelineDescriptor()
+            {
+                BlendStates = new BlendState[]
+                {
+                    BlendState.OverrideBlend
+                },
+                PrimitiveState = new PrimitiveState()
+                {
+                    PolygonMode = PolygonMode.Fill,
+                    Topology = PrimitiveTopology.TriangleList,
+                    FrontFace = FrontFace.Cw,
+                    CullFace = CullFace.None
+                },
+                BindGroupLayouts = new BindGroupLayout[] { sliderInfoLayout },
+                VertexAttributes = GraphicsManager.fullScreenVertexLayout,
+                AttachmentDescription = new AttachmentDescription()
+                {
+                    ColorFormats = new TextureFormat[] { TextureFormat.Rgba8UnormSrgb }
+                }
+            };
 
-            float[] verts = new float[]
-             {
-                        -1, 1, 0, 0,
-                        1, 1, 1, 0,
-                        1, -1, 1, 1,
-                        -1, -1, 0, 1
-             };
-            ushort[] s_quadIndices = new ushort[] { 0, 1, 2, 0, 2, 3 };
-
-            sliderVB = GraphicsManager.gd.ResourceFactory.CreateBuffer(new BufferDescription((uint)verts.Length * sizeof(float), BufferUsage.VertexBuffer | BufferUsage.Dynamic));
-            GraphicsManager.gd.UpdateBuffer(sliderVB, 0, verts);
-
-            sliderIB = GraphicsManager.gd.ResourceFactory.CreateBuffer(
-                new BufferDescription((uint)s_quadIndices.Length * sizeof(float), BufferUsage.IndexBuffer | BufferUsage.Dynamic));
-            GraphicsManager.gd.UpdateBuffer(sliderIB, 0, s_quadIndices);
-
-            sliderInfoLayout = GraphicsManager.gd.ResourceFactory.CreateResourceLayout(
-              new ResourceLayoutDescription(
-                  new ResourceLayoutElementDescription("SliderInfo", ResourceKind.UniformBuffer, ShaderStages.Fragment)));
-
+            sliderPipeline = wgil.CreateRenderPipeline(ShadersUI.SliderVertex, ShadersUI.SliderFragment, ref sliderPipeDesc);
         }
 
         internal static void DisposeResources()
         {
-            foreach (var shader in _shaders)
-            {
-                shader.Dispose();
-            }
-
-            sliderVB.Dispose();
-            sliderIB.Dispose();
+            sliderPipeline.Dispose();
             sliderInfoLayout.Dispose();
         }
 	}
