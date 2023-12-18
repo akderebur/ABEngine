@@ -30,7 +30,8 @@ namespace ABEngine.ABERuntime
 
         public override void SetupResources(params TextureView[] sampledTextures)
         {
-            base.pipelineAsset = new LightPipelineAsset();
+            if(base.pipelineAsset == null)
+                base.pipelineAsset = new LightPipelineAsset();
 
             if (textureSet != null)
                 textureSet.Dispose();
@@ -150,6 +151,7 @@ namespace ABEngine.ABERuntime
             if (resize)
             {
                 textureSet.Dispose();
+                textureSet = null;
             }
             else
             {

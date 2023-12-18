@@ -169,7 +169,6 @@ namespace ABEngine.ABERuntime
                 pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
                 pass.DrawIndexed(6);
             }
-
         }
 
         void MainPPWork(RenderPass pass)
@@ -183,6 +182,7 @@ namespace ABEngine.ABERuntime
             //pass.DrawIndexed(6);
 
             spriteBatchSystem.RenderPP(pass, GraphicsManager.renderLayers.Count - 1);
+            meshRenderSystem.RenderPP(pass);
         }
 
         void LightPassWork(RenderPass pass)

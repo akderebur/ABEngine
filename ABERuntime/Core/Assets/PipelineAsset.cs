@@ -195,7 +195,8 @@ namespace ABEngine.ABERuntime.Core.Assets
                                             }
                                             break;
                                         case "@StepMode":
-                                            if (value.Equals("Instance"))
+                                            VertexStepMode stepModeAttr;
+                                            if (Enum.TryParse(value, true, out stepModeAttr))
                                                 stepMode = VertexStepMode.Instance;
                                             break;
                                         case "@Blend":
@@ -205,28 +206,28 @@ namespace ABEngine.ABERuntime.Core.Assets
                                                 blendDesc = new BlendState[] { BlendState.AdditiveBlend, BlendState.AdditiveBlend };
                                             break;
                                         case "@Depth":
-                                            if (value.Equals("GE"))
-                                                depthDesc.DepthComparison = CompareFunction.GreaterEqual;
+                                            CompareFunction compFuncAttr;
+                                            if (Enum.TryParse(value, true, out compFuncAttr))
+                                                depthDesc.DepthComparison = compFuncAttr;
+                                            break;
+                                        case "@DepthWrite":
+                                            bool depthWriteAttr;
+                                            if (bool.TryParse(value, out depthWriteAttr))
+                                                depthDesc.DepthWriteEnabled = depthWriteAttr;
                                             break;
                                         case "@Cull":
-                                            if (value.Equals("None"))
-                                                primitiveDesc.CullFace = CullFace.None;
-                                            else if (value.Equals("Front"))
-                                                primitiveDesc.CullFace = CullFace.Front;
+                                            CullFace cullFaceAttr;
+                                            if (Enum.TryParse(value, true, out cullFaceAttr))
+                                                primitiveDesc.CullFace = cullFaceAttr;
                                             break;
                                         case "@FrontFace":
                                             if (value.Equals("CCW"))
                                                 primitiveDesc.FrontFace = FrontFace.Ccw;
                                             break;
                                         case "@Topology":
-                                            if (value.Equals("PointList"))
-                                                primitiveDesc.Topology = PrimitiveTopology.PointList;
-                                            else if (value.Equals("LineList"))
-                                                primitiveDesc.Topology = PrimitiveTopology.LineList;
-                                            else if (value.Equals("LineStrip"))
-                                                primitiveDesc.Topology = PrimitiveTopology.LineStrip;
-                                            else if (value.Equals("TriangleStrio"))
-                                                primitiveDesc.Topology = PrimitiveTopology.TriangleStrip;
+                                            PrimitiveTopology topologyAttr;
+                                            if (Enum.TryParse(value, true, out topologyAttr))
+                                                primitiveDesc.Topology = topologyAttr;
                                             break;
                                         default:
                                             break;
@@ -364,10 +365,20 @@ namespace ABEngine.ABERuntime.Core.Assets
                 foreach (var textureName in textureNames)
                 {
                     this.textureNames.Add(textureName, index / 2);
-                    layoutElements[index] = new BindGroupLayoutEntry { BindingType = BindingType.Texture, ShaderStages = ShaderStages.FRAGMENT };
-                    index++;
-                    layoutElements[index] = new BindGroupLayoutEntry { BindingType = BindingType.Sampler, ShaderStages = ShaderStages.FRAGMENT };
-                    index++;
+                    if (textureName.Equals("DepthTex"))
+                    {
+                        layoutElements[index] = new BindGroupLayoutEntry { BindingType = BindingType.Texture, TextureSampleType = TextureSampleType.FloatNoFilter, ShaderStages = ShaderStages.FRAGMENT };
+                        index++;
+                        layoutElements[index] = new BindGroupLayoutEntry { BindingType = BindingType.Sampler, SamplerBindingType = SamplerBindingType.NonFiltering, ShaderStages = ShaderStages.FRAGMENT };
+                        index++;
+                    }
+                    else
+                    {
+                        layoutElements[index] = new BindGroupLayoutEntry { BindingType = BindingType.Texture, ShaderStages = ShaderStages.FRAGMENT };
+                        index++;
+                        layoutElements[index] = new BindGroupLayoutEntry { BindingType = BindingType.Sampler, ShaderStages = ShaderStages.FRAGMENT };
+                        index++;
+                    }
                 }
 
                 var texLayoutDesc = new BindGroupLayoutDescriptor()

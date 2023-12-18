@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Pipelines;
+using ABEngine.ABERuntime.Rendering;
 using Arch.Core;
 using WGIL;
 
@@ -44,11 +46,15 @@ namespace ABEngine.ABERuntime
             {
                 Mesh mesh = mr.mesh;
 
-                if (mesh == null || mr.material.isLateRender)
+                if (mesh == null || mr.material.renderOrder >= (int)RenderOrder.Transparent)
                     return;
 
                 // Update vertex uniform
                 sharedVertexUniform.transformMatrix = transform.worldMatrix;
+                Matrix4x4 MV = transform.worldMatrix;
+                Matrix4x4 MVInv;
+                Matrix4x4.Invert(MV, out MVInv);
+                sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
                 wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
 
                 pass.SetVertexBuffer(0, mesh.vertexBuffer);

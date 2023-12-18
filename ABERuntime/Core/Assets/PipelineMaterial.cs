@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using Halak;
 using WGIL;
 using Buffer = WGIL.Buffer;
+using ABEngine.ABERuntime.Rendering;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
@@ -55,6 +56,12 @@ namespace ABEngine.ABERuntime.Core.Assets
         public void SetRenderOrder(int renderOrder)
         {
             this.renderOrder = renderOrder;
+            onPipelineChanged?.Invoke(this.pipelineAsset);
+        }
+
+        public void SetRenderOrder(RenderOrder renderOrder)
+        {
+            this.renderOrder = (int)renderOrder;
             onPipelineChanged?.Invoke(this.pipelineAsset);
         }
 
@@ -130,7 +137,10 @@ namespace ABEngine.ABERuntime.Core.Assets
                     }
 
                     index++;
-                    resources[index] = GraphicsManager.linearSamplerWrap;
+                    if (textureName.Equals("DepthTex"))
+                        resources[index] = GraphicsManager.pointSamplerClamp;
+                    else
+                        resources[index] = GraphicsManager.linearSamplerWrap;
                     index++;
                 }
 

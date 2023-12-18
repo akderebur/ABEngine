@@ -553,7 +553,7 @@ Fragment
         normalSample = (normalSample + 1) * 0.5;
 
         if(color.a > 0.99f)
-        outputNormal = vec4(normalSample, layer / 255.0, 1);
+            outputNormal = vec4(normalSample, layer / 255.0, 1);
     }
 }
 "

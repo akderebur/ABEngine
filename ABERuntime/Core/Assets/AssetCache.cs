@@ -224,6 +224,11 @@ namespace ABEngine.ABERuntime.Core.Assets
             return GetOrCreateTexture2D(texturePath, sampler, Vector2.Zero);
         }
 
+        public static Texture2D CreateTexture2D(string texturePath, Sampler sampler, bool isLinear)
+        {
+            return GetOrCreateTexture2D(texturePath, sampler, Vector2.Zero, 0, isLinear);
+        }
+
         public static Texture2D CreateTexture2D(string texturePath, Sampler sampler, Vector2 spriteSize)
         {
             return GetOrCreateTexture2D(texturePath, sampler, spriteSize);
@@ -337,7 +342,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         // ABE Helpers
 
-        private static Texture2D GetOrCreateTexture2D(string texPath, Sampler sampler, Vector2 spriteSize, uint preHash = 0)
+        private static Texture2D GetOrCreateTexture2D(string texPath, Sampler sampler, Vector2 spriteSize, uint preHash = 0, bool linear = false)
         {
             uint hash = preHash;
             if (hash == 0)
@@ -357,7 +362,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             {
                 if (preHash != 0)
                     texPath = hashToFName[preHash];
-                tex = GetTextureDebug(Game.AssetPath + texPath);
+                tex = GetTextureDebug(Game.AssetPath + texPath, false, linear);
             }
 
             tex2d = new Texture2D(hash, tex, sampler, spriteSize);
@@ -575,23 +580,23 @@ namespace ABEngine.ABERuntime.Core.Assets
             return view;
         }
 
-        internal static Texture GetTextureDebug(string texPath)
+        internal static Texture GetTextureDebug(string texPath, bool mipmap = false, bool linear = false)
         {
-            var imageData = GetImageDebug(texPath);
+            var imageData = GetImageDebug(texPath, mipmap, linear);
             return GetTextureDebug(imageData);
         }
 
-        internal static Texture GetTextureDebug(string folder, string texPath)
+        internal static Texture GetTextureDebug(string folder, string texPath, bool mipmap = false, bool linear = false)
         {
-            var imageData = GetImageDebug(folder + texPath);
+            var imageData = GetImageDebug(folder + texPath, mipmap, linear);
             return GetTextureDebug(imageData);
         }
 
-        internal static ImageSharpTexture GetImageDebug(string path)
+        internal static ImageSharpTexture GetImageDebug(string path, bool mipmap, bool linear)
         {
             if (!s_images_debug.TryGetValue(path, out ImageSharpTexture img))
             {
-                img = new ImageSharpTexture(path);
+                img = new ImageSharpTexture(path, mipmap, !linear);
                 s_images_debug.Add(path, img);
             }
 

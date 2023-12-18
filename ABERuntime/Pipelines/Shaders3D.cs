@@ -500,7 +500,7 @@ Fragment
     };
 
     layout (set = 3, binding = 0) uniform texture2D DepthTex;
-    layout (set = 3, binding = 1) uniform sampler DepthTexSampler;
+    layout (set = 3, binding = 1) uniform samplerShadow DepthTexSampler;
     layout (set = 3, binding = 2) uniform texture2D CamNormalTex;
     layout (set = 3, binding = 3) uniform sampler CamNormalTexSampler;
     layout (set = 3, binding = 4) uniform texture2D DistNoiseTex;
@@ -632,7 +632,7 @@ Fragment
 	    //depth = 1.0 - depth;
 
         //vec3 projCoord = clipPos.xyz / clipPos.w;
-        float existingDepth01 =  texture(sampler2D(DepthTex, DepthTexSampler), gl_FragCoord.xy/Resolution).r;
+        float existingDepth01 =  texture(sampler2DShadow(DepthTex, DepthTexSampler), vec3(gl_FragCoord.xy/Resolution, 1)).r;
         float existingDepthLinear = LinearizeDepth(existingDepth01);
 
         float depth =  existingDepthLinear - clipPos.w;

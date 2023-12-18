@@ -50,6 +50,7 @@ namespace ABEngine.ABERuntime
         public static Sampler pointSamplerClamp;
         public static Sampler linearSamplerWrap;
         public static Sampler linearSampleClamp;
+        public static Sampler depthSampler;
 
         public static Tuple<BindGroupLayout, BindGroupLayout> SpriteLayouts;
 
@@ -197,6 +198,9 @@ namespace ABEngine.ABERuntime
 
             linearSampleClamp = wgil.CreateSampler(SamplerAddressMode.ClampToEdge, SamplerFilterMode.Linear).SetManualDispose(true);
             linearSampleClamp.Name = "LinearClamp";
+
+            depthSampler = wgil.CreateSampler(SamplerAddressMode.ClampToEdge, SamplerFilterMode.Linear, CompareFunction.LessEqual, true);
+            depthSampler.Name = "DepthSampler";
 
             AllSamplers.Add(linearSampleClamp);
             AllSamplers.Add(linearSamplerWrap);
@@ -430,6 +434,7 @@ namespace ABEngine.ABERuntime
             {
                 sampler?.Dispose();
             }
+            depthSampler?.Dispose();
         }
 
         private const string DepthVertex = @"
@@ -517,8 +522,8 @@ vec3 adjustContrast(vec3 color, float contrastFactor) {
 void main()
 { 
     vec4 color = texture(sampler2D(SceneTex, SceneSampler), fsTexCoord);
-    vec3 tonedColor = adjustSaturation(color.rgb, 1.0);
-    tonedColor = adjustContrast(tonedColor, 1.0);
+    vec3 tonedColor = adjustSaturation(color.rgb, 1.1);
+    tonedColor = adjustContrast(tonedColor, 1.2);
     OutputColor = vec4(tonedColor.rgb, color.a);
 }
 ";

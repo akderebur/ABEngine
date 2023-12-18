@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Rendering;
 using Arch.Core;
 using WGIL;
 using Buffer = WGIL.Buffer;
@@ -34,14 +35,6 @@ namespace ABEngine.ABERuntime
         public float _padding2;
         public float _padding3;
     }
-
-    public struct SharedMeshFragmentTest
-    {
-        public Vector4 lightPos;
-        public Vector4 lightColor;
-        public Vector4 camPos;
-    }
-
 
     public class MeshRenderSystem : RenderSystem
     {
@@ -92,8 +85,11 @@ namespace ABEngine.ABERuntime
         }
 
 
-        List<(MeshRenderer, Transform)> renderOrder = new List<(MeshRenderer, Transform)>();
-        List<(MeshRenderer, Transform)> lateRenderOrder = new List<(MeshRenderer, Transform)>();
+        //List<(MeshRenderer, Transform)> renderOrder = new List<(MeshRenderer, Transform)>();
+        //List<(MeshRenderer, Transform)> lateRenderOrder = new List<(MeshRenderer, Transform)>();
+
+        SortedDictionary<int, List<(MeshRenderer, Transform)>> renderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
+        SortedDictionary<int, List<(MeshRenderer, Transform)>> lateRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
 
         public override void Update(float gameTime, float deltaTime)
         {
@@ -142,10 +138,14 @@ namespace ABEngine.ABERuntime
             // Mesh render order
             Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
             {
-                if(mr.material.isLateRender)
-                    lateRenderOrder.Add((mr, transform));
+                SortedDictionary<int, List<(MeshRenderer, Transform)>> dict = renderOrder;
+                if (mr.material.renderOrder >= (int)RenderOrder.PostProcess)
+                    dict = lateRenderOrder;
+
+                if (dict.TryGetValue(mr.material.renderOrder, out var pairList))
+                    pairList.Add((mr, transform));
                 else
-                    renderOrder.Add((mr, transform));
+                    dict.Add(mr.material.renderOrder, new List<(MeshRenderer, Transform)>() { (mr, transform) });
             });
         }
 
@@ -175,127 +175,77 @@ namespace ABEngine.ABERuntime
             // TODO Render layers
             // TODO Pipeline batching
 
-            foreach (var render in renderOrder)
+            foreach (var renderPair in renderOrder)
             {
-                MeshRenderer mr = render.Item1;
-                Transform transform = render.Item2;
-                Mesh mesh = mr.mesh;
-
-                // Update vertex uniform
-                sharedVertexUniform.transformMatrix = transform.worldMatrix;
-                Matrix4x4 MV = transform.worldMatrix;
-                Matrix4x4 MVInv;
-                Matrix4x4.Invert(MV, out MVInv);
-                sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
-
-                wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
-
-                mr.material.pipelineAsset.BindPipeline(pass, 1, sharedFragmentSet);
-
-                pass.SetVertexBuffer(0, mesh.vertexBuffer);
-                pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
-
-                //cl.SetGraphicsResourceSet(0, Game.pipelineSet);
-                pass.SetBindGroup(1, mr.vertexTransformSet);
-
-                // Material Resource Sets
-                foreach (var setKV in mr.material.bindableSets)
+                foreach (var render in renderPair.Value)
                 {
-                    pass.SetBindGroup(setKV.Key, setKV.Value);
+                    MeshRenderer mr = render.Item1;
+                    Transform transform = render.Item2;
+                    Mesh mesh = mr.mesh;
+
+                    // Update vertex uniform
+                    sharedVertexUniform.transformMatrix = transform.worldMatrix;
+                    Matrix4x4 MV = transform.worldMatrix;
+                    Matrix4x4 MVInv;
+                    Matrix4x4.Invert(MV, out MVInv);
+                    sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
+
+                    wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
+
+                    mr.material.pipelineAsset.BindPipeline(pass, 1, sharedFragmentSet);
+
+                    pass.SetVertexBuffer(0, mesh.vertexBuffer);
+                    pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
+
+                    pass.SetBindGroup(1, mr.vertexTransformSet);
+
+                    // Material Resource Sets
+                    foreach (var setKV in mr.material.bindableSets)
+                    {
+                        pass.SetBindGroup(setKV.Key, setKV.Value);
+                    }
+
+                    pass.DrawIndexed(mesh.indices.Length);
                 }
-
-                //pass.SetBindGroup(4, sharedFragmentSet);
-
-                pass.DrawIndexed(mesh.indices.Length);
-
-                //cl.End();
-                //gd.SubmitCommands(cl);
-                //gd.WaitForIdle();
-                //cl.Begin();
-
-                //if (ind == 0)
-                //{
-                //    cl.End();
-                //    gd.SubmitCommands(cl);
-                //    gd.WaitForIdle();
-
-                //    // Copy depth
-                //    cl.Begin();
-                //    cl.CopyTexture(Game.mainDepthTexture, Game.DepthTexture);
-                //    cl.End();
-                //    gd.SubmitCommands(cl);
-                //    gd.WaitForIdle();
-
-                //    MappedResourceView<ushort> map = gd.Map<ushort>(Game.DepthTexture, MapMode.Read);
-                //    ushort[] data = new ushort[Game.DepthTexture.Width * Game.DepthTexture.Height];
-                //    for (int i = 0; i < data.Length; i++)
-                //    {
-                //        data[i] = map[i];
-                //    }
-
-                //    gd.Unmap(Game.DepthTexture);
-
-                //    Image<L8> image = new Image<L8>((int)Game.DepthTexture.Width, (int)Game.DepthTexture.Height);
-                //    for (int y = 0; y < Game.DepthTexture.Height; y++)
-                //    {
-                //        for (int x = 0; x < Game.DepthTexture.Width; x++)
-                //        {
-                //            // Normalize the 16-bit depth data to 8-bit for visualization
-
-                //            float sample = data[y * Game.DepthTexture.Width + x] / 65535.0f;
-                //            byte pixelValue = (byte)(LinearEyeDepth(sample) * 255.0);
-                //            image[x, y] = new L8(pixelValue);
-                //        }
-                //    }
-                //    image.Save("depth_output.png");
-
-                //    cl.Begin();
-                //}
-
-                //ind++;
             }
         }
 
-        //private void LateRender()
-        //{
-        //    cl.End();
-        //    gd.SubmitCommands(cl);
-        //    gd.WaitForIdle();
-        //    cl.Begin();
+        public void RenderPP(RenderPass pass)
+        {
+            foreach (var renderPair in lateRenderOrder)
+            {
+                foreach (var render in renderPair.Value)
+                {
+                    MeshRenderer mr = render.Item1;
+                    Transform transform = render.Item2;
+                    Mesh mesh = mr.mesh;
 
-        //    cl.SetFramebuffer(Game.resourceContext.mainRenderFB);
-        //    cl.SetFullViewports();
+                    // Update vertex uniform
+                    sharedVertexUniform.transformMatrix = transform.worldMatrix;
+                    Matrix4x4 MV = transform.worldMatrix;
+                    Matrix4x4 MVInv;
+                    Matrix4x4.Invert(MV, out MVInv);
+                    sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
 
-        //    foreach (var render in lateRenderOrder)
-        //    {
-        //        MeshRenderer mr = render.Item1;
-        //        Transform transform = render.Item2;
-        //        Mesh mesh = mr.mesh;
+                    wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
 
-        //        // Update vertex uniform
-        //        sharedVertexUniform.transformMatrix = transform.worldMatrix;
-        //        gd.UpdateBuffer(mr.vertexUniformBuffer, 0, sharedVertexUniform);
+                    mr.material.pipelineAsset.BindPipeline(pass, 1, sharedFragmentSet);
 
-        //        mr.material.pipelineAsset.BindPipeline();
+                    pass.SetVertexBuffer(0, mesh.vertexBuffer);
+                    pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-        //        cl.SetVertexBuffer(0, mesh.vertexBuffer);
-        //        cl.SetIndexBuffer(mesh.indexBuffer, IndexFormat.UInt16);
+                    pass.SetBindGroup(1, mr.vertexTransformSet);
 
-        //        //cl.SetGraphicsResourceSet(0, Game.pipelineSet);
-        //        cl.SetGraphicsResourceSet(1, mr.vertexTransformSet);
+                    // Material Resource Sets
+                    foreach (var setKV in mr.material.bindableSets)
+                    {
+                        pass.SetBindGroup(setKV.Key, setKV.Value);
+                    }
 
-        //        // Material Resource Sets
-        //        foreach (var setKV in mr.material.bindableSets)
-        //        {
-        //            cl.SetGraphicsResourceSet(setKV.Key, setKV.Value);
-        //        }
-
-        //        cl.SetGraphicsResourceSet(4, sharedFragmentSet);
-
-
-        //        cl.DrawIndexed((uint)mesh.indices.Length);
-        //    }
-        //}
+                    pass.DrawIndexed(mesh.indices.Length);
+                }
+            }
+        }
 
         public override void CleanUp(bool reload, bool newScene, bool resize)
         {

@@ -66,6 +66,7 @@ Vertex
    layout (set = 1, binding = 0) uniform SharedMeshVertex
    {
        mat4 transformationMatrix;
+       mat4 normalMatrix;
    };
 
    layout(location = 0) in vec3 position;
@@ -79,10 +80,7 @@ Vertex
    {
        gl_Position = Projection * View * transformationMatrix * vec4(position,1.0);
 
-        //mat3 normalMatrix = transpose(inverse(mat3(View * transformationMatrix)));
-       mat3 normalMatrix = transpose(mat3(View * transformationMatrix));
-
-       outNormal_VS = normalize(normalMatrix * vertexNormal);
+       outNormal_VS = normalize(mat3(normalMatrix) * vertexNormal);
    }
 }
 Fragment
@@ -105,7 +103,9 @@ Fragment
    
     void main()
     {
-        outputColor = vec4(Normal_VS, 1.0);
+        vec3 normal = normalize(Normal_VS);
+        normal = (normal + 1) * 0.5;
+        outputColor = vec4(normal, 1.0);
     }
 }
 "
