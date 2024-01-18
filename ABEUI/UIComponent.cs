@@ -27,6 +27,11 @@ namespace ABEngine.ABEUI
 		{
 
 		}
+
+		internal virtual void WGILRender()
+		{
+
+		}
 	}
 }
 

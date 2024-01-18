@@ -101,9 +101,35 @@ namespace ABEngine.ABERuntime
             return Game.canvas.canvasSize * ratio;
         }
 
-        public static Vector3 ScreenToWorld(this Vector2 screenPoint)
+        internal static Vector3 ScreenToWorld(this Vector2 screenPoint)
         {
             return UnprojectOrtho(screenPoint, Game.pipelineData.Projection, Game.pipelineData.View, Game.virtualSize.X, Game.virtualSize.Y);
+        }
+
+        internal static Vector3 ScreenToWorldPerspective(this Vector2 screenPoint, float depth)
+        {
+            return UnprojectPersp(screenPoint, Game.pipelineData.Projection, Game.pipelineData.View, Game.virtualSize.X, Game.virtualSize.Y, depth);
+        }
+
+        public static Vector3 UnprojectPersp(Vector2 screenPoint, Matrix4x4 projection, Matrix4x4 view, float viewportWidth, float viewportHeight, float depth)
+        {
+            // Convert screen point to normalized device coordinates
+            Vector4 point = new Vector4(
+                (screenPoint.X / viewportWidth) * 2.0f - 1.0f,
+                (screenPoint.Y / viewportHeight) * 2.0f - 1.0f,
+                depth,
+                1f);
+
+            Matrix4x4 mult = view * projection;
+            Matrix4x4.Invert(mult, out Matrix4x4 inv);
+        
+            // Transform to world space
+            Vector4 worldSpace = Vector4.Transform(point, inv);
+
+            // Perspective divide
+            worldSpace /= worldSpace.W;
+
+            return worldSpace.ToVector3();
         }
 
         public static Vector3 UnprojectOrtho(Vector2 screenPoint, Matrix4x4 projection, Matrix4x4 view, float viewportWidth, float viewportHeight)
@@ -115,14 +141,11 @@ namespace ABEngine.ABERuntime
                 0);  // Z can be set to 0 in orthographic projection
 
             // Invert view and projection matrices
-            Matrix4x4.Invert(view, out Matrix4x4 invertedView);
-            Matrix4x4.Invert(projection, out Matrix4x4 invertedProjection);
-
-            // Transform to eye space
-            Vector3 eyeSpace = Vector3.Transform(point, invertedProjection);
+            Matrix4x4 mult = view * projection;
+            Matrix4x4.Invert(mult, out Matrix4x4 inv);
 
             // Transform to world space
-            Vector3 worldSpace = Vector3.Transform(eyeSpace, invertedView);
+            Vector3 worldSpace = Vector3.Transform(point, inv);
 
             return worldSpace;
         }

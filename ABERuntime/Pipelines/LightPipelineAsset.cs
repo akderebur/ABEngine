@@ -70,7 +70,7 @@ namespace ABEngine.ABERuntime.Pipelines
                 VertexAttributes = vertLayout,
                 AttachmentDescription = new AttachmentDescription()
                 {
-                    ColorFormats = new[] { GraphicsManager.surfaceFormat }
+                    ColorFormats = new[] { TextureFormat.Rgba16Float }
                 }
             };
 

@@ -106,7 +106,7 @@ namespace ABEngine.ABERuntime
 
         public override void Render(RenderPass pass)
         {
-            if (Game.activeCam == null)
+            if (Game.activeCamTrans == null)
                 return;
 
             // Light pass
@@ -122,7 +122,7 @@ namespace ABEngine.ABERuntime
             LightInfo[] writemap = new LightInfo[lightList.Count + 1];
 
             // Global Light
-            writemap[0] = new LightInfo(Game.activeCam.worldPosition - Vector3.UnitZ,
+            writemap[0] = new LightInfo(Game.activeCamTrans.worldPosition - Vector3.UnitZ,
                                                         Vector4.One,
                                                         30,
                                                         GlobalLightIntensity,

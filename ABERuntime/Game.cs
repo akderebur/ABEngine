@@ -49,7 +49,8 @@ namespace ABEngine.ABERuntime
         // Global Vars
         public static string AppPath;
         public static string AssetPath;
-        public static Transform activeCam;
+        public static Transform activeCamTrans;
+        public static Camera activeCamera;
         public static Canvas canvas;
         public static Vector2 pixelSize;
         public static Vector2 virtualSize;
@@ -427,8 +428,8 @@ namespace ABEngine.ABERuntime
                 }
 
                 // Reset Camera
-                Game.activeCam = null;
-                TriggerCamCheck();
+                Game.activeCamTrans = null;
+                //TriggerCamCheck();
 
                 LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
 
@@ -448,6 +449,7 @@ namespace ABEngine.ABERuntime
                 for (int i = renderExtensions.Count - 1; i >= 0; i--)
                 {
                     BaseSystem system = renderExtensions[i];
+                    system.CleanUp(true, true);
                     if (!system.dontDestroyOnLoad)
                     {
                         renderExtensions.RemoveAt(i);
@@ -478,6 +480,7 @@ namespace ABEngine.ABERuntime
                 SubscribeSystems();
 
                 Scene_Setup();
+                FindCamera();
                 onSceneLoad?.Invoke();
 
                 //Start Events
@@ -546,15 +549,15 @@ namespace ABEngine.ABERuntime
         protected private void RenderSetup(float time)
         {
             // First pass setup
-            if (Game.activeCam != null)
+            if (Game.activeCamTrans != null)
             {
-                var camEnt = Game.activeCam.entity;
+                var camEnt = Game.activeCamTrans.entity;
                 if (camEnt != Entity.Null)
                 {
-                    Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCam.worldRotation);
-                    Vector3 cameraPosition = Game.activeCam.worldPosition;
+                    Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCamTrans.worldRotation);
+                    Vector3 cameraPosition = Game.activeCamTrans.worldPosition;
                     Vector3 targetPosition = cameraPosition + forward;
-                    Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCam.worldRotation);
+                    Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCamTrans.worldRotation);
 
                     Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
 
@@ -710,18 +713,7 @@ namespace ABEngine.ABERuntime
             // Active Cam Update
             if (_checkCamUpdate)
             {
-                activeCam = null;
-                var camQ = new QueryDescription().WithAll<Camera, Transform>();
-                GameWorld.Query(in camQ, (Entity camEnt) =>
-                {
-                    if (camEnt != Entity.Null)
-                    {
-                        activeCam = camEnt.Get<Transform>();
-                        RefreshProjection(canvas);
-                        return;
-                    }
-                });
-                _checkCamUpdate = false;
+                FindCamera();
             }
 
             foreach (var system in userSystems)
@@ -771,11 +763,11 @@ namespace ABEngine.ABERuntime
 
         internal static void RefreshProjection(Canvas canvas)
         {
-            if (canvas == null || Game.canvas != canvas || Game.activeCam == null)
+            if (canvas == null || Game.canvas != canvas || Game.activeCamTrans == null)
                 return;
 
 
-            Camera camera = Game.activeCam.entity.Get<Camera>();
+            Camera camera = Game.activeCamTrans.entity.Get<Camera>();
             if (camera.cameraProjection == CameraProjection.Orthographic)
             {
                 Vector2 extents = canvas.canvasSize / 2f / 100f;
@@ -894,6 +886,7 @@ namespace ABEngine.ABERuntime
             SubscribeSystems();
 
             Scene_Setup();
+            FindCamera();
             onSceneLoad?.Invoke();
 
             RefreshProjection(Game.canvas);
@@ -927,6 +920,23 @@ namespace ABEngine.ABERuntime
             {
                 rendExt.Start();
             }
+        }
+
+        void FindCamera()
+        {
+            activeCamTrans = null;
+            var camQ = new QueryDescription().WithAll<Camera, Transform>();
+            GameWorld.Query(in camQ, (Entity camEnt) =>
+            {
+                if (camEnt != Entity.Null)
+                {
+                    activeCamTrans = camEnt.Get<Transform>();
+                    activeCamera = camEnt.Get<Camera>();
+                    RefreshProjection(canvas);
+                    return;
+                }
+            });
+            _checkCamUpdate = false;
         }
 
         private protected void CreateRenderResources(uint pixelWidth, uint pixelHeight)
@@ -1019,7 +1029,7 @@ namespace ABEngine.ABERuntime
                     Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
 
-            GameWorld.SubscribeComponentAdded((in Entity entity, ref Camera cam) => TriggerCamCheck());
+            //GameWorld.SubscribeComponentAdded((in Entity entity, ref Camera cam) => TriggerCamCheck());
 
             GameWorld.SubscribeComponentAdded((in Entity entity, ref AABB newBB) =>
             {

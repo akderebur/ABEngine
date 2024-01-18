@@ -5,7 +5,6 @@ using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
 using ImGuiNET;
-using SixLabors.ImageSharp.ColorSpaces;
 using WGIL;
 using Buffer = WGIL.Buffer;
 
@@ -34,7 +33,7 @@ namespace ABEngine.ABEUI
             {
                 _percentage = value;
                 _sliderInfo.percentage = value;
-                UpdateGraphics();
+                isUpdateNeeded = true;
             }
         }
 
@@ -57,6 +56,7 @@ namespace ABEngine.ABEUI
         private Buffer _infoBuffer;
 
         private BindGroup _sliderGroup;
+        private bool isUpdateNeeded;
 
         // Shared
         static BindGroupLayout sliderInfoLayout;
@@ -119,6 +119,15 @@ namespace ABEngine.ABEUI
             pass.DrawIndexed(6);
         }
 
+        internal override void WGILRender()
+        {
+            if(isUpdateNeeded)
+            {
+                _pass.BeginPass();
+                isUpdateNeeded = false;
+            }
+        }
+
         private void LoadGraphics()
         {
             // Pass
@@ -140,7 +149,6 @@ namespace ABEngine.ABEUI
                 }
             };
             _pass = wgil.CreateRenderPass(ref sliderPassDesc);
-            wgil.AddRenderPass(_pass);
             _pass.JoinRenderQueue(OnPassRender);
 
             _infoBuffer = wgil.CreateBuffer(SliderInfo.BufferSize, BufferUsages.UNIFORM | BufferUsages.COPY_DST);

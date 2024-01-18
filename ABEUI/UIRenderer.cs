@@ -75,6 +75,11 @@ namespace ABEngine.ABEUI
 
         private UIRenderer() : base(true)
         {
+
+        }
+
+        private void InitRenderer()
+        {
             UISliderImage.InitSliderAssets();
 
             LoadDefaultFontData();
@@ -95,8 +100,8 @@ namespace ABEngine.ABEUI
                 {
                     // Once in app lifetime
                     instance = new UIRenderer();
+                    instance.InitRenderer();
                 }
-             
 
                 return instance;
             }
@@ -200,6 +205,12 @@ namespace ABEngine.ABEUI
             ImGui.GetIO().Fonts.Clear();
             ImGui.GetIO().Fonts.AddFontDefault();
             RemakeFonts();
+
+            foreach (var uiComp in uiComponents)
+            {
+                if (uiComp.GetType() == typeof(UIText))
+                    ((UIText)uiComp).LoadFont();
+            }
         }
 
         private void Game_onCanvasResize()
@@ -209,6 +220,12 @@ namespace ABEngine.ABEUI
             ImGui.GetIO().Fonts.Clear();
             ImGui.GetIO().Fonts.AddFontDefault();
             RemakeFonts();
+
+            foreach (var uiComp in uiComponents)
+            {
+                if (uiComp.GetType() == typeof(UIText))
+                    ((UIText)uiComp).LoadFont();
+            }
         }
 
         internal ImFontPtr GetOrCreateFont(string fontPath, float fontSize)
@@ -292,6 +309,10 @@ namespace ABEngine.ABEUI
 
         public override void UIRender(RenderPass pass)
         {
+            foreach (var component in uiComponents)
+            {
+                component.WGILRender();
+            }
             imguiRenderer.Render(pass);
         }
 

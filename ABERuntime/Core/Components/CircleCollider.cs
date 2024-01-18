@@ -38,10 +38,10 @@ namespace ABEngine.ABERuntime.Components
 
         public bool CheckCollisionMouse(Transform transform, Vector2 mousePos)
         {
-            if (Game.activeCam == null)
+            if (Game.activeCamTrans == null)
                 return false;
 
-            var camEnt = Game.activeCam.entity;
+            var camEnt = Game.activeCamTrans.entity;
             if (camEnt == Entity.Null)
                 return false;
 

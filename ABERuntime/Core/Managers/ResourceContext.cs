@@ -51,7 +51,7 @@ namespace ABEngine.ABERuntime
                                                      TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
             // Main
-            mainRenderTexture = wgil.CreateTexture(width, height, surfaceFormat,
+            mainRenderTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba16Float,
                                                    TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_SRC, true);
 
             spriteNormalsTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba8Unorm,
@@ -60,11 +60,11 @@ namespace ABEngine.ABERuntime
             mainDepthTexture = wgil.CreateTexture(width, height, TextureFormat.Depth32Float,
                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
-            mainPPTexture = wgil.CreateTexture(width, height, surfaceFormat,
+            mainPPTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba16Float,
                                                    TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST, true);
 
             // Light
-            lightRenderTexture = wgil.CreateTexture(width, height, surfaceFormat,
+            lightRenderTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba16Float,
                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
             cameraNormalView = cameraNormalTexture.CreateView(true);

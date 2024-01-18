@@ -71,6 +71,14 @@ namespace ABEngine.ABERuntime.Components
             _lastActive = _isActive;
         }
 
+        public Vector3 ScreenToWorld(Vector2 screenPos, float depth = 0f)
+        {
+            if (_projection == CameraProjection.Orthographic)
+                return screenPos.ScreenToWorld();
+            else
+                return screenPos.ScreenToWorldPerspective(depth);
+        }
+
         //public void SetReferences()
         //{
         //    if(!string.IsNullOrEmpty(_followEntGuid))

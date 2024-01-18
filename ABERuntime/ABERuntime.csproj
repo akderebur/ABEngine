@@ -55,6 +55,7 @@
     <None Remove="Core\Animation\StateMatch\" />
     <None Remove="Systems\Rendering\" />
     <None Remove="Windowing\" />
+    <None Remove="Core\Particles\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
@@ -77,6 +78,7 @@
     <Folder Include="Core\Animation\StateMatch\" />
     <Folder Include="Systems\Rendering\" />
     <Folder Include="Windowing\" />
+    <Folder Include="Core\Particles\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Box2D\Box2D.NetStandard.csproj" />

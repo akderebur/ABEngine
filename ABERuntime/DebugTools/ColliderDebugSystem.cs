@@ -262,6 +262,7 @@ namespace ABEngine.ABERuntime.Debug
 
         public override void CleanUp(bool reload, bool newScene, bool resize)
         {
+            linePointsBuffer?.Dispose();
             lastTrans = null;
         }
     }

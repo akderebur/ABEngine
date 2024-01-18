@@ -93,7 +93,7 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float deltaTime)
         {
-            if (Game.activeCam == null)
+            if (Game.activeCamTrans == null)
                 return;
 
             renderOrder.Clear();
@@ -129,7 +129,7 @@ namespace ABEngine.ABERuntime
             sharedFragmentUniform.Light2 = lightInfos[2];
             sharedFragmentUniform.Light3 = lightInfos[3];
 
-            sharedFragmentUniform.CamPos = Game.activeCam.worldPosition;
+            sharedFragmentUniform.CamPos = Game.activeCamTrans.worldPosition;
             sharedFragmentUniform.NumDirectionalLights = dirLightC;
             sharedFragmentUniform.NumPointLights = pointLightC;
 
