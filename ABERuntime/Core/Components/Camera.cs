@@ -45,6 +45,7 @@ namespace ABEngine.ABERuntime.Components
 
         public bool matchCanvas { get; set; }
         public Vector2 viewSize { get; set; }
+        internal Vector2 compViewSize { get; set; }
 
         public Camera()
         {
@@ -54,12 +55,16 @@ namespace ABEngine.ABERuntime.Components
             _isActive = true;
             _lastActive = _isActive;
             matchCanvas = true;
+            viewSize = Vector2.One;
         }
 
         internal void OnCameraActivate()
         {
+            compViewSize = viewSize;
             if (matchCanvas)
-                viewSize = Game.canvas.canvasSize;
+            {
+                compViewSize *= Game.canvas.canvasSize;
+            }
         }
 
         public Vector3 ScreenToWorld(Vector2 screenPos, float depth = 0f)

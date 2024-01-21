@@ -766,11 +766,11 @@ namespace ABEngine.ABERuntime
             camera.OnCameraActivate();
             if (camera.cameraProjection == CameraProjection.Orthographic)
             {
-                Vector2 extents = activeCamera.viewSize / 2f / 100f;
+                Vector2 extents = activeCamera.compViewSize / 2f / 100f;
                 projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(-extents.X, extents.X, -extents.Y, extents.Y, -1000f, 1000f);
             }
             else
-                projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 4f, activeCamera.viewSize.X / activeCamera.viewSize.Y, 0.1f, 1000f);
+                projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 4f, activeCamera.compViewSize.X / activeCamera.compViewSize.Y, 0.1f, 1000f);
 
             //projectionMatrix = CreatePerspective(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 1000f, 0.1f);
 
