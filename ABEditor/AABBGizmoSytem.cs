@@ -33,7 +33,7 @@ namespace ABEngine.ABEditor
 
         public override void Update(float gameTime, float deltaTime)
         {
-            if (Game.activeCam == null)
+            if (Game.activeCamTrans == null)
                 return;
 
             var selectedEntity = Editor.selectedEntity;

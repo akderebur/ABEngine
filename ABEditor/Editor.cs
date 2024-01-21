@@ -227,6 +227,13 @@ namespace ABEngine.ABEditor
             {
                 system.Start();
             }
+
+            Game.onWindowResize += Game_onWindowResize;
+        }
+
+        private void Game_onWindowResize()
+        {
+            imguiRenderer.WindowResized((uint)Game.pixelSize.X, (uint)Game.pixelSize.Y);
         }
 
         protected override void Init(string windowName)
@@ -560,18 +567,7 @@ namespace ABEngine.ABEditor
             // Active Cam Update
             if (_checkCamUpdate)
             {
-                activeCam = null;
-                var camQ = new QueryDescription().WithAll<Camera, Transform>();
-                GameWorld.Query(in camQ, (Entity camEnt) =>
-                {
-                    if (camEnt != Entity.Null)
-                    {
-                        activeCam = camEnt.Get<Transform>();
-                        RefreshProjection(canvas);
-                        return;
-                    }
-                });
-                _checkCamUpdate = false;
+                FindCamera();
             }
 
             particleSystem.Update(newTime, elapsed);

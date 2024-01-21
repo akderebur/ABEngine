@@ -48,7 +48,7 @@ namespace ABEngine.ABEditor
             Vector3 ray_world = new Vector3(ray_world_4D.X, ray_world_4D.Y, ray_world_4D.Z);
 
             Ray ray;
-            ray.Origin = Game.activeCam.worldPosition;
+            ray.Origin = Game.activeCamTrans.worldPosition;
 
             ray.Direction = Vector3.Normalize(ray_world);
 
@@ -150,14 +150,14 @@ namespace ABEngine.ABEditor
 
         public override void Update(float gameTime, float deltaTime)
         {
-            if (Game.activeCam == null)
+            if (Game.activeCamTrans == null)
                 return;
 
             bool imguiCapture = ImGui.GetIO().WantCaptureMouse || ImGui.GetIO().WantCaptureKeyboard;
             if (imguiCapture)
                 return;
 
-            Camera cam = Game.activeCam.entity.Get<Camera>();
+            Camera cam = Game.activeCamera;
             if (cam.cameraProjection == CameraProjection.Orthographic)
             {
 

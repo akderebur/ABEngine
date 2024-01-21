@@ -118,8 +118,8 @@ namespace ABEngine.ABEUI
 
             imguiRenderer = new ImGuiRenderer(
             wgil,
-            (uint)Game.pixelSize.X,
-            (uint)Game.pixelSize.Y);
+            (uint)Game.canvas.canvasSize.X,
+            (uint)Game.canvas.canvasSize.Y);
 
             screenScale = Game.virtualSize / Game.canvas.referenceSize;
             imguiRenderer.scaleFactor = Game.pixelSize / Game.virtualSize;

@@ -8,28 +8,11 @@ namespace ABEngine.ABERuntime.Components
 {
     public class Camera : ABComponent
     {
-        //private Transform _followTarget;
-        //private string _followEntGuid;
-
-        //public Transform followTarget
-        //{
-        //    get
-        //    {
-        //        return _followTarget;
-        //    }
-
-        //    set
-        //    {
-        //        _followTarget = value;
-        //        if(value != null)
-        //            _followEntGuid = value.entity.Get<Guid>().ToString();
-        //    }
-        //}
-
         // Cam Fields
         private bool _isActive;
         private bool _lastActive;
         private CameraProjection _projection;
+        public Vector3 velocity;
 
         // Cam Props
         public Transform followTarget { get; set; }
@@ -48,7 +31,6 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
-        public Vector3 velocity;
         public bool isActive
         {
             get { return _isActive; }
@@ -61,6 +43,8 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
+        public bool matchCanvas { get; set; }
+        public Vector2 viewSize { get; set; }
 
         public Camera()
         {
@@ -69,6 +53,13 @@ namespace ABEngine.ABERuntime.Components
             offset = Vector3.Zero;
             _isActive = true;
             _lastActive = _isActive;
+            matchCanvas = true;
+        }
+
+        internal void OnCameraActivate()
+        {
+            if (matchCanvas)
+                viewSize = Game.canvas.canvasSize;
         }
 
         public Vector3 ScreenToWorld(Vector2 screenPos, float depth = 0f)

@@ -18,7 +18,7 @@ namespace ABEngine.ABEditor
 
         public override void Update(float gameTime, float deltaTime)
         {
-            if (Game.activeCam == null)
+            if (Game.activeCamTrans == null)
                 return;
 
             bool imguiCapture = ImGui.GetIO().WantCaptureMouse || ImGui.GetIO().WantCaptureKeyboard;
@@ -35,7 +35,7 @@ namespace ABEngine.ABEditor
 
             if (Input.HasInput() && !imguiCapture)
             {
-                Transform transform = Game.activeCam;
+                Transform transform = Game.activeCamTrans;
                 Vector3 endPos = transform.localPosition;
                 Camera cam = transform.entity.Get<Camera>();
 

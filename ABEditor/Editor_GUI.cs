@@ -377,7 +377,7 @@ namespace ABEngine.ABEditor
 
         void RenderGrid()
         {
-            if (!tilemapSelected || gridTrans == null || Game.activeCam == null)
+            if (!tilemapSelected || gridTrans == null || Game.activeCamTrans == null)
                 return;
 
             if (lastCell != null)
@@ -447,7 +447,7 @@ namespace ABEngine.ABEditor
             }
             lastCell = selCell;
 
-            Vector3 camPos = Game.activeCam.worldPosition;
+            Vector3 camPos = Game.activeCamTrans.worldPosition;
             float xRound = MathF.Floor(camPos.X / worldOffset.X) * worldOffset.X - 30 * worldOffset.X;
             float yRound = MathF.Floor(camPos.Y / worldOffset.Y) * worldOffset.Y - 20 * worldOffset.Y;
 
@@ -604,7 +604,8 @@ namespace ABEngine.ABEditor
                         GameWorld.Create("Canvas", Guid.NewGuid(), new Transform(), canvas);
 
                         var camEnt = GameWorld.Create("Camera", Guid.NewGuid(), new Transform(), new Camera());
-                        activeCam = camEnt.Get<Transform>();
+                        activeCamTrans = camEnt.Get<Transform>();
+                        activeCamera = camEnt.Get<Camera>();
 
                         TMColliderGizmo.ResetGizmo();
                         spriteBatchSystem.Start();

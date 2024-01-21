@@ -9,11 +9,17 @@ namespace ABEngine.ABERuntime.Components
         private Guid _guid;
         private Vector2 _canvasSize;
         private Vector2 _lastScreenSetSize;
+        private Vector2 _lastScreenPixelSetSize;
+
         private Vector2 _lastFixedSize;
+        private Vector2 _lastFixedPixelSize;
+
         private bool _isDynamicSize;
         private Vector2 _worldSize;
 
         public Vector2 referenceSize;
+
+        Vector2 pvRatio = Vector2.One;
 
         public Vector2 canvasSize
         {
@@ -24,6 +30,7 @@ namespace ABEngine.ABERuntime.Components
                 _worldSize = _canvasSize.PixelToWorld();
             }
         }
+        public Vector2 canvasPixelSize { get; set; }
 
         public bool isDynamicSize {
             get { return _isDynamicSize; }
@@ -53,12 +60,17 @@ namespace ABEngine.ABERuntime.Components
             referenceSize = _canvasSize;
         }
 
-        public void UpdateScreenSize(Vector2 screenSize)
+        public void UpdateScreenSize(Vector2 screenSize, Vector2 pixelSize)
         {
             _lastScreenSetSize = screenSize;
+            _lastScreenPixelSetSize = pixelSize;
+
+            pvRatio = pixelSize / screenSize;
+
             if (isDynamicSize)
             {
                 canvasSize = _lastScreenSetSize;
+                canvasPixelSize = _lastScreenPixelSetSize;
                 Game.RefreshProjection(this);
             }
         }
@@ -66,9 +78,11 @@ namespace ABEngine.ABERuntime.Components
         public void UpdateCanvasSize(Vector2 newSize)
         {
             _lastFixedSize = newSize;
+            _lastFixedPixelSize = newSize * pvRatio;
             if(!isDynamicSize)
             {
                 canvasSize = _lastFixedSize;
+                canvasPixelSize = _lastFixedPixelSize;
                 Game.RefreshProjection(this);
             }
         }

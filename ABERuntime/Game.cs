@@ -330,7 +330,7 @@ namespace ABEngine.ABERuntime
                 foreach (var render in internalRenders)
                     render.CleanUp(true, false, true);
 
-                resourceContext.RecreateFrameResources((uint)pixelSize.X, (uint)pixelSize.Y);
+                resourceContext.RecreateFrameResources((uint)canvas.canvasPixelSize.X, (uint)canvas.canvasPixelSize.Y);
 
                 // Update pass attachments
                 TextureViewSet newSet = new TextureViewSet();
@@ -367,7 +367,7 @@ namespace ABEngine.ABERuntime
                 {
                     Projection = Matrix4x4.Identity,
                     View = Matrix4x4.Identity,
-                    PixelSize = pixelSize,
+                    PixelSize = canvas.canvasPixelSize,
                     Time = 0,
                     Padding = 0f
                 };
@@ -759,18 +759,18 @@ namespace ABEngine.ABERuntime
 
         internal static void RefreshProjection(Canvas canvas)
         {
-            if (canvas == null || Game.canvas != canvas || Game.activeCamTrans == null)
+            if (Game.activeCamTrans == null)
                 return;
 
-
-            Camera camera = Game.activeCamTrans.entity.Get<Camera>();
+            Camera camera = Game.activeCamera;
+            camera.OnCameraActivate();
             if (camera.cameraProjection == CameraProjection.Orthographic)
             {
-                Vector2 extents = canvas.canvasSize / 2f / 100f;
+                Vector2 extents = activeCamera.viewSize / 2f / 100f;
                 projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(-extents.X, extents.X, -extents.Y, extents.Y, -1000f, 1000f);
             }
             else
-                projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 0.1f, 1000f);
+                projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 4f, activeCamera.viewSize.X / activeCamera.viewSize.Y, 0.1f, 1000f);
 
             //projectionMatrix = CreatePerspective(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 1000f, 0.1f);
 
@@ -805,7 +805,7 @@ namespace ABEngine.ABERuntime
 
             SDL_GetWindowSize(window.Handle, out int w, out int h);
             virtualSize = new Vector2(w, h);
-            canvas.UpdateScreenSize(virtualSize);
+            canvas.UpdateScreenSize(virtualSize, pixelSize);
             onWindowResize?.Invoke();
             wgil.logicalSize = virtualSize;
 
@@ -826,7 +826,8 @@ namespace ABEngine.ABERuntime
             pixelSize = new Vector2(pw, ph);
             virtualSize = new Vector2(w, h);
             canvas = new Canvas(w, h);
-            canvas.isDynamicSize = false;
+            canvas.isDynamicSize = true;
+            canvas.UpdateScreenSize(virtualSize, pixelSize);
             canvas.referenceSize = new Vector2(1280f, 720f);
             wgil.logicalSize = virtualSize;
 
@@ -904,9 +905,12 @@ namespace ABEngine.ABERuntime
             {
                 rendExt.Start();
             }
+
+            reload = true;
+            resize = true;
         }
 
-        void FindCamera()
+        protected private void FindCamera()
         {
             activeCamTrans = null;
             var camQ = new QueryDescription().WithAll<Camera, Transform>();
@@ -916,6 +920,7 @@ namespace ABEngine.ABERuntime
                 {
                     activeCamTrans = camEnt.Get<Transform>();
                     activeCamera = camEnt.Get<Camera>();
+                    activeCamera.OnCameraActivate();
                     RefreshProjection(canvas);
                     return;
                 }
@@ -1256,7 +1261,7 @@ namespace ABEngine.ABERuntime
                 if (isCanvasEnt)
                 {
                     canvas = newEnt.Get<Canvas>();
-                    canvas.UpdateScreenSize(virtualSize);
+                    canvas.UpdateScreenSize(virtualSize, pixelSize);
                     Game.canvas.UpdateCanvasSize(canvas.canvasSize);
                 }
             }
