@@ -119,7 +119,7 @@ namespace ABEngine.ABERuntime
         protected private static InputDataSdl inputData = new InputDataSdl();
 
         // Render Passes
-        RenderPass normalsPass, mainPass, mainPPPass, lightPass, fsPass, debugPass;
+        RenderPass normalsPass, mainPass, mainPPPass, lightPass, fsPass;
 
         public Game(bool debug, List<Type> userTypes)
         {
@@ -199,12 +199,10 @@ namespace ABEngine.ABERuntime
             pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
             pass.DrawIndexed(6);
 
-            UIRender(pass);
-        }
+            if (debug)
+                colDebugSystem.Render(pass);
 
-        void DebugPassWork(RenderPass pass)
-        {
-            colDebugSystem.Render(pass);
+            UIRender(pass);
         }
 
         protected private void CreateInternalRenders()
@@ -742,11 +740,9 @@ namespace ABEngine.ABERuntime
         {
             normalsPass.BeginPass();
             mainPass.BeginPass();
-            mainPPPass.BeginPass();
+            //mainPPPass.BeginPass();
             lightPass.BeginPass();
             fsPass.BeginPass();
-            if (debugPass != null)
-                debugPass.BeginPass();
         }
 
       
@@ -837,18 +833,6 @@ namespace ABEngine.ABERuntime
             CreateRenderResources((uint)pw, (uint)ph);
 
             CreateInternalRenders();
-
-            if(debug)
-            {
-                // Debug Pass
-                var debugPassDesc = new RenderPassDescriptor()
-                {
-                    IsColorClear = false,
-                    IsRenderSwapchain = true
-                };
-                debugPass = wgil.CreateRenderPass(ref debugPassDesc);
-                debugPass.JoinRenderQueue(DebugPassWork);
-            }
 
             foreach (var render in internalRenders)
                 render.SceneSetup();

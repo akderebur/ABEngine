@@ -33,6 +33,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         public RenderOrder renderOrder { get; protected set; }
         public RenderType renderType { get; protected set; }
 
+
         public PipelineAsset()
         {
             pipelineID = pipelineCount;
@@ -179,6 +180,13 @@ namespace ABEngine.ABERuntime.Core.Assets
 
                                     switch (descName)
                                     {
+                                        case "@RenderType":
+                                            if(value.Equals("Transparent"))
+                                            {
+                                                renderType = RenderType.Transparent;
+                                                renderOrder = RenderOrder.Transparent;
+                                            }
+                                            break;
                                         case "@Pipeline":
                                             // Set 1 - Reserved for pipeline specific data
                                             if (value.Equals("3D"))
