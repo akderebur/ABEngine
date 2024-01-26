@@ -13,6 +13,7 @@ namespace ABEngine.ABERuntime.Components
         private bool _lastActive;
         private CameraProjection _projection;
         public Vector3 velocity;
+        private Vector2 _viewSize;
 
         // Cam Props
         public Transform followTarget { get; set; }
@@ -44,8 +45,18 @@ namespace ABEngine.ABERuntime.Components
         }
 
         public bool matchCanvas { get; set; }
-        public Vector2 viewSize { get; set; }
+        public Vector2 viewSize
+        {
+            get { return _viewSize; }
+            set
+            {
+                _viewSize = value;
+                Game.RefreshProjection(Game.canvas);
+            }
+        }
         internal Vector2 compViewSize { get; set; }
+
+        public Vector4 viewport { get; set; }
 
         public Camera()
         {
@@ -56,6 +67,7 @@ namespace ABEngine.ABERuntime.Components
             _lastActive = _isActive;
             matchCanvas = true;
             viewSize = Vector2.One;
+            viewport = new Vector4(0f, 0f, 1f, 1f);
         }
 
         internal void OnCameraActivate()

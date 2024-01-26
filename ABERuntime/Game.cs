@@ -193,6 +193,8 @@ namespace ABEngine.ABERuntime
 
         void FinalPassWork(RenderPass pass)
         {
+            Camera cam = Game.activeCamera;
+            pass.SetViewport(Game.pixelSize.X * cam.viewport.X, Game.pixelSize.Y * cam.viewport.Y, Game.pixelSize.X * cam.viewport.Z, Game.pixelSize.Y * cam.viewport.W);
             pass.SetPipeline(GraphicsManager.FullScreenPipeline);
             pass.SetBindGroup(0, finalQuadRSSet);
             pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
