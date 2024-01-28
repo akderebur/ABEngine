@@ -98,7 +98,7 @@ namespace ABEngine.ABERuntime.Windowing
             switch (e.windowEvent)
             {
                 case SDL_WindowEventID.SDL_WINDOWEVENT_SIZE_CHANGED:
-                    Resize(e.windowEvent);
+                    Resize();
                     break;
                 case SDL_WindowEventID.SDL_WINDOWEVENT_FOCUS_GAINED:
                     FocusGained?.Invoke();
@@ -111,9 +111,8 @@ namespace ABEngine.ABERuntime.Windowing
             }
         }
 
-        void Resize(SDL_WindowEventID aa)
+        void Resize()
         {
-            Console.WriteLine(aa);
             Resized?.Invoke();
         }
 

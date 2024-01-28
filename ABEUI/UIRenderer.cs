@@ -88,7 +88,6 @@ namespace ABEngine.ABEUI
             ResetRenderer();
 
             Game.onWindowResize += Game_onWindowResize;
-            Game.onCanvasResize += Game_onCanvasResize;
             Game.onSceneLoad += Game_onSceneLoad;
         }
 
@@ -177,7 +176,6 @@ namespace ABEngine.ABEUI
             {
                 Game.onWindowResize -= Game_onWindowResize;
                 Game.onSceneLoad -= Game_onSceneLoad;
-                Game.onCanvasResize -= Game_onCanvasResize;
 
                 imguiRenderer.ClearCachedImageResources();
                 imguiRenderer.Dispose();
@@ -214,20 +212,20 @@ namespace ABEngine.ABEUI
             }
         }
 
-        private void Game_onCanvasResize()
-        {
-            screenScale = Game.virtualSize / Game.canvas.referenceSize;
+        //private void Game_onCanvasResize()
+        //{
+        //    screenScale = Game.virtualSize / Game.canvas.referenceSize;
 
-            ImGui.GetIO().Fonts.Clear();
-            ImGui.GetIO().Fonts.AddFontDefault();
-            RemakeFonts();
+        //    ImGui.GetIO().Fonts.Clear();
+        //    ImGui.GetIO().Fonts.AddFontDefault();
+        //    RemakeFonts();
 
-            foreach (var uiComp in uiComponents)
-            {
-                if (uiComp.GetType() == typeof(UIText))
-                    ((UIText)uiComp).LoadFont();
-            }
-        }
+        //    foreach (var uiComp in uiComponents)
+        //    {
+        //        if (uiComp.GetType() == typeof(UIText))
+        //            ((UIText)uiComp).LoadFont();
+        //    }
+        //}
 
         internal ImFontPtr GetOrCreateFont(string fontPath, float fontSize)
         {
