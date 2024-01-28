@@ -80,7 +80,7 @@ namespace ABEngine.ABEUI
 
         private void InitRenderer()
         {
-            UISliderImage.InitSliderAssets();
+            //UISliderImage.InitSliderAssets();
 
             LoadDefaultFontData();
 

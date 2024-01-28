@@ -29,6 +29,7 @@ namespace ABEngine.ABERuntime
         // Light
         private Texture lightRenderTexture;
         public TextureView lightRenderView;
+      
 
         internal ResourceContext()
 		{
@@ -74,6 +75,11 @@ namespace ABEngine.ABERuntime
             mainDepthView = mainDepthTexture.CreateView(true);
             mainPPView = mainPPTexture.CreateView(true);
             lightRenderView = lightRenderTexture.CreateView(true);
+
+            if(Game.activePostProcess != null)
+            {
+                Game.activePostProcess.RecreateBloom();
+            }
         }
 
         internal void DisposeFrameResources()

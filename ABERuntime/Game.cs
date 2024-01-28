@@ -51,6 +51,7 @@ namespace ABEngine.ABERuntime
         public static string AssetPath;
         public static Transform activeCamTrans;
         public static Camera activeCamera;
+        public static PostProcess activePostProcess;
         public static Canvas canvas;
         public static Vector2 pixelSize;
         public static Vector2 virtualSize;
@@ -195,11 +196,27 @@ namespace ABEngine.ABERuntime
         {
             Camera cam = Game.activeCamera;
             pass.SetViewport(Game.pixelSize.X * cam.viewport.X, Game.pixelSize.Y * cam.viewport.Y, Game.pixelSize.X * cam.viewport.Z, Game.pixelSize.Y * cam.viewport.W);
-            pass.SetPipeline(GraphicsManager.FullScreenPipeline);
-            pass.SetBindGroup(0, finalQuadRSSet);
-            pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-            pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
-            pass.DrawIndexed(6);
+
+            if (activePostProcess == null || !activePostProcess.BloomEnabled)
+            {
+                // No Post Process - HDR
+                pass.SetPipeline(GraphicsManager.FullScreenPipeline);
+                pass.SetBindGroup(0, finalQuadRSSet);
+                pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+                pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
+                pass.DrawIndexed(6);
+            }
+            else
+            {
+                // Post Process - HDR
+                activePostProcess.BloomWork.BeginCompute();
+
+                pass.SetPipeline(PostProcess.fsPipeline);
+                pass.SetBindGroup(0, activePostProcess.fsBindGroup);
+                pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
+                pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
+                pass.DrawIndexed(6);
+            }
 
             if (debug)
                 colDebugSystem.Render(pass);
@@ -395,6 +412,10 @@ namespace ABEngine.ABERuntime
             {
                 newScene = false;
 
+                // Clear PP
+                if (activePostProcess != null)
+                    activePostProcess.RemovePostProcess();
+
                 EntityManager.SetImmediateDestroy(true);
                 CoroutineManager.StopAllCoroutines();
                 PrefabManager.ClearScene();
@@ -481,6 +502,7 @@ namespace ABEngine.ABERuntime
 
                 Scene_Setup();
                 FindCamera();
+                FindPostProcess();
                 onSceneLoad?.Invoke();
 
                 //Start Events
@@ -874,6 +896,7 @@ namespace ABEngine.ABERuntime
 
             Scene_Setup();
             FindCamera();
+            FindPostProcess();
             onSceneLoad?.Invoke();
 
             RefreshProjection(Game.canvas);
@@ -928,6 +951,18 @@ namespace ABEngine.ABERuntime
                 }
             });
             _checkCamUpdate = false;
+        }
+
+        protected private void FindPostProcess()
+        {
+            activePostProcess = null;
+            var ppQ = new QueryDescription().WithAll<PostProcess, Transform>();
+            GameWorld.Query(in ppQ, (ref PostProcess pp) =>
+            {
+                activePostProcess = pp;
+                activePostProcess.InitPostProcess();
+                return;
+            });
         }
 
         private protected void CreateRenderResources(uint pixelWidth, uint pixelHeight)
