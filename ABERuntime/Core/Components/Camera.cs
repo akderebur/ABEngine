@@ -82,9 +82,35 @@ namespace ABEngine.ABERuntime.Components
         public Vector3 ScreenToWorld(Vector2 screenPos, float depth = 0f)
         {
             if (_projection == CameraProjection.Orthographic)
-                return screenPos.ScreenToWorld();
+                return ScreenToViewport(screenPos).NormalizedToWorld();
             else
-                return screenPos.ScreenToWorldPerspective(depth);
+                return ScreenToViewport(screenPos).NormalizedToWorldPerspective(depth);
+        }
+
+        //public Vector3 ScreenViewportToWorld(Vector2 screenPos, float depth = 0f)
+        //{
+        //    //screenPos.X -= Game.virtualSize.X * viewport.X;
+        //    //screenPos.Y -= Game.virtualSize.Y * (1f - viewport.W - viewport.Y);
+
+        //    if (_projection == CameraProjection.Orthographic)
+        //        return ScreenToViewport(screenPos).NormalizedToWorld();
+        //    else
+        //        return screenPos.ScreenToWorldPerspective(depth);
+        //}
+
+        public Vector2 ScreenToViewport(Vector2 screenPos)
+        {
+            Vector2 normalized = (screenPos / Game.virtualSize);
+            
+            normalized.X -= viewport.X;
+            normalized.X /= viewport.Z;
+
+            float y = 1f - normalized.Y;
+            y -= viewport.Y;
+            y /= viewport.W;
+            normalized.Y = 1f - y;
+
+            return normalized;
         }
 
         //public void SetReferences()

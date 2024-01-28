@@ -30,6 +30,8 @@ namespace ABEngine.ABEUI
         private byte[] openSansData;
         private ImFontConfigPtr openSansConf;
 
+        public bool UseCameraViewport { get; set; }
+
         // Shared
         BindGroupLayout sliderInfoLayout;
 
@@ -73,9 +75,8 @@ namespace ABEngine.ABEUI
             }
         }
 
-        private UIRenderer() : base(true)
+        private UIRenderer() : base(false)
         {
-
         }
 
         private void InitRenderer()
@@ -118,8 +119,8 @@ namespace ABEngine.ABEUI
 
             imguiRenderer = new ImGuiRenderer(
             wgil,
-            (uint)Game.canvas.canvasSize.X,
-            (uint)Game.canvas.canvasSize.Y);
+            (uint)Game.pixelSize.X,
+            (uint)Game.pixelSize.Y);
 
             screenScale = Game.virtualSize / Game.canvas.referenceSize;
             imguiRenderer.scaleFactor = Game.pixelSize / Game.virtualSize;
@@ -309,10 +310,14 @@ namespace ABEngine.ABEUI
 
         public override void UIRender(RenderPass pass)
         {
+            if(!UseCameraViewport)
+                pass.SetViewport(0, 0, Game.pixelSize.X, Game.pixelSize.Y);
+
             foreach (var component in uiComponents)
             {
                 component.WGILRender();
             }
+
             imguiRenderer.Render(pass);
         }
 
