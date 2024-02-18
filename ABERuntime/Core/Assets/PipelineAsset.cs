@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using ABEngine.ABERuntime.Rendering;
 using WGIL;
+using WGIL.IO;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
@@ -15,12 +16,13 @@ namespace ABEngine.ABERuntime.Core.Assets
         public string name;
         protected string defaultMatName;
 
-        protected RenderPipeline pipeline;
+        public RenderPipeline pipeline;
 
         // Description
         protected string[] shaders = new string[2];
         protected List<BindGroupLayout> resourceLayouts;
-        protected VertexAttribute[] vertexLayout;
+        protected VertexLayout vertexLayout;
+        protected VertexLayout instanceLayout;
 
         Dictionary<string, int> propNames;
         Dictionary<string, int> textureNames;
@@ -33,6 +35,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         public RenderOrder renderOrder { get; protected set; }
         public RenderType renderType { get; protected set; }
 
+        Dictionary<string, VariantPipelineAsset> pipelineVariants;
 
         public PipelineAsset()
         {
@@ -53,6 +56,8 @@ namespace ABEngine.ABERuntime.Core.Assets
             pass.SetPipeline(pipeline);
             pass.SetBindGroup(0, Game.pipelineSet);
         }
+
+        
 
         public virtual void BindPipeline(RenderPass pass, int bindC, params BindGroup[] bindGroups)
         {
@@ -84,7 +89,123 @@ namespace ABEngine.ABERuntime.Core.Assets
             _ => VertexFormat.Float32
         };
 
-        protected void ParseAsset(string pipelineAsset, bool readDescriptor = true, bool shaderOptimised = false)
+        public VariantPipelineAsset GetPipelineVariant(string defineKey)
+        {
+            if (pipelineVariants != null && pipelineVariants.TryGetValue(defineKey, out VariantPipelineAsset variant))
+            {
+                if (!variant.IsBuilt)
+                    variant.Build();
+                return variant;
+            }
+
+            return null;
+        }
+
+        protected void ParseAsset(string pipelineAsset, bool readDescriptor = true)
+        {
+            Dictionary<string, bool> defines = new Dictionary<string, bool>();
+
+            StringReader sr = new StringReader(pipelineAsset);
+          
+            while (true)
+            {
+                string line = sr.ReadLine();
+                if (line != null)
+                {
+                    line = line.Trim();
+                    if(line.StartsWith("#ifdef "))
+                    {
+                        string defVar = line.Replace("#ifdef ", "");
+                        if(!defines.ContainsKey(defVar))
+                            defines.Add(defVar, false);
+                    }
+                }
+                else
+                    break;
+            }
+
+            int variantCount = (int)MathF.Pow(2, defines.Count);
+
+            if (variantCount == 1)
+                ParseAsset(pipelineAsset, readDescriptor, "");
+            else
+            {
+                pipelineVariants = new Dictionary<string, VariantPipelineAsset>();
+
+                // Create each variant
+                List<string> keys = defines.Keys.ToList();
+                for (int i = 0; i < variantCount; i++)
+                {
+                    sr = new StringReader(pipelineAsset);
+                    StringBuilder sb = new StringBuilder();
+                    Stack<string> defStack = new Stack<string>();
+                    bool defineChain = true;
+
+                    // Set defines
+                    string defineKey = "";
+                    string binary = Convert.ToString(i, 2).PadLeft(defines.Count, '0');
+                    int index = binary.Length - 1;
+                    foreach (var key in keys)
+                    {
+                        bool hasKey = binary[index] == '0' ? false : true;
+                        defines[key] = hasKey;
+                        index--;
+
+                        if (hasKey)
+                            defineKey += "*" + key;
+                    }                        
+
+                    while (true)
+                    {
+                        string orgLine = sr.ReadLine();
+                        if (orgLine != null)
+                        {
+                            string line = orgLine.Trim();
+                            if (line.StartsWith("#ifdef "))
+                            {
+                                string defVar = line.Replace("#ifdef ", "");
+                                defStack.Push(defVar);
+
+                                defineChain = true;
+                                foreach (var item in defStack)
+                                    defineChain &= defines[item];
+                            }
+                            else if (defStack.Count > 0)
+                            {
+                                if (line.StartsWith("#endif"))
+                                {
+                                    defStack.Pop();
+
+                                    defineChain = true;
+                                    foreach (var item in defStack)
+                                        defineChain &= defines[item];
+                                }
+                                else if(defineChain)
+                                {
+                                    sb.AppendLine(orgLine);
+                                }
+                            }
+                            else
+                                sb.AppendLine(orgLine);
+                        }
+                        else
+                            break;
+                    }
+
+                    // Default - No defines
+                    if(i == 0)
+                        ParseAsset(sb.ToString(), readDescriptor, defineKey);
+                    else
+                    {
+                        // Variant
+                        VariantPipelineAsset variant = new VariantPipelineAsset(sb.ToString(), readDescriptor, defineKey);
+                        pipelineVariants.Add(defineKey, variant);
+                    }
+                }
+            }
+        }
+
+        protected void ParseAsset(string pipelineAsset, bool readDescriptor, string defineKey)
         {
             var wgil = Game.wgil;
 
@@ -95,7 +216,14 @@ namespace ABEngine.ABERuntime.Core.Assets
             List<string> textureNames = new List<string>();
 
             List<VertexAttribute> vertexElements = new List<VertexAttribute>();
+            List<VertexAttribute> instanceElements = new List<VertexAttribute>();
+
+            List<VertexAttribute> curVertexAttrList = null;
+
             bool pipeline3d = false;
+
+            bool useSkin = defineKey.Contains("HAS_SKIN");
+            bool useInstance = defineKey.Contains("HAS_INSTANCE");
 
 
             // Descriptor Defaults
@@ -145,7 +273,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                         if (sectionIndex == -2)
                         {
                             if(defaultMatName.Equals("NoName"))
-                                defaultMatName = lastLine;
+                                defaultMatName = lastLine + defineKey;
                             sectionIndex = 0;
                         }
                         else if (lastLine.Equals("Vertex"))
@@ -192,8 +320,13 @@ namespace ABEngine.ABERuntime.Core.Assets
                                             if (value.Equals("3D"))
                                             {
                                                 // Set 0 - Shared pipeline data
+
                                                 resourceLayouts.Add(GraphicsManager.sharedPipelineLightLayout);
-                                                resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
+                                                if (useSkin)
+                                                    resourceLayouts.Add(GraphicsManager.sharedSkinnedMeshUniform_VS);
+                                                else
+                                                    resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
+
                                                 pipeline3d = true;
                                             }
                                             else
@@ -282,7 +415,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                                 
                                 // Vertex element
                                 if(line.Contains("layout") && line.Contains("location") && line.Contains("in "))
-                                {
+                                {                                   
                                     string[] split = line.Split("in ");
                                     string typeAndName = split[1];
 
@@ -312,6 +445,11 @@ namespace ABEngine.ABERuntime.Core.Assets
                                         tmp += item;
                                     }
 
+                                    if (useInstance && name.ToLower().StartsWith("ins_"))
+                                        curVertexAttrList = instanceElements;
+                                    else
+                                        curVertexAttrList = vertexElements;
+
                                     Type variableType = ShaderToNetType(type);
                                     VertexAttribute vertexElement = new VertexAttribute()
                                     {
@@ -321,7 +459,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                                     };
 
                                     vertexOffset += (uint)System.Runtime.InteropServices.Marshal.SizeOf(variableType);
-                                    vertexElements.Add(vertexElement);
+                                    curVertexAttrList.Add(vertexElement);
                                 }
                         
                                 vertexShaderSrc += line + System.Environment.NewLine;
@@ -342,7 +480,25 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
 
             // Vertex layout
-            vertexLayout = vertexElements.ToArray();
+            vertexLayout = new VertexLayout()
+            {
+                VertexStepMode = stepMode,
+                VertexAttributes = vertexElements.ToArray()
+            };
+
+            VertexLayout[] vertexLayouts = null;
+            if (useInstance)
+            {
+                instanceLayout = new VertexLayout()
+                {
+                    VertexStepMode = VertexStepMode.Instance,
+                    VertexAttributes = instanceElements.ToArray()
+                };
+                vertexLayouts = new VertexLayout[] { vertexLayout, instanceLayout };
+            }
+            else
+                vertexLayouts = new VertexLayout[] { vertexLayout };
+
 
             // Shader propery Uniforms
             BindGroupLayout shaderPropUniform = null;
@@ -454,11 +610,10 @@ namespace ABEngine.ABERuntime.Core.Assets
                 // Create pipeline
                 var pipelineDesc = new PipelineDescriptor()
                 {
-                    VertexStepMode = stepMode,
                     BlendStates = blendDesc,
                     DepthStencilState = depthDesc,
                     PrimitiveState = primitiveDesc,
-                    VertexAttributes = vertexLayout,
+                    VertexLayouts = vertexLayouts,
                     BindGroupLayouts = resourceLayouts.ToArray(),
                     AttachmentDescription = new AttachmentDescription()
                     {
@@ -518,6 +673,29 @@ namespace ABEngine.ABERuntime.Core.Assets
         public bool HasTextures()
         {
             return textureNames.Count > 0;
+        }
+    }
+
+    public class VariantPipelineAsset : PipelineAsset
+    {
+        public bool IsBuilt { get; set; }
+        public string DefineKey { get; set; }
+
+        private string pipelineSource;
+        private bool readDescriptor;
+
+        public VariantPipelineAsset(string assetContent, bool readDescriptor, string defineKey) : base()
+        {
+            this.pipelineSource = assetContent;
+            this.readDescriptor = readDescriptor;
+            this.DefineKey = defineKey;
+        }
+
+        public void Build()
+        {
+            base.ParseAsset(pipelineSource, readDescriptor, DefineKey);
+            pipelineSource = null;
+            IsBuilt = true;
         }
     }
 }

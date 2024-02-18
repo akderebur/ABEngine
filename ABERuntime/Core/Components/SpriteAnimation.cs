@@ -89,7 +89,7 @@ namespace ABEngine.ABERuntime.Components
         public void SetLooping(bool isLooping)
         {
             if (state != null)
-                state.looping = isLooping;
+                state.IsLooping = isLooping;
         }
     }
 }

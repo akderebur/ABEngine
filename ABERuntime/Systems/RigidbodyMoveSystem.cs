@@ -72,7 +72,7 @@ namespace ABEngine.ABERuntime
 
                     if (rb.interpolationType == RBInterpolationType.None)
                     {
-                        Vector3 locPos = Vector3.Transform(new Vector3(rb.b2dBody.GetPosition(), transform.localPosition.Z), transform.parent != null ? transform.parent.worldToLocaMatrix : Matrix4x4.Identity);
+                        Vector3 locPos = Vector3.Transform(new Vector3(rb.b2dBody.GetPosition(), transform.localPosition.Z), transform.parent != null ? transform.parent.worldToLocalMatrix : Matrix4x4.Identity);
                         transform.localPosition = locPos;
                     }
                     else
@@ -100,7 +100,7 @@ namespace ABEngine.ABERuntime
                         bool oldMovestate = transform.transformMove;
                         rb.current = Vector2.Lerp(rb.start, rb.target, ratio);
 
-                        Vector3 locPos = Vector3.Transform(new Vector3(rb.current, transform.localPosition.Z), transform.parent != null ? transform.parent.worldToLocaMatrix : Matrix4x4.Identity);
+                        Vector3 locPos = Vector3.Transform(new Vector3(rb.current, transform.localPosition.Z), transform.parent != null ? transform.parent.worldToLocalMatrix : Matrix4x4.Identity);
                         transform.localPosition = locPos;
                         transform.transformMove = oldMovestate;
                     }

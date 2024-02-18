@@ -370,7 +370,6 @@ namespace ABEngine.ABERuntime.Rendering
 
             PipelineDescriptor fsPipeDesc = new()
             {
-                VertexStepMode = VertexStepMode.Vertex,
                 PrimitiveState = new PrimitiveState()
                 {
                     Topology = PrimitiveTopology.TriangleList,
@@ -381,7 +380,7 @@ namespace ABEngine.ABERuntime.Rendering
                 {
                     BlendState.OverrideBlend
                 },
-                VertexAttributes = GraphicsManager.fullScreenVertexLayout,
+                VertexLayouts = new[] { GraphicsManager.fullScreenVertexLayout },
                 BindGroupLayouts = new[]
                 {
                     fsLayout

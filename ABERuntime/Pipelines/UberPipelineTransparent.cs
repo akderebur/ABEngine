@@ -19,9 +19,9 @@ namespace ABEngine.ABERuntime.Pipelines
             renderOrder = Rendering.RenderOrder.Transparent;
             renderType = Rendering.RenderType.Transparent;
 
+            vertexLayout.VertexStepMode = VertexStepMode.Instance;
             var uberTransPipeDesc = new PipelineDescriptor()
             {
-                VertexStepMode = VertexStepMode.Instance,
                 BlendStates = new BlendState[]
                 {
                     BlendState.AlphaBlend,
@@ -40,7 +40,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     CullFace = CullFace.None,
                     FrontFace = FrontFace.Cw
                 },
-                VertexAttributes = vertexLayout,
+                VertexLayouts = new[] { vertexLayout },
                 BindGroupLayouts = resourceLayouts.ToArray(),
                 AttachmentDescription = new AttachmentDescription()
                 {

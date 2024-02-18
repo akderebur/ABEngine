@@ -15,24 +15,24 @@ namespace ABEngine.ABERuntime
             Game.GameWorld.Query(in query, (ref SpriteAnimation anim, ref Sprite sprite) =>
             {
                 AnimationState curState = anim.state;
-                SpriteClip curClip = curState.clip;
+                SpriteClip curClip = curState.clip as SpriteClip;
 
-                curState.normalizedTime = (gameTime - curState.loopStartTime) / curState.length;
-                if ((gameTime - curState.sampleFreq) > curState.lastFrameTime)
+                curState.normalizedTime = (gameTime - curState.loopStartTime) / curState.Length;
+                if ((gameTime - curState.SampleFreq) > curState.lastFrameTime)
                 {
                     curState.curFrame++;
-                    if (curState.curFrame >= curClip.frameCount)
+                    if (curState.curFrame >= curClip.FrameCount)
                     {
                         curState.normalizedTime = 1f;
 
-                        if (curState.looping)
+                        if (curState.IsLooping)
                         {
                             curState.curFrame = 0;
                             curState.loopStartTime = gameTime;
                         }
                         else
                         {
-                            curState.curFrame = curClip.frameCount - 1;
+                            curState.curFrame = curClip.FrameCount - 1;
                         }
                     }
                     curState.lastFrameTime = gameTime;

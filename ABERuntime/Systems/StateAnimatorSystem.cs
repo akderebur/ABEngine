@@ -14,7 +14,7 @@ namespace ABEngine.ABERuntime
             var query = new QueryDescription().WithAll<StateMatchAnimator, Sprite>();
             Game.GameWorld.Query(in query, (ref StateMatchAnimator anim, ref Transform transform, ref Sprite sprite) =>
             {
-                foreach (var clip in anim.GetAllClips())
+                foreach (SpriteClip clip in anim.GetAllClips())
                 {
                     var batch = Game.spriteBatchSystem.GetBatchFromSprite(transform, sprite, clip.texture2D, "");
                     if (batch == null)
@@ -35,7 +35,7 @@ namespace ABEngine.ABERuntime
 
                 AnimationMatch curMatch = anim.GetCurrentAnimMatch();
                 AnimationState curState = curMatch.animationState;
-                SpriteClip curClip = curState.clip;
+                SpriteClip curClip = curState.clip as SpriteClip;
                 if (stateChanged)
                 {
                     sprite.SetTexture(curClip.texture2D);
@@ -46,21 +46,21 @@ namespace ABEngine.ABERuntime
                     curState.curFrame = -1;
                 }
 
-                curState.normalizedTime = (gameTime - curState.loopStartTime) / curState.length;
-                if (curState.normalizedTime >= 1f && !curState.looping && curState.loopStartTime != 0)
+                curState.normalizedTime = (gameTime - curState.loopStartTime) / curState.Length;
+                if (curState.normalizedTime >= 1f && !curState.IsLooping && curState.loopStartTime != 0)
                 {
                     curState.completed = true;
                     anim.AnimationComplete(curMatch);
                 }
 
-                if ((gameTime - curState.sampleFreq) > curState.lastFrameTime)
+                if ((gameTime - curState.SampleFreq) > curState.lastFrameTime)
                 {
                     curState.curFrame++;
-                    if (curState.curFrame >= curClip.frameCount)
+                    if (curState.curFrame >= curClip.FrameCount)
                     {
                         curState.normalizedTime = 1f;
 
-                        if (curState.looping)
+                        if (curState.IsLooping)
                         {
                             curState.curFrame = 0;
                             curState.loopStartTime = gameTime;
@@ -71,7 +71,7 @@ namespace ABEngine.ABERuntime
                                 anim.AnimationComplete(curMatch);
 
                             curState.completed = true;
-                            curState.curFrame = curClip.frameCount - 1;
+                            curState.curFrame = curClip.FrameCount - 1;
                         }
                     }
                     curState.lastFrameTime = gameTime;

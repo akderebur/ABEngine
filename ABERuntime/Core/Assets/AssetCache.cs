@@ -11,6 +11,10 @@ using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using Halak;
 using System.Runtime.CompilerServices;
+using ABEngine.ABERuntime.ECS;
+using Arch.Core;
+using ABEngine.ABERuntime.Components;
+using Arch.Core.Extensions;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
@@ -81,6 +85,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 hashParser(".abmat");
                 hashParser(".abprefab");
                 hashParser(".abmesh");
+                hashParser(".abmodel");
 
                 // Get user pipelines
                 var files = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories)
@@ -273,6 +278,50 @@ namespace ABEngine.ABERuntime.Core.Assets
             return GetOrCreateMesh(meshFilePath);
         }
 
+        public static Transform CreateModel(string modelAssetPath)
+        {
+            BinaryReader br = null;
+            if(Game.debug)
+            {
+                string modelAbsPath = Game.AssetPath + modelAssetPath;
+                if (File.Exists(modelAbsPath))
+                    br = new BinaryReader(new FileStream(modelAbsPath, FileMode.Open));
+                else
+                    return null;
+            }
+            else
+            {
+                // Load from PK
+            }
+
+            int nodeC = br.ReadInt32();
+            Transform[] nodeTransforms = new Transform[nodeC];
+
+            for (int i = 0; i < nodeC; i++)
+            {
+                string nodeName = br.ReadString();
+                int parId = br.ReadInt32();
+
+                Entity nodeEnt = EntityManager.CreateEntity(nodeName, "");
+                Transform nodeTrans = nodeEnt.Get<Transform>();
+
+                if (parId >= 0)
+                    nodeTrans.parent = nodeTransforms[parId];
+
+                Vector3 locPos = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                Quaternion locRot = new Quaternion(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                Vector3 locSca = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                nodeTrans.SetTRS(locPos, locRot, locSca);
+
+                // Visualize skel
+
+            }
+
+            br.Close();
+
+            return nodeTransforms[0];
+        }
+
         public static PipelineAsset CreatePipelineAsset(string pipelineName)
         {
             var pipeline = GraphicsManager.GetPipelineAssetByName(pipelineName);
@@ -448,7 +497,12 @@ namespace ABEngine.ABERuntime.Core.Assets
             {
                 if (preHash != 0)
                     meshPath = hashToFName[preHash];
-                mesh = LoadMeshRAW(hash, meshPath);
+
+                string meshAbsPath = Game.AssetPath.ToCommonPath() + meshPath;
+                if (!File.Exists(meshAbsPath))
+                    return null;
+
+                mesh = LoadMeshRAW(hash, File.ReadAllBytes(meshAbsPath));
             }
 
             s_meshes.Add(mesh);
@@ -686,22 +740,17 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
         }
 
-        private static Mesh LoadMeshRAW(uint hash, string meshFilePath)
+        private static Mesh LoadMeshRAW(uint hash, byte[] meshData)
         {
-            meshFilePath = Game.AssetPath.ToCommonPath() + meshFilePath;
-            if (!File.Exists(meshFilePath))
-                return null;
-
             Mesh mesh = new Mesh(hash);
-            using (FileStream fs = new FileStream(meshFilePath, FileMode.Open))
+            using (MemoryStream fs = new MemoryStream(meshData))
             using (BinaryReader br = new BinaryReader(fs))
             {
+                int meshDataSize = br.ReadInt32();
                 int vertC = br.ReadInt32();
                 int indC = br.ReadInt32();
 
                 int compC = br.ReadByte();
-
-                VertexStandard[] vertices = new VertexStandard[vertC];
 
                 for (int vc = 0; vc < compC; vc++)
                 {
@@ -709,20 +758,54 @@ namespace ABEngine.ABERuntime.Core.Assets
                     switch (vcID)
                     {
                         case 'P':
+                            Vector3[] poses = new Vector3[vertC];
                             for (int i = 0; i < vertC; i++)
-                                vertices[i].Position = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                                poses[i] = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                            mesh.Positions = poses;
                             break;
                         case 'U':
+                            Vector2[] uv = new Vector2[vertC];
                             for (int i = 0; i < vertC; i++)
-                                vertices[i].UV = new Vector2(br.ReadSingle(), br.ReadSingle());
+                                uv[i] = new Vector2(br.ReadSingle(), br.ReadSingle());
+                            mesh.UV0 = uv;
                             break;
                         case 'N':
+                            Vector3[] normals = new Vector3[vertC];
                             for (int i = 0; i < vertC; i++)
-                                vertices[i].Normal = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                                normals[i] = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                            mesh.Normals = normals;
                             break;
                         case 'T':
+                            Vector4[] tangents = new Vector4[vertC];
                             for (int i = 0; i < vertC; i++)
-                                vertices[i].Tangent = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                                tangents[i] = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                            mesh.Tangents = tangents;
+                            break;
+                        case 'B':
+                            Vector4BInt[] boneIds = new Vector4BInt[vertC];
+                            Vector4[] boneWeights = new Vector4[vertC];
+                            for (int i = 0; i < vertC; i++)
+                            {
+                                Vector4BInt idVec = new Vector4BInt();
+                                Vector4 weightVec = new Vector4();
+
+                                idVec.B0 = br.ReadUInt16();
+                                weightVec.X = br.ReadSingle();
+
+                                idVec.B1 = br.ReadUInt16();
+                                weightVec.Y = br.ReadSingle();
+
+                                idVec.B2 = br.ReadUInt16();
+                                weightVec.Z = br.ReadSingle();
+
+                                idVec.B3 = br.ReadUInt16();
+                                weightVec.W = br.ReadSingle();
+
+                                boneIds[i] = idVec;
+                                boneWeights[i] = weightVec;
+                            }
+                            mesh.BoneIDs = boneIds;
+                            mesh.BoneWeights = boneWeights;
                             break;
                         default:
                             break;
@@ -732,11 +815,10 @@ namespace ABEngine.ABERuntime.Core.Assets
                 ushort[] indices = new ushort[indC];
                 for (int i = 0; i < indC; i++)
                     indices[i] = br.ReadUInt16();
-
-                mesh.vertices = vertices;
-                mesh.indices = indices;
+                mesh.Indices = indices;
             }
 
+            mesh.UpdateMesh();
             return mesh;
         }
 

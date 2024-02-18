@@ -34,7 +34,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     CullFace = CullFace.Back,
                     FrontFace = FrontFace.Cw
                 },
-                VertexAttributes = GraphicsManager.sharedMeshVertexLayout,
+                VertexLayouts = new[] { GraphicsManager.sharedMeshVertexLayout },
                 BindGroupLayouts = resourceLayouts.ToArray(),
                 AttachmentDescription = new AttachmentDescription()
                 {

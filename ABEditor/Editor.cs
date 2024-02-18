@@ -130,6 +130,7 @@ namespace ABEngine.ABEditor
         void EditorPassWork(RenderPass pass)
         {
             colDebugSystem.Render(pass);
+            TMColliderGizmo.Render(pass);
         }
 
         private protected override void MainLoop(float newTime, float elapsed)

@@ -5,13 +5,16 @@ namespace ABEngine.ABERuntime.Rendering
 {
     public static class CubeModel
     {
+        private static Mesh _cubeMesh = null;
+
         public static Mesh GetCubeMesh()
         {
-            Mesh mesh = new Mesh();
-            mesh.vertices = Vertices;
-            mesh.indices = Indices;
-
-            return mesh;
+            if (_cubeMesh == null)
+            {
+                _cubeMesh = new Mesh();
+                _cubeMesh.CreateFromStandard(Vertices, Indices);
+            }
+            return _cubeMesh;
         }
 
         public static readonly VertexStandard[] Vertices = new VertexStandard[]

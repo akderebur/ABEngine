@@ -69,7 +69,7 @@ namespace ABEngine.ABERuntime
                 //    pass.SetBindGroup(entry.Key, entry.Value);
                 //}
 
-                pass.DrawIndexed(mesh.indices.Length);
+                pass.DrawIndexed(mesh.Indices.Length);
             });
         }
 

@@ -54,14 +54,15 @@ namespace ABEngine.ABERuntime
 
         public static Tuple<BindGroupLayout, BindGroupLayout> SpriteLayouts;
 
-        public static VertexAttribute[] sharedVertexLayout;
-        public static VertexAttribute[] sharedMeshVertexLayout;
-        public static VertexAttribute[] fullScreenVertexLayout;
+        public static VertexLayout sharedVertexLayout;
+        public static VertexLayout sharedMeshVertexLayout;
+        public static VertexLayout fullScreenVertexLayout;
 
         public static BindGroupLayout sharedPipelineLayout;
         public static BindGroupLayout sharedTextureLayout;
         public static BindGroupLayout sharedSpriteNormalLayout;
         public static BindGroupLayout sharedMeshUniform_VS;
+        public static BindGroupLayout sharedSkinnedMeshUniform_VS;
         public static BindGroupLayout sharedPipelineLightLayout;
 
         public static TextureView defaultTexView;
@@ -281,9 +282,9 @@ namespace ABEngine.ABERuntime
             sharedSpriteNormalLayout = wgil.CreateBindGroupLayout(ref texLayoutNormalDesc).SetManualDispose(true);
 
             // Shared vertex layouts
-            sharedVertexLayout = WGILUtils.GetVertexLayout<QuadVertex>(out _);
+            sharedVertexLayout = WGILUtils.GetVertexLayout<QuadVertex>(VertexStepMode.Instance);
 
-            sharedMeshVertexLayout = WGILUtils.GetVertexLayout<VertexStandard>(out _);
+            sharedMeshVertexLayout = WGILUtils.GetVertexLayout<VertexStandard>(VertexStepMode.Vertex);
 
             // 3D Shared
             var meshVertexDesc = new BindGroupLayoutDescriptor()
@@ -300,6 +301,26 @@ namespace ABEngine.ABERuntime
 
 
             sharedMeshUniform_VS = wgil.CreateBindGroupLayout(ref meshVertexDesc).SetManualDispose(true);
+
+            var skinnedMeshVertexDesc = new BindGroupLayoutDescriptor()
+            {
+                Entries = new[]
+                {
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Buffer,
+                        ShaderStages = ShaderStages.VERTEX
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Buffer,
+                        ShaderStages = ShaderStages.VERTEX
+                    }
+                }
+            };
+
+
+            sharedSkinnedMeshUniform_VS = wgil.CreateBindGroupLayout(ref skinnedMeshVertexDesc).SetManualDispose(true);
 
             var pipeLightDesc = new BindGroupLayoutDescriptor()
             {
@@ -321,10 +342,14 @@ namespace ABEngine.ABERuntime
             sharedPipelineLightLayout = wgil.CreateBindGroupLayout(ref pipeLightDesc).SetManualDispose(true);
 
             // Full screen pipeline
-            fullScreenVertexLayout = new VertexAttribute[]
+            fullScreenVertexLayout = new VertexLayout()
             {
-                new VertexAttribute() { format = VertexFormat.Float32x2, location = 0, offset = 0 },
-                new VertexAttribute() { format = VertexFormat.Float32x2, location = 1, offset = 8 }
+                VertexStepMode = VertexStepMode.Vertex,
+                VertexAttributes = new VertexAttribute[]
+                {
+                    new VertexAttribute() { format = VertexFormat.Float32x2, location = 0, offset = 0 },
+                    new VertexAttribute() { format = VertexFormat.Float32x2, location = 1, offset = 8 }
+                }
             };
 
             var fsPipelineDesc = new PipelineDescriptor()
@@ -340,7 +365,7 @@ namespace ABEngine.ABERuntime
                     CullFace = CullFace.None,
                     FrontFace = FrontFace.Cw
                 },
-                VertexAttributes = fullScreenVertexLayout,
+                VertexLayouts = new[] { fullScreenVertexLayout },
                 BindGroupLayouts = new BindGroupLayout[]
                 {
                     sharedTextureLayout
@@ -371,7 +396,6 @@ namespace ABEngine.ABERuntime
             // Depth Clear Pipeline
             PipelineDescriptor depthPipeDesc = new()
             {
-                VertexStepMode = VertexStepMode.Vertex,
                 PrimitiveState = new PrimitiveState()
                 {
                     Topology = PrimitiveTopology.TriangleList,
@@ -390,7 +414,7 @@ namespace ABEngine.ABERuntime
                     BlendState.OverrideBlend,
                     BlendState.OverrideBlend
                 },
-                VertexAttributes = fullScreenVertexLayout,
+                VertexLayouts = new[] { fullScreenVertexLayout },
                 AttachmentDescription = new AttachmentDescription()
                 {
                     DepthFormat = Game.resourceContext.mainDepthView.Format,
@@ -419,6 +443,7 @@ namespace ABEngine.ABERuntime
             sharedTextureLayout?.Dispose();
 
             sharedMeshUniform_VS?.Dispose();
+            sharedSkinnedMeshUniform_VS?.Dispose();
             sharedPipelineLightLayout?.Dispose();
 
             defaultTexView?.Dispose();

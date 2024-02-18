@@ -14,7 +14,7 @@ namespace ABEditor.Debug
         public TMColliderPipelineAsset() : base()
         {
             // Line Pipeline
-            var lineVertLayout = WGILUtils.GetVertexLayout<LinePoint>(out _);
+            var lineVertLayout = WGILUtils.GetVertexLayout<LinePoint>(VertexStepMode.Vertex, out _);
 
             var linePipeDesc = new PipelineDescriptor()
             {
@@ -35,7 +35,7 @@ namespace ABEditor.Debug
                     CullFace = CullFace.None,
                     FrontFace = FrontFace.Cw
                 },
-                VertexAttributes = lineVertLayout,
+                VertexLayouts = new[] { lineVertLayout },
                 BindGroupLayouts = new[] { GraphicsManager.sharedPipelineLayout },
                 AttachmentDescription = new AttachmentDescription()
                 {

@@ -222,7 +222,7 @@ namespace ABEngine.ABEUI
                     CullFace = CullFace.None
                 },
                 BindGroupLayouts = new BindGroupLayout[] { sliderInfoLayout },
-                VertexAttributes = GraphicsManager.fullScreenVertexLayout,
+                VertexLayouts = new[] { GraphicsManager.fullScreenVertexLayout },
                 AttachmentDescription = new AttachmentDescription()
                 {
                     ColorFormats = new TextureFormat[] { TextureFormat.Rgba8UnormSrgb }

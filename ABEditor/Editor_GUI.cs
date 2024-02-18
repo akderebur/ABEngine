@@ -1292,7 +1292,7 @@ namespace ABEngine.ABEditor
                         AnimationState entry = sourceAnim.GetEntryState();
                         if (entry != null)
                         {
-                            SpriteClip clip = entry.clip;
+                            SpriteClip clip = entry.clip as SpriteClip;
                             sprite.SetTexture(AssetCache.CreateTexture2D(clip.imgPath));
                             sprite.Resize(new Vector2(clip.frameWidth, clip.frameHeight));
                             sprite.SetUVPosScale(clip.uvPoses[0], clip.uvScales[0]);

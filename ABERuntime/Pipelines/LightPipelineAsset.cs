@@ -15,7 +15,7 @@ namespace ABEngine.ABERuntime.Pipelines
         {
 
             // Light Pipeline
-            var vertLayout = WGILUtils.GetVertexLayout<LightInfo>(out _);
+            var vertLayout = WGILUtils.GetVertexLayout<LightInfo>(VertexStepMode.Instance);
 
             // Tex Layout
             var texLayoutDesc = new BindGroupLayoutDescriptor()
@@ -50,7 +50,6 @@ namespace ABEngine.ABERuntime.Pipelines
 
             var lightPipeDesc = new PipelineDescriptor()
             {
-                VertexStepMode = VertexStepMode.Instance,
                 BlendStates = new BlendState[]
                 {
                     new BlendState()
@@ -67,7 +66,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     FrontFace = FrontFace.Cw
                 },
                 BindGroupLayouts = new[] { GraphicsManager.sharedPipelineLayout, texLayout },
-                VertexAttributes = vertLayout,
+                VertexLayouts = new[] { vertLayout },
                 AttachmentDescription = new AttachmentDescription()
                 {
                     ColorFormats = new[] { TextureFormat.Rgba16Float }

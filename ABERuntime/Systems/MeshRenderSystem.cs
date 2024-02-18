@@ -174,6 +174,7 @@ namespace ABEngine.ABERuntime
         {
             // TODO Render layers
             // TODO Pipeline batching
+            pass.SetBindGroup(0, sharedFragmentSet);
 
             foreach (var renderPair in renderOrder)
             {
@@ -192,7 +193,8 @@ namespace ABEngine.ABERuntime
 
                     wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
 
-                    mr.material.pipelineAsset.BindPipeline(pass, 1, sharedFragmentSet);
+                    pass.SetPipeline(mr.material.pipelineAsset.pipeline);
+                    //mr.material.pipelineAsset.BindPipeline(pass, 1, sharedFragmentSet);
 
                     pass.SetVertexBuffer(0, mesh.vertexBuffer);
                     pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
@@ -205,7 +207,7 @@ namespace ABEngine.ABERuntime
                         pass.SetBindGroup(setKV.Key, setKV.Value);
                     }
 
-                    pass.DrawIndexed(mesh.indices.Length);
+                    pass.DrawIndexed(mesh.Indices.Length);
                 }
             }
         }
@@ -242,7 +244,7 @@ namespace ABEngine.ABERuntime
                         pass.SetBindGroup(setKV.Key, setKV.Value);
                     }
 
-                    pass.DrawIndexed(mesh.indices.Length);
+                    pass.DrawIndexed(mesh.Indices.Length);
                 }
             }
         }

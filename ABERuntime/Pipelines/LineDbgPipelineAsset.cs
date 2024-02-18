@@ -20,10 +20,17 @@ namespace ABEngine.ABERuntime.Pipelines
                     FrontFace = FrontFace.Cw,
                     CullFace = CullFace.None
                 },
-                VertexAttributes = new VertexAttribute[]
+                VertexLayouts = new[]
                 {
-                    new VertexAttribute() { format = VertexFormat.Float32x4, location = 0, offset = 0 },
-                    new VertexAttribute() { format = VertexFormat.Float32x3, location = 1, offset = 16 }
+                    new VertexLayout()
+                    {
+                        VertexStepMode = VertexStepMode.Vertex,
+                        VertexAttributes = new VertexAttribute[]
+                        {
+                            new VertexAttribute() { format = VertexFormat.Float32x4, location = 0, offset = 0 },
+                            new VertexAttribute() { format = VertexFormat.Float32x3, location = 1, offset = 16 }
+                        }
+                    }
                 },
                 BindGroupLayouts = new BindGroupLayout[] { GraphicsManager.sharedPipelineLayout },
                 AttachmentDescription = new AttachmentDescription()

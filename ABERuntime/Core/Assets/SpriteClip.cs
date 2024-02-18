@@ -6,7 +6,7 @@ using Halak;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
-    public class SpriteClip : Asset
+    public class SpriteClip : Asset, IClip
     {
         public string imgPath { get; set; }
         public string clipAssetPath { get; set; }
@@ -16,13 +16,14 @@ namespace ABEngine.ABERuntime.Core.Assets
         public List<Vector2> uvScales = new List<Vector2>();
 
         private float _sampleRate;
-        public float sampleRate { get { return _sampleRate; } set { sampleFreq = 1f / value; clipLength = sampleFreq * frameCount; _sampleRate = value; } }
-        public float sampleFreq { get; set; }
-        public float clipLength { get; set; }
-        public int frameCount { get; set; }
+        public float SampleRate { get { return _sampleRate; } set { SampleFreq = 1f / value; ClipLength = SampleFreq * FrameCount; _sampleRate = value; } }
+        public float SampleFreq { get; set; }
+        public float ClipLength { get; set; }
+        public int FrameCount { get; set; }
 
         public float frameWidth { get; set; }
         public float frameHeight { get; set; }
+        public string ClipAssetPath { get => clipAssetPath; set => clipAssetPath = value; }
 
         /// <summary>
         /// Load a sprite sheet animation from json description
@@ -93,8 +94,8 @@ namespace ABEngine.ABERuntime.Core.Assets
         {
             //sampleFreq = 1f / sampleRate;
 
-            frameCount = frameC;
-            sampleRate = 10f;
+            FrameCount = frameC;
+            SampleRate = 10f;
             //curFrame = -1;
             //lastFrameTime = 0f;
         }

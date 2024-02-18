@@ -22,7 +22,7 @@ namespace ABEngine.ABERuntime.Components
 
         public Matrix4x4 localMatrix;
         public Matrix4x4 worldMatrix;
-        public Matrix4x4 worldToLocaMatrix;
+        private Matrix4x4 _worldToLocalMatrix;
 
         private Transform _parent;
 
@@ -112,10 +112,17 @@ namespace ABEngine.ABERuntime.Components
         //    }
         //}
 
+        public void SetTRS(Vector3 position, Quaternion rotation, Vector3 scale)
+        {
+            _localPosition = position;
+            _localRotation = rotation;
+            _localScale = scale;
+
+            RecalculateTRS();
+        }
 
         private void RecalculateTRS()
         {
-
             localMatrix = Matrix4x4.CreateScale(_localScale) * Matrix4x4.CreateFromQuaternion(_localRotation) * Matrix4x4.CreateTranslation(_localPosition);
             Matrix4x4 worldMat = localMatrix;
             if (_parent != null)
@@ -123,7 +130,6 @@ namespace ABEngine.ABERuntime.Components
 
             this.worldMatrix = worldMat;
             Matrix4x4.Decompose(worldMat, out _worldScale, out _worldRotation, out _worldPosition);
-            Matrix4x4.Invert(worldMatrix, out worldToLocaMatrix);
 
             transformMove = true;
 
@@ -302,6 +308,15 @@ namespace ABEngine.ABERuntime.Components
                     _parent.AddChild(this);
 
                 }
+            }
+        }
+
+        public Matrix4x4 worldToLocalMatrix
+        {
+            get
+            {
+                Matrix4x4.Invert(worldMatrix, out _worldToLocalMatrix);
+                return _worldToLocalMatrix;
             }
         }
 

@@ -220,7 +220,8 @@ namespace ABEngine.ABEditor
                         var exNode = nodes.FirstOrDefault(n => n.AnimState.stateUID.Equals(stateUID));
                         if (exNode == null)
                         {
-                            EditorSprite statePV = new EditorSprite(AssetCache.CreateTexture2D(newState.clip.imgPath));
+                            var clip = newState.clip as SpriteClip;
+                            EditorSprite statePV = new EditorSprite(AssetCache.CreateTexture2D(clip.imgPath));
                             newNode.pvTex = statePV;
                             newNode.pvTexPtr = Editor.GetImGuiTexture(statePV.frameView);
                         }
@@ -361,7 +362,7 @@ namespace ABEngine.ABEditor
                     int srcIndex = dataPtr[0];
 
                     var clipFilePath = AssetsFolderView.files[srcIndex];
-                    Node exNode = nodes.FirstOrDefault(n => n.AnimState.clip.clipAssetPath.Equals(clipFilePath));
+                    Node exNode = nodes.FirstOrDefault(n => n.AnimState.clip.ClipAssetPath.Equals(clipFilePath));
 
                     if(exNode == null)
                     {
@@ -579,14 +580,15 @@ namespace ABEngine.ABEditor
                 {
                     var state = node.AnimState;
                     var clip = state.clip;
-                    if ((gameTime - state.sampleFreq) > state.lastFrameTime)
+                    if ((gameTime - state.SampleFreq) > state.lastFrameTime)
                     {
                         state.curFrame++;
-                        if (state.curFrame >= clip.frameCount)
+                        if (state.curFrame >= clip.FrameCount)
                             state.curFrame = 0;
                         state.lastFrameTime = gameTime;
 
-                        node.pvTex.SetUVPosScale(clip.uvPoses[state.curFrame], clip.uvScales[state.curFrame]);
+                        var spriteClip = clip as SpriteClip;
+                        node.pvTex.SetUVPosScale(spriteClip.uvPoses[state.curFrame], spriteClip.uvScales[state.curFrame]);
                     }
                 }
 

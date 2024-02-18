@@ -194,8 +194,11 @@ namespace ABEngine.ABERuntime
 
         void FinalPassWork(RenderPass pass)
         {
-            Camera cam = Game.activeCamera;
-            pass.SetViewport(Game.pixelSize.X * cam.viewport.X, Game.pixelSize.Y * cam.viewport.Y, Game.pixelSize.X * cam.viewport.Z, Game.pixelSize.Y * cam.viewport.W);
+            if (Game.activeCamera != null)
+            {
+                Camera cam = Game.activeCamera;
+                pass.SetViewport(Game.pixelSize.X * cam.viewport.X, Game.pixelSize.Y * cam.viewport.Y, Game.pixelSize.X * cam.viewport.Z, Game.pixelSize.Y * cam.viewport.W);
+            }
 
             if (activePostProcess == null || !activePostProcess.BloomEnabled)
             {
