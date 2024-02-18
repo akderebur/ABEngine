@@ -90,7 +90,7 @@ namespace ABEngine.ABERuntime
 
         // Render Systems
         public static NormalsPassRenderSystem normalsRenderSystem;
-        protected MeshRenderSystem meshRenderSystem;
+        internal static MeshRenderSystem meshRenderSystem;
         public static SpriteBatchSystem spriteBatchSystem;
         //internal static MSAAResolveSystem msaaResolveSystem;
         public static LightRenderSystem lightRenderSystem;

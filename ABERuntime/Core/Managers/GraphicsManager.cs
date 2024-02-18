@@ -293,7 +293,7 @@ namespace ABEngine.ABERuntime
                 {
                     new BindGroupLayoutEntry()
                     {
-                        BindingType = BindingType.Buffer,
+                        BindingType = BindingType.DynamicStorageBuffer,
                         ShaderStages = ShaderStages.VERTEX
                     }
                 }

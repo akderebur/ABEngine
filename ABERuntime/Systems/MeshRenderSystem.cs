@@ -12,6 +12,8 @@ namespace ABEngine.ABERuntime
     {
         public Matrix4x4 transformMatrix;
         public Matrix4x4 normalMatrix;
+        public Matrix4x4 padding1;
+        public Matrix4x4 padding2;
     }
 
     public struct LightInfo3D
@@ -45,11 +47,16 @@ namespace ABEngine.ABERuntime
         Buffer fragmentUniformBuffer;
 
         BindGroup sharedFragmentSet;
+        internal BindGroup transformSet;
 
         SharedMeshVertex sharedVertexUniform;
         SharedMeshFragment sharedFragmentUniform;
 
         LightInfo3D[] lightInfos;
+
+        internal Buffer meshTransformBuffer;
+        internal const int maxMeshCount = 10000;
+        internal int bufferStep = 0;
 
         public override void SetupResources(params TextureView[] sampledTextures)
         {
@@ -70,6 +77,20 @@ namespace ABEngine.ABERuntime
                 };
 
                 sharedFragmentSet = wgil.CreateBindGroup(ref sharedFragmentDesc).SetManualDispose(true);
+
+                bufferStep = (int)wgil.GetMinUniformOffset();
+                meshTransformBuffer = wgil.CreateBuffer(bufferStep * maxMeshCount, BufferUsages.STORAGE | BufferUsages.COPY_DST).SetManualDispose(true);
+                meshTransformBuffer.DynamicEntrySize = 128;
+
+                var transformSetDesc = new BindGroupDescriptor()
+                {
+                    BindGroupLayout = GraphicsManager.sharedMeshUniform_VS,
+                    Entries = new BindResource[]
+                    {
+                        meshTransformBuffer
+                    }
+                };
+                transformSet = Game.wgil.CreateBindGroup(ref transformSetDesc).SetManualDispose(true);
             }
 
             sharedVertexUniform = new SharedMeshVertex();
@@ -88,15 +109,17 @@ namespace ABEngine.ABERuntime
         //List<(MeshRenderer, Transform)> renderOrder = new List<(MeshRenderer, Transform)>();
         //List<(MeshRenderer, Transform)> lateRenderOrder = new List<(MeshRenderer, Transform)>();
 
-        SortedDictionary<int, List<(MeshRenderer, Transform)>> renderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
-        SortedDictionary<int, List<(MeshRenderer, Transform)>> lateRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
+        internal SortedDictionary<int, List<(MeshRenderer, Transform)>> opaqueRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
+        internal SortedDictionary<int, List<(MeshRenderer, Transform)>> transparentRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
+        internal SortedDictionary<int, List<(MeshRenderer, Transform)>> lateRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
 
         public override void Update(float gameTime, float deltaTime)
         {
             if (Game.activeCamTrans == null)
                 return;
 
-            renderOrder.Clear();
+            opaqueRenderOrder.Clear();
+            transparentRenderOrder.Clear();
             lateRenderOrder.Clear();
 
             // Fragment uniform update
@@ -138,8 +161,10 @@ namespace ABEngine.ABERuntime
             // Mesh render order
             Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
             {
-                SortedDictionary<int, List<(MeshRenderer, Transform)>> dict = renderOrder;
-                if (mr.material.renderOrder >= (int)RenderOrder.PostProcess)
+                SortedDictionary<int, List<(MeshRenderer, Transform)>> dict = opaqueRenderOrder;
+                if (mr.material.pipelineAsset.renderType == RenderType.Transparent)
+                    dict = transparentRenderOrder;
+                else if (mr.material.renderOrder >= (int)RenderOrder.PostProcess)
                     dict = lateRenderOrder;
 
                 if (dict.TryGetValue(mr.material.renderOrder, out var pairList))
@@ -175,8 +200,43 @@ namespace ABEngine.ABERuntime
             // TODO Render layers
             // TODO Pipeline batching
             pass.SetBindGroup(0, sharedFragmentSet);
+            bool set = false;
 
-            foreach (var renderPair in renderOrder)
+            foreach (var renderPair in opaqueRenderOrder)
+            {
+                foreach (var render in renderPair.Value)
+                {
+                    MeshRenderer mr = render.Item1;
+                    Mesh mesh = mr.mesh;
+
+                    int renderID = mr.renderID;
+                    // Opaque transform buffers updated in depth pre-pass
+
+
+                    if (!set)
+                    {
+                        pass.SetPipeline(mr.material.pipelineAsset.pipeline);
+
+                        pass.SetVertexBuffer(0, mesh.vertexBuffer);
+                        pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
+
+                        set = true;
+                    }
+
+                    pass.SetBindGroup(1, (uint)(bufferStep * renderID), transformSet);
+
+                    // Material Resource Sets
+                    foreach (var setKV in mr.material.bindableSets)
+                    {
+                        pass.SetBindGroup(setKV.Key, setKV.Value);
+                    }
+
+                    pass.DrawIndexed(mesh.Indices.Length);
+                }
+            }
+
+
+            foreach (var renderPair in transparentRenderOrder)
             {
                 foreach (var render in renderPair.Value)
                 {
@@ -184,22 +244,23 @@ namespace ABEngine.ABERuntime
                     Transform transform = render.Item2;
                     Mesh mesh = mr.mesh;
 
-                    // Update vertex uniform
+                    int renderID = mr.renderID;
+                    // Update transform buffer
+
                     sharedVertexUniform.transformMatrix = transform.worldMatrix;
                     Matrix4x4 MV = transform.worldMatrix;
                     Matrix4x4 MVInv;
                     Matrix4x4.Invert(MV, out MVInv);
                     sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
-
-                    wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
+                    //wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
+                
 
                     pass.SetPipeline(mr.material.pipelineAsset.pipeline);
-                    //mr.material.pipelineAsset.BindPipeline(pass, 1, sharedFragmentSet);
 
                     pass.SetVertexBuffer(0, mesh.vertexBuffer);
                     pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                    pass.SetBindGroup(1, mr.vertexTransformSet);
+                    pass.SetBindGroup(1, (uint)(bufferStep * renderID), transformSet);
 
                     // Material Resource Sets
                     foreach (var setKV in mr.material.bindableSets)
@@ -229,14 +290,14 @@ namespace ABEngine.ABERuntime
                     Matrix4x4.Invert(MV, out MVInv);
                     sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
 
-                    wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
+                    //wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
 
                     mr.material.pipelineAsset.BindPipeline(pass, 1, sharedFragmentSet);
 
                     pass.SetVertexBuffer(0, mesh.vertexBuffer);
                     pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                    pass.SetBindGroup(1, mr.vertexTransformSet);
+                    //pass.SetBindGroup(1, mr.vertexTransformSet);
 
                     // Material Resource Sets
                     foreach (var setKV in mr.material.bindableSets)
@@ -251,11 +312,17 @@ namespace ABEngine.ABERuntime
 
         public override void CleanUp(bool reload, bool newScene, bool resize)
         {
-            renderOrder.Clear();
+            opaqueRenderOrder.Clear();
+            transparentRenderOrder.Clear();
+            lateRenderOrder.Clear();
+
             if (!reload)
             {
                 sharedFragmentSet.Dispose();
                 fragmentUniformBuffer.Dispose();
+
+                transformSet.Dispose();
+                meshTransformBuffer.Dispose();
             }
         }
 

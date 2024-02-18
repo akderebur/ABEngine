@@ -12,14 +12,11 @@ namespace ABEngine.ABERuntime.Components
 	{
         public PipelineMaterial material { get; set; }
         public Mesh mesh { get; set; }
-
-        internal Buffer vertexUniformBuffer;
-        internal BindGroup vertexTransformSet;
+        internal int renderID { get; set; }
 
         public MeshRenderer()
 		{
             material = GraphicsManager.GetUber3D();
-            SetupResources();
         }
 
         public MeshRenderer(Mesh mesh) : this()
@@ -31,22 +28,6 @@ namespace ABEngine.ABERuntime.Components
         {
             this.mesh = mesh;
             this.material = material;
-            SetupResources();
-        }
-
-        void SetupResources()
-        {
-            vertexUniformBuffer = Game.wgil.CreateBuffer(128, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
-
-            var vertexTransformDesc = new BindGroupDescriptor()
-            {
-                BindGroupLayout = GraphicsManager.sharedMeshUniform_VS,
-                Entries = new BindResource[]
-                {
-                    vertexUniformBuffer
-                }
-            };
-            vertexTransformSet = Game.wgil.CreateBindGroup(ref vertexTransformDesc);
         }
 
         public JValue Serialize()

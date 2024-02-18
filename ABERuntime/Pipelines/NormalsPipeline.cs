@@ -63,11 +63,17 @@ Vertex
        float Padding;
    };
 
-   layout (set = 1, binding = 0) uniform SharedMeshVertex
-   {
-       mat4 transformationMatrix;
-       mat4 normalMatrix;
-   };
+   //layout (set = 1, binding = 0) uniform SharedMeshVertex
+   //{
+   //    mat4 transformationMatrix;
+   //    mat4 normalMatrix;
+   //};
+
+    layout (set = 1, binding = 0) buffer readonly SharedMeshVertex
+    {
+        mat4 transformationMatrix;
+        mat4 normalMatrix;
+    };
 
    layout(location = 0) in vec3 position;
    layout(location = 1) in vec3 vertexNormal;

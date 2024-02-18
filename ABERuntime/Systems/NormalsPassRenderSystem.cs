@@ -14,6 +14,7 @@ namespace ABEngine.ABERuntime
         private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
 
         SharedMeshVertex sharedVertexUniform;
+        SharedMeshVertex[] meshBufferData;
 
         public override void SetupResources(params TextureView[] samplesTextures)
         {
@@ -24,6 +25,7 @@ namespace ABEngine.ABERuntime
         {
             base.Start();
             sharedVertexUniform = new SharedMeshVertex();
+            meshBufferData = new SharedMeshVertex[MeshRenderSystem.maxMeshCount];
         }
 
         public override void SceneSetup()
@@ -41,36 +43,43 @@ namespace ABEngine.ABERuntime
         public override void Render(RenderPass pass)
         {
             pipelineAsset.BindPipeline(pass);
+            
+            int renderID = 0;
 
-            Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
+            foreach (var renderPair in Game.meshRenderSystem.opaqueRenderOrder)
             {
-                Mesh mesh = mr.mesh;
+                var renderList = renderPair.Value;
 
-                if (mesh == null || mr.material.renderOrder >= (int)RenderOrder.Transparent)
-                    return;
+                foreach (var meshGr in renderList.GroupBy(r => r.Item1.mesh))
+                {
+                    Mesh mesh = meshGr.Key;
+                    pass.SetVertexBuffer(0, mesh.vertexBuffer);
+                    pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                // Update vertex uniform
-                sharedVertexUniform.transformMatrix = transform.worldMatrix;
-                Matrix4x4 MV = transform.worldMatrix;
-                Matrix4x4 MVInv;
-                Matrix4x4.Invert(MV, out MVInv);
-                sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
-                wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
+                    foreach (var render in meshGr)
+                    {
+                        MeshRenderer mr = render.Item1;
+                        Transform transform = render.Item2;
 
-                pass.SetVertexBuffer(0, mesh.vertexBuffer);
-                pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
+                        // Update vertex uniform
+                        sharedVertexUniform.transformMatrix = transform.worldMatrix;
+                        Matrix4x4 MV = transform.worldMatrix;
+                        Matrix4x4 MVInv;
+                        Matrix4x4.Invert(MV, out MVInv);
+                        sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
+                        meshBufferData[renderID] = sharedVertexUniform;
+                        mr.renderID = renderID;
 
-                pass.SetBindGroup(1, mr.vertexTransformSet);
+                        pass.SetBindGroup(1, (uint)(Game.meshRenderSystem.bufferStep * renderID), Game.meshRenderSystem.transformSet);
 
-                // Material Resource Sets
-                //if (mr.material.bindableSets.Count > 0)
-                //{
-                //    var entry = mr.material.bindableSets.ElementAt(0);
-                //    pass.SetBindGroup(entry.Key, entry.Value);
-                //}
+                        pass.DrawIndexed(mesh.Indices.Length);
 
-                pass.DrawIndexed(mesh.Indices.Length);
-            });
+                        renderID++;
+                    }
+                }
+            }
+
+            wgil.WriteBuffer(Game.meshRenderSystem.meshTransformBuffer, meshBufferData, 0, Game.meshRenderSystem.bufferStep * renderID);
         }
 
         internal override TextureView GetMainColorAttachent()

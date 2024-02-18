@@ -117,11 +117,17 @@ Vertex
        float Padding;
    };
 
-   layout (set = 1, binding = 0) uniform SharedMeshVertex
-   {
-       mat4 transformationMatrix;
-       mat4 normalMatrix;
-   };
+   //layout (set = 1, binding = 0) uniform SharedMeshVertex
+   //{
+   //    mat4 transformationMatrix;
+   //    mat4 normalMatrix;
+   //};
+
+    layout (set = 1, binding = 0) buffer readonly SharedMeshVertex
+    {
+        mat4 transformationMatrix;
+        mat4 normalMatrix;
+    };
 
     layout (set = 2, binding = 0) uniform ShaderProps
     {
