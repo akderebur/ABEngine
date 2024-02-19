@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using ABEngine.ABERuntime.Pipelines;
 using ABEngine.ABERuntime.Rendering;
 using WGIL;
 using WGIL.IO;
@@ -105,8 +106,47 @@ namespace ABEngine.ABERuntime.Core.Assets
         {
             Dictionary<string, bool> defines = new Dictionary<string, bool>();
 
-            StringReader sr = new StringReader(pipelineAsset);
-          
+            string source = pipelineAsset; 
+            StringReader sr = new StringReader(source);
+            StringBuilder sb = new StringBuilder();
+
+            // Includes
+            while (true)
+            {
+                string orgLine = sr.ReadLine();
+                if (orgLine != null)
+                {
+                    string line = orgLine.Trim();
+                    if (line.StartsWith("#include "))
+                    {
+                        string incParam = line.Replace("#include ", "").Trim();
+                        int builtIncStart = incParam.IndexOf('<');
+                        if (builtIncStart > -1)
+                        {
+                            // Built-in include
+                            int builtIncEnd = incParam.IndexOf('>');
+                            int length = builtIncEnd - builtIncStart - 1;
+                            if (builtIncEnd > -1 && length > 0)
+                            {
+                                string incName = incParam.Substring(builtIncStart + 1, length);
+                                sb.AppendLine(ShaderIncludes.GetShaderInclude(incName));
+                            }
+                        }
+                        else
+                        {
+                            // Check user include
+                        }
+                    }
+                    else
+                        sb.AppendLine(orgLine);
+                }
+                else
+                    break;
+            }
+            source = sb.ToString();
+
+            // Defines
+            sr = new StringReader(source);
             while (true)
             {
                 string line = sr.ReadLine();
@@ -127,7 +167,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             int variantCount = (int)MathF.Pow(2, defines.Count);
 
             if (variantCount == 1)
-                ParseAsset(pipelineAsset, readDescriptor, "");
+                ParseAsset(source, readDescriptor, "");
             else
             {
                 pipelineVariants = new Dictionary<string, VariantPipelineAsset>();
@@ -136,8 +176,8 @@ namespace ABEngine.ABERuntime.Core.Assets
                 List<string> keys = defines.Keys.ToList();
                 for (int i = 0; i < variantCount; i++)
                 {
-                    sr = new StringReader(pipelineAsset);
-                    StringBuilder sb = new StringBuilder();
+                    sr = new StringReader(source);
+                    sb = new StringBuilder();
                     Stack<string> defStack = new Stack<string>();
                     bool defineChain = true;
 
@@ -321,7 +361,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                                             {
                                                 // Set 0 - Shared pipeline data
 
-                                                resourceLayouts.Add(GraphicsManager.sharedPipelineLightLayout);
+                                                resourceLayouts.Add(GraphicsManager.sharedMeshFrameData);
                                                 if (useSkin)
                                                     resourceLayouts.Add(GraphicsManager.sharedSkinnedMeshUniform_VS);
                                                 else

@@ -14,6 +14,7 @@ namespace ABEngine.ABERuntime.Rendering
                 _cubeMesh = new Mesh();
                 _cubeMesh.CreateFromStandard(Vertices, Indices);
             }
+
             return _cubeMesh;
         }
 

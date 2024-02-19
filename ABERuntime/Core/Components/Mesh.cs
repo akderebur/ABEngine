@@ -146,14 +146,14 @@ namespace ABEngine.ABERuntime
             if (vertexBuffer != null)
                 vertexBuffer.Dispose();
 
-            vertexBuffer = Game.wgil.CreateBuffer(48 * Positions.Length, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+            vertexBuffer = Game.wgil.CreateBuffer(48 * Positions.Length, BufferUsages.VERTEX | BufferUsages.COPY_DST).SetManualDispose(true);
             Game.wgil.WriteBuffer(vertexBuffer, vertices);
 
             // Index Buffer
             Indices = indices;
             if (indexBuffer != null)
                 indexBuffer.Dispose();
-            indexBuffer = Game.wgil.CreateBuffer(sizeof(ushort) * Indices.Length, BufferUsages.INDEX | BufferUsages.COPY_DST);
+            indexBuffer = Game.wgil.CreateBuffer(sizeof(ushort) * Indices.Length, BufferUsages.INDEX | BufferUsages.COPY_DST).SetManualDispose(true);
             Game.wgil.WriteBuffer(indexBuffer, indices);
         }
     }

@@ -6,6 +6,8 @@ using ABEngine.ABERuntime.Pipelines;
 using ABEngine.ABERuntime.Rendering;
 using Arch.Core;
 using WGIL;
+using WGIL.IO;
+using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime
 {
@@ -13,8 +15,8 @@ namespace ABEngine.ABERuntime
 	{
         private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
 
-        SharedMeshVertex sharedVertexUniform;
-        SharedMeshVertex[] meshBufferData;
+        MeshMatrixData matrixData;
+        BindGroup normalsFrameSet;
 
         public override void SetupResources(params TextureView[] samplesTextures)
         {
@@ -24,14 +26,27 @@ namespace ABEngine.ABERuntime
         public override void Start()
         {
             base.Start();
-            sharedVertexUniform = new SharedMeshVertex();
-            meshBufferData = new SharedMeshVertex[MeshRenderSystem.maxMeshCount];
+            matrixData = new MeshMatrixData();
         }
 
         public override void SceneSetup()
         {
             if(!GraphicsManager.render2DOnly)
                 base.pipelineAsset = new NormalsPipeline();
+
+            if (normalsFrameSet == null)
+            {
+                var normalsFrameData = new BindGroupDescriptor()
+                {
+                    BindGroupLayout = GraphicsManager.normalsFrameData,
+                    Entries = new BindResource[]
+                      {
+                        Game.pipelineBuffer,
+                        Game.meshRenderSystem.matrixStorageBuffer
+                      }
+                };
+                normalsFrameSet = wgil.CreateBindGroup(ref normalsFrameData).SetManualDispose(true);
+            }
         }
 
         public override void Render(RenderPass pass, int renderLayer)
@@ -42,44 +57,73 @@ namespace ABEngine.ABERuntime
 
         public override void Render(RenderPass pass)
         {
-            pipelineAsset.BindPipeline(pass);
-            
-            int renderID = 0;
+            pass.SetPipeline(pipelineAsset.pipeline);
+            pass.SetBindGroup(0, normalsFrameSet);
 
-            foreach (var renderPair in Game.meshRenderSystem.opaqueRenderOrder)
+            int matrixStart = 0;
+            int groupID = 0;
+            for (int matGroupID = 0; matGroupID < Game.meshRenderSystem.opaqueKeys.Count; matGroupID++)
             {
-                var renderList = renderPair.Value;
+                var material = Game.meshRenderSystem.opaqueKeys[matGroupID];
+                var matGroup = Game.meshRenderSystem.opaqueDict[material];
 
-                foreach (var meshGr in renderList.GroupBy(r => r.Item1.mesh))
+                foreach (var meshKey in matGroup.keyList)
                 {
-                    Mesh mesh = meshGr.Key;
+                    var meshGroup = matGroup.meshGroups[meshKey];
+                    int renderC = meshGroup.renderC;
+
+                    Game.meshRenderSystem.groupDrawDatas[groupID].matrixStartID = matrixStart;
+                    wgil.WriteBuffer(Game.meshRenderSystem.drawDataBuffer,
+                                     Game.meshRenderSystem.groupDrawDatas[groupID],
+                                     Game.meshRenderSystem.bufferStep * matGroupID,
+                                     4);
+
+                    pass.SetBindGroup(1, (uint)(Game.meshRenderSystem.bufferStep * groupID), Game.meshRenderSystem.drawDataset);
+
+                    Mesh mesh = meshKey;
                     pass.SetVertexBuffer(0, mesh.vertexBuffer);
                     pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                    foreach (var render in meshGr)
-                    {
-                        MeshRenderer mr = render.Item1;
-                        Transform transform = render.Item2;
+                    int locID = 0;
+                    int skipCount = 0;
 
-                        // Update vertex uniform
-                        sharedVertexUniform.transformMatrix = transform.worldMatrix;
+                    MeshMatrixData[] matrixDataArray = null;
+                    if (meshGroup.lastMatrixStart != matrixStart)
+                    {
+                        // Include static matrices to write too
+                        matrixDataArray = new MeshMatrixData[renderC];
+                        foreach (MeshMatrixData matrixData in meshGroup.staticRenders)
+                        {
+                            matrixDataArray[locID++] = matrixData;
+                        }
+                    }
+                    else
+                    {
+                        // Write dynamics only
+                        skipCount += meshGroup.staticRenders.Count;
+                        matrixDataArray = new MeshMatrixData[meshGroup.dynamicRenders.Count];
+                    }
+                    meshGroup.lastMatrixStart = matrixStart;
+
+                    foreach (Transform transform in meshGroup.dynamicRenders)
+                    {
+                        // Update model matrices
+                        matrixData.transformMatrix = transform.worldMatrix;
                         Matrix4x4 MV = transform.worldMatrix;
                         Matrix4x4 MVInv;
                         Matrix4x4.Invert(MV, out MVInv);
-                        sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
-                        meshBufferData[renderID] = sharedVertexUniform;
-                        mr.renderID = renderID;
-
-                        pass.SetBindGroup(1, (uint)(Game.meshRenderSystem.bufferStep * renderID), Game.meshRenderSystem.transformSet);
-
-                        pass.DrawIndexed(mesh.Indices.Length);
-
-                        renderID++;
+                        matrixData.normalMatrix = Matrix4x4.Transpose(MVInv);
+                        matrixDataArray[locID++] = matrixData;
                     }
+
+                    if(locID > 0)
+                        wgil.WriteBuffer(Game.meshRenderSystem.matrixStorageBuffer, matrixDataArray, matrixStart * 128 + skipCount * 128, locID * 128);
+                    pass.DrawIndexed(mesh.Indices.Length, renderC);
+
+                    matrixStart += renderC;
+                    groupID++;
                 }
             }
-
-            wgil.WriteBuffer(Game.meshRenderSystem.meshTransformBuffer, meshBufferData, 0, Game.meshRenderSystem.bufferStep * renderID);
         }
 
         internal override TextureView GetMainColorAttachent()
@@ -91,6 +135,7 @@ namespace ABEngine.ABERuntime
         {
             return Game.resourceContext.normalsDepthView;
         }
+
     }
 }
 

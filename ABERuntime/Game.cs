@@ -1083,6 +1083,12 @@ namespace ABEngine.ABERuntime
                 }
             });
 
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref MeshRenderer newMr) =>
+            {
+                meshRenderSystem.AddMesh(entity.Get<Transform>(), newMr);
+            });
+
+
             GameWorld.SubscribeComponentAdded((in Entity entity, ref StateMatchAnimator animator) => animator.SetTransform(entity.Get<Transform>()));
 
             GameWorld.SubscribeComponentRemoved((in Entity entity, ref Sprite sprite) =>

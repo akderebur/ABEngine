@@ -10,8 +10,44 @@ namespace ABEngine.ABERuntime.Components
 {
 	public class MeshRenderer : JSerializable
 	{
-        public PipelineMaterial material { get; set; }
-        public Mesh mesh { get; set; }
+        private PipelineMaterial _material;
+        private Mesh _mesh;
+
+        public PipelineMaterial material
+        {
+            get { return _material; }
+            set
+            {
+                if (_material == value || value == null)
+                    return;
+
+                Transform transform = null;
+                if(_material != null)
+                    transform = Game.meshRenderSystem.RemoveMesh(this);
+                _material = value;
+                if(transform != null)
+                    Game.meshRenderSystem.AddMesh(transform, this);
+            }
+        }
+
+
+        public Mesh mesh
+        {
+            get { return _mesh; }
+            set
+            {
+                if (_mesh == value || value == null)
+                    return;
+
+                Transform transform = null;
+                if (_mesh != null)
+                    transform = Game.meshRenderSystem.RemoveMesh(this);
+                _mesh = value;
+                if (transform != null)
+                    Game.meshRenderSystem.AddMesh(transform, this);
+            }
+        }
+
         internal int renderID { get; set; }
 
         public MeshRenderer()

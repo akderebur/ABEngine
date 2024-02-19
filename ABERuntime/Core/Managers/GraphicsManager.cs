@@ -62,8 +62,11 @@ namespace ABEngine.ABERuntime
         public static BindGroupLayout sharedTextureLayout;
         public static BindGroupLayout sharedSpriteNormalLayout;
         public static BindGroupLayout sharedMeshUniform_VS;
+
         public static BindGroupLayout sharedSkinnedMeshUniform_VS;
-        public static BindGroupLayout sharedPipelineLightLayout;
+        public static BindGroupLayout sharedMeshFrameData;
+        public static BindGroupLayout normalsFrameData;
+
 
         public static TextureView defaultTexView;
 
@@ -287,13 +290,28 @@ namespace ABEngine.ABERuntime
             sharedMeshVertexLayout = WGILUtils.GetVertexLayout<VertexStandard>(VertexStepMode.Vertex);
 
             // 3D Shared
+            //var meshInstanceBufferDesc = new BindGroupLayoutDescriptor()
+            //{
+            //    Entries = new[]
+            //   {
+            //        new BindGroupLayoutEntry()
+            //        {
+            //            BindingType = BindingType.StorageBuffer,
+            //            ShaderStages = ShaderStages.VERTEX
+            //        }
+            //    }
+            //};
+
+
+            //sharedMeshInstanceStorage_VS = wgil.CreateBindGroupLayout(ref meshInstanceBufferDesc).SetManualDispose(true);
+
             var meshVertexDesc = new BindGroupLayoutDescriptor()
             {
                 Entries = new[]
                 {
                     new BindGroupLayoutEntry()
                     {
-                        BindingType = BindingType.DynamicStorageBuffer,
+                        BindingType = BindingType.DynamicBuffer,
                         ShaderStages = ShaderStages.VERTEX
                     }
                 }
@@ -322,7 +340,28 @@ namespace ABEngine.ABERuntime
 
             sharedSkinnedMeshUniform_VS = wgil.CreateBindGroupLayout(ref skinnedMeshVertexDesc).SetManualDispose(true);
 
-            var pipeLightDesc = new BindGroupLayoutDescriptor()
+            // Normals Pipeline
+
+            var normalsFrameDesc = new BindGroupLayoutDescriptor()
+            {
+                Entries = new[]
+               {
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Buffer,
+                        ShaderStages = ShaderStages.VERTEX
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.StorageBuffer,
+                        ShaderStages = ShaderStages.VERTEX
+                    }
+                }
+            };
+
+            normalsFrameData = wgil.CreateBindGroupLayout(ref normalsFrameDesc).SetManualDispose(true);
+
+            var frameDataDesc = new BindGroupLayoutDescriptor()
             {
                 Entries = new[]
                 {
@@ -335,11 +374,16 @@ namespace ABEngine.ABERuntime
                     {
                         BindingType = BindingType.Buffer,
                         ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.StorageBuffer,
+                        ShaderStages = ShaderStages.VERTEX
                     }
                 }
             };
 
-            sharedPipelineLightLayout = wgil.CreateBindGroupLayout(ref pipeLightDesc).SetManualDispose(true);
+            sharedMeshFrameData = wgil.CreateBindGroupLayout(ref frameDataDesc).SetManualDispose(true);
 
             // Full screen pipeline
             fullScreenVertexLayout = new VertexLayout()
@@ -444,7 +488,8 @@ namespace ABEngine.ABERuntime
 
             sharedMeshUniform_VS?.Dispose();
             sharedSkinnedMeshUniform_VS?.Dispose();
-            sharedPipelineLightLayout?.Dispose();
+            sharedMeshFrameData?.Dispose();
+            normalsFrameData?.Dispose();
 
             defaultTexView?.Dispose();
             pointSamplerClamp?.Dispose();

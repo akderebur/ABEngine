@@ -15,7 +15,7 @@ namespace ABEngine.ABERuntime.Pipelines
 
             resourceLayouts.Clear();
 
-            resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
+            resourceLayouts.Add(GraphicsManager.normalsFrameData);
             resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
 
             var normalsPipeDesc = new PipelineDescriptor()
@@ -63,17 +63,17 @@ Vertex
        float Padding;
    };
 
-   //layout (set = 1, binding = 0) uniform SharedMeshVertex
-   //{
-   //    mat4 transformationMatrix;
-   //    mat4 normalMatrix;
-   //};
 
-    layout (set = 1, binding = 0) buffer readonly SharedMeshVertex
+    layout (set = 0, binding = 1) buffer readonly SharedMeshVertex
     {
-        mat4 transformationMatrix;
-        mat4 normalMatrix;
+        mat4 matrices[];
     };
+
+
+   layout (set = 1, binding = 0) uniform DrawData
+   {
+        int matrixStartID;
+   };
 
    layout(location = 0) in vec3 position;
    layout(location = 1) in vec3 vertexNormal;
@@ -84,6 +84,9 @@ Vertex
 
    void main()
    {
+        mat4 transformationMatrix = matrices[matrixStartID + gl_InstanceIndex * 2];
+        mat4 normalMatrix = matrices[matrixStartID + gl_InstanceIndex * 2 + 1];
+
        gl_Position = Projection * View * transformationMatrix * vec4(position,1.0);
 
        outNormal_VS = normalize(mat3(normalMatrix) * vertexNormal);
@@ -92,16 +95,6 @@ Vertex
 Fragment
 {
     #version 450
-
-    layout (set = 0, binding = 0) uniform PipelineData
-    {
-        mat4 Projection;
-        mat4 View;
-        vec2 Resolution;
-        float Time;
-        float Padding;
-    };
-
 
     layout(location = 0) in vec3 Normal_VS;
 

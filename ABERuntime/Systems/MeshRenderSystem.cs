@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Rendering;
 using Arch.Core;
 using WGIL;
@@ -8,12 +9,10 @@ using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime
 {
-    public struct SharedMeshVertex
+    public struct MeshMatrixData
     {
         public Matrix4x4 transformMatrix;
         public Matrix4x4 normalMatrix;
-        public Matrix4x4 padding1;
-        public Matrix4x4 padding2;
     }
 
     public struct LightInfo3D
@@ -38,6 +37,120 @@ namespace ABEngine.ABERuntime
         public float _padding3;
     }
 
+    public struct DrawData
+    {
+        public int matrixStartID;
+    }
+
+    struct RenderEntry
+    {
+        public int keyIndex;
+        public List<(MeshRenderer, Transform)> renderList;
+    }
+
+    class MaterialGroup
+    {
+        public Dictionary<Mesh, MeshGroup> meshGroups;
+        public List<Mesh> keyList;
+
+        public MaterialGroup()
+        {
+            meshGroups = new Dictionary<Mesh, MeshGroup>();
+            keyList = new List<Mesh>();
+        }
+
+        public void AddMesh(Transform transform, MeshRenderer mr)
+        {
+            if(meshGroups.TryGetValue(mr.mesh, out MeshGroup mg))
+            {
+                mg.AddMesh(transform, mr);
+            }
+            else
+            {
+                mg = new MeshGroup();
+                mg.AddMesh(transform, mr);
+                meshGroups.Add(mr.mesh, mg);
+                keyList.Add(mr.mesh);
+            }
+        }
+
+        public Transform RemoveMesh(MeshRenderer mr)
+        {
+            if(meshGroups.TryGetValue(mr.mesh, out MeshGroup mg))
+            {
+                Transform mrTrans = mg.RemoveMesh(mr);
+                if (mg.renderC == 0)
+                {
+                    meshGroups.Remove(mr.mesh);
+                    keyList.Remove(mr.mesh);
+                }
+                return mrTrans;
+            }
+
+            return null;
+        }
+    }
+
+    class MeshGroup
+    {
+        public List<MeshMatrixData> staticRenders;
+        public List<Transform> dynamicRenders;
+        public int renderC = 0;
+        public int lastMatrixStart = -1;
+
+        Dictionary<MeshRenderer, (Transform transform, int listId)> mrLookup;
+
+        public MeshGroup()
+        {
+            mrLookup = new();
+            staticRenders = new List<MeshMatrixData>();
+            dynamicRenders = new List<Transform>();
+        }
+
+        public void AddMesh(Transform transform, MeshRenderer mr)
+        {
+            if (mrLookup.ContainsKey(mr))
+                return;
+
+            int listIndex = 0;
+            if (transform.isStatic)
+            {
+                MeshMatrixData matrixData = new MeshMatrixData();
+                matrixData.transformMatrix = transform.worldMatrix;
+                Matrix4x4 MV = transform.worldMatrix;
+                Matrix4x4 MVInv;
+                Matrix4x4.Invert(MV, out MVInv);
+                matrixData.normalMatrix = Matrix4x4.Transpose(MVInv);
+                listIndex = staticRenders.Count;
+                staticRenders.Add(matrixData);
+            }
+            else
+            {
+                listIndex = dynamicRenders.Count;
+                dynamicRenders.Add(transform);
+            }
+
+            mrLookup.Add(mr, (transform, listIndex));
+            renderC++;
+        }
+
+        public Transform RemoveMesh(MeshRenderer mr)
+        {
+            Transform transform = null;
+            if(mrLookup.TryGetValue(mr, out var transformData))
+            {
+                transform = transformData.transform;
+                if (transformData.transform.isStatic)
+                    staticRenders.RemoveAt(transformData.listId);
+                else
+                    dynamicRenders.RemoveAt(transformData.listId);
+                renderC--;
+            }
+
+            return transform;
+        }
+    }
+
     public class MeshRenderSystem : RenderSystem
     {
         private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
@@ -46,16 +159,17 @@ namespace ABEngine.ABERuntime
 
         Buffer fragmentUniformBuffer;
 
-        BindGroup sharedFragmentSet;
-        internal BindGroup transformSet;
+        BindGroup sharedFrameSet;
 
-        SharedMeshVertex sharedVertexUniform;
+        internal BindGroup drawDataset;
+
         SharedMeshFragment sharedFragmentUniform;
 
         LightInfo3D[] lightInfos;
 
-        internal Buffer meshTransformBuffer;
-        internal const int maxMeshCount = 10000;
+        internal Buffer matrixStorageBuffer;
+        internal Buffer drawDataBuffer;
+        internal const int maxMeshCount = 100000;
         internal int bufferStep = 0;
 
         public override void SetupResources(params TextureView[] sampledTextures)
@@ -65,35 +179,36 @@ namespace ABEngine.ABERuntime
             if (fragmentUniformBuffer == null)
             {
                 fragmentUniformBuffer = wgil.CreateBuffer(160, BufferUsages.UNIFORM | BufferUsages.COPY_DST).SetManualDispose(true);
+                matrixStorageBuffer = wgil.CreateBuffer(64 * 2 * maxMeshCount, BufferUsages.STORAGE | BufferUsages.COPY_DST).SetManualDispose(true);
 
-                var sharedFragmentDesc = new BindGroupDescriptor()
+                var sharedFrameData = new BindGroupDescriptor()
                 {
-                    BindGroupLayout = GraphicsManager.sharedPipelineLightLayout,
+                    BindGroupLayout = GraphicsManager.sharedMeshFrameData,
                     Entries = new BindResource[]
                     {
                         Game.pipelineBuffer,
-                        fragmentUniformBuffer
+                        fragmentUniformBuffer,
+                        matrixStorageBuffer
                     }
                 };
 
-                sharedFragmentSet = wgil.CreateBindGroup(ref sharedFragmentDesc).SetManualDispose(true);
+                sharedFrameSet = wgil.CreateBindGroup(ref sharedFrameData).SetManualDispose(true);
 
                 bufferStep = (int)wgil.GetMinUniformOffset();
-                meshTransformBuffer = wgil.CreateBuffer(bufferStep * maxMeshCount, BufferUsages.STORAGE | BufferUsages.COPY_DST).SetManualDispose(true);
-                meshTransformBuffer.DynamicEntrySize = 128;
+                drawDataBuffer = wgil.CreateBuffer(bufferStep * maxMeshCount, BufferUsages.UNIFORM | BufferUsages.COPY_DST).SetManualDispose(true);
+                drawDataBuffer.DynamicEntrySize = 4;
 
-                var transformSetDesc = new BindGroupDescriptor()
+                var drawSetDesc = new BindGroupDescriptor()
                 {
                     BindGroupLayout = GraphicsManager.sharedMeshUniform_VS,
                     Entries = new BindResource[]
                     {
-                        meshTransformBuffer
+                        drawDataBuffer
                     }
                 };
-                transformSet = Game.wgil.CreateBindGroup(ref transformSetDesc).SetManualDispose(true);
+                drawDataset = Game.wgil.CreateBindGroup(ref drawSetDesc).SetManualDispose(true);
             }
 
-            sharedVertexUniform = new SharedMeshVertex();
             sharedFragmentUniform = new SharedMeshFragment();
         }
 
@@ -105,22 +220,60 @@ namespace ABEngine.ABERuntime
             return new Vector3(rotatedQuat.X, rotatedQuat.Y, rotatedQuat.Z);
         }
 
-
         //List<(MeshRenderer, Transform)> renderOrder = new List<(MeshRenderer, Transform)>();
         //List<(MeshRenderer, Transform)> lateRenderOrder = new List<(MeshRenderer, Transform)>();
 
-        internal SortedDictionary<int, List<(MeshRenderer, Transform)>> opaqueRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
+
+        internal Dictionary<PipelineMaterial, MaterialGroup> opaqueDict = new();
+        internal List<PipelineMaterial> opaqueKeys = new();
+        internal DrawData[] groupDrawDatas = new DrawData[100];
+
+        SortedDictionary<int, List<(MeshRenderer, Transform)>> opaqueRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
         internal SortedDictionary<int, List<(MeshRenderer, Transform)>> transparentRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
         internal SortedDictionary<int, List<(MeshRenderer, Transform)>> lateRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
+
+        public void AddMesh(Transform transform, MeshRenderer mr)
+        {
+            var key = mr.material;
+            if (opaqueDict.TryGetValue(key, out MaterialGroup mg))
+            {
+                mg.AddMesh(transform, mr);
+            }
+            else
+            {
+                mg = new MaterialGroup();
+                mg.AddMesh(transform, mr);
+                opaqueDict.Add(key, mg);
+                opaqueKeys.Add(key);
+            }
+        }
+
+        public Transform RemoveMesh(MeshRenderer mr)
+        {
+            if (opaqueDict.TryGetValue(mr.material, out MaterialGroup mg))
+            {
+                Transform mrTrans = mg.RemoveMesh(mr);
+                if (mg.keyList.Count == 0)
+                {
+                    opaqueDict.Remove(mr.material);
+                    opaqueKeys.Remove(mr.material);
+                }
+                return mrTrans;
+            }
+
+            return null;
+        }
 
         public override void Update(float gameTime, float deltaTime)
         {
             if (Game.activeCamTrans == null)
                 return;
 
-            opaqueRenderOrder.Clear();
-            transparentRenderOrder.Clear();
-            lateRenderOrder.Clear();
+            //opaqueRenderOrder.Clear();
+            //transparentRenderOrder.Clear();
+            //lateRenderOrder.Clear();
+            //opaqueDict.Clear();
+            //opaqueKeys.Clear();
 
             // Fragment uniform update
             int dirLightC = 0;
@@ -157,21 +310,6 @@ namespace ABEngine.ABERuntime
             sharedFragmentUniform.NumPointLights = pointLightC;
 
             wgil.WriteBuffer(fragmentUniformBuffer, sharedFragmentUniform);
-
-            // Mesh render order
-            Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
-            {
-                SortedDictionary<int, List<(MeshRenderer, Transform)>> dict = opaqueRenderOrder;
-                if (mr.material.pipelineAsset.renderType == RenderType.Transparent)
-                    dict = transparentRenderOrder;
-                else if (mr.material.renderOrder >= (int)RenderOrder.PostProcess)
-                    dict = lateRenderOrder;
-
-                if (dict.TryGetValue(mr.material.renderOrder, out var pairList))
-                    pairList.Add((mr, transform));
-                else
-                    dict.Add(mr.material.renderOrder, new List<(MeshRenderer, Transform)>() { (mr, transform) });
-            });
         }
 
         float LinearEyeDepth(float z)
@@ -199,115 +337,158 @@ namespace ABEngine.ABERuntime
         {
             // TODO Render layers
             // TODO Pipeline batching
-            pass.SetBindGroup(0, sharedFragmentSet);
-            bool set = false;
 
-            foreach (var renderPair in opaqueRenderOrder)
+            // Bind all matrices
+            pass.SetBindGroup(0, sharedFrameSet);
+
+            int groupID = 0;
+            for (int matGroupID = 0; matGroupID < opaqueKeys.Count; matGroupID++)
             {
-                foreach (var render in renderPair.Value)
+                var material = Game.meshRenderSystem.opaqueKeys[matGroupID];
+                var matGroup = Game.meshRenderSystem.opaqueDict[material];
+
+                pass.SetPipeline(material.pipelineAsset.pipeline);
+
+                foreach (var setKV in material.bindableSets)
                 {
-                    MeshRenderer mr = render.Item1;
-                    Mesh mesh = mr.mesh;
-
-                    int renderID = mr.renderID;
-                    // Opaque transform buffers updated in depth pre-pass
-
-
-                    if (!set)
-                    {
-                        pass.SetPipeline(mr.material.pipelineAsset.pipeline);
-
-                        pass.SetVertexBuffer(0, mesh.vertexBuffer);
-                        pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
-
-                        set = true;
-                    }
-
-                    pass.SetBindGroup(1, (uint)(bufferStep * renderID), transformSet);
-
-                    // Material Resource Sets
-                    foreach (var setKV in mr.material.bindableSets)
-                    {
-                        pass.SetBindGroup(setKV.Key, setKV.Value);
-                    }
-
-                    pass.DrawIndexed(mesh.Indices.Length);
+                    pass.SetBindGroup(setKV.Key, setKV.Value);
                 }
-            }
 
-
-            foreach (var renderPair in transparentRenderOrder)
-            {
-                foreach (var render in renderPair.Value)
+                foreach (var mesh in matGroup.keyList)
                 {
-                    MeshRenderer mr = render.Item1;
-                    Transform transform = render.Item2;
-                    Mesh mesh = mr.mesh;
+                    var meshGroup = matGroup.meshGroups[mesh];
 
-                    int renderID = mr.renderID;
-                    // Update transform buffer
-
-                    sharedVertexUniform.transformMatrix = transform.worldMatrix;
-                    Matrix4x4 MV = transform.worldMatrix;
-                    Matrix4x4 MVInv;
-                    Matrix4x4.Invert(MV, out MVInv);
-                    sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
-                    //wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
-                
-
-                    pass.SetPipeline(mr.material.pipelineAsset.pipeline);
+                    pass.SetBindGroup(1, (uint)(bufferStep * groupID), drawDataset);
 
                     pass.SetVertexBuffer(0, mesh.vertexBuffer);
                     pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                    pass.SetBindGroup(1, (uint)(bufferStep * renderID), transformSet);
+                    pass.DrawIndexed(mesh.Indices.Length, meshGroup.renderC);
 
-                    // Material Resource Sets
-                    foreach (var setKV in mr.material.bindableSets)
-                    {
-                        pass.SetBindGroup(setKV.Key, setKV.Value);
-                    }
-
-                    pass.DrawIndexed(mesh.Indices.Length);
+                    groupID++;
                 }
             }
+
+
+            //for (int i = 0; i < opaqueKeys.Count; i++)
+            //{
+            //    var key = opaqueKeys[i];
+            //    wgil.WriteBuffer(drawDataBuffer, groupDrawDatas[i], 0, 4);
+
+            //    PipelineMaterial material = key.material;
+            //    pass.SetPipeline(material.pipelineAsset.pipeline);
+
+                
+
+            //}
+
+
+            //foreach (var renderPair in opaqueRenderOrder)
+            //{
+            //    foreach (var render in renderPair.Value)
+            //    {
+            //        MeshRenderer mr = render.Item1;
+            //        Mesh mesh = mr.mesh;
+
+            //        int renderID = mr.renderID;
+            //        // Opaque transform buffers updated in depth pre-pass
+
+
+            //        if (!set)
+            //        {
+            //            pass.SetPipeline(mr.material.pipelineAsset.pipeline);
+
+            //            pass.SetVertexBuffer(0, mesh.vertexBuffer);
+            //            pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
+
+            //            set = true;
+            //        }
+
+            //        pass.SetBindGroup(1, (uint)(bufferStep * renderID), transformSet);
+
+            //        // Material Resource Sets
+            //        foreach (var setKV in mr.material.bindableSets)
+            //        {
+            //            pass.SetBindGroup(setKV.Key, setKV.Value);
+            //        }
+
+            //        pass.DrawIndexed(mesh.Indices.Length);
+            //    }
+            //}
+
+
+            //foreach (var renderPair in transparentRenderOrder)
+            //{
+            //    foreach (var render in renderPair.Value)
+            //    {
+            //        MeshRenderer mr = render.Item1;
+            //        Transform transform = render.Item2;
+            //        Mesh mesh = mr.mesh;
+
+            //        int renderID = mr.renderID;
+            //        // Update transform buffer
+
+            //        sharedVertexUniform.transformMatrix = transform.worldMatrix;
+            //        Matrix4x4 MV = transform.worldMatrix;
+            //        Matrix4x4 MVInv;
+            //        Matrix4x4.Invert(MV, out MVInv);
+            //        sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
+            //        //wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
+                
+
+            //        pass.SetPipeline(mr.material.pipelineAsset.pipeline);
+
+            //        pass.SetVertexBuffer(0, mesh.vertexBuffer);
+            //        pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
+
+            //        pass.SetBindGroup(1, (uint)(bufferStep * renderID), transformSet);
+
+            //        // Material Resource Sets
+            //        foreach (var setKV in mr.material.bindableSets)
+            //        {
+            //            pass.SetBindGroup(setKV.Key, setKV.Value);
+            //        }
+
+            //        pass.DrawIndexed(mesh.Indices.Length);
+            //    }
+            //}
         }
 
         public void RenderPP(RenderPass pass)
         {
-            foreach (var renderPair in lateRenderOrder)
-            {
-                foreach (var render in renderPair.Value)
-                {
-                    MeshRenderer mr = render.Item1;
-                    Transform transform = render.Item2;
-                    Mesh mesh = mr.mesh;
+            //foreach (var renderPair in lateRenderOrder)
+            //{
+            //    foreach (var render in renderPair.Value)
+            //    {
+            //        MeshRenderer mr = render.Item1;
+            //        Transform transform = render.Item2;
+            //        Mesh mesh = mr.mesh;
 
-                    // Update vertex uniform
-                    sharedVertexUniform.transformMatrix = transform.worldMatrix;
-                    Matrix4x4 MV = transform.worldMatrix;
-                    Matrix4x4 MVInv;
-                    Matrix4x4.Invert(MV, out MVInv);
-                    sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
+            //        // Update vertex uniform
+            //        sharedVertexUniform.transformMatrix = transform.worldMatrix;
+            //        Matrix4x4 MV = transform.worldMatrix;
+            //        Matrix4x4 MVInv;
+            //        Matrix4x4.Invert(MV, out MVInv);
+            //        sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
 
-                    //wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
+            //        //wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
 
-                    mr.material.pipelineAsset.BindPipeline(pass, 1, sharedFragmentSet);
+            //        mr.material.pipelineAsset.BindPipeline(pass, 1, sharedFragmentSet);
 
-                    pass.SetVertexBuffer(0, mesh.vertexBuffer);
-                    pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
+            //        pass.SetVertexBuffer(0, mesh.vertexBuffer);
+            //        pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                    //pass.SetBindGroup(1, mr.vertexTransformSet);
+            //        //pass.SetBindGroup(1, mr.vertexTransformSet);
 
-                    // Material Resource Sets
-                    foreach (var setKV in mr.material.bindableSets)
-                    {
-                        pass.SetBindGroup(setKV.Key, setKV.Value);
-                    }
+            //        // Material Resource Sets
+            //        foreach (var setKV in mr.material.bindableSets)
+            //        {
+            //            pass.SetBindGroup(setKV.Key, setKV.Value);
+            //        }
 
-                    pass.DrawIndexed(mesh.Indices.Length);
-                }
-            }
+            //        pass.DrawIndexed(mesh.Indices.Length);
+            //    }
+            //}
         }
 
         public override void CleanUp(bool reload, bool newScene, bool resize)
@@ -316,13 +497,21 @@ namespace ABEngine.ABERuntime
             transparentRenderOrder.Clear();
             lateRenderOrder.Clear();
 
+            if (newScene)
+            {
+                opaqueKeys.Clear();
+                opaqueDict.Clear();
+            }
+
             if (!reload)
             {
-                sharedFragmentSet.Dispose();
+                sharedFrameSet.Dispose();
                 fragmentUniformBuffer.Dispose();
 
-                transformSet.Dispose();
-                meshTransformBuffer.Dispose();
+                drawDataBuffer.Dispose();
+                drawDataset.Dispose();
+
+                matrixStorageBuffer.Dispose();
             }
         }
 
