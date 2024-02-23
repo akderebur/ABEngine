@@ -38,11 +38,6 @@ namespace ABEngine.ABERuntime
 
         }
 
-        public virtual void SceneSetup()
-        {
-
-        }
-
         public virtual void Render(RenderPass pass)
         {
 

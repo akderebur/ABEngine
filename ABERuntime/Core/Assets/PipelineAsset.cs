@@ -261,6 +261,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             List<VertexAttribute> curVertexAttrList = null;
 
             bool pipeline3d = false;
+            bool isPP = false;
 
             bool useSkin = defineKey.Contains("HAS_SKIN");
             bool useInstance = defineKey.Contains("HAS_INSTANCE");
@@ -368,6 +369,12 @@ namespace ABEngine.ABERuntime.Core.Assets
                                                     resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
 
                                                 pipeline3d = true;
+                                            }
+                                            else if(value.Equals("PostProcess2D"))
+                                            {
+                                                isPP = true;
+                                                resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
+                                                resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
                                             }
                                             else
                                             {
@@ -645,24 +652,50 @@ namespace ABEngine.ABERuntime.Core.Assets
             refMaterial.SetShaderPropBuffer(shaderVals, vertBufferSize);
             refMaterial.SetShaderTextureResources(textureNames);
 
+
             if (readDescriptor)
             {
-                // Create pipeline
-                var pipelineDesc = new PipelineDescriptor()
+                if (isPP)
                 {
-                    BlendStates = blendDesc,
-                    DepthStencilState = depthDesc,
-                    PrimitiveState = primitiveDesc,
-                    VertexLayouts = vertexLayouts,
-                    BindGroupLayouts = resourceLayouts.ToArray(),
-                    AttachmentDescription = new AttachmentDescription()
-                    {
-                        DepthFormat = TextureFormat.Depth32Float,
-                        ColorFormats = new[] { Game.resourceContext.mainRenderView.Format, Game.resourceContext.spriteNormalsView.Format }
-                    }
-                };
+                    blendDesc = new BlendState[1] { blendDesc[0] };
 
-                pipeline = wgil.CreateRenderPipeline(shaders[0], shaders[1], ref pipelineDesc);
+                    // Create PP pipeline
+                    var pipelineDesc = new PipelineDescriptor()
+                    {
+                        BlendStates = blendDesc,
+                        DepthStencilState = depthDesc,
+                        PrimitiveState = primitiveDesc,
+                        VertexLayouts = vertexLayouts,
+                        BindGroupLayouts = resourceLayouts.ToArray(),
+                        AttachmentDescription = new AttachmentDescription()
+                        {
+                            DepthFormat = TextureFormat.Depth32Float,
+                            ColorFormats = new[] { TextureFormat.Rgba16Float }
+                        }
+                    };
+
+                    pipeline = wgil.CreateRenderPipeline(shaders[0], shaders[1], ref pipelineDesc);
+                }
+                else
+                {
+
+                    // Create pipeline
+                    var pipelineDesc = new PipelineDescriptor()
+                    {
+                        BlendStates = blendDesc,
+                        DepthStencilState = depthDesc,
+                        PrimitiveState = primitiveDesc,
+                        VertexLayouts = vertexLayouts,
+                        BindGroupLayouts = resourceLayouts.ToArray(),
+                        AttachmentDescription = new AttachmentDescription()
+                        {
+                            DepthFormat = TextureFormat.Depth32Float,
+                            ColorFormats = new[] { Game.resourceContext.mainRenderView.Format, Game.resourceContext.spriteNormalsView.Format }
+                        }
+                    };
+
+                    pipeline = wgil.CreateRenderPipeline(shaders[0], shaders[1], ref pipelineDesc);
+                }
             }
 
             name = defaultMatName;
@@ -714,6 +747,12 @@ namespace ABEngine.ABERuntime.Core.Assets
         {
             return textureNames.Count > 0;
         }
+
+        internal static Dictionary<MaterialFeature, string> MatFeatureToKey = new()
+        {
+            { MaterialFeature.Transparency, "HAS_TRANSPARENCY" },
+            { MaterialFeature.Skinning, "HAS_SKIN" },
+        };
     }
 
     public class VariantPipelineAsset : PipelineAsset
@@ -737,6 +776,12 @@ namespace ABEngine.ABERuntime.Core.Assets
             pipelineSource = null;
             IsBuilt = true;
         }
+    }
+
+    public enum MaterialFeature
+    {
+        Transparency,
+        Skinning
     }
 }
 

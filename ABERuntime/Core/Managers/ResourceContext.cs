@@ -49,24 +49,24 @@ namespace ABEngine.ABERuntime
                                                      TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
             normalsDepthTexture = wgil.CreateTexture(width, height, TextureFormat.Depth32Float,
-                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
+                                                     TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_SRC, true);
 
             // Main
             mainRenderTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba16Float,
-                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_SRC, true);
+                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
             spriteNormalsTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba8Unorm,
                                                       TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
             mainDepthTexture = wgil.CreateTexture(width, height, TextureFormat.Depth32Float,
-                                                  TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
+                                                  TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST, true);
 
             mainPPTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba16Float,
                                                    TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST, true);
 
             // Light
             lightRenderTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba16Float,
-                                                    TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
+                                                    TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_SRC, true);
 
             cameraNormalView = cameraNormalTexture.CreateView(true);
             normalsDepthView = normalsDepthTexture.CreateView(true);
@@ -106,7 +106,12 @@ namespace ABEngine.ABERuntime
 
         public void CopyScreenTexture()
         {
-            Game.wgil.CopyTexture(mainRenderTexture, mainPPTexture);
+            Game.wgil.CopyTexture(lightRenderTexture, mainPPTexture);
+        }
+
+        public void CopyDepthTexture()
+        {
+            Game.wgil.CopyTexture(normalsDepthTexture, mainDepthTexture);
         }
     }
 }

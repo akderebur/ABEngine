@@ -8,7 +8,7 @@ namespace ABEngine.ABERuntime
 {
     public class CameraMovementSystem : BaseSystem
     {
-        public override void Start()
+        protected override void StartScene()
         {
             var query = new QueryDescription().WithAll<Camera, Transform>();
             Game.GameWorld.Query(in query, (ref Camera cam, ref Transform camTrans) =>

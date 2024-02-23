@@ -232,8 +232,13 @@ UberStandard
 {
     @Pipeline:2D
     @StepMode:Instance
-    @Blend:Alpha
     @Cull:None
+
+    #ifdef HAS_TRANSPARENCY
+    @RenderType:Transparent
+    @Blend:Alpha
+    @DepthWrite:False
+    #endif
 
 	DissolveFade:float
     EnableFade:float
@@ -271,8 +276,6 @@ Vertex
     layout(location = 2) out vec2 fsin_UnitUV;
     layout(location = 3) out vec2 fsin_UVScale;
     layout(location = 4) out vec2 fsin_ObjScale;
-
-    //vec2 Pivot = vec2(-0.2, 0);
 
 
     //   B____C
@@ -315,19 +318,9 @@ Vertex
         pos = rotate(pos, ZRotation);
         pos += Position.xy;
 
-        //if(Tint.r == 1 && Tint.g == 0 )
-        //{
-        //    float normTime = fract(Time / 2.0) * 2.0;
-        //    if(unit_quad.x > 0)
-        //        pos += vec2(normTime * 4.0, 0);
-        //    else
-        //        pos -= vec2(normTime , 0);
-        //}
-
         gl_Position = Projection * View * vec4(pos, Position.z, 1);
 
         vec2 uv_sample = uv_pos * uvScale + uvStart;
-        //uv_sample = vec2(1, 1) + FlipScale * uv_pos;
     
         fsin_TexCoords = uv_sample ;
         fsin_Tint = Tint;

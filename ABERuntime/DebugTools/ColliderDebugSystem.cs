@@ -48,10 +48,8 @@ namespace ABEngine.ABERuntime.Debug
             base.Awake();
         }
 
-        public override void Start()
+        protected override void StartScene()
         {
-            base.Start();
-
             linePointsBuffer = wgil.CreateBuffer(linePointCount * (int)LinePoint.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST).SetManualDispose(true);
 
             LinePoint[] vertices = new LinePoint[linePointCount];

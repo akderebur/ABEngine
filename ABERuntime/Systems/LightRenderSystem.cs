@@ -38,7 +38,7 @@ namespace ABEngine.ABERuntime
 
             var textureSetDesc = new BindGroupDescriptor()
             {
-                BindGroupLayout = ((LightPipelineAsset)base.pipelineAsset).GetTexResourceLayout(),
+                BindGroupLayout = GraphicsManager.sharedLightTexLayout,
                 Entries = new BindResource[]
                 {
                     sampledTextures[0],
@@ -51,15 +51,8 @@ namespace ABEngine.ABERuntime
             textureSet = wgil.CreateBindGroup(ref textureSetDesc).SetManualDispose(true);
         }
 
-        public override void SceneSetup()
+        protected override void StartScene()
         {
-            //base.pipelineAsset = new LightPipelineAsset(lightRenderFB);
-        }
-
-        public override void Start()
-        {
-            base.Start();
-
             if (pipelineAsset == null)
                 pipelineAsset = new LightPipelineAsset();
 

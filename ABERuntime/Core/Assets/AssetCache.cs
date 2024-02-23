@@ -70,10 +70,20 @@ namespace ABEngine.ABERuntime.Core.Assets
 
             if (Game.debug)
             {
+                var fileEnum = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories);
+
+                // Get hash override assets
+                var files = fileEnum.Where(s => s.ToLower().EndsWith(".hoa"));
+                foreach (var file in files)
+                {
+                    string localPath = file.ToCommonPath().Replace(commonAssetPath, "");
+                    string hashStr = Path.GetFileNameWithoutExtension(localPath);
+                    hashToFName.Add(Convert.ToUInt32(hashStr, 16), localPath);
+                }
+
                 var hashParser = (string extension) =>
                 {
-                    var files = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories)
-                    .Where(s => s.ToLower().EndsWith(extension));
+                    var files = fileEnum.Where(s => s.ToLower().EndsWith(extension));
                     foreach (var file in files)
                     {
                         string localPath = file.ToCommonPath().Replace(commonAssetPath, "");
@@ -88,8 +98,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 hashParser(".abmodel");
 
                 // Get user pipelines
-                var files = Directory.EnumerateFiles(commonAssetPath, "*.*", SearchOption.AllDirectories)
-                   .Where(s => s.ToLower().EndsWith(".abpipeline"));
+                files = fileEnum.Where(s => s.ToLower().EndsWith(".abpipeline"));
                 foreach (var file in files)
                 {
                     string localPath = file.ToCommonPath().Replace(commonAssetPath, "");
@@ -281,8 +290,10 @@ namespace ABEngine.ABERuntime.Core.Assets
         public static Transform CreateModel(string modelAssetPath)
         {
             BinaryReader br = null;
+            string modAssetFolder = "";
             if(Game.debug)
             {
+                modAssetFolder = Path.GetDirectoryName(modelAssetPath);
                 string modelAbsPath = Game.AssetPath + modelAssetPath;
                 if (File.Exists(modelAbsPath))
                     br = new BinaryReader(new FileStream(modelAbsPath, FileMode.Open));
@@ -304,6 +315,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
                 Entity nodeEnt = EntityManager.CreateEntity(nodeName, "");
                 Transform nodeTrans = nodeEnt.Get<Transform>();
+                nodeTransforms[i] = nodeTrans;
 
                 if (parId >= 0)
                     nodeTrans.parent = nodeTransforms[parId];
@@ -314,15 +326,45 @@ namespace ABEngine.ABERuntime.Core.Assets
                 nodeTrans.SetTRS(locPos, locRot, locSca);
 
                 // Visualize skel
-
+                //Mesh cubeMesh = Rendering.CubeModel.GetCubeMesh();
+                //MeshRenderer mr = new MeshRenderer(cubeMesh);
+                //var cubeEnt = EntityManager.CreateEntity(nodeName, "", mr);
+                //cubeEnt.Get<Transform>().localPosition = nodeTrans.worldPosition;
+                //cubeEnt.Get<Transform>().localScale = Vector3.One * 0.01f;
             }
+
+            int matCount = br.ReadInt32();
+            for (int m = 0; m < matCount; m++)
+            {
+                uint matHash = br.ReadUInt32();
+                GetOrCreateMaterial("", matHash);
+            }
+
+            int staMeshCount = br.ReadInt32();
+            int skinMeshCount = br.ReadInt32();
+
+            for (int i = 0; i < skinMeshCount; i++)
+            {
+                uint meshHash = br.ReadUInt32();
+                uint matHash = br.ReadUInt32();
+                int nodeId = br.ReadInt32();
+
+                Mesh mesh = GetOrCreateMesh("", meshHash);
+                PipelineMaterial material = GetOrCreateMaterial("", matHash);
+
+                MeshRenderer mr = new MeshRenderer(mesh, material);
+                Transform mrTrans = nodeTransforms[nodeId];
+
+                mrTrans.entity.Add(mr);
+            }
+
 
             br.Close();
 
             return nodeTransforms[0];
         }
 
-        public static PipelineAsset CreatePipelineAsset(string pipelineName)
+        public static PipelineAsset CreatePipelineAsset(string pipelineName, params MaterialFeature[] materialFeatures)
         {
             var pipeline = GraphicsManager.GetPipelineAssetByName(pipelineName);
             if(pipeline == null)
@@ -340,6 +382,15 @@ namespace ABEngine.ABERuntime.Core.Assets
                         pipeline = GetPipelineFromPK(hash);
                     }
                 }
+            }
+
+            if(pipeline != null && materialFeatures.Length > 0)
+            {
+                string defineKey = "";
+                foreach (var feature in materialFeatures)
+                    defineKey += "*" + PipelineAsset.MatFeatureToKey[feature];
+
+                pipeline = pipeline.GetPipelineVariant(defineKey);
             }
 
             return pipeline;
@@ -677,49 +728,39 @@ namespace ABEngine.ABERuntime.Core.Assets
                 string pipelineName = br.ReadString();
 
                 PipelineAsset pipelineAsset = CreatePipelineAsset(pipelineName);
-                var layouts = pipelineAsset.GetResourceLayouts();
-
-                bool hasProps = pipelineAsset.HasProperties();
-                bool hasTexs = pipelineAsset.HasTextures();
-
-                int texLayoutId = 3;
-                if (!hasProps)
-                    texLayoutId--;
-
-                PipelineMaterial mat = new PipelineMaterial(hash, pipelineAsset, hasProps ? layouts[2] : null, hasTexs ? layouts[texLayoutId] : null);
+                PipelineMaterial mat = pipelineAsset.GetDefaultMaterial().GetCopy();
                 mat.name = matName;
 
                 // Shader props
-                List<ShaderProp> shaderProps = new List<ShaderProp>();
-                uint propBufferSize = 0;
+                int textureCount = br.ReadInt32();
+                int vectorCount = br.ReadInt32();
+                int floatCount = br.ReadInt32();
 
-                int propC = br.ReadInt32();
-                for (int i = 0; i < propC; i++)
+                // Textures
+                for (int i = 0; i < textureCount; i++)
                 {
-                    byte[] propData = br.ReadBytes(24);
-                    ShaderProp prop = new ShaderProp();
-                    unsafe
-                    {
-                        fixed(byte* propDataPtr = propData)
-                            Unsafe.CopyBlock(prop.Bytes, propDataPtr, 24);
-                    }
-                    propBufferSize += prop.SizeInBytes;
-                    shaderProps.Add(prop);
+                    string propname = br.ReadString();
+                    uint texHash = br.ReadUInt32();
+                    bool isLinear = br.ReadBoolean();
+
+                    Texture2D tex2d = GetOrCreateTexture2D(null, null, Vector2.Zero, texHash, isLinear);
+                    mat.SetTexture(propname, tex2d);
                 }
 
-                List<string> textureNames = pipelineAsset.GetTextureNames();
-                mat.SetShaderPropBuffer(shaderProps, propBufferSize);
-                mat.SetShaderTextureResources(textureNames);
-
-                // Texture references
-                for (int i = 0; i < textureNames.Count; i++)
+                // Vectors
+                for (int i = 0; i < vectorCount; i++)
                 {
-                    uint tHash = br.ReadUInt32();
-                    if (tHash == 0) // Procedural texture skip
-                        continue;
+                    string propname = br.ReadString();
+                    Vector4 vector = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                    mat.SetVector4(propname, vector);
+                }
 
-                    Texture2D tex2d = GetOrCreateTexture2D(null, null, Vector2.Zero, tHash);
-                    mat.SetTexture(textureNames[i], tex2d);
+                // Floats
+                for (int i = 0; i < floatCount; i++)
+                {
+                    string propname = br.ReadString();
+                    float value = br.ReadSingle();
+                    mat.SetFloat(propname, value);
                 }
 
                 return mat;
@@ -746,7 +787,6 @@ namespace ABEngine.ABERuntime.Core.Assets
             using (MemoryStream fs = new MemoryStream(meshData))
             using (BinaryReader br = new BinaryReader(fs))
             {
-                int meshDataSize = br.ReadInt32();
                 int vertC = br.ReadInt32();
                 int indC = br.ReadInt32();
 
@@ -766,7 +806,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                         case 'U':
                             Vector2[] uv = new Vector2[vertC];
                             for (int i = 0; i < vertC; i++)
-                                uv[i] = new Vector2(br.ReadSingle(), br.ReadSingle());
+                                uv[i] = new Vector2(br.ReadSingle(), 1f - br.ReadSingle());
                             mesh.UV0 = uv;
                             break;
                         case 'N':
@@ -806,6 +846,10 @@ namespace ABEngine.ABERuntime.Core.Assets
                             }
                             mesh.BoneIDs = boneIds;
                             mesh.BoneWeights = boneWeights;
+                            break;
+                        case 'M':
+                            int matrixCount = br.ReadInt32();
+                            br.BaseStream.Position += 64 * matrixCount;
                             break;
                         default:
                             break;
@@ -953,17 +997,17 @@ namespace ABEngine.ABERuntime.Core.Assets
             var uberMat = GraphicsManager.GetUberMaterial();
             var additiveMat = GraphicsManager.GetUberAdditiveMaterial();
             var uber3d = GraphicsManager.GetUber3D();
-            var uberTransparent = GraphicsManager.GetUberTransparentMaterial();
+            //var uberTransparent = GraphicsManager.GetUberTransparentMaterial();
 
             s_materials.Add(uberMat);
             s_materials.Add(additiveMat);
             s_materials.Add(uber3d);
-            s_materials.Add(uberTransparent);
+            //s_materials.Add(uberTransparent);
 
             assetDict.Add(uberMat.fPathHash, uberMat);
             assetDict.Add(additiveMat.fPathHash, additiveMat);
             assetDict.Add(uber3d.fPathHash, uber3d);
-            assetDict.Add(uberTransparent.fPathHash, uberTransparent);
+            //assetDict.Add(uberTransparent.fPathHash, uberTransparent);
         }
 
         private static Texture2D DeserializeTexture(JValue texAsset, uint hash)

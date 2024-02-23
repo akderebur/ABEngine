@@ -161,7 +161,6 @@ namespace ABEngine.ABERuntime.Core.Assets
                 else
                     bindableSets.Add(2, textureSet);
             }
-
         }
 
         public void SetTexture(string textureName, Texture2D tex2d)
@@ -211,6 +210,13 @@ namespace ABEngine.ABERuntime.Core.Assets
             matCopy.renderOrder = this.renderOrder;
 
             return matCopy;
+        }
+
+        internal PipelineMaterial GetCopy(uint hash)
+        {
+            var mat = GetCopy();
+            mat.fPathHash = hash;
+            return mat;
         }
 
         public void ChangePipeline(PipelineAsset pipeline)

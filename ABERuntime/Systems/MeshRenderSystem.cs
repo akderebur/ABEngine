@@ -212,6 +212,14 @@ namespace ABEngine.ABERuntime
             sharedFragmentUniform = new SharedMeshFragment();
         }
 
+        protected override void StartScene()
+        {
+            Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
+            {
+                AddMesh(transform, mr);
+            });
+        }
+
         public Vector3 RotateByQuaternion(Vector3 vec, Quaternion rotation)
         {
             Quaternion vecQuat = new Quaternion(vec.X, vec.Y, vec.Z, 0);
@@ -219,9 +227,6 @@ namespace ABEngine.ABERuntime
             Quaternion rotatedQuat = rotation * vecQuat * conjugate;
             return new Vector3(rotatedQuat.X, rotatedQuat.Y, rotatedQuat.Z);
         }
-
-        //List<(MeshRenderer, Transform)> renderOrder = new List<(MeshRenderer, Transform)>();
-        //List<(MeshRenderer, Transform)> lateRenderOrder = new List<(MeshRenderer, Transform)>();
 
 
         internal Dictionary<PipelineMaterial, MaterialGroup> opaqueDict = new();
@@ -234,6 +239,12 @@ namespace ABEngine.ABERuntime
 
         public void AddMesh(Transform transform, MeshRenderer mr)
         {
+            if (!base.started)
+                return;
+
+            if (mr.material.pipelineAsset.renderType == RenderType.Transparent)
+                return;
+
             var key = mr.material;
             if (opaqueDict.TryGetValue(key, out MaterialGroup mg))
             {

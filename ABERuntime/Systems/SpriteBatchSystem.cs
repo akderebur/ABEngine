@@ -109,7 +109,7 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        public override void Start()
+        protected override void StartScene()
         {
             batches = new Dictionary<string, SpriteBatch>();
             layerRenderGroups = new SortedDictionary<int, LayerContext>();
@@ -193,8 +193,6 @@ namespace ABEngine.ABERuntime
                     DoPipelineGrouping(zOrderGroup.ToList(), layerContext, zOrderGroup.Key, true);
                 }
             }
-
-            base.Start();
         }
 
         void DoPipelineGrouping(List<Entity> spriteEnts, LayerContext layerContext, float zValue = 0f, bool isTransparent = false)

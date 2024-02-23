@@ -62,6 +62,7 @@ namespace ABEngine.ABERuntime
         public static BindGroupLayout sharedTextureLayout;
         public static BindGroupLayout sharedSpriteNormalLayout;
         public static BindGroupLayout sharedMeshUniform_VS;
+        public static BindGroupLayout sharedLightTexLayout;
 
         public static BindGroupLayout sharedSkinnedMeshUniform_VS;
         public static BindGroupLayout sharedMeshFrameData;
@@ -79,6 +80,8 @@ namespace ABEngine.ABERuntime
 
         static PipelineMaterial GetFirstMatByName(string name)
         {
+            if (name.Equals("UberTransparent"))
+                name = "UberStandard";
             var mat = pipelineMaterials.FirstOrDefault(pm => pm.name.Equals(name));
 
             if (mat == null)
@@ -88,14 +91,13 @@ namespace ABEngine.ABERuntime
                     "UberStandard" => new UberPipelineAsset().refMaterial,
                     "UberAdditive" => new UberPipelineAdditive().refMaterial,
                     "Uber3D" => new UberPipeline3D().refMaterial,
-                    "UberTransparent" => new UberPipelineTransparent().refMaterial,
+                    "UberTransparent" => new UberPipelineAsset().refMaterial,
                     _ => null
                 };
             }
             else
                 return mat;
         }
-
 
         public static PipelineMaterial GetUberMaterial()
         {
@@ -114,7 +116,9 @@ namespace ABEngine.ABERuntime
 
         public static PipelineMaterial GetUberTransparentMaterial()
         {
-            return GetFirstMatByName("UberTransparent");
+            var uberPipeline = pipelineAssets["UberStandard"];
+            var uberTransPipeline = uberPipeline.GetPipelineVariant("*HAS_TRANSPARENCY");
+            return uberTransPipeline.GetDefaultMaterial();
         }
 
         public static int GetPipelineCount()
@@ -385,6 +389,38 @@ namespace ABEngine.ABERuntime
 
             sharedMeshFrameData = wgil.CreateBindGroupLayout(ref frameDataDesc).SetManualDispose(true);
 
+            // Light pipeline
+
+            var lightTexLayoutDesc = new BindGroupLayoutDescriptor()
+            {
+                Entries = new[]
+             {
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Texture,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Sampler,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Texture,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Sampler,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    }
+                }
+            };
+
+
+            sharedLightTexLayout = Game.wgil.CreateBindGroupLayout(ref lightTexLayoutDesc).SetManualDispose(true);
+
             // Full screen pipeline
             fullScreenVertexLayout = new VertexLayout()
             {
@@ -490,6 +526,7 @@ namespace ABEngine.ABERuntime
             sharedSkinnedMeshUniform_VS?.Dispose();
             sharedMeshFrameData?.Dispose();
             normalsFrameData?.Dispose();
+            sharedLightTexLayout?.Dispose();
 
             defaultTexView?.Dispose();
             pointSamplerClamp?.Dispose();

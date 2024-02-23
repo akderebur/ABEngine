@@ -15,10 +15,8 @@ namespace ABEngine.ABERuntime
         readonly QueryDescription spmQuery = new QueryDescription().WithAll<Transform, ScriptableParticleModule>();
 
 
-        public override void Start()
+        protected override void StartScene()
         {
-            base.Start();
-
             Game.GameWorld.Query(in pmQuery, (ref ParticleModule pm, ref Transform transform) =>
             {
                 pm.Init(transform);

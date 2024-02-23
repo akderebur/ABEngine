@@ -106,16 +106,13 @@ namespace ABEngine.ABERuntime
             rb.b2dBody = b2dBody;
         }
 
-        public override void Start()
+        protected override void StartScene()
         {
             var rbQuery = new QueryDescription().WithAll<Rigidbody>();
             Game.GameWorld.Query(in rbQuery, (Entity rbEnt) =>
             {
                 CreateBody(rbEnt);
             });
-
-         
-            base.Start();
         }
 
         internal void AddRBRuntime(in Entity entity)

@@ -22,9 +22,24 @@ namespace ABEngine.ABERuntime
         {
         }
 
-        public virtual void Start()
+        internal void Start()
         {
             started = true;
+            StartScene();
+        }
+
+        protected virtual void StartScene()
+        {
+        }
+
+        internal void SceneChange()
+        {
+            started = false;
+            ChangeScene();
+        }
+
+        protected virtual void ChangeScene()
+        {
         }
 
         public virtual void Update(float gameTime, float deltaTime)

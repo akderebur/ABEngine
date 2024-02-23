@@ -9,45 +9,13 @@ namespace ABEngine.ABERuntime.Pipelines
 {
     public class LightPipelineAsset : PipelineAsset
     {
-        BindGroupLayout texLayout;
-
         public LightPipelineAsset() : base()
         {
 
             // Light Pipeline
             var vertLayout = WGILUtils.GetVertexLayout<LightInfo>(VertexStepMode.Instance);
 
-            // Tex Layout
-            var texLayoutDesc = new BindGroupLayoutDescriptor()
-            {
-                Entries = new[]
-               {
-                    new BindGroupLayoutEntry()
-                    {
-                        BindingType = BindingType.Texture,
-                        ShaderStages = ShaderStages.FRAGMENT
-                    },
-                    new BindGroupLayoutEntry()
-                    {
-                        BindingType = BindingType.Sampler,
-                        ShaderStages = ShaderStages.FRAGMENT
-                    },
-                    new BindGroupLayoutEntry()
-                    {
-                        BindingType = BindingType.Texture,
-                        ShaderStages = ShaderStages.FRAGMENT
-                    },
-                    new BindGroupLayoutEntry()
-                    {
-                        BindingType = BindingType.Sampler,
-                        ShaderStages = ShaderStages.FRAGMENT
-                    }
-                }
-            };
-
-
-            texLayout = Game.wgil.CreateBindGroupLayout(ref texLayoutDesc);
-
+           
             var lightPipeDesc = new PipelineDescriptor()
             {
                 BlendStates = new BlendState[]
@@ -65,7 +33,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     CullFace = CullFace.Back,
                     FrontFace = FrontFace.Cw
                 },
-                BindGroupLayouts = new[] { GraphicsManager.sharedPipelineLayout, texLayout },
+                BindGroupLayouts = new[] { GraphicsManager.sharedPipelineLayout, GraphicsManager.sharedLightTexLayout },
                 VertexLayouts = new[] { vertLayout },
                 AttachmentDescription = new AttachmentDescription()
                 {
@@ -74,11 +42,6 @@ namespace ABEngine.ABERuntime.Pipelines
             };
 
             pipeline = Game.wgil.CreateRenderPipeline(Shaders.PointLightVertex2, Shaders.PointLightFragment2, ref lightPipeDesc);
-        }
-
-        public BindGroupLayout GetTexResourceLayout()
-        {
-            return texLayout;
         }
     }
 }

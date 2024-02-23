@@ -8,6 +8,7 @@ Uber3D
 {
     @Pipeline:3D
     @Blend:Alpha
+    
 
     AlbedoColor:vec4
     MetallicFactor:float

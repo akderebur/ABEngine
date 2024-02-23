@@ -9,7 +9,7 @@ namespace ABEngine.ABERuntime
 {
     public class StateAnimatorSystem : BaseSystem
     {
-        public override void Start()
+        protected override void StartScene()
         {
             var query = new QueryDescription().WithAll<StateMatchAnimator, Sprite>();
             Game.GameWorld.Query(in query, (ref StateMatchAnimator anim, ref Transform transform, ref Sprite sprite) =>

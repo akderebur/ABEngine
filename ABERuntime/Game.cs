@@ -160,12 +160,14 @@ namespace ABEngine.ABERuntime
 
         void MainPassWork(RenderPass pass)
         {
-            meshRenderSystem.Render(pass);
+            resourceContext.CopyDepthTexture();
+            if (!GraphicsManager.render2DOnly)
+                meshRenderSystem.Render(pass);
             for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
             {
                 spriteBatchSystem.Render(pass, i);
 
-                // Dpeth Clear
+                // Depth Clear
                 pass.SetPipeline(GraphicsManager.DepthClearPipeline);
                 pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
                 pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
@@ -259,10 +261,10 @@ namespace ABEngine.ABERuntime
             var mainPassDesc = new RenderPassDescriptor()
             {
                 IsColorClear = true,
-                IsDepthClear = true,
+                IsDepthClear = false,
                 ClearColor = new WGIL.Color(0, 0, 0, 0),
                 DepthValue = 1,
-                DepthAttachment = resourceContext.mainDepthView,
+                DepthAttachment = resourceContext.normalsDepthView,
                 ColorAttachments = new TextureViewSet()
                 {
                     TextureViews = new[]
@@ -283,13 +285,12 @@ namespace ABEngine.ABERuntime
                 IsColorClear = false,
                 IsDepthClear = false,
                 ClearColor = new WGIL.Color(0, 0, 0, 0),
-                DepthAttachment = resourceContext.mainDepthView,
+                DepthAttachment = resourceContext.normalsDepthView,
                 ColorAttachments = new TextureViewSet()
                 {
                     TextureViews = new[]
                     {
-                        resourceContext.mainRenderView,
-                        resourceContext.spriteNormalsView
+                        resourceContext.lightRenderView,
                     }
                 }
             };
@@ -361,15 +362,16 @@ namespace ABEngine.ABERuntime
                 newSet.TextureViews = new[] { resourceContext.cameraNormalView };
                 normalsPass.UpdateColorAttachments(ref newSet);
 
-                mainPass.UpdateDepthAttachment(resourceContext.mainDepthView);
+                mainPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
                 newSet.TextureViews = new[] { resourceContext.mainRenderView, resourceContext.spriteNormalsView };
                 mainPass.UpdateColorAttachments(ref newSet);
 
-                mainPPPass.UpdateDepthAttachment(resourceContext.mainDepthView);
-                mainPPPass.UpdateColorAttachments(ref newSet);
-
+             
                 newSet.TextureViews = new[] { resourceContext.lightRenderView };
                 lightPass.UpdateColorAttachments(ref newSet);
+
+                mainPPPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
+                mainPPPass.UpdateColorAttachments(ref newSet);
 
                 var finalQuadDesc = new BindGroupDescriptor()
                 {
@@ -448,7 +450,7 @@ namespace ABEngine.ABERuntime
                 foreach (var render in internalRenders)
                 {
                     render.CleanUp(true, true, false);
-                    render.SceneSetup();
+                    render.SceneChange();
                 }
 
                 // Reset Camera
@@ -474,10 +476,10 @@ namespace ABEngine.ABERuntime
                 {
                     BaseSystem system = renderExtensions[i];
                     system.CleanUp(true, true);
-                    if (!system.dontDestroyOnLoad)
-                    {
+                    if (system.dontDestroyOnLoad)
+                        system.SceneChange();
+                    else
                         renderExtensions.RemoveAt(i);
-                    }
                 }
 
                 for (int i = userSystems.Count - 1; i >= 0; i--)
@@ -765,10 +767,11 @@ namespace ABEngine.ABERuntime
 
         private protected virtual void Render()
         {
-            normalsPass.BeginPass();
+            if(!GraphicsManager.render2DOnly)
+                normalsPass.BeginPass();
             mainPass.BeginPass();
-            //mainPPPass.BeginPass();
             lightPass.BeginPass();
+            mainPPPass.BeginPass();
             fsPass.BeginPass();
         }
 
@@ -863,7 +866,7 @@ namespace ABEngine.ABERuntime
             CreateInternalRenders();
 
             foreach (var render in internalRenders)
-                render.SceneSetup();
+                render.SceneChange();
 
             AssetCache.InitAssetCache();
 
