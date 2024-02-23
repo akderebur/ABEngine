@@ -282,9 +282,9 @@ namespace ABEngine.ABERuntime.Core.Assets
             return newClip;
         }
 
-        public static Mesh CreateMesh(string meshFilePath)
+        public static Mesh CreateMesh(string meshFilePath, bool flipUVs = false)
         {
-            return GetOrCreateMesh(meshFilePath);
+            return GetOrCreateMesh(meshFilePath, 0, flipUVs);
         }
 
         public static Transform CreateModel(string modelAssetPath)
@@ -530,7 +530,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             return prefabAsset;
         }
 
-        private static Mesh GetOrCreateMesh(string meshPath, uint preHash = 0)
+        private static Mesh GetOrCreateMesh(string meshPath, uint preHash = 0, bool flipUVs = false)
         {
             uint hash = preHash;
             if (hash == 0)
@@ -553,7 +553,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 if (!File.Exists(meshAbsPath))
                     return null;
 
-                mesh = LoadMeshRAW(hash, File.ReadAllBytes(meshAbsPath));
+                mesh = LoadMeshRAW(hash, File.ReadAllBytes(meshAbsPath), flipUVs);
             }
 
             s_meshes.Add(mesh);
@@ -781,8 +781,11 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
         }
 
-        private static Mesh LoadMeshRAW(uint hash, byte[] meshData)
+        private static Mesh LoadMeshRAW(uint hash, byte[] meshData, bool flipUVs)
         {
+            float uvMult = flipUVs ? -1 : 1;
+            float uvAdd = flipUVs ? 1 : 0;
+
             Mesh mesh = new Mesh(hash);
             using (MemoryStream fs = new MemoryStream(meshData))
             using (BinaryReader br = new BinaryReader(fs))
@@ -806,7 +809,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                         case 'U':
                             Vector2[] uv = new Vector2[vertC];
                             for (int i = 0; i < vertC; i++)
-                                uv[i] = new Vector2(br.ReadSingle(), 1f - br.ReadSingle());
+                                uv[i] = new Vector2(br.ReadSingle(), br.ReadSingle() * uvMult + uvAdd);
                             mesh.UV0 = uv;
                             break;
                         case 'N':

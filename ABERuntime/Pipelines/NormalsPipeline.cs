@@ -63,10 +63,11 @@ Vertex
        float Padding;
    };
 
-   layout (set = 0, binding = 1) buffer readonly SharedMeshVertex
+   layout (set = 0, binding = 1) readonly buffer SharedMeshVertex
    {
-        mat4 matrices[];
-   };
+        mat4 transformationMatrix;
+        mat4 normalMatrix;
+   } matrices[];
 
    layout (set = 1, binding = 0) uniform DrawData
    {
@@ -80,8 +81,9 @@ Vertex
 
    void main()
    {
-        mat4 transformationMatrix = matrices[matrixStartID + gl_InstanceIndex * 2];
-        mat4 normalMatrix = matrices[matrixStartID + gl_InstanceIndex * 2 + 1];
+       int index = matrixStartID + int(gl_InstanceIndex);
+       mat4 transformationMatrix = matrices[index].transformationMatrix;
+       mat4 normalMatrix = matrices[index].normalMatrix;
 
        gl_Position = Projection * View * transformationMatrix * vec4(position,1.0);
 

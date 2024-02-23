@@ -216,7 +216,7 @@ namespace ABEngine.ABERuntime
                 sharedFrameSet = wgil.CreateBindGroup(ref sharedFrameData).SetManualDispose(true);
 
                 bufferStep = (int)wgil.GetMinUniformOffset();
-                drawDataBuffer = wgil.CreateBuffer(bufferStep * maxMeshCount, BufferUsages.UNIFORM | BufferUsages.COPY_DST).SetManualDispose(true);
+                drawDataBuffer = wgil.CreateBuffer(bufferStep * 100, BufferUsages.UNIFORM | BufferUsages.COPY_DST).SetManualDispose(true);
                 drawDataBuffer.DynamicEntrySize = 4;
 
                 var drawSetDesc = new BindGroupDescriptor()
