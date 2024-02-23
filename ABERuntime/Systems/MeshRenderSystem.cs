@@ -45,7 +45,7 @@ namespace ABEngine.ABERuntime
     struct RenderEntry
     {
         public int keyIndex;
-        public List<(MeshRenderer, Transform)> renderList;
+        public List<(IRenderer, Transform)> renderList;
     }
 
     class MaterialGroup
@@ -59,7 +59,7 @@ namespace ABEngine.ABERuntime
             keyList = new List<Mesh>();
         }
 
-        public void AddMesh(Transform transform, MeshRenderer mr)
+        public void AddMesh(Transform transform, IRenderer mr)
         {
             if(meshGroups.TryGetValue(mr.mesh, out MeshGroup mg))
             {
@@ -74,12 +74,12 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        public Transform RemoveMesh(MeshRenderer mr)
+        public Transform RemoveMesh(IRenderer mr)
         {
             if(meshGroups.TryGetValue(mr.mesh, out MeshGroup mg))
             {
                 Transform mrTrans = mg.RemoveMesh(mr);
-                if (mg.renderC == 0)
+                if (mg.renderCount == 0)
                 {
                     meshGroups.Remove(mr.mesh);
                     keyList.Remove(mr.mesh);
@@ -95,19 +95,23 @@ namespace ABEngine.ABERuntime
     {
         public List<MeshMatrixData> staticRenders;
         public List<Transform> dynamicRenders;
-        public int renderC = 0;
+        public List<Transform[]> skinnedRenders;
+        public int renderCount = 0;
+        public int skinnedCount = 0;
+        public int noSkinCount = 0;
         public int lastMatrixStart = -1;
 
-        Dictionary<MeshRenderer, (Transform transform, int listId)> mrLookup;
+        Dictionary<IRenderer, (Transform transform, int listId)> mrLookup;
 
         public MeshGroup()
         {
             mrLookup = new();
             staticRenders = new List<MeshMatrixData>();
             dynamicRenders = new List<Transform>();
+            skinnedRenders = new List<Transform[]>();
         }
 
-        public void AddMesh(Transform transform, MeshRenderer mr)
+        public void AddMesh(Transform transform, IRenderer mr)
         {
             if (mrLookup.ContainsKey(mr))
                 return;
@@ -121,20 +125,29 @@ namespace ABEngine.ABERuntime
                 Matrix4x4 MVInv;
                 Matrix4x4.Invert(MV, out MVInv);
                 matrixData.normalMatrix = Matrix4x4.Transpose(MVInv);
+
                 listIndex = staticRenders.Count;
                 staticRenders.Add(matrixData);
             }
-            else
+            else if(mr is MeshRenderer)
             {
                 listIndex = dynamicRenders.Count;
                 dynamicRenders.Add(transform);
             }
+            else
+            {
+                listIndex = skinnedRenders.Count;
+                skinnedRenders.Add(((SkinnedMeshRenderer)mr).bones);
+            }
 
             mrLookup.Add(mr, (transform, listIndex));
-            renderC++;
+
+            noSkinCount = staticRenders.Count + dynamicRenders.Count;
+            skinnedCount = skinnedRenders.Count;
+            renderCount++;
         }
 
-        public Transform RemoveMesh(MeshRenderer mr)
+        public Transform RemoveMesh(IRenderer mr)
         {
             Transform transform = null;
             if(mrLookup.TryGetValue(mr, out var transformData))
@@ -142,10 +155,18 @@ namespace ABEngine.ABERuntime
                 transform = transformData.transform;
                 if (transformData.transform.isStatic)
                     staticRenders.RemoveAt(transformData.listId);
-                else
+                else if(mr is MeshRenderer)
                     dynamicRenders.RemoveAt(transformData.listId);
-                renderC--;
+                else
+                    skinnedRenders.RemoveAt(transformData.listId);
+
+                noSkinCount = staticRenders.Count + dynamicRenders.Count;
+                skinnedCount = skinnedRenders.Count;
+                renderCount--;
             }
+
+            if (transform != null)
+                mrLookup.Remove(mr);
 
             return transform;
         }
@@ -374,7 +395,7 @@ namespace ABEngine.ABERuntime
                     pass.SetVertexBuffer(0, mesh.vertexBuffer);
                     pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                    pass.DrawIndexed(mesh.Indices.Length, meshGroup.renderC);
+                    pass.DrawIndexed(mesh.Indices.Length, meshGroup.noSkinCount);
 
                     groupID++;
                 }

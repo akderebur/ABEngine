@@ -8,7 +8,7 @@ using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime.Components
 {
-	public class MeshRenderer : JSerializable
+	public class MeshRenderer : JSerializable, IRenderer
 	{
         private PipelineMaterial _material;
         private Mesh _mesh;

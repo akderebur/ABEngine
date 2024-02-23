@@ -68,7 +68,7 @@ namespace ABEngine.ABERuntime
                 foreach (var meshKey in matGroup.keyList)
                 {
                     var meshGroup = matGroup.meshGroups[meshKey];
-                    int renderC = meshGroup.renderC;
+                    int renderC = meshGroup.noSkinCount;
 
                     Game.meshRenderSystem.groupDrawDatas[groupID].matrixStartID = matrixStart * 2;
                     wgil.WriteBuffer(Game.meshRenderSystem.drawDataBuffer,

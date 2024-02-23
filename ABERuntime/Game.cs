@@ -771,7 +771,7 @@ namespace ABEngine.ABERuntime
                 normalsPass.BeginPass();
             mainPass.BeginPass();
             lightPass.BeginPass();
-            mainPPPass.BeginPass();
+            //mainPPPass.BeginPass();
             fsPass.BeginPass();
         }
 

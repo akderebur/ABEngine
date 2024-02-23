@@ -8,10 +8,12 @@ using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime.Components
 {
-    public class SkinnedMeshRenderer : JSerializable
+    public class SkinnedMeshRenderer : JSerializable, IRenderer
     {
         public PipelineMaterial material { get; set; }
         public Mesh mesh { get; set; }
+
+        public Transform[] bones { get; set; }
 
         internal Buffer vertexUniformBuffer;
         internal Buffer vertexSkinBuffer;

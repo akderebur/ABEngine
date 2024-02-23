@@ -63,12 +63,10 @@ Vertex
        float Padding;
    };
 
-
-    layout (set = 0, binding = 1) buffer readonly SharedMeshVertex
-    {
+   layout (set = 0, binding = 1) buffer readonly SharedMeshVertex
+   {
         mat4 matrices[];
-    };
-
+   };
 
    layout (set = 1, binding = 0) uniform DrawData
    {
