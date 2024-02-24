@@ -8,7 +8,7 @@ Uber3D
 {
     @Pipeline:3D
     @Blend:Alpha
-    @Depth:LessEqual
+    @Depth:Equal
 
     AlbedoColor:vec4
     MetallicFactor:float
@@ -77,25 +77,19 @@ Vertex
    void main()
    {
        #ifdef HAS_SKIN
-           int boneStart =0;
-           vec4 accPos = vec4(0.0);
-           vec4 accNormal = vec4(0.0);
-   
-           for(int i = 0; i < 4; i++) {
-                int boneIndex = boneIDs[0];
-                mat4 boneTransform = boneMatrices[boneIndex].boneMatrix;
-                float weight =  boneWeights[i];
+           int boneStart = boneStartID + int(gl_InstanceIndex) * meshBoneCount;
 
-                vec4 posePosition = boneTransform * vec4(position, 1.0);
-                accPos += posePosition * weight;
+            mat4 skinMatrix = boneMatrices[boneStart + boneIDs[0]].boneMatrix * boneWeights[0] +
+                    boneMatrices[boneStart + boneIDs[1]].boneMatrix * boneWeights[1] +
+                    boneMatrices[boneStart + boneIDs[2]].boneMatrix * boneWeights[2] +
+                    boneMatrices[boneStart + boneIDs[3]].boneMatrix * boneWeights[3];
 
-                vec4 poseNormal = boneTransform * vec4(normal, 1.0);
-                accNormal += poseNormal * weight;
-           }
+           mat4 world = skinMatrix;
 
-           gl_Position = Projection * View * vec4(position, 1);
-           pass_position = vec3(accPos);
-           pass_normalVector = normalize(vec3(accNormal));
+           vec4 worldPos = world * vec4(position, 1);
+           gl_Position = Projection * View * world * vec4(position, 1);
+           pass_position = vec3(worldPos);
+           pass_normalVector = normalize(mat3(world) * normal);
        #else
            int index = matrixStartID + int(gl_InstanceIndex);
            mat4 transformationMatrix = matrices[index].transformationMatrix;

@@ -104,17 +104,17 @@ Vertex
    void main()
    {
        #ifdef HAS_SKIN
-           int boneStart =0;
-           vec4 accPos = vec4(0.0);
-   
-           for(int i = 0; i < 4; i++) {
-                int boneIndex =  boneIDs[0];
-                mat4 boneTransform = boneMatrices[boneIndex].boneMatrix;
-                vec4 posePosition = boneTransform * vec4(position, 1.0);
-                accPos += posePosition * boneWeights[i];
-           }
-           gl_Position = Projection * View * vec4(position, 1);
-           outNormal_VS = vec3(0.5);
+           int boneStart = boneStartID + int(gl_InstanceIndex) * meshBoneCount;
+           
+
+          mat4 skinMatrix = boneMatrices[boneStart + boneIDs[0]].boneMatrix * boneWeights[0] +
+                    boneMatrices[boneStart + boneIDs[1]].boneMatrix * boneWeights[1] +
+                    boneMatrices[boneStart + boneIDs[2]].boneMatrix * boneWeights[2] +
+                    boneMatrices[boneStart + boneIDs[3]].boneMatrix * boneWeights[3];
+
+           mat4 world = skinMatrix;
+           gl_Position = Projection * View * world * vec4(position, 1);
+           outNormal_VS = normalize(mat3(world) * normal);
        #else
            int index = matrixStartID + int(gl_InstanceIndex);
            mat4 transformationMatrix = matrices[index].transformationMatrix;
