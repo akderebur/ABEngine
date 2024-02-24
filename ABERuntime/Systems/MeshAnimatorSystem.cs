@@ -6,13 +6,13 @@ using Arch.Core;
 
 namespace ABEngine.ABERuntime
 {
-    public class SpriteAnimatorSystem : BaseSystem
-    {       
+    public class MeshAnimatorSystem : BaseSystem
+    {
+        private readonly QueryDescription animQuery = new QueryDescription().WithAll<Animator>().WithNone<Sprite>();
+
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = new QueryDescription().WithAll<Animator, Sprite>();
-
-            Game.GameWorld.Query(in query ,(ref Animator anim, ref Sprite sprite, ref Transform transform) =>
+            Game.GameWorld.Query(in animQuery, (ref Animator anim, ref Sprite sprite, ref Transform transform) =>
             {
                 if (!transform.enabled)
                     return;
@@ -20,7 +20,6 @@ namespace ABEngine.ABERuntime
                 anim.Time += deltaTime;
                 float animTime = anim.Time;
 
-                bool frameChanged = false;
                 bool stateChanged = anim.CheckTransitions();
                 anim.CheckTriggers(deltaTime);
 
@@ -29,24 +28,14 @@ namespace ABEngine.ABERuntime
                 if (stateChanged)
                 {
                     curState.loopStartTime = animTime;
-                    curState.lastFrameTime = animTime;
-                    curState.curFrame = 0;
-                    frameChanged = true;
+                    curState.lastFrameTime = 0f;
+                    curState.curFrame = -1;
                 }
 
                 curState.normalizedTime = (animTime - curState.loopStartTime) / curState.Length;
-
-                float frameTime = curState.lastFrameTime + curState.SampleFreq;
-                while(frameTime <= animTime)
+                if ((animTime - curState.SampleFreq) > curState.lastFrameTime)
                 {
                     curState.curFrame++;
-                    frameTime += curState.SampleFreq;
-                    frameChanged = true;
-                }
-                frameTime -= curState.SampleFreq;
-
-                if(frameChanged)
-                {
                     if (curState.curFrame >= curClip.FrameCount)
                     {
                         curState.normalizedTime = 1f;
@@ -61,11 +50,12 @@ namespace ABEngine.ABERuntime
                             curState.curFrame = curClip.FrameCount - 1;
                         }
                     }
-                    curState.lastFrameTime = frameTime;
+                    curState.lastFrameTime = animTime;
 
                     sprite.SetUVPosScale(curClip.uvPoses[curState.curFrame], curClip.uvScales[curState.curFrame]);
                 }
-            });
+            }
+            );
         }
     }
 }

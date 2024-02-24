@@ -9,9 +9,10 @@ namespace ABEngine.ABERuntime
 {
     public class StateAnimatorSystem : BaseSystem
     {
+        private readonly QueryDescription query = new QueryDescription().WithAll<StateMatchAnimator, Sprite>();
+
         protected override void StartScene()
         {
-            var query = new QueryDescription().WithAll<StateMatchAnimator, Sprite>();
             Game.GameWorld.Query(in query, (ref StateMatchAnimator anim, ref Transform transform, ref Sprite sprite) =>
             {
                 foreach (SpriteClip clip in anim.GetAllClips())
@@ -27,9 +28,15 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = new QueryDescription().WithAll<StateMatchAnimator, Sprite>();
-            Game.GameWorld.Query(in query, (ref StateMatchAnimator anim, ref Sprite sprite) =>
+            Game.GameWorld.Query(in query, (ref StateMatchAnimator anim, ref Sprite sprite, ref Transform transform) =>
             {
+                if (!transform.enabled)
+                    return;
+
+                anim.Time += deltaTime;
+                float animTime = anim.Time;
+
+                bool frameChanged = false;
                 bool stateChanged = anim.CheckStates();
                 anim.CheckTriggers(deltaTime);
 
@@ -41,21 +48,32 @@ namespace ABEngine.ABERuntime
                     sprite.SetTexture(curClip.texture2D);
 
                     anim.AnimationStarted(curMatch);
-                    curState.loopStartTime = gameTime;
-                    curState.lastFrameTime = 0f;
-                    curState.curFrame = -1;
+                    curState.loopStartTime = animTime;
+                    curState.lastFrameTime = animTime;
+                    curState.curFrame = 0;
+                    frameChanged = true;
                 }
 
-                curState.normalizedTime = (gameTime - curState.loopStartTime) / curState.Length;
-                if (curState.normalizedTime >= 1f && !curState.IsLooping && curState.loopStartTime != 0)
-                {
-                    curState.completed = true;
-                    anim.AnimationComplete(curMatch);
-                }
+                curState.normalizedTime = (animTime - curState.loopStartTime) / curState.Length;
 
-                if ((gameTime - curState.SampleFreq) > curState.lastFrameTime)
+                float frameTime = curState.lastFrameTime + curState.SampleFreq;
+                while (frameTime <= animTime)
                 {
                     curState.curFrame++;
+                    frameTime += curState.SampleFreq;
+                    frameChanged = true;
+                }
+
+                //if (!curState.completed && curState.normalizedTime >= 1f && !curState.IsLooping && curState.loopStartTime != 0)
+                //{
+                //    curState.completed = true;
+                //    anim.AnimationComplete(curMatch);
+                //}
+
+                if (frameChanged)
+                {
+                    frameTime -= curState.SampleFreq;
+
                     if (curState.curFrame >= curClip.FrameCount)
                     {
                         curState.normalizedTime = 1f;
@@ -63,7 +81,7 @@ namespace ABEngine.ABERuntime
                         if (curState.IsLooping)
                         {
                             curState.curFrame = 0;
-                            curState.loopStartTime = gameTime;
+                            curState.loopStartTime = frameTime;
                         }
                         else
                         {
@@ -74,7 +92,7 @@ namespace ABEngine.ABERuntime
                             curState.curFrame = curClip.FrameCount - 1;
                         }
                     }
-                    curState.lastFrameTime = gameTime;
+                    curState.lastFrameTime = frameTime;
 
                     sprite.SetUVPosScale(curClip.uvPoses[curState.curFrame], curClip.uvScales[curState.curFrame]);
                 }

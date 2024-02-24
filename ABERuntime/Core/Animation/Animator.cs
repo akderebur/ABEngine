@@ -20,6 +20,7 @@ namespace ABEngine.ABERuntime.Animation
             }
         }
 
+        public float Time { get; internal set; }
         private AnimationState _currentState;
         private AnimationState _nextState;
         private List<string> _transitionParams;

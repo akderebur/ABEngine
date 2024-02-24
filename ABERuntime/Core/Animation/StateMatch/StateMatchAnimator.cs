@@ -8,6 +8,8 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
 {
 	public class StateMatchAnimator
 	{
+        public float Time { get; internal set; }
+
         public Transform transform { get; private set; }
         public Dictionary<string, float> parameters;
         private AnimationMatch _currentAnimMatch;
@@ -91,6 +93,7 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
             {
                 if (animChain.animationMatch.IsStatesMatched() && !_currentAnimMatch.IsChainLocked(animChain))
                 {
+                    _currentAnimMatch.animationState.completed = false;
                     _currentAnimMatch = animChain.animationMatch;
                     return true;
                 }
@@ -106,6 +109,7 @@ namespace ABEngine.ABERuntime.Core.Animation.StateMatch
                 {
                     if (_currentAnimMatch != animMatch)
                     {
+                        _currentAnimMatch.animationState.completed = false;
                         _currentAnimMatch = animMatch;
                         return true;
                     }
