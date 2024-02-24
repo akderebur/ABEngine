@@ -40,54 +40,133 @@ namespace ABEngine.ABERuntime
     public struct DrawData
     {
         public int matrixStartID;
-    }
-
-    struct RenderEntry
-    {
-        public int keyIndex;
-        public List<(IRenderer, Transform)> renderList;
+        public int boneStartID;
+        public int meshBoneCount;
     }
 
     class MaterialGroup
     {
         public Dictionary<Mesh, MeshGroup> meshGroups;
+        public Dictionary<Mesh, SkinnedMeshGroup> skinnedMeshGroups;
+
         public List<Mesh> keyList;
+        public List<Mesh> skinnedKeyList;
 
         public MaterialGroup()
         {
-            meshGroups = new Dictionary<Mesh, MeshGroup>();
-            keyList = new List<Mesh>();
+            meshGroups = new();
+            skinnedMeshGroups = new();
+            keyList = new();
+            skinnedKeyList = new List<Mesh>();
         }
 
-        public void AddMesh(Transform transform, IRenderer mr)
+        public void AddMesh(Transform transform, IRenderer mrCommon)
         {
-            if(meshGroups.TryGetValue(mr.mesh, out MeshGroup mg))
+            if(mrCommon is SkinnedMeshRenderer)
             {
-                mg.AddMesh(transform, mr);
+                SkinnedMeshRenderer mr = mrCommon as SkinnedMeshRenderer;
+                if (skinnedMeshGroups.TryGetValue(mr.mesh, out SkinnedMeshGroup mg))
+                {
+                    mg.AddMesh(transform, mr);
+                }
+                else
+                {
+                    mg = new SkinnedMeshGroup();
+                    mg.AddMesh(transform, mr);
+                    skinnedMeshGroups.Add(mr.mesh, mg);
+                    skinnedKeyList.Add(mr.mesh);
+                }
             }
             else
             {
-                mg = new MeshGroup();
-                mg.AddMesh(transform, mr);
-                meshGroups.Add(mr.mesh, mg);
-                keyList.Add(mr.mesh);
+                MeshRenderer mr = mrCommon as MeshRenderer;
+                if (meshGroups.TryGetValue(mr.mesh, out MeshGroup mg))
+                {
+                    mg.AddMesh(transform, mr);
+                }
+                else
+                {
+                    mg = new MeshGroup();
+                    mg.AddMesh(transform, mr);
+                    meshGroups.Add(mr.mesh, mg);
+                    keyList.Add(mr.mesh);
+                }
             }
         }
 
         public Transform RemoveMesh(IRenderer mr)
         {
-            if(meshGroups.TryGetValue(mr.mesh, out MeshGroup mg))
+            if (mr is SkinnedMeshRenderer)
             {
-                Transform mrTrans = mg.RemoveMesh(mr);
-                if (mg.renderCount == 0)
+                if (skinnedMeshGroups.TryGetValue(mr.mesh, out SkinnedMeshGroup mg))
                 {
-                    meshGroups.Remove(mr.mesh);
-                    keyList.Remove(mr.mesh);
+                    Transform mrTrans = mg.RemoveMesh(mr);
+                    if (mg.renderCount == 0)
+                    {
+                        meshGroups.Remove(mr.mesh);
+                        skinnedKeyList.Remove(mr.mesh);
+                    }
+                    return mrTrans;
                 }
-                return mrTrans;
+            }
+            else
+            {
+                if (meshGroups.TryGetValue(mr.mesh, out MeshGroup mg))
+                {
+                    Transform mrTrans = mg.RemoveMesh(mr);
+                    if (mg.renderCount == 0)
+                    {
+                        meshGroups.Remove(mr.mesh);
+                        keyList.Remove(mr.mesh);
+                    }
+                    return mrTrans;
+                }
             }
 
             return null;
+        }
+    }
+
+    class SkinnedMeshGroup
+    {
+        public List<Transform[]> renders;
+        public int renderCount = 0;
+
+        Dictionary<IRenderer, (Transform transform, int listId)> mrLookup;
+
+        public SkinnedMeshGroup()
+        {
+            renders = new();
+            mrLookup = new();
+        }
+
+        public void AddMesh(Transform transform, SkinnedMeshRenderer mr)
+        {
+            if (mrLookup.ContainsKey(mr))
+                return;
+
+            int listIndex = renders.Count;
+            renders.Add(mr.bones);
+
+            mrLookup.Add(mr, (transform, listIndex));
+            renderCount++;
+        }
+
+        public Transform RemoveMesh(IRenderer mr)
+        {
+            Transform transform = null;
+            if (mrLookup.TryGetValue(mr, out var transformData))
+            {
+                transform = transformData.transform;
+                renders.RemoveAt(transformData.listId);
+
+                renderCount--;
+            }
+
+            if (transform != null)
+                mrLookup.Remove(mr);
+
+            return transform;
         }
     }
 
@@ -95,10 +174,7 @@ namespace ABEngine.ABERuntime
     {
         public List<MeshMatrixData> staticRenders;
         public List<Transform> dynamicRenders;
-        public List<Transform[]> skinnedRenders;
         public int renderCount = 0;
-        public int skinnedCount = 0;
-        public int noSkinCount = 0;
         public int lastMatrixStart = -1;
 
         Dictionary<IRenderer, (Transform transform, int listId)> mrLookup;
@@ -106,12 +182,11 @@ namespace ABEngine.ABERuntime
         public MeshGroup()
         {
             mrLookup = new();
-            staticRenders = new List<MeshMatrixData>();
-            dynamicRenders = new List<Transform>();
-            skinnedRenders = new List<Transform[]>();
+            staticRenders = new();
+            dynamicRenders = new();
         }
 
-        public void AddMesh(Transform transform, IRenderer mr)
+        public void AddMesh(Transform transform, MeshRenderer mr)
         {
             if (mrLookup.ContainsKey(mr))
                 return;
@@ -129,21 +204,13 @@ namespace ABEngine.ABERuntime
                 listIndex = staticRenders.Count;
                 staticRenders.Add(matrixData);
             }
-            else if(mr is MeshRenderer)
+            else
             {
                 listIndex = dynamicRenders.Count;
                 dynamicRenders.Add(transform);
             }
-            else
-            {
-                listIndex = skinnedRenders.Count;
-                skinnedRenders.Add(((SkinnedMeshRenderer)mr).bones);
-            }
 
             mrLookup.Add(mr, (transform, listIndex));
-
-            noSkinCount = staticRenders.Count + dynamicRenders.Count;
-            skinnedCount = skinnedRenders.Count;
             renderCount++;
         }
 
@@ -155,13 +222,9 @@ namespace ABEngine.ABERuntime
                 transform = transformData.transform;
                 if (transformData.transform.isStatic)
                     staticRenders.RemoveAt(transformData.listId);
-                else if(mr is MeshRenderer)
-                    dynamicRenders.RemoveAt(transformData.listId);
                 else
-                    skinnedRenders.RemoveAt(transformData.listId);
-
-                noSkinCount = staticRenders.Count + dynamicRenders.Count;
-                skinnedCount = skinnedRenders.Count;
+                    dynamicRenders.RemoveAt(transformData.listId);
+             
                 renderCount--;
             }
 
@@ -174,7 +237,6 @@ namespace ABEngine.ABERuntime
 
     public class MeshRenderSystem : RenderSystem
     {
-        private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
         private readonly QueryDescription pointLightQuery = new QueryDescription().WithAll<Transform, PointLight>();
         private readonly QueryDescription directionalLightQuery = new QueryDescription().WithAll<Transform, DirectionalLight>();
 
@@ -189,6 +251,7 @@ namespace ABEngine.ABERuntime
         LightInfo3D[] lightInfos;
 
         internal Buffer matrixStorageBuffer;
+        internal Buffer boneStorageBuffer;
         internal Buffer drawDataBuffer;
         internal const int maxMeshCount = 100000;
         internal int bufferStep = 0;
@@ -201,6 +264,7 @@ namespace ABEngine.ABERuntime
             {
                 fragmentUniformBuffer = wgil.CreateBuffer(160, BufferUsages.UNIFORM | BufferUsages.COPY_DST).SetManualDispose(true);
                 matrixStorageBuffer = wgil.CreateBuffer(64 * 2 * maxMeshCount, BufferUsages.STORAGE | BufferUsages.COPY_DST).SetManualDispose(true);
+                boneStorageBuffer = wgil.CreateBuffer(64 * 2000, BufferUsages.STORAGE | BufferUsages.COPY_DST).SetManualDispose(true);
 
                 var sharedFrameData = new BindGroupDescriptor()
                 {
@@ -209,7 +273,8 @@ namespace ABEngine.ABERuntime
                     {
                         Game.pipelineBuffer,
                         fragmentUniformBuffer,
-                        matrixStorageBuffer
+                        matrixStorageBuffer,
+                        boneStorageBuffer
                     }
                 };
 
@@ -217,7 +282,7 @@ namespace ABEngine.ABERuntime
 
                 bufferStep = (int)wgil.GetMinUniformOffset();
                 drawDataBuffer = wgil.CreateBuffer(bufferStep * 100, BufferUsages.UNIFORM | BufferUsages.COPY_DST).SetManualDispose(true);
-                drawDataBuffer.DynamicEntrySize = 4;
+                drawDataBuffer.DynamicEntrySize = 12;
 
                 var drawSetDesc = new BindGroupDescriptor()
                 {
@@ -235,7 +300,15 @@ namespace ABEngine.ABERuntime
 
         protected override void StartScene()
         {
-            Game.GameWorld.Query(in meshQuery, (ref MeshRenderer mr, ref Transform transform) =>
+            QueryDescription mrQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
+            QueryDescription smrQuery = new QueryDescription().WithAll<Transform, SkinnedMeshRenderer>();
+
+            Game.GameWorld.Query(in mrQuery, (ref MeshRenderer mr, ref Transform transform) =>
+            {
+                AddMesh(transform, mr);
+            });
+
+            Game.GameWorld.Query(in smrQuery, (ref SkinnedMeshRenderer mr, ref Transform transform) =>
             {
                 AddMesh(transform, mr);
             });
@@ -252,13 +325,15 @@ namespace ABEngine.ABERuntime
 
         internal Dictionary<PipelineMaterial, MaterialGroup> opaqueDict = new();
         internal List<PipelineMaterial> opaqueKeys = new();
+        internal List<PipelineMaterial> skinnedKeys = new();
+
         internal DrawData[] groupDrawDatas = new DrawData[100];
 
         SortedDictionary<int, List<(MeshRenderer, Transform)>> opaqueRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
         internal SortedDictionary<int, List<(MeshRenderer, Transform)>> transparentRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
         internal SortedDictionary<int, List<(MeshRenderer, Transform)>> lateRenderOrder = new SortedDictionary<int, List<(MeshRenderer, Transform)>>();
 
-        public void AddMesh(Transform transform, MeshRenderer mr)
+        public void AddMesh(Transform transform, IRenderer mr)
         {
             if (!base.started)
                 return;
@@ -379,6 +454,9 @@ namespace ABEngine.ABERuntime
                 var material = Game.meshRenderSystem.opaqueKeys[matGroupID];
                 var matGroup = Game.meshRenderSystem.opaqueDict[material];
 
+                if (matGroup.keyList.Count == 0)
+                    continue;
+
                 pass.SetPipeline(material.pipelineAsset.pipeline);
 
                 foreach (var setKV in material.bindableSets)
@@ -395,7 +473,39 @@ namespace ABEngine.ABERuntime
                     pass.SetVertexBuffer(0, mesh.vertexBuffer);
                     pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                    pass.DrawIndexed(mesh.Indices.Length, meshGroup.noSkinCount);
+                    pass.DrawIndexed(mesh.Indices.Length, meshGroup.renderCount);
+
+                    groupID++;
+                }
+            }
+
+            // Skinned
+
+            for (int matGroupID = 0; matGroupID < opaqueKeys.Count; matGroupID++)
+            {
+                var material = Game.meshRenderSystem.opaqueKeys[matGroupID];
+                var matGroup = Game.meshRenderSystem.opaqueDict[material];
+
+                if (matGroup.skinnedKeyList.Count == 0)
+                    continue;
+
+                pass.SetPipeline(material.pipelineAsset.pipeline);
+
+                foreach (var setKV in material.bindableSets)
+                {
+                    pass.SetBindGroup(setKV.Key, setKV.Value);
+                }
+
+                foreach (var mesh in matGroup.skinnedKeyList)
+                {
+                    var meshGroup = matGroup.skinnedMeshGroups[mesh];
+
+                    pass.SetBindGroup(1, (uint)(bufferStep * groupID), drawDataset);
+
+                    pass.SetVertexBuffer(0, mesh.vertexBuffer);
+                    pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
+
+                    pass.DrawIndexed(mesh.Indices.Length, meshGroup.renderCount);
 
                     groupID++;
                 }
@@ -410,7 +520,7 @@ namespace ABEngine.ABERuntime
             //    PipelineMaterial material = key.material;
             //    pass.SetPipeline(material.pipelineAsset.pipeline);
 
-                
+
 
             //}
 
@@ -466,7 +576,7 @@ namespace ABEngine.ABERuntime
             //        Matrix4x4.Invert(MV, out MVInv);
             //        sharedVertexUniform.normalMatrix = Matrix4x4.Transpose(MVInv);
             //        //wgil.WriteBuffer(mr.vertexUniformBuffer, sharedVertexUniform);
-                
+
 
             //        pass.SetPipeline(mr.material.pipelineAsset.pipeline);
 

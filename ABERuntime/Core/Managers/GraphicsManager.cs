@@ -359,6 +359,11 @@ namespace ABEngine.ABERuntime
                     {
                         BindingType = BindingType.StorageBuffer,
                         ShaderStages = ShaderStages.VERTEX
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.StorageBuffer,
+                        ShaderStages = ShaderStages.VERTEX
                     }
                 }
             };
@@ -378,6 +383,11 @@ namespace ABEngine.ABERuntime
                     {
                         BindingType = BindingType.Buffer,
                         ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.StorageBuffer,
+                        ShaderStages = ShaderStages.VERTEX
                     },
                     new BindGroupLayoutEntry()
                     {

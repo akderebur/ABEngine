@@ -118,6 +118,8 @@ namespace ABEngine.ABERuntime.Components
             _localRotation = rotation;
             _localScale = scale;
 
+            _localEulerAngles = _localRotation.ToEulerAngles();
+
             RecalculateTRS();
         }
 

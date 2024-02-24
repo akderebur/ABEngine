@@ -36,6 +36,8 @@ namespace ABEngine.ABERuntime.Core.Assets
         public RenderOrder renderOrder { get; protected set; }
         public RenderType renderType { get; protected set; }
 
+        public string DefineKey { get; protected set; }
+
         Dictionary<string, VariantPipelineAsset> pipelineVariants;
 
         public PipelineAsset()
@@ -47,9 +49,11 @@ namespace ABEngine.ABERuntime.Core.Assets
             propNames = new Dictionary<string, int>();
             textureNames = new Dictionary<string, int>();
             defaultMatName = "NoName";
+            DefineKey = "";
 
             renderOrder = RenderOrder.Opaque;
             renderType = RenderType.Opaque;
+
         }
 
         public virtual void BindPipeline(RenderPass pass)
@@ -78,6 +82,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             "vec2" => typeof(Vector2),
             "vec3" => typeof(Vector3),
             "vec4" => typeof(Vector4),
+            "ivec4" => typeof(Vector4),
             _ => null
         };
 
@@ -87,6 +92,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             "vec2" => VertexFormat.Float32x2,
             "vec3" => VertexFormat.Float32x3,
             "vec4" => VertexFormat.Float32x4,
+            "ivec4" => VertexFormat.Sint32x4,
             _ => VertexFormat.Float32
         };
 
@@ -155,7 +161,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                     line = line.Trim();
                     if(line.StartsWith("#ifdef "))
                     {
-                        string defVar = line.Replace("#ifdef ", "");
+                        string defVar = line.Replace("#ifdef ", "").Trim();
                         if(!defines.ContainsKey(defVar))
                             defines.Add(defVar, false);
                     }
@@ -180,6 +186,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                     sb = new StringBuilder();
                     Stack<string> defStack = new Stack<string>();
                     bool defineChain = true;
+                    bool elseBlock = false;
 
                     // Set defines
                     string defineKey = "";
@@ -203,7 +210,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                             string line = orgLine.Trim();
                             if (line.StartsWith("#ifdef "))
                             {
-                                string defVar = line.Replace("#ifdef ", "");
+                                string defVar = line.Replace("#ifdef ", "").Trim();
                                 defStack.Push(defVar);
 
                                 defineChain = true;
@@ -216,11 +223,16 @@ namespace ABEngine.ABERuntime.Core.Assets
                                 {
                                     defStack.Pop();
 
+                                    elseBlock = false;
                                     defineChain = true;
                                     foreach (var item in defStack)
                                         defineChain &= defines[item];
                                 }
-                                else if(defineChain)
+                                else if(line.StartsWith("#else"))
+                                {
+                                    elseBlock = true;
+                                }
+                                else if((defineChain && !elseBlock) || (!defineChain && elseBlock))
                                 {
                                     sb.AppendLine(orgLine);
                                 }
@@ -363,9 +375,9 @@ namespace ABEngine.ABERuntime.Core.Assets
                                                 // Set 0 - Shared pipeline data
 
                                                 resourceLayouts.Add(GraphicsManager.sharedMeshFrameData);
-                                                if (useSkin)
-                                                    resourceLayouts.Add(GraphicsManager.sharedSkinnedMeshUniform_VS);
-                                                else
+                                                //if (useSkin)
+                                                //    resourceLayouts.Add(GraphicsManager.sharedSkinnedMeshUniform_VS);
+                                                //else
                                                     resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
 
                                                 pipeline3d = true;
@@ -758,7 +770,6 @@ namespace ABEngine.ABERuntime.Core.Assets
     public class VariantPipelineAsset : PipelineAsset
     {
         public bool IsBuilt { get; set; }
-        public string DefineKey { get; set; }
 
         private string pipelineSource;
         private bool readDescriptor;
@@ -775,6 +786,16 @@ namespace ABEngine.ABERuntime.Core.Assets
             base.ParseAsset(pipelineSource, readDescriptor, DefineKey);
             pipelineSource = null;
             IsBuilt = true;
+        }
+
+        public VertexLayout GetVertexLayout()
+        {
+            return vertexLayout;
+        }
+
+        public void BuildPipeline(ref PipelineDescriptor descriptor)
+        {
+            base.pipeline = Game.wgil.CreateRenderPipeline(shaders[0], shaders[1], ref descriptor);
         }
     }
 

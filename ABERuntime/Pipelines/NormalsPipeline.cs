@@ -7,6 +7,8 @@ namespace ABEngine.ABERuntime.Pipelines
 {
 	public class NormalsPipeline : PipelineAsset
     {
+        public PipelineAsset skinPipeline;
+
         public NormalsPipeline() : base()
         {
             defaultMatName = "NormalsPass";
@@ -44,6 +46,12 @@ namespace ABEngine.ABERuntime.Pipelines
             };
 
             pipeline = Game.wgil.CreateRenderPipeline(shaders[0], shaders[1], ref normalsPipeDesc);
+
+            var skinVariant = this.GetPipelineVariant("*HAS_SKIN");
+            normalsPipeDesc.VertexLayouts = new VertexLayout[] { skinVariant.GetVertexLayout() };
+
+            skinVariant.BuildPipeline(ref normalsPipeDesc);
+            this.skinPipeline = skinVariant;
         }
 
         string NormalsPipelineAsset = @"
@@ -69,25 +77,52 @@ Vertex
         mat4 normalMatrix;
    } matrices[];
 
+   layout (set = 0, binding = 2) readonly buffer BoneBuffer
+   {
+        mat4 boneMatrix;
+   } boneMatrices[];
+
    layout (set = 1, binding = 0) uniform DrawData
    {
         int matrixStartID;
+        int boneStartID;
+        int meshBoneCount;
    };
 
    layout(location = 0) in vec3 position;
-   layout(location = 1) in vec3 vertexNormal;
+   layout(location = 1) in vec3 normal;
+   layout(location = 2) in vec2 texCoord;
+   layout(location = 3) in vec4 tangent;
+
+   #ifdef HAS_SKIN
+   layout(location = 4) in ivec4 boneIDs;
+   layout(location = 5) in vec4 boneWeights;
+   #endif
 
    layout(location = 0) out vec3 outNormal_VS;
 
    void main()
    {
-       int index = matrixStartID + int(gl_InstanceIndex);
-       mat4 transformationMatrix = matrices[index].transformationMatrix;
-       mat4 normalMatrix = matrices[index].normalMatrix;
+       #ifdef HAS_SKIN
+           int boneStart =0;
+           vec4 accPos = vec4(0.0);
+   
+           for(int i = 0; i < 4; i++) {
+                int boneIndex =  boneIDs[0];
+                mat4 boneTransform = boneMatrices[boneIndex].boneMatrix;
+                vec4 posePosition = boneTransform * vec4(position, 1.0);
+                accPos += posePosition * boneWeights[i];
+           }
+           gl_Position = Projection * View * vec4(position, 1);
+           outNormal_VS = vec3(0.5);
+       #else
+           int index = matrixStartID + int(gl_InstanceIndex);
+           mat4 transformationMatrix = matrices[index].transformationMatrix;
+           mat4 normalMatrix = matrices[index].normalMatrix;
 
-       gl_Position = Projection * View * transformationMatrix * vec4(position,1.0);
-
-       outNormal_VS = normalize(mat3(normalMatrix) * vertexNormal);
+           gl_Position = Projection * View * transformationMatrix * vec4(position,1.0);
+           outNormal_VS = normalize(mat3(normalMatrix) * normal);
+       #endif
    }
 }
 Fragment

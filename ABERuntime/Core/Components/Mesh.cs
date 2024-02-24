@@ -25,6 +25,8 @@ namespace ABEngine.ABERuntime
         public Vector4BInt[] BoneIDs { private get; set; }
         public Vector4[] BoneWeights { private get; set; }
 
+        public Matrix4x4[] invBindMatrices { get; set; }
+
         public ushort[] Indices { internal get; set; }
         public bool IsSkinned { get; set; }
 

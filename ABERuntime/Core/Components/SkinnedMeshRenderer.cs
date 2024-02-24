@@ -33,7 +33,16 @@ namespace ABEngine.ABERuntime.Components
         public SkinnedMeshRenderer(Mesh mesh, PipelineMaterial material)
         {
             this.mesh = mesh;
+
+            bool skinSupport = material.pipelineAsset.DefineKey.Contains("*HAS_SKIN");
+            if(!skinSupport)
+            {
+                var skinVariant = material.pipelineAsset.GetPipelineVariant("*HAS_SKIN" + material.pipelineAsset.DefineKey);
+                if (skinVariant != null)
+                    material = skinVariant.GetDefaultMaterial();
+            }
             this.material = material;
+
             SetupResources();
         }
 

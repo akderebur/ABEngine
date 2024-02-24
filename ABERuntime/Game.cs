@@ -757,8 +757,9 @@ namespace ABEngine.ABERuntime
             spriteBatchSystem.Update(newTime, elapsed);
             if (!GraphicsManager.render2DOnly)
             {
-                normalsRenderSystem.Update(newTime, elapsed);
                 meshRenderSystem.Update(newTime, elapsed);
+                normalsRenderSystem.Update(newTime, elapsed);
+
             }
             lightRenderSystem.Update(newTime, elapsed);
             if(debug)
@@ -771,7 +772,7 @@ namespace ABEngine.ABERuntime
                 normalsPass.BeginPass();
             mainPass.BeginPass();
             lightPass.BeginPass();
-            //mainPPPass.BeginPass();
+            mainPPPass.BeginPass();
             fsPass.BeginPass();
         }
 

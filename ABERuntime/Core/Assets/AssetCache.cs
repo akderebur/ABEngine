@@ -282,9 +282,9 @@ namespace ABEngine.ABERuntime.Core.Assets
             return newClip;
         }
 
-        public static Mesh CreateMesh(string meshFilePath, bool flipUVs = false)
+        public static Mesh CreateMesh(string meshFilePath)
         {
-            return GetOrCreateMesh(meshFilePath, 0, flipUVs);
+            return GetOrCreateMesh(meshFilePath);
         }
 
         public static Transform CreateModel(string modelAssetPath)
@@ -352,8 +352,15 @@ namespace ABEngine.ABERuntime.Core.Assets
                 Mesh mesh = GetOrCreateMesh("", meshHash);
                 PipelineMaterial material = GetOrCreateMaterial("", matHash);
 
-                MeshRenderer mr = new MeshRenderer(mesh, material);
+                SkinnedMeshRenderer mr = new SkinnedMeshRenderer(mesh, material);
                 Transform mrTrans = nodeTransforms[nodeId];
+
+                int boneCount = br.ReadInt32();
+                mr.bones = new Transform[boneCount];
+                for (int b = 0; b < boneCount; b++)
+                {
+                    mr.bones[b] = nodeTransforms[br.ReadInt32()];
+                }
 
                 mrTrans.entity.Add(mr);
             }
@@ -530,7 +537,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             return prefabAsset;
         }
 
-        private static Mesh GetOrCreateMesh(string meshPath, uint preHash = 0, bool flipUVs = false)
+        private static Mesh GetOrCreateMesh(string meshPath, uint preHash = 0)
         {
             uint hash = preHash;
             if (hash == 0)
@@ -553,7 +560,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 if (!File.Exists(meshAbsPath))
                     return null;
 
-                mesh = LoadMeshRAW(hash, File.ReadAllBytes(meshAbsPath), flipUVs);
+                mesh = LoadMeshRAW(hash, File.ReadAllBytes(meshAbsPath));
             }
 
             s_meshes.Add(mesh);
@@ -781,11 +788,8 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
         }
 
-        private static Mesh LoadMeshRAW(uint hash, byte[] meshData, bool flipUVs)
+        private static Mesh LoadMeshRAW(uint hash, byte[] meshData)
         {
-            float uvMult = flipUVs ? -1 : 1;
-            float uvAdd = flipUVs ? 1 : 0;
-
             Mesh mesh = new Mesh(hash);
             using (MemoryStream fs = new MemoryStream(meshData))
             using (BinaryReader br = new BinaryReader(fs))
@@ -809,7 +813,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                         case 'U':
                             Vector2[] uv = new Vector2[vertC];
                             for (int i = 0; i < vertC; i++)
-                                uv[i] = new Vector2(br.ReadSingle(), br.ReadSingle() * uvMult + uvAdd);
+                                uv[i] = new Vector2(br.ReadSingle(), 1f - br.ReadSingle());
                             mesh.UV0 = uv;
                             break;
                         case 'N':
@@ -825,6 +829,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                             mesh.Tangents = tangents;
                             break;
                         case 'B':
+                            mesh.IsSkinned = true;
                             Vector4BInt[] boneIds = new Vector4BInt[vertC];
                             Vector4[] boneWeights = new Vector4[vertC];
                             for (int i = 0; i < vertC; i++)
@@ -852,7 +857,18 @@ namespace ABEngine.ABERuntime.Core.Assets
                             break;
                         case 'M':
                             int matrixCount = br.ReadInt32();
-                            br.BaseStream.Position += 64 * matrixCount;
+                            Matrix4x4[] invBindMatrices = new Matrix4x4[matrixCount];
+                            for (int m = 0; m < matrixCount; m++)
+                            {
+                                Matrix4x4 invBindMatrix = new Matrix4x4(
+                                br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle(),
+                                br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle(),
+                                br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle(),
+                                br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+
+                                invBindMatrices[m] = invBindMatrix;
+                            }
+                            mesh.invBindMatrices = invBindMatrices;
                             break;
                         default:
                             break;

@@ -8,7 +8,7 @@ Uber3D
 {
     @Pipeline:3D
     @Blend:Alpha
-    
+    @Depth:LessEqual
 
     AlbedoColor:vec4
     MetallicFactor:float
@@ -36,9 +36,18 @@ Vertex
         mat4 normalMatrix;
    } matrices[];
 
+
+   layout (set = 0, binding = 3) readonly buffer BoneBuffer
+   {
+        mat4 boneMatrix;
+   } boneMatrices[];
+
+
    layout (set = 1, binding = 0) uniform DrawData
    {
         int matrixStartID;
+        int boneStartID;
+        int meshBoneCount;
    };
 
     layout (set = 2, binding = 0) uniform ShaderProps
@@ -55,6 +64,11 @@ Vertex
    layout(location = 2) in vec2 texCoord;
    layout(location = 3) in vec4 tangent;
 
+   #ifdef HAS_SKIN
+   layout(location = 4) in ivec4 boneIDs;
+   layout(location = 5) in vec4 boneWeights;
+   #endif
+
    layout(location = 0) out vec2 pass_textureCoordinates;
    layout(location = 1) out vec3 pass_position;
    layout(location = 2) out vec3 pass_normalVector;
@@ -62,14 +76,37 @@ Vertex
 
    void main()
    {
-       int index = matrixStartID + int(gl_InstanceIndex);
-       mat4 transformationMatrix = matrices[index].transformationMatrix;
-       mat4 normalMatrix = matrices[index].normalMatrix;
+       #ifdef HAS_SKIN
+           int boneStart =0;
+           vec4 accPos = vec4(0.0);
+           vec4 accNormal = vec4(0.0);
+   
+           for(int i = 0; i < 4; i++) {
+                int boneIndex = boneIDs[0];
+                mat4 boneTransform = boneMatrices[boneIndex].boneMatrix;
+                float weight =  boneWeights[i];
 
-       gl_Position = Projection * View * transformationMatrix * vec4(position,1.0);
+                vec4 posePosition = boneTransform * vec4(position, 1.0);
+                accPos += posePosition * weight;
+
+                vec4 poseNormal = boneTransform * vec4(normal, 1.0);
+                accNormal += poseNormal * weight;
+           }
+
+           gl_Position = Projection * View * vec4(position, 1);
+           pass_position = vec3(accPos);
+           pass_normalVector = normalize(vec3(accNormal));
+       #else
+           int index = matrixStartID + int(gl_InstanceIndex);
+           mat4 transformationMatrix = matrices[index].transformationMatrix;
+           mat4 normalMatrix = matrices[index].normalMatrix;
+
+           gl_Position = Projection * View * transformationMatrix * vec4(position,1.0);
+           pass_position = vec3(transformationMatrix * vec4(position, 1));
+           pass_normalVector = normalize(mat3(normalMatrix) * normal);
+       #endif
+
        pass_textureCoordinates = texCoord;
-       pass_position = vec3(transformationMatrix * vec4(position, 1));
-       pass_normalVector = normalize(mat3(normalMatrix) * normal);
 
        //vec3 N = normalize(vec3(transformationMatrix * vec4(vertexNormal,0)));
        //vec3 T = normalize(vec3(transformationMatrix * vec4(tangent,   0.0)));
