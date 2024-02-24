@@ -732,12 +732,22 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public List<string> GetTextureNames()
         {
-            return textureNames.Keys.ToList();
+            return textureNames.OrderBy(t => t.Value).Select(t => t.Key).ToList();
         }
 
         public List<string> GetPropNames()
         {
-            return propNames.Keys.ToList();
+            return propNames.OrderBy(p => p.Value).Select(p => p.Key).ToList();
+        }
+
+        internal Dictionary<string, int> GetPropDict()
+        {
+            return propNames;
+        }
+
+        internal Dictionary<string, int> GetTextureDict()
+        {
+            return textureNames;
         }
 
         internal List<BindGroupLayout> GetResourceLayouts()

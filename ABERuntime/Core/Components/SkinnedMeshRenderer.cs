@@ -39,7 +39,7 @@ namespace ABEngine.ABERuntime.Components
             {
                 var skinVariant = material.pipelineAsset.GetPipelineVariant("*HAS_SKIN" + material.pipelineAsset.DefineKey);
                 if (skinVariant != null)
-                    material = skinVariant.GetDefaultMaterial();
+                    material.ChangePipeline(skinVariant);
             }
             this.material = material;
 

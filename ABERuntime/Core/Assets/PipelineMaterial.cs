@@ -22,7 +22,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         public PipelineAsset pipelineAsset;
 
         internal List<ShaderProp> shaderProps;
-        internal List<uint> texHashes;
+        internal List<Texture2D> textures;
 
         public uint shaderPropBufferSize;
 
@@ -106,9 +106,10 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         internal void SetShaderTextureResources(List<string> textureNames)
         {
-            texHashes = new List<uint>();
+            textures = new List<Texture2D>();
+            Texture2D defTex = AssetCache.GetDefaultTexture();
             foreach (var texName in textureNames) // Invalid Textures
-                texHashes.Add(0);
+                textures.Add(null);
 
             if (textureNames.Count > 0)
             {
@@ -133,7 +134,8 @@ namespace ABEngine.ABERuntime.Core.Assets
                     }
                     else
                     {
-                        resources[index] = AssetCache.GetDefaultTexture().GetView();
+                        resources[index] = defTex.GetView();
+                        textures[index] = defTex;
                     }
 
                     index++;
@@ -171,7 +173,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 int texInd = texNameInd * 2;
                 texResources[texInd] = tex2d.GetView();
                 texResources[texInd + 1] = tex2d.textureSampler;
-                texHashes[texNameInd] = tex2d.fPathHash;
+                textures[texNameInd] = tex2d;
                 if(textureSet != null)
                     textureSet.Dispose();
 
@@ -221,8 +223,11 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public void ChangePipeline(PipelineAsset pipeline)
         {
-            //bool 
-            //if((int)this.pipelineAsset.renderOrder == renderOrder)
+            // Cache old data
+            var oldProps = shaderProps;
+            var oldTextures = textures;
+            var oldPropNames = pipeline.GetPropNames();
+            var oldTexNames = pipeline.GetTextureNames();
 
             propBuffer?.Dispose();
             foreach (var resourceSet in bindableSets.Values)
@@ -237,6 +242,19 @@ namespace ABEngine.ABERuntime.Core.Assets
 
             this.SetShaderPropBuffer(refMat.shaderProps.ToList(), refMat.shaderPropBufferSize);
             this.SetShaderTextureResources(pipeline.GetTextureNames());
+
+            // Try setting old data
+            for (int i = 0; i < oldPropNames.Count; i++)
+            {
+                this.SetVector4(oldPropNames[i], oldProps[i].Float4);
+            }
+
+            for (int i = 0; i < oldTexNames.Count; i++)
+            {
+                Texture2D tex = oldTextures[i];
+                if(tex != null)
+                    this.SetTexture(oldTexNames[i], tex);
+            }
 
             onPipelineChanged?.Invoke(pipeline);
         }
