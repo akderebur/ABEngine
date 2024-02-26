@@ -15,7 +15,7 @@ namespace ABEngine.ABEditor
         Sprite bboxSprite = null;
         Matrix4x4 projectionMatrix;
 
-        public override void Start()
+        protected override void StartScene()
         {
             Texture2D bboxTex = AssetCache.CreateTexture2D("Sprites/bbox_frame.png");
             bboxSprite = new Sprite(bboxTex);

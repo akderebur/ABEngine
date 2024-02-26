@@ -34,11 +34,6 @@ namespace ABEngine.ABERuntime
         {
         }
 
-        internal Mesh(uint hash) : this()
-        {
-            base.fPathHash = hash;
-        }
-
         public void UpdateMesh()
         {
             if (Positions == null || Positions.Length == 0)

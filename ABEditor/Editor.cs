@@ -194,7 +194,7 @@ namespace ABEngine.ABEditor
             editorPass.JoinRenderQueue(imguiRenderer.Render);
 
             foreach (var render in internalRenders)
-                render.SceneSetup();
+                render.SceneChange();
 
             EntityManager.Init();
 

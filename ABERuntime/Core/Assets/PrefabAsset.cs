@@ -8,9 +8,8 @@ namespace ABEngine.ABERuntime.Core.Assets
         public string serializedData { get; set; }
         public Guid prefabGuid { get; set; }
 
-        public PrefabAsset(uint hash)
+        public PrefabAsset()
 		{
-            base.fPathHash = hash;
 		}
 
         internal override JValue SerializeAsset()

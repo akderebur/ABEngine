@@ -620,7 +620,8 @@ namespace ABEngine.ABERuntime.Core.Assets
             shaders[0] = vertexShaderSrc;
             shaders[1] = fragmentShaderSrc;
 
-            refMaterial = new PipelineMaterial(defaultMatName.ToHash32(), this, shaderPropUniform, texUniform);
+            refMaterial = new PipelineMaterial(this, shaderPropUniform, texUniform);
+            refMaterial.fPathHash = defaultMatName.ToHash32();
             refMaterial.name = defaultMatName;
 
             // Shader Props Array

@@ -35,10 +35,8 @@ namespace ABEditor.Debug
             base.Awake();
         }
 
-        public override void Start()
+        protected override void StartScene()
         {
-            base.Start();
-
             chunkBuffers = new Dictionary<CollisionChunk, ChunkBufferInfo>();
             TilemapDrawer.onCollisionUpdate += UpdateChunk;
             //linePointsBuffer = rf.CreateBuffer(new BufferDescription((uint)(5 * LinePoint.VertexSize), BufferUsage.VertexBuffer | BufferUsage.Dynamic));

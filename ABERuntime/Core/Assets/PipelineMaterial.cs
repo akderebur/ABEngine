@@ -39,14 +39,13 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         internal event Action<PipelineAsset> onPipelineChanged;
 
-        public PipelineMaterial(uint hash, PipelineAsset pipelineAsset, BindGroupLayout propLayout, BindGroupLayout texLayout)
+        public PipelineMaterial(PipelineAsset pipelineAsset, BindGroupLayout propLayout, BindGroupLayout texLayout)
         {
             this.pipelineAsset = pipelineAsset;
             this.instanceID = GraphicsManager.GetPipelineMaterialCount();
             this.propLayout = propLayout;
             this.texLayout = texLayout;
-            name = hash + "_" + instanceID;
-            fPathHash = hash;
+            name = pipelineAsset.name + "_" + instanceID;
 
             GraphicsManager.AddPipelineMaterial(this);
             this.renderOrder = (int)pipelineAsset.renderOrder;
@@ -206,7 +205,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public PipelineMaterial GetCopy()
         {
-            var matCopy = new PipelineMaterial(0, this.pipelineAsset, this.propLayout, this.texLayout);
+            var matCopy = new PipelineMaterial(this.pipelineAsset, this.propLayout, this.texLayout);
             matCopy.SetShaderPropBuffer(this.shaderProps.ToList(), this.shaderPropBufferSize);
             matCopy.SetShaderTextureResources(this.pipelineAsset.GetTextureNames());
             matCopy.renderOrder = this.renderOrder;

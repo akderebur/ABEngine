@@ -62,7 +62,7 @@ namespace ABEngine.ABEditor.Assets.Meta
             mat.fPathHash = fileHash;
 
             File.WriteAllBytes(savePath, MaterialToRAW(mat));
-            AssetCache.AddMaterial(mat, assetPath);
+            AssetCache.AddAsset(mat, assetPath);
         }
 
 
@@ -83,8 +83,8 @@ namespace ABEngine.ABEditor.Assets.Meta
                     }
                 }
 
-                foreach (uint texHash in mat.texHashes)
-                    bw.Write(texHash);
+                //foreach (uint texHash in mat.texHashes)
+                //    bw.Write(texHash);
 
                 return ms.ToArray();
             }

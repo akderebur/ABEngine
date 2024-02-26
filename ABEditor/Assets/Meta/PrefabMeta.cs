@@ -42,7 +42,8 @@ namespace ABEngine.ABEditor.Assets.Meta
             var prefabEntity = PrefabManager.EntityToPrefab(entity, null);
             PrefabManager.AddPrefabEntity(prefabEntity, fileHash);
 
-            PrefabAsset prefabAsset = new PrefabAsset(fileHash);
+            PrefabAsset prefabAsset = new PrefabAsset();
+            prefabAsset.fPathHash = fileHash;
 
             JsonObjectBuilder jPrefab = new JsonObjectBuilder(10000);
             JsonArrayBuilder entArr = new JsonArrayBuilder(10000);
@@ -60,7 +61,7 @@ namespace ABEngine.ABEditor.Assets.Meta
             //entity.Get<Prefab>().prefabAsset = prefabAsset;
 
             File.WriteAllBytes(savePath, PrefabToRAW(prefabAsset));
-            AssetCache.AddPrefab(prefabAsset, assetPath);
+            AssetCache.AddAsset(prefabAsset, assetPath);
         }
 
         public override void MetaCreated()

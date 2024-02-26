@@ -56,6 +56,7 @@
     <None Remove="Systems\Rendering\" />
     <None Remove="Windowing\" />
     <None Remove="Core\Particles\" />
+    <None Remove="Core\Assets\Loaders\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
@@ -79,6 +80,7 @@
     <Folder Include="Systems\Rendering\" />
     <Folder Include="Windowing\" />
     <Folder Include="Core\Particles\" />
+    <Folder Include="Core\Assets\Loaders\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Box2D\Box2D.NetStandard.csproj" />

@@ -6,11 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.IO.Compression;
 using WGIL;
-using System.Net.NetworkInformation;
-using System.Reflection.Emit;
-using System.Runtime.InteropServices;
 using Halak;
-using System.Runtime.CompilerServices;
 using ABEngine.ABERuntime.ECS;
 using Arch.Core;
 using ABEngine.ABERuntime.Components;
@@ -44,10 +40,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         // ABE Types
         private static readonly List<Texture2D> s_texture2ds = new List<Texture2D>();
-        private static readonly List<PipelineMaterial> s_materials = new List<PipelineMaterial>();
-        private static readonly List<PrefabAsset> s_prefabAssets = new List<PrefabAsset>();
         private static readonly List<SpriteClip> s_clips = new List<SpriteClip>();
-        private static readonly List<Mesh> s_meshes = new List<Mesh>();
 
         private static Texture2D defTexture = null;
 
@@ -60,9 +53,20 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         static BinaryReader pr; // ABPK reader
 
+        // Loaders
+        static Dictionary<Type, AssetLoader> assetLoaders;
+
         public static void InitAssetCache()
         {
             assetDict = new Dictionary<uint, Asset>();
+
+            // Asset Loaders
+            assetLoaders = new()
+            {
+                { typeof(PipelineMaterial), new MaterialLoader() },
+                { typeof(Mesh), new MeshLoader() },
+                { typeof(PrefabAsset), new PrefabLoader() },
+            };
 
             LoadDefaultMaterials();
 
@@ -209,13 +213,11 @@ namespace ABEngine.ABERuntime.Core.Assets
             return tex;
         }
 
-        private static PipelineMaterial GetMaterialFromPK(uint hash)
+        private static Asset LoadAssetFromPK(uint hash, AssetLoader loader)
         {
-            // Find material in asset dictionary
-            AssetEntry matAsset = assetDictPK[hash];
-
-            pr.BaseStream.Position = matAsset.offset;
-            return LoadMaterialRAW(hash, pr.ReadBytes(matAsset.size));
+            AssetEntry assetEntry = assetDictPK[hash];
+            pr.BaseStream.Position = assetEntry.offset;
+            return loader.LoadAssetRAW(pr.ReadBytes(assetEntry.size));
         }
 
         private static PipelineAsset GetPipelineFromPK(uint hash)
@@ -248,19 +250,17 @@ namespace ABEngine.ABERuntime.Core.Assets
             return GetOrCreateTexture2D(texturePath, sampler, spriteSize);
         }
 
-
         public static PipelineMaterial CreateMaterial(string matPath)
         {
-            var newMat = GetOrCreateMaterial(matPath);
+            var newMat = GetOrCreateAsset<PipelineMaterial>(matPath, 0);
             return newMat;
         }
 
         public static PrefabAsset CreatePrefabAsset(string prefabAssetPath)
         {
-            var newPrefab = GetOrCreatePrefabAsset(prefabAssetPath);
+            var newPrefab = GetOrCreateAsset<PrefabAsset>(prefabAssetPath, 0);
             return newPrefab;
         }
-
 
         public static SpriteClip CreateSpriteClip(string clipAssetPath)
         {
@@ -284,7 +284,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public static Mesh CreateMesh(string meshFilePath)
         {
-            return GetOrCreateMesh(meshFilePath);
+            return GetOrCreateAsset<Mesh>(meshFilePath);
         }
 
         public static Transform CreateModel(string modelAssetPath)
@@ -337,7 +337,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             for (int m = 0; m < matCount; m++)
             {
                 uint matHash = br.ReadUInt32();
-                GetOrCreateMaterial("", matHash);
+                GetOrCreateAsset<PipelineMaterial>("", matHash);
             }
 
             int staMeshCount = br.ReadInt32();
@@ -349,8 +349,8 @@ namespace ABEngine.ABERuntime.Core.Assets
                 uint matHash = br.ReadUInt32();
                 int nodeId = br.ReadInt32();
 
-                Mesh mesh = GetOrCreateMesh("", meshHash);
-                PipelineMaterial material = GetOrCreateMaterial("", matHash);
+                Mesh mesh = GetOrCreateAsset<Mesh>("", meshHash);
+                PipelineMaterial material = GetOrCreateAsset<PipelineMaterial>("", matHash);
 
                 SkinnedMeshRenderer mr = new SkinnedMeshRenderer(mesh, material);
                 Transform mrTrans = nodeTransforms[nodeId];
@@ -449,7 +449,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         // ABE Helpers
 
-        private static Texture2D GetOrCreateTexture2D(string texPath, Sampler sampler, Vector2 spriteSize, uint preHash = 0, bool linear = false)
+        internal static Texture2D GetOrCreateTexture2D(string texPath, Sampler sampler, Vector2 spriteSize, uint preHash = 0, bool linear = false)
         {
             uint hash = preHash;
             if (hash == 0)
@@ -481,94 +481,49 @@ namespace ABEngine.ABERuntime.Core.Assets
             return tex2d;
         }
 
-        private static PipelineMaterial GetOrCreateMaterial(string matPath, uint preHash = 0)
+        private static T GetCachedAsset<T>(string assetPath, uint preHash, out uint hash) where T : Asset
         {
-            uint hash = preHash;
+            hash = preHash;
             if (hash == 0)
-                hash = matPath.ToHash32();
+                hash = assetPath.ToHash32();
 
-            PipelineMaterial mat = s_materials.FirstOrDefault(t => t.fPathHash == hash);
-            if (mat != null)
-                return mat;
+            T tAsset = null;
+            if (assetDict.TryGetValue(hash, out Asset asset))
+                tAsset = asset as T;
 
-            if (!Game.debug)
-                mat = GetMaterialFromPK(hash);
-            else
-            {
-                if (preHash != 0)
-                    matPath = hashToFName[preHash];
-                mat = LoadMaterialRAW(hash, File.ReadAllBytes(Game.AssetPath + matPath));
-            }
-
-            s_materials.Add(mat);
-            if (assetDict.ContainsKey(hash))
-                assetDict[hash] = mat;
-            else
-                assetDict.Add(hash, mat);
-            return mat;
+            return tAsset;
         }
 
-        private static PrefabAsset GetOrCreatePrefabAsset(string prefabPath, uint preHash = 0)
+        private static void RegisterAsset(Asset asset, uint hash)
         {
-            uint hash = preHash;
-            if (hash == 0)
-                hash = prefabPath.ToHash32();
-
-            PrefabAsset prefabAsset = s_prefabAssets.FirstOrDefault(t => t.fPathHash == hash);
-            if (prefabAsset != null)
-                return prefabAsset;
-
-            if (!Game.debug)
-            {
-                //prefabAsset = GetMaterialFromPK(hash);
-            }
-            else
-            {
-                if (preHash != 0)
-                    prefabPath = hashToFName[preHash];
-                prefabAsset = LoadPrefabAssetRAW(hash, File.ReadAllBytes(Game.AssetPath + prefabPath));
-            }
-
-            s_prefabAssets.Add(prefabAsset);
             if (assetDict.ContainsKey(hash))
-                assetDict[hash] = prefabAsset;
+                assetDict[hash] = asset;
             else
-                assetDict.Add(hash, prefabAsset);
-            return prefabAsset;
+                assetDict.Add(hash, asset);
         }
 
-        private static Mesh GetOrCreateMesh(string meshPath, uint preHash = 0)
+        private static T GetOrCreateAsset<T>(string assetPath, uint preHash = 0) where T : Asset
         {
-            uint hash = preHash;
-            if (hash == 0)
-                hash = meshPath.ToHash32();
+            T asset = GetCachedAsset<T>(assetPath, preHash, out uint hash);
 
-            Mesh mesh = s_meshes.FirstOrDefault(t => t.fPathHash == hash);
-            if (mesh != null)
-                return mesh;
+            if (asset != null)
+                return asset;
 
+            // Not cached / Load the asset
+            AssetLoader loader = assetLoaders[typeof(T)];
             if (!Game.debug)
-            {
-                //prefabAsset = GetMaterialFromPK(hash);
-            }
+                asset = LoadAssetFromPK(hash, loader) as T;
             else
             {
                 if (preHash != 0)
-                    meshPath = hashToFName[preHash];
-
-                string meshAbsPath = Game.AssetPath.ToCommonPath() + meshPath;
-                if (!File.Exists(meshAbsPath))
-                    return null;
-
-                mesh = LoadMeshRAW(hash, File.ReadAllBytes(meshAbsPath));
+                    assetPath = hashToFName[preHash];
+                asset = loader.LoadAssetRAW(File.ReadAllBytes(Game.AssetPath + assetPath)) as T;
             }
 
-            s_meshes.Add(mesh);
-            if (assetDict.ContainsKey(hash))
-                assetDict[hash] = mesh;
-            else
-                assetDict.Add(hash, mesh);
-            return mesh;
+            asset.fPathHash = hash;
+            RegisterAsset(asset, hash);
+
+            return asset;
         }
 
         public static string GetTextAsset(string assetPath)
@@ -592,29 +547,17 @@ namespace ABEngine.ABERuntime.Core.Assets
             return tex2d;
         }
 
-        internal static void AddMaterial(PipelineMaterial mat, string file)
+        internal static void AddAsset(Asset asset, string file)
         {
-            uint hash = mat.fPathHash;
+            uint hash = asset.fPathHash;
             hashToFName.Add(hash, file);
-            s_materials.Add(mat);
             if (assetDict.ContainsKey(hash))
-                assetDict[hash] = mat;
+                assetDict[hash] = asset;
             else
-                assetDict.Add(hash, mat);
+                assetDict.Add(hash, asset);
         }
 
         // Editor ONLY remove later
-        internal static void AddPrefab(PrefabAsset prefabAsset, string file)
-        {
-            uint hash = prefabAsset.fPathHash;
-            hashToFName.Add(hash, file);
-            s_prefabAssets.Add(prefabAsset);
-            if (assetDict.ContainsKey(hash))
-                assetDict[hash] = prefabAsset;
-            else
-                assetDict.Add(hash, prefabAsset);
-        }
-
         internal static void UpdateAsset(uint oldHash, uint hash, string file)
         {
             if (hashToFName.ContainsKey(oldHash))
@@ -626,17 +569,12 @@ namespace ABEngine.ABERuntime.Core.Assets
                 return;
 
             var asset = assetDict[oldHash];
-            if (s_prefabAssets.Contains(asset))
+            if (asset is PrefabAsset)
                 PrefabManager.UpdatePrefab(oldHash, hash);
 
             asset.fPathHash = hash;
             assetDict.Remove(oldHash);
             assetDict.Add(hash, asset);
-        }
-
-        private static PipelineMaterial FindExistingMaterial(int matInsID)
-        {
-            return s_materials.FirstOrDefault(m => m.instanceID == matInsID);
         }
 
         private static SpriteClip FindExistingSpriteClip(string clipAssetPath)
@@ -726,165 +664,6 @@ namespace ABEngine.ABERuntime.Core.Assets
             return tex;
         }
 
-        internal static PipelineMaterial LoadMaterialRAW(uint hash, byte[] data)
-        {
-            using (MemoryStream ms = new MemoryStream(data))
-            using (BinaryReader br = new BinaryReader(ms))
-            {
-                string matName = br.ReadString();
-                string pipelineName = br.ReadString();
-
-                PipelineAsset pipelineAsset = CreatePipelineAsset(pipelineName);
-                PipelineMaterial mat = pipelineAsset.GetDefaultMaterial().GetCopy();
-                mat.name = matName;
-
-                // Shader props
-                int textureCount = br.ReadInt32();
-                int vectorCount = br.ReadInt32();
-                int floatCount = br.ReadInt32();
-
-                // Textures
-                for (int i = 0; i < textureCount; i++)
-                {
-                    string propname = br.ReadString();
-                    uint texHash = br.ReadUInt32();
-                    bool isLinear = br.ReadBoolean();
-
-                    Texture2D tex2d = GetOrCreateTexture2D(null, null, Vector2.Zero, texHash, isLinear);
-                    mat.SetTexture(propname, tex2d);
-                }
-
-                // Vectors
-                for (int i = 0; i < vectorCount; i++)
-                {
-                    string propname = br.ReadString();
-                    Vector4 vector = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                    mat.SetVector4(propname, vector);
-                }
-
-                // Floats
-                for (int i = 0; i < floatCount; i++)
-                {
-                    string propname = br.ReadString();
-                    float value = br.ReadSingle();
-                    mat.SetFloat(propname, value);
-                }
-
-                return mat;
-            }
-        }
-
-        internal static PrefabAsset LoadPrefabAssetRAW(uint hash, byte[] data)
-        {
-            using (MemoryStream ms = new MemoryStream(data))
-            using (BinaryReader br = new BinaryReader(ms))
-            {
-                PrefabAsset prefabAsset = new PrefabAsset(hash);
-                prefabAsset.serializedData = br.ReadString();
-                if(ms.Position + 20 <= ms.Length && br.ReadInt32() == guidMagic)
-                    prefabAsset.prefabGuid = new Guid(br.ReadBytes(16));
-
-                return prefabAsset;
-            }
-        }
-
-        private static Mesh LoadMeshRAW(uint hash, byte[] meshData)
-        {
-            Mesh mesh = new Mesh(hash);
-            using (MemoryStream fs = new MemoryStream(meshData))
-            using (BinaryReader br = new BinaryReader(fs))
-            {
-                int vertC = br.ReadInt32();
-                int indC = br.ReadInt32();
-
-                int compC = br.ReadByte();
-
-                for (int vc = 0; vc < compC; vc++)
-                {
-                    char vcID = br.ReadChar();
-                    switch (vcID)
-                    {
-                        case 'P':
-                            Vector3[] poses = new Vector3[vertC];
-                            for (int i = 0; i < vertC; i++)
-                                poses[i] = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                            mesh.Positions = poses;
-                            break;
-                        case 'U':
-                            Vector2[] uv = new Vector2[vertC];
-                            for (int i = 0; i < vertC; i++)
-                                uv[i] = new Vector2(br.ReadSingle(), 1f - br.ReadSingle());
-                            mesh.UV0 = uv;
-                            break;
-                        case 'N':
-                            Vector3[] normals = new Vector3[vertC];
-                            for (int i = 0; i < vertC; i++)
-                                normals[i] = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                            mesh.Normals = normals;
-                            break;
-                        case 'T':
-                            Vector4[] tangents = new Vector4[vertC];
-                            for (int i = 0; i < vertC; i++)
-                                tangents[i] = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                            mesh.Tangents = tangents;
-                            break;
-                        case 'B':
-                            mesh.IsSkinned = true;
-                            Vector4BInt[] boneIds = new Vector4BInt[vertC];
-                            Vector4[] boneWeights = new Vector4[vertC];
-                            for (int i = 0; i < vertC; i++)
-                            {
-                                Vector4BInt idVec = new Vector4BInt();
-                                Vector4 weightVec = new Vector4();
-
-                                idVec.B0 = br.ReadUInt16();
-                                weightVec.X = br.ReadSingle();
-
-                                idVec.B1 = br.ReadUInt16();
-                                weightVec.Y = br.ReadSingle();
-
-                                idVec.B2 = br.ReadUInt16();
-                                weightVec.Z = br.ReadSingle();
-
-                                idVec.B3 = br.ReadUInt16();
-                                weightVec.W = br.ReadSingle();
-
-                                boneIds[i] = idVec;
-                                boneWeights[i] = weightVec;
-                            }
-                            mesh.BoneIDs = boneIds;
-                            mesh.BoneWeights = boneWeights;
-                            break;
-                        case 'M':
-                            int matrixCount = br.ReadInt32();
-                            Matrix4x4[] invBindMatrices = new Matrix4x4[matrixCount];
-                            for (int m = 0; m < matrixCount; m++)
-                            {
-                                Matrix4x4 invBindMatrix = new Matrix4x4(
-                                br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle(),
-                                br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle(),
-                                br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle(),
-                                br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-
-                                invBindMatrices[m] = invBindMatrix;
-                            }
-                            mesh.invBindMatrices = invBindMatrices;
-                            break;
-                        default:
-                            break;
-                    }
-                }
-
-                ushort[] indices = new ushort[indC];
-                for (int i = 0; i < indC; i++)
-                    indices[i] = br.ReadUInt16();
-                mesh.Indices = indices;
-            }
-
-            mesh.UpdateMesh();
-            return mesh;
-        }
-
 
         // Serialization - For scene
         internal static JValue SerializeAssets()
@@ -923,13 +702,13 @@ namespace ABEngine.ABERuntime.Core.Assets
                         curAsset = DeserializeTexture(asset, hash);
                         break;
                     case 1: // Material
-                        curAsset = GetOrCreateMaterial(null, hash);
+                        curAsset = GetOrCreateAsset<PipelineMaterial>(null, hash);
                         break;
                     case 2: // Prefab
-                        curAsset = GetOrCreatePrefabAsset(null, hash);
+                        curAsset = GetOrCreateAsset<PrefabAsset>(null, hash);
                         break;
                     case 3: // Mesh
-                        curAsset = GetOrCreateMesh(null, hash);
+                        curAsset = GetOrCreateAsset<Mesh>(null, hash);
                         break;
                     default:
                         break;
@@ -1001,9 +780,6 @@ namespace ABEngine.ABERuntime.Core.Assets
         {
             s_texture2ds.Clear();
             s_clips.Clear();
-            s_materials.Clear();
-            s_prefabAssets.Clear();
-            s_meshes.Clear();
             assetDict.Clear();
             sceneAssets.Clear();
 
@@ -1017,11 +793,6 @@ namespace ABEngine.ABERuntime.Core.Assets
             var additiveMat = GraphicsManager.GetUberAdditiveMaterial();
             var uber3d = GraphicsManager.GetUber3D();
             //var uberTransparent = GraphicsManager.GetUberTransparentMaterial();
-
-            s_materials.Add(uberMat);
-            s_materials.Add(additiveMat);
-            s_materials.Add(uber3d);
-            //s_materials.Add(uberTransparent);
 
             assetDict.Add(uberMat.fPathHash, uberMat);
             assetDict.Add(additiveMat.fPathHash, additiveMat);
@@ -1085,10 +856,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
             // ABE Types
             s_texture2ds.Clear();
-            s_materials.Clear();
             s_clips.Clear();
-            s_prefabAssets.Clear();
-            s_meshes.Clear();
             defTexture = null;
         }
     }
