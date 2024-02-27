@@ -10,6 +10,14 @@ namespace ABEngine.ABERuntime
     {
         private readonly QueryDescription animQuery = new QueryDescription().WithAll<Animator, Skeleton>();
 
+        protected override void StartScene()
+        {
+            Game.GameWorld.Query(in animQuery, (ref Animator anim) =>
+            {
+                anim.Init();
+            });
+        }
+
         public override void Update(float gameTime, float deltaTime)
         {
             Game.GameWorld.Query(in animQuery, (ref Animator anim, ref Skeleton skeleton, ref Transform transform) =>
@@ -30,14 +38,15 @@ namespace ABEngine.ABERuntime
                     curState.loopStartTime = animTime;
                 }
 
-                curState.normalizedTime = Math.Clamp((animTime - curState.loopStartTime) / curState.Length, 0f, 1f);
+                curState.unclampedNormTime = (animTime - curState.loopStartTime) / curState.Length;
+                curState.normalizedTime = Math.Clamp(curState.unclampedNormTime, 0f, 1f);
                 if(!curState.completed)
                 {
                     if(curState.normalizedTime == 1f)
                     {
                         if (curState.IsLooping)
                         {
-                            float excess = (animTime - curState.loopStartTime) / curState.Length - 1f;
+                            float excess = curState.unclampedNormTime % 1f;
                             curState.loopStartTime = animTime;
                             curState.normalizedTime = excess;
                         }
@@ -47,7 +56,9 @@ namespace ABEngine.ABERuntime
                         }
                     }
 
-                    curClip.Sample(curState.normalizedTime, skeleton.bones);
+                    float transRatio = curState.transitionTime / curState.transitionDur;
+                    curClip.Sample(curState.normalizedTime, skeleton.bones, transRatio);
+                    curState.transitionTime += deltaTime;
                 }
             }
             );

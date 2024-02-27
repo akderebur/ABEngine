@@ -28,11 +28,15 @@ namespace ABEngine.ABERuntime.Animation
         // Clip Instance
         internal float loopStartTime { get; set; }
         public float normalizedTime { get; internal set; }
+        internal float unclampedNormTime { get; set; }
 
         public int curFrame { get; set; }
         public float lastFrameTime { get; set; }
 
         internal bool completed { get; set; }
+
+        internal float transitionTime { get; set; }
+        internal float transitionDur { get; set; }
 
         public AnimationState(IClip clip, bool looping)
         {
@@ -46,6 +50,8 @@ namespace ABEngine.ABERuntime.Animation
 
             Speed = 1;
             this.IsLooping = looping;
+            this.transitionTime = 2f;
+            this.transitionDur = 1f;
         }
 
         public AnimationState(IClip clip) : this(clip, false)
@@ -71,6 +77,16 @@ namespace ABEngine.ABERuntime.Animation
                 {
                     transParams = transition.transParamKeys;
                     animatorState = nextState;
+                    if (transition.transitionTime <= 0)
+                    {
+                        nextState.transitionTime = 2f;
+                        nextState.transitionDur = 1f;
+                    }
+                    else
+                    {
+                        nextState.transitionTime = 0;
+                        nextState.transitionDur = transition.transitionTime;
+                    }
                     return true;
                 }
             }

@@ -11,6 +11,7 @@ namespace ABEngine.ABERuntime.Animation
 
         public bool hasCondition { get; set; }
         public float exitTime { get; set; }
+        public float transitionTime { get; set; }
 
         private Animator _animator;
         public AnimTransCondition[] conditions { get; }
@@ -51,7 +52,7 @@ namespace ABEngine.ABERuntime.Animation
         {
             if(!hasCondition) // No Condition
             {
-                if (startState.normalizedTime >= exitTime)
+                if (startState.unclampedNormTime >= exitTime)
                 {
                     return endState;
                 }
@@ -67,7 +68,7 @@ namespace ABEngine.ABERuntime.Animation
                     conditionMet &= cond.IsConditionMet(paramValue);
                 }
 
-                if (startState.normalizedTime >= exitTime && conditionMet)
+                if (startState.unclampedNormTime >= exitTime && conditionMet)
                 {
                     return endState;
                 }

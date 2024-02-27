@@ -32,6 +32,8 @@ namespace ABEngine.ABERuntime.Animation
         private Dictionary<string, Trigger> _triggers { get; set; }
         public Dictionary<string, float> parameters { get; set; }
 
+        internal float transitionEndTime;
+
         public Animator()
         {
             ResetFields();

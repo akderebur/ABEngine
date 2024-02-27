@@ -22,11 +22,28 @@ namespace ABEngine.ABERuntime.Core.Assets
 		{
 		}
 
-        internal void Sample(float normalizedTime, Transform[] bones)
+        internal void Sample(float normalizedTime, Transform[] bones, float transRatio)
         {
             int index = Array.BinarySearch(times, normalizedTime);
 
-            if (index >= 0)
+            if(transRatio <= 1f)
+            {
+                if (index < 0)
+                    index = ~index;
+
+                // Interpolate current pose and clip pose
+                for (int b = 0; b < bones.Length; b++)
+                {
+                    Transform bone = bones[b];
+                    BoneFrameData frameData = bonesData[b];
+
+                    Vector3 pos = Vector3.Lerp(bone.localPosition, frameData.framePoses[index], transRatio);
+                    Quaternion rot = Quaternion.Slerp(bone.localRotation, frameData.frameRotations[index], transRatio);
+
+                    bone.SetTRS(pos, rot, bone.localScale);
+                }
+            }
+            else if (index >= 0)
             {
                 // Exact match
                 for (int b = 0; b < bones.Length; b++)
