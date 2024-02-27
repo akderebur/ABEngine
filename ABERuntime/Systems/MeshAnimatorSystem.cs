@@ -20,7 +20,6 @@ namespace ABEngine.ABERuntime
                 anim.Time += deltaTime;
                 float animTime = anim.Time;
 
-                bool frameChanged = false;
                 bool stateChanged = anim.CheckTransitions();
                 anim.CheckTriggers(deltaTime);
 
@@ -29,49 +28,26 @@ namespace ABEngine.ABERuntime
                 if (stateChanged)
                 {
                     curState.loopStartTime = animTime;
-                    curState.lastFrameTime = animTime;
-                    curState.curFrame = 0;
-                    frameChanged = true;
                 }
 
-                curState.normalizedTime = (animTime - curState.loopStartTime) / curState.Length;
-
-                float frameTime = curState.lastFrameTime + curState.SampleFreq;
-                while (frameTime <= animTime)
+                curState.normalizedTime = Math.Clamp((animTime - curState.loopStartTime) / curState.Length, 0f, 1f);
+                if(!curState.completed)
                 {
-                    curState.curFrame++;
-                    frameTime += curState.SampleFreq;
-                    frameChanged = true;
-                }
-
-                if (frameChanged)
-                {
-                    frameTime -= curState.SampleFreq;
-
-                    if (curState.curFrame >= curClip.FrameCount)
+                    if(curState.normalizedTime == 1f)
                     {
-                        curState.normalizedTime = 1f;
-
                         if (curState.IsLooping)
                         {
-                            curState.curFrame = 0;
-                            curState.loopStartTime = frameTime;
+                            float excess = (animTime - curState.loopStartTime) / curState.Length - 1f;
+                            curState.loopStartTime = animTime;
+                            curState.normalizedTime = excess;
                         }
                         else
                         {
                             curState.completed = true;
-                            curState.curFrame = curClip.FrameCount - 1;
                         }
                     }
-                    curState.lastFrameTime = frameTime;
 
-                    for (int b = 0; b < skeleton.bones.Length; b++)
-                    {
-                        Transform bone = skeleton.bones[b];
-                        BoneFrameData frameData = curClip.bonesData[b];
-
-                        bone.SetTRS(frameData.framePoses[curState.curFrame], frameData.frameRotations[curState.curFrame], bone.localScale);
-                    }
+                    curClip.Sample(curState.normalizedTime, skeleton.bones);
                 }
             }
             );

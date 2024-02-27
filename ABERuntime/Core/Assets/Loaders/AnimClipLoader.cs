@@ -14,6 +14,17 @@ namespace ABEngine.ABERuntime.Core.Assets
             using (BinaryReader br = new BinaryReader(ms))
             {
                 int frameC = br.ReadInt32();
+                float frameDiv = frameC - 1;
+                var times = new float[frameC];
+                for (int f = 0; f < frameC; f++)
+                {
+                    float normTime = f / frameDiv;
+                    if (f == frameC - 1)
+                        normTime = 1f;
+                    times[f] = normTime;
+                }
+                clip.times = times;
+
                 clip.FrameCount = frameC;
                 clip.SampleRate = br.ReadSingle();
 
