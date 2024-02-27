@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABERuntime.Rendering
 {

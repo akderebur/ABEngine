@@ -4,6 +4,7 @@ using System.Linq;
 using System.Numerics;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Debug;
 using Arch.Core;
 using Arch.Core.Extensions;

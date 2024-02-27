@@ -81,6 +81,7 @@ namespace ABEngine.ABERuntime
         protected CameraMovementSystem camMoveSystem;
         internal static B2DInitSystem b2dInitSystem;
         protected SpriteAnimatorSystem spriteAnimatorSystem;
+        protected MeshAnimatorSystem meshAnimatorSystem;
         protected StateAnimatorSystem stateAnimatorSystem;
         protected SpriteAnimSystem spriteAnimSystem;
         protected RigidbodyMoveSystem rbMoveSystem;
@@ -463,6 +464,7 @@ namespace ABEngine.ABERuntime
                 camMoveSystem = new CameraMovementSystem();
                 b2dInitSystem = new B2DInitSystem();
                 spriteAnimatorSystem = new SpriteAnimatorSystem();
+                meshAnimatorSystem = new MeshAnimatorSystem();
                 stateAnimatorSystem = new StateAnimatorSystem();
                 spriteAnimSystem = new SpriteAnimSystem();
                 rbMoveSystem = new RigidbodyMoveSystem();
@@ -524,6 +526,7 @@ namespace ABEngine.ABERuntime
                     meshRenderSystem.Start();
                 }
                 spriteAnimatorSystem.Start();
+                meshAnimatorSystem.Start();
                 stateAnimatorSystem.Start();
                 spriteAnimSystem.Start();
                 camMoveSystem.Start();
@@ -749,6 +752,7 @@ namespace ABEngine.ABERuntime
             }
             tweenSystem.Update(newTime, elapsed);
             spriteAnimatorSystem.Update(newTime, elapsed);
+            meshAnimatorSystem.Update(newTime, elapsed);
             stateAnimatorSystem.Update(newTime, elapsed);
             spriteAnimSystem.Update(newTime, elapsed);
             particleSystem.Update(newTime, elapsed);
@@ -878,6 +882,7 @@ namespace ABEngine.ABERuntime
             camMoveSystem = new CameraMovementSystem();
             b2dInitSystem = new B2DInitSystem();
             spriteAnimatorSystem = new SpriteAnimatorSystem();
+            meshAnimatorSystem = new MeshAnimatorSystem();
             stateAnimatorSystem = new StateAnimatorSystem();
             spriteAnimSystem = new SpriteAnimSystem();
             rbMoveSystem = new RigidbodyMoveSystem();
@@ -924,6 +929,7 @@ namespace ABEngine.ABERuntime
                 meshRenderSystem.Start();
             }
             spriteAnimatorSystem.Start();
+            meshAnimatorSystem.Start();
             stateAnimatorSystem.Start();
             spriteAnimSystem.Start();
             camMoveSystem.Start();

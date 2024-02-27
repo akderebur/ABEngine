@@ -66,6 +66,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 { typeof(PipelineMaterial), new MaterialLoader() },
                 { typeof(Mesh), new MeshLoader() },
                 { typeof(PrefabAsset), new PrefabLoader() },
+                { typeof(AnimationClip), new AnimClipLoader() },
             };
 
             LoadDefaultMaterials();
@@ -85,6 +86,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                     hashToFName.Add(Convert.ToUInt32(hashStr, 16), localPath);
                 }
 
+                // Get standard assets
                 var hashParser = (string extension) =>
                 {
                     var files = fileEnum.Where(s => s.ToLower().EndsWith(extension));
@@ -99,7 +101,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 hashParser(".abmat");
                 hashParser(".abprefab");
                 hashParser(".abmesh");
-                hashParser(".abmodel");
+                hashParser(".abclip");
 
                 // Get user pipelines
                 files = fileEnum.Where(s => s.ToLower().EndsWith(".abpipeline"));
@@ -282,9 +284,14 @@ namespace ABEngine.ABERuntime.Core.Assets
             return newClip;
         }
 
-        public static Mesh CreateMesh(string meshFilePath)
+        public static Mesh CreateMesh(string meshAssetPath)
         {
-            return GetOrCreateAsset<Mesh>(meshFilePath);
+            return GetOrCreateAsset<Mesh>(meshAssetPath);
+        }
+
+        public static AnimationClip CreateAnimationClip(string clipAssetPath)
+        {
+            return GetOrCreateAsset<AnimationClip>(clipAssetPath);
         }
 
         public static Transform CreateModel(string modelAssetPath)
@@ -306,8 +313,11 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
 
             int nodeC = br.ReadInt32();
+            int skelBoneC = br.ReadInt32();
             Transform[] nodeTransforms = new Transform[nodeC];
+            Transform[] skeletonBones = new Transform[skelBoneC];
 
+            int skellBoneInd = 0;
             for (int i = 0; i < nodeC; i++)
             {
                 string nodeName = br.ReadString();
@@ -319,6 +329,9 @@ namespace ABEngine.ABERuntime.Core.Assets
 
                 if (parId >= 0)
                     nodeTrans.parent = nodeTransforms[parId];
+
+                if (br.ReadByte() == 1) // Is skeleton bone?
+                    skeletonBones[skellBoneInd++] = nodeTrans;
 
                 Vector3 locPos = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
                 Quaternion locRot = new Quaternion(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
@@ -367,6 +380,18 @@ namespace ABEngine.ABERuntime.Core.Assets
 
 
             br.Close();
+
+            if (skinMeshCount > 0)
+            {
+                // Skeleton component
+                Skeleton skeleton = new Skeleton()
+                {
+                    bones = skeletonBones
+                };
+
+                Transform root = nodeTransforms[0];
+                root.entity.Add(skeleton);
+            }
 
             return nodeTransforms[0];
         }

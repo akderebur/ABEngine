@@ -34,10 +34,10 @@ namespace ABEngine.ABERuntime.Animation
 
         internal bool completed { get; set; }
 
-        public AnimationState(SpriteClip clip, bool looping)
+        public AnimationState(IClip clip, bool looping)
         {
             this.clip = clip;
-            this.name = clip.name;
+            //this.name = clip.name;
             transitions = new List<AnimationTransition>();
             stateUID = Guid.NewGuid();
 
@@ -48,7 +48,7 @@ namespace ABEngine.ABERuntime.Animation
             this.IsLooping = looping;
         }
 
-        public AnimationState(SpriteClip clip) : this(clip, false)
+        public AnimationState(IClip clip) : this(clip, false)
         {
           
         }

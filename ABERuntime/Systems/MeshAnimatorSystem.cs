@@ -8,11 +8,11 @@ namespace ABEngine.ABERuntime
 {
     public class MeshAnimatorSystem : BaseSystem
     {
-        private readonly QueryDescription animQuery = new QueryDescription().WithAll<Animator>().WithNone<Sprite>();
+        private readonly QueryDescription animQuery = new QueryDescription().WithAll<Animator, Skeleton>();
 
         public override void Update(float gameTime, float deltaTime)
         {
-            Game.GameWorld.Query(in animQuery, (ref Animator anim, ref Sprite sprite, ref Transform transform) =>
+            Game.GameWorld.Query(in animQuery, (ref Animator anim, ref Skeleton skeleton, ref Transform transform) =>
             {
                 if (!transform.enabled)
                     return;
@@ -20,22 +20,34 @@ namespace ABEngine.ABERuntime
                 anim.Time += deltaTime;
                 float animTime = anim.Time;
 
+                bool frameChanged = false;
                 bool stateChanged = anim.CheckTransitions();
                 anim.CheckTriggers(deltaTime);
 
                 AnimationState curState = anim.GetCurrentState();
-                SpriteClip curClip = curState.clip as SpriteClip;
+                AnimationClip curClip = curState.clip as AnimationClip;
                 if (stateChanged)
                 {
                     curState.loopStartTime = animTime;
-                    curState.lastFrameTime = 0f;
-                    curState.curFrame = -1;
+                    curState.lastFrameTime = animTime;
+                    curState.curFrame = 0;
+                    frameChanged = true;
                 }
 
                 curState.normalizedTime = (animTime - curState.loopStartTime) / curState.Length;
-                if ((animTime - curState.SampleFreq) > curState.lastFrameTime)
+
+                float frameTime = curState.lastFrameTime + curState.SampleFreq;
+                while (frameTime <= animTime)
                 {
                     curState.curFrame++;
+                    frameTime += curState.SampleFreq;
+                    frameChanged = true;
+                }
+
+                if (frameChanged)
+                {
+                    frameTime -= curState.SampleFreq;
+
                     if (curState.curFrame >= curClip.FrameCount)
                     {
                         curState.normalizedTime = 1f;
@@ -43,16 +55,23 @@ namespace ABEngine.ABERuntime
                         if (curState.IsLooping)
                         {
                             curState.curFrame = 0;
-                            curState.loopStartTime = animTime;
+                            curState.loopStartTime = frameTime;
                         }
                         else
                         {
+                            curState.completed = true;
                             curState.curFrame = curClip.FrameCount - 1;
                         }
                     }
-                    curState.lastFrameTime = animTime;
+                    curState.lastFrameTime = frameTime;
 
-                    sprite.SetUVPosScale(curClip.uvPoses[curState.curFrame], curClip.uvScales[curState.curFrame]);
+                    for (int b = 0; b < skeleton.bones.Length; b++)
+                    {
+                        Transform bone = skeleton.bones[b];
+                        BoneFrameData frameData = curClip.bonesData[b];
+
+                        bone.SetTRS(frameData.framePoses[curState.curFrame], frameData.frameRotations[curState.curFrame], bone.localScale);
+                    }
                 }
             }
             );

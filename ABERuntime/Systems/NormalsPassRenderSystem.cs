@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
+using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Pipelines;
 using ABEngine.ABERuntime.Rendering;
 using Arch.Core;

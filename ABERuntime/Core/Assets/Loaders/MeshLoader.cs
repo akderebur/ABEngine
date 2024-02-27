@@ -32,7 +32,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                         case 'U':
                             Vector2[] uv = new Vector2[vertC];
                             for (int i = 0; i < vertC; i++)
-                                uv[i] = new Vector2(br.ReadSingle(), 1f - br.ReadSingle());
+                                uv[i] = new Vector2(br.ReadSingle(), br.ReadSingle());
                             mesh.UV0 = uv;
                             break;
                         case 'N':

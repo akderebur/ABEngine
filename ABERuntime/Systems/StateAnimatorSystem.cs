@@ -23,6 +23,8 @@ namespace ABEngine.ABERuntime
 
                     batch.SetAutoDestroy(false);
                 }
+
+                anim.Init();
             });
         }
 

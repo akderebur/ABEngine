@@ -2,13 +2,11 @@
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using ABEngine.ABERuntime.Core.Assets;
 using Halak;
 using Buffer = WGIL.Buffer;
 using WGIL;
-using Box2D.NetStandard.Dynamics.World;
 
-namespace ABEngine.ABERuntime
+namespace ABEngine.ABERuntime.Core.Assets
 {
 	public class Mesh : Asset
 	{

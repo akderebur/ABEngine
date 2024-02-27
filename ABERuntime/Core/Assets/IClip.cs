@@ -3,12 +3,12 @@ namespace ABEngine.ABERuntime.Core.Assets
 {
 	public interface IClip
 	{
-		public float SampleRate { get; set; }
-		public float SampleFreq { get; set; }
-        public float ClipLength { get; set; }
-		public int FrameCount { get; set; }
+		public float SampleRate { get; }
+		public float SampleFreq { get; }
+        public float ClipLength { get; }
+		public int FrameCount { get;  }
 
-		public string ClipAssetPath { get; set; }
+		public string ClipAssetPath { get; }
 	}
 }
 

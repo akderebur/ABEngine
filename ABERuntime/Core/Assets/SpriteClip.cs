@@ -17,9 +17,9 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         private float _sampleRate;
         public float SampleRate { get { return _sampleRate; } set { SampleFreq = 1f / value; ClipLength = SampleFreq * FrameCount; _sampleRate = value; } }
-        public float SampleFreq { get; set; }
-        public float ClipLength { get; set; }
-        public int FrameCount { get; set; }
+        public float SampleFreq { get; internal set; }
+        public float ClipLength { get; protected set; }
+        public int FrameCount { get; internal set; }
 
         public float frameWidth { get; set; }
         public float frameHeight { get; set; }
