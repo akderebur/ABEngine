@@ -227,6 +227,90 @@ Fragment
 "
 ;
 
+        internal const string ParticlePipelineAsset = @"
+UberStandard
+{
+    @Pipeline:3D
+    @Cull:Back
+    @RenderType:Transparent
+    @Blend:Alpha
+    @DepthWrite:True
+
+    #ifdef IS_STRIP
+    @StepMode:Vertex
+    #else
+    @StepMode:Instance
+    #endif
+}
+Vertex
+{
+    #version 450
+
+    layout (set = 0, binding = 0) uniform PipelineData
+    {
+        mat4 Projection;
+        mat4 View;
+        vec2 Resolution;
+        float Time;
+        float Padding;
+    };
+
+    layout (set = 1, binding = 0) uniform DrawData
+    {
+        mat4 TRSMatrix;
+    };
+
+    layout(location = 0) in vec3 Position;
+    layout(location = 1) in vec4 Tint;
+    layout(location = 2) in vec2 uvStart;
+    layout(location = 3) in vec2 uvScale;
+
+    layout(location = 0) out vec2 fsin_TexCoords;
+    layout(location = 1) out vec4 fsin_Tint;
+    layout(location = 2) out vec2 fsin_UnitUV;
+    layout(location = 3) out vec2 fsin_UVScale;
+    layout(location = 4) out vec2 fsin_ObjScale;
+
+
+    //   B____C
+    //   |   /| 
+    //   |  / |
+    //   | /  |
+    //   |/___|
+    //  A     D
+
+    const vec4 Quads[6]= vec4[6](
+        vec4(-0.5, -0.5, 0, 1),
+        vec4(-0.5, 0.5, 0, 0),
+        vec4(0.5, 0.5, 1, 0),
+        vec4(-0.5, -0.5, 0, 1),
+        vec4(0.5, 0.5, 1, 0),
+        vec4(0.5, -0.5, 1, 1)
+    );
+
+    void main()
+    {
+        vec4 unit_quad = Quads[gl_VertexIndex];
+        vec2 unit_pos = unit_quad.xy;
+        vec2 uv_pos = unit_quad.zw;
+
+        gl_Position = Projection * View * TRSMatrix * vec4(unit_pos, 0, 1);
+
+        vec2 uv_sample = uv_pos * uvScale + uvStart;
+    
+        fsin_TexCoords = uv_sample;
+        fsin_Tint = Tint;
+        fsin_UnitUV = uv_pos;
+        fsin_UVScale = uvScale;
+        fsin_ObjScale = Scale;
+    }
+}
+Fragment
+{
+
+}
+";
+
         internal const string UberPipelineAsset = @"
 UberStandard
 {

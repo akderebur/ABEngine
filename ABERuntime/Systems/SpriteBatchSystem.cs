@@ -8,12 +8,13 @@ using ABEngine.ABERuntime.Components;
 using Arch.Core;
 using Arch.Core.Extensions;
 using ABEngine.ABERuntime.Core.Assets;
+using WGIL.IO;
 
 namespace ABEngine.ABERuntime
 {
     public class SpriteBatchSystem : RenderSystem
     {
-        Dictionary<string, SpriteBatch> batches = new Dictionary<string, SpriteBatch>();
+        Dictionary<string, RenderBatch> batches = new Dictionary<string, RenderBatch>();
         //Dictionary<int, List<AssetBatchPair>> renderGroups = new Dictionary<int, List<AssetBatchPair>>();
 
         SortedDictionary<int, LayerContext> layerRenderGroups = new SortedDictionary<int, LayerContext>();
@@ -92,12 +93,16 @@ namespace ABEngine.ABERuntime
 
             public void RemoveRender(AssetBatchPair renderPair)
             {
-                if (renderPair.renderOrder >= (int)RenderOrder.PostProcess)
-                    postKeys.Remove(renderPair.renderOrder);
-                else
-                    orderKeys.Remove(renderPair.renderOrder);
+                OrderRender orderContext = orderRenders[renderPair.renderOrder];
+                orderContext.Remove(renderPair);
 
-                orderRenders[renderPair.renderOrder].Remove(renderPair);
+                if (orderContext.pairList.Count == 0)
+                {
+                    if (renderPair.renderOrder >= (int)RenderOrder.PostProcess)
+                        postKeys.Remove(renderPair.renderOrder);
+                    else
+                        orderKeys.Remove(renderPair.renderOrder);
+                }
             }
 
             public void UpdateLayer()
@@ -111,7 +116,7 @@ namespace ABEngine.ABERuntime
 
         protected override void StartScene()
         {
-            batches = new Dictionary<string, SpriteBatch>();
+            batches = new Dictionary<string, RenderBatch>();
             layerRenderGroups = new SortedDictionary<int, LayerContext>();
 
             // Create batch groups
@@ -281,14 +286,14 @@ namespace ABEngine.ABERuntime
 
             if (batches.ContainsKey(key))
             {
-                SpriteBatch batch = batches[key];
+                SpriteBatch batch = batches[key] as SpriteBatch;
                 int remCount = batch.RemoveSpriteEntity(sprite);
                 if (remCount == -1)
                     batches.Remove(key);
             }
         }
 
-        internal void DeleteBatch(SpriteBatch batch)
+        internal void DeleteBatch(RenderBatch batch)
         {
             var batchKV = batches.FirstOrDefault(b => b.Value == batch);
             if (!string.IsNullOrEmpty(batchKV.Key))
@@ -310,12 +315,11 @@ namespace ABEngine.ABERuntime
                 key += "_" + spriteTrans.worldPosition.Z;
             key += extraKey;
 
-            if (batches.TryGetValue(key, out SpriteBatch batch))
-                return batch;
+            if (batches.TryGetValue(key, out RenderBatch batch))
+                return batch as SpriteBatch;
 
             return null;
         }
-
 
         public void UpdateSpriteBatch(Sprite sprite, int oldRenderLayerID, Texture2D oldTex, int oldMatInsId)
         {
@@ -327,15 +331,32 @@ namespace ABEngine.ABERuntime
             if (sprite.sharedMaterial.pipelineAsset.renderType == RenderType.Transparent)
                 key += "_" + sprite.transform.worldPosition.Z;
 
-            if (batches.TryGetValue(key, out SpriteBatch batch))
+            if (batches.TryGetValue(key, out RenderBatch batch))
             {
-                //SpriteBatch batch = batches[key];
-                int remCount = batch.RemoveSpriteEntity(sprite);
+                SpriteBatch sbatch = batch as SpriteBatch;
+                int remCount = sbatch.RemoveSpriteEntity(sprite);
                 if (remCount == -1)
                     batches.Remove(key);
             }
 
             AddSpriteToBatch(sprite.transform, sprite);
+        }
+
+        internal void AddGenericBatch(RenderBatch batch)
+        {
+            if (!batches.ContainsKey(batch.key))
+            {
+                batches.Add(batch.key, batch);
+                UpdateBatchPipeline(batch);
+            }
+        }
+
+        internal void RemoveGenericBatch(RenderBatch batch)
+        {
+            if (batches.ContainsKey(batch.key))
+            {
+                batches.Remove(batch.key);
+            }
         }
 
         internal int DEBUG_GetBatchCount()
@@ -353,13 +374,13 @@ namespace ABEngine.ABERuntime
                 key += "_" + spriteTrans.worldPosition.Z;
             key += extraKey;
 
-            if (batches.TryGetValue(key, out SpriteBatch batch))
-                return batch;
+            if (batches.TryGetValue(key, out RenderBatch batch))
+                return batch as SpriteBatch;
 
             batch = new SpriteBatch(tex2D, mat, sprite.renderLayerIndex, spriteTrans.isStatic, spriteTrans.worldPosition.Z);
             batches.Add(key, batch);
             UpdateBatchPipeline(batch);
-            return batch;
+            return batch as SpriteBatch;
         }
 
         internal SpriteBatch AddSpriteToBatch(Transform spriteTrans, Sprite sprite, string extraKey)
@@ -376,11 +397,12 @@ namespace ABEngine.ABERuntime
                 key += "_" + spriteTrans.worldPosition.Z;
             key += extraKey;
 
-            if (batches.TryGetValue(key, out SpriteBatch batch))
+            if (batches.TryGetValue(key, out RenderBatch batch))
             {
-                batch.AddSpriteEntity(spriteTrans, sprite);
-                batch.InitBatch();
-                return batch;
+                SpriteBatch sbatch = batch as SpriteBatch;
+                sbatch.AddSpriteEntity(spriteTrans, sprite);
+                sbatch.InitBatch();
+                return sbatch;
             }
             else
             {
@@ -455,7 +477,7 @@ namespace ABEngine.ABERuntime
             return AddSpriteToBatch(spriteTrans, sprite, "");
         }
 
-        internal void UpdateBatchPipeline(SpriteBatch sb)
+        internal void UpdateBatchPipeline(RenderBatch sb)
         {
             // Find suitable render group
             if (layerRenderGroups.TryGetValue(sb.renderLayerIndex, out LayerContext layerContext))
@@ -539,17 +561,7 @@ namespace ABEngine.ABERuntime
                             continue;
 
                         //rendC++;
-                        pass.SetVertexBuffer(0, sb.vertexBuffer);
-
-                        pass.SetBindGroup(1, sb.texSet);
-
-                        // Material Resource Sets
-                        foreach (var setKV in sb.material.bindableSets)
-                        {
-                            pass.SetBindGroup(setKV.Key, setKV.Value);
-                        }
-
-                        pass.Draw(6, (int)sb.instanceCount);
+                        sb.Render(pass);                     
                     }
                 }
             }
@@ -576,17 +588,7 @@ namespace ABEngine.ABERuntime
                             continue;
 
                         //rendC++;
-                        pass.SetVertexBuffer(0, sb.vertexBuffer);
-
-                        pass.SetBindGroup(1, sb.texSet);
-
-                        // Material Resource Sets
-                        foreach (var setKV in sb.material.bindableSets)
-                        {
-                            pass.SetBindGroup(setKV.Key, setKV.Value);
-                        }
-
-                        pass.Draw(6, (int)sb.instanceCount);
+                        sb.Render(pass);
                     }
                 }
             }
@@ -599,7 +601,7 @@ namespace ABEngine.ABERuntime
     {
         public int layerIndex { get; set; }
         public PipelineAsset pipelineAsset { get; set; }
-        public List<SpriteBatch> batches = new List<SpriteBatch>();
+        public List<RenderBatch> batches = new List<RenderBatch>();
         public float zValue; // Transparent only
         public int renderOrder;
 
@@ -619,7 +621,7 @@ namespace ABEngine.ABERuntime
         //    maxZ = batches.Last().maxZ;
         //}
 
-        public void OnBatchDelete(SpriteBatch sb)
+        public void OnBatchDelete(RenderBatch sb)
         {
             sb.onDelete -= OnBatchDelete;
             batches.Remove(sb);

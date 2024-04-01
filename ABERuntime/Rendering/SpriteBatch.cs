@@ -9,71 +9,35 @@ using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime.Rendering
 {
-    public class SpriteBatch
+    public class SpriteBatch : RenderBatch
     {
-        private WGILContext _wgil;
-        public PipelineMaterial material;
-
+        // GPU Resources
         public Buffer vertexBuffer;
-        public Buffer layerBuffer;
-
         public BindGroup texSet;
-
-        public uint instanceCount;
-        public bool isStatic { get; set; }
-
-        Texture2D texture2d;
+        public Buffer layerBuffer;
 
         List<SpriteTransformPair> sprites = new List<SpriteTransformPair>();
         List<QuadVertex> verticesList = new List<QuadVertex>();
 
         QuadVertex[] vertices = null;
 
-        public event Action onPropertyChanged;
-
-        internal bool isTransparent = false;
-        internal bool isDynamicSort = false;
-
-        public float maxZ;
-        public int renderOrder = 0;
-        public int renderLayerIndex = 0;
-        public float zValue = 0;
-
-        internal event Action<SpriteBatch> onDelete;
         bool autoDestroy = true;
-        internal bool active = false;
 
         Vector3 imageSize;
 
-        public string key;
-
         public SpriteBatch(Texture2D texture, PipelineMaterial pipelineMaterial, int renderLayerIndex, bool isStatic, float zValue)
+            :  base(texture, pipelineMaterial, renderLayerIndex, isStatic, zValue)
         {
-            _wgil = Game.wgil;
-
-            this.texture2d = texture;
             imageSize = new Vector3(texture.imageSize.X, texture.imageSize.Y, 1f);
-
-            this.material = pipelineMaterial;
-            this.renderLayerIndex = renderLayerIndex;
-            this.isStatic = isStatic;
-
-            pipelineMaterial.onPipelineChanged += PipelineMaterial_onPipelineChanged;
 
             layerBuffer = _wgil.CreateBuffer(16, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
             _wgil.WriteBuffer(layerBuffer, new Vector4(renderLayerIndex, 0, 0, 0));
-
-            renderOrder = pipelineMaterial.renderOrder;
-            if (pipelineMaterial.pipelineAsset.renderType == RenderType.Transparent)
-                isTransparent = true;
-
-            this.zValue = zValue;
         }
 
-        private void PipelineMaterial_onPipelineChanged(PipelineAsset pipeline)
+        protected override void PipelineMaterial_onPipelineChanged(PipelineAsset pipeline)
         {
             // Signal remove from  Pipeline Asset Pairs
-            onDelete?.Invoke(this);
+            base.TriggerDelete();
 
             bool oldTrans = isTransparent;
             if (pipeline.renderType == RenderType.Transparent)
@@ -117,8 +81,7 @@ namespace ABEngine.ABERuntime.Rendering
                         vertexBuffer.Dispose();
                         layerBuffer.Dispose();
                         texSet.Dispose();
-                        onDelete?.Invoke(this);
-                        material.onPipelineChanged -= PipelineMaterial_onPipelineChanged;
+                        base.DeleteBatch();
                         return -1;
                     }
                 }
@@ -134,16 +97,15 @@ namespace ABEngine.ABERuntime.Rendering
             this.autoDestroy = autoDestroy;
         }
 
-        internal void DeleteBatch()
+        internal override void DeleteBatch()
         {
             verticesList.Clear();
             sprites.Clear();
 
             vertexBuffer.Dispose();
-            layerBuffer.Dispose();
             texSet.Dispose();
-            onDelete?.Invoke(this);
-            material.onPipelineChanged -= PipelineMaterial_onPipelineChanged;
+            layerBuffer.Dispose();
+            base.DeleteBatch();
         }
 
         public void InitBatch()
@@ -243,7 +205,7 @@ namespace ABEngine.ABERuntime.Rendering
         }
 
         int runC = 0;
-        public void UpdateBatch()
+        public override void UpdateBatch()
         {
             // Dynamic batches only
             if (!active || isStatic)
@@ -252,7 +214,6 @@ namespace ABEngine.ABERuntime.Rendering
             }
 
             // Write to GPU buffer
-            QuadVertex[] writemap = new QuadVertex[sprites.Count];
 
             var sorted = sprites.Where(sp => sp.transform.enabled);
 
@@ -271,7 +232,7 @@ namespace ABEngine.ABERuntime.Rendering
                     Transform spriteTrans = spritePair.transform;
                     Sprite spriteData = spritePair.spriteData;
 
-                    writemap[index++] = new QuadVertex(spriteTrans.worldPosition,
+                    vertices[index++] = new QuadVertex(spriteTrans.worldPosition,
                                                spriteData.GetSize(),
                                                spriteTrans.worldScale,
                                                spriteData.tintColor,
@@ -285,7 +246,7 @@ namespace ABEngine.ABERuntime.Rendering
 
             for (int i = 0; i < sprites.Count - renderCount; i++)
             {
-                writemap[index++] = new QuadVertex(Vector3.Zero,
+                vertices[index++] = new QuadVertex(Vector3.Zero,
                                          Vector2.Zero,
                                          Vector3.Zero,
                                          Vector4.Zero,
@@ -295,7 +256,22 @@ namespace ABEngine.ABERuntime.Rendering
                                          Vector2.Zero);
             }
 
-            _wgil.WriteBuffer(vertexBuffer, writemap);
+            _wgil.WriteBuffer(vertexBuffer, vertices);
+        }
+
+        internal override void Render(RenderPass pass)
+        {
+            pass.SetVertexBuffer(0, vertexBuffer);
+
+            pass.SetBindGroup(1, texSet);
+
+            // Material Resource Sets
+            foreach (var setKV in material.bindableSets)
+            {
+                pass.SetBindGroup(setKV.Key, setKV.Value);
+            }
+
+            pass.Draw(6, (int)instanceCount);
         }
     }
 

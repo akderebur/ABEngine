@@ -8,6 +8,12 @@ namespace ABEngine.ABERuntime.Components
 		public Vector4 color { get; set; }
 		public Vector3 direction { get; set; }
 		public float Intensity { get; set; }
+
+		public DirectionalLight()
+		{
+			color = Vector4.One;
+			Intensity = 1f;
+		}
 	}
 }
 

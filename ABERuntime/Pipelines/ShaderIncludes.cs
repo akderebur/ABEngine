@@ -66,6 +66,59 @@ namespace ABEngine.ABERuntime.Pipelines
         gl_Position = Projection * View * transformationMatrix * vec4(position,1.0);
         ";
 
+
+        internal static string VertexInput2D = @"
+        layout (set = 0, binding = 0) uniform PipelineData
+        {
+            mat4 Projection;
+            mat4 View;
+            vec2 Resolution;
+            float Time;
+            float Padding;
+        };
+
+        layout(location = 0) in vec3 Position;
+        layout(location = 1) in vec2 Scale;
+        layout(location = 2) in vec3 WorldScale;
+        layout(location = 3) in vec4 Tint;
+        layout(location = 4) in float ZRotation;
+        layout(location = 5) in vec2 uvStart;
+        layout(location = 6) in vec2 uvScale;
+        layout(location = 7) in vec2 Pivot;
+
+        
+        vec2 rotate(vec2 v, float a)
+        {
+            float s = sin(a);
+            float c = cos(a);
+            mat2 m = mat2(c, -s, s, c);
+            return m * v;
+        }
+
+        const vec4 Quads[6]= vec4[6](
+        vec4(-0.5, -0.5, 0, 1),
+        vec4(-0.5, 0.5, 0, 0),
+        vec4(0.5, 0.5, 1, 0),
+        vec4(-0.5, -0.5, 0, 1),
+        vec4(0.5, 0.5, 1, 0),
+        vec4(0.5, -0.5, 1, 1)
+        );
+        ";
+
+        internal static string CalculateSpriteCS = @"
+        vec4 unit_quad = Quads[gl_VertexIndex];
+        vec2 unit_pos = unit_quad.xy;
+        vec2 uv_pos = unit_quad.zw;
+
+        vec2 pos = ((unit_pos + Pivot) * Scale.xy);
+        pos *= WorldScale.xy;
+        pos = rotate(pos, ZRotation);
+        pos += Position.xy;
+
+        gl_Position = Projection * View * vec4(pos, Position.z, 1);
+
+        vec2 uv_sample = uv_pos * uvScale + uvStart;
+        ";
     }
 }
 

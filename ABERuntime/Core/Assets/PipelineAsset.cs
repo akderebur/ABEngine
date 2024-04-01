@@ -276,7 +276,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             bool isPP = false;
 
             bool useSkin = defineKey.Contains("HAS_SKIN");
-            bool useInstance = defineKey.Contains("HAS_INSTANCE");
+            bool useInstance = false;
 
 
             // Descriptor Defaults
@@ -397,7 +397,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                                         case "@StepMode":
                                             VertexStepMode stepModeAttr;
                                             if (Enum.TryParse(value, true, out stepModeAttr))
-                                                stepMode = VertexStepMode.Instance;
+                                                stepMode = stepModeAttr;
                                             break;
                                         case "@Blend":
                                             if (value.Equals("Alpha"))
@@ -504,16 +504,29 @@ namespace ABEngine.ABERuntime.Core.Assets
                                         tmp += item;
                                     }
 
-                                    if (useInstance && name.ToLower().StartsWith("ins_"))
+                                    uint shaderLocation = 0;
+                                    if (name.ToLower().StartsWith("ins_"))
+                                    {
                                         curVertexAttrList = instanceElements;
+                                        shaderLocation += (uint)(vertexElements.Count + instanceElements.Count);
+
+                                        if (!useInstance)
+                                        {
+                                            useInstance = true;
+                                            vertexOffset = 0;
+                                        }
+                                    }
                                     else
+                                    {
                                         curVertexAttrList = vertexElements;
+                                        shaderLocation = (uint)vertexElements.Count;
+                                    }
 
                                     Type variableType = ShaderToNetType(type);
                                     VertexAttribute vertexElement = new VertexAttribute()
                                     {
                                         format = ShaderToVertexFormat(type),
-                                        location = (uint)vertexElements.Count,
+                                        location = shaderLocation,
                                         offset = vertexOffset
                                     };
 

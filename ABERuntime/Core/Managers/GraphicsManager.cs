@@ -64,7 +64,7 @@ namespace ABEngine.ABERuntime
         public static BindGroupLayout sharedMeshUniform_VS;
         public static BindGroupLayout sharedLightTexLayout;
 
-        public static BindGroupLayout sharedSkinnedMeshUniform_VS;
+        public static BindGroupLayout sharedParticleUniform_VS;
         public static BindGroupLayout sharedMeshFrameData;
         public static BindGroupLayout normalsFrameData;
 
@@ -92,6 +92,7 @@ namespace ABEngine.ABERuntime
                     "UberAdditive" => new UberPipelineAdditive().refMaterial,
                     "Uber3D" => new UberPipeline3D().refMaterial,
                     "UberTransparent" => new UberPipelineAsset().refMaterial,
+                    "UberParticle" => new ParticlePipeline().refMaterial,
                     _ => null
                 };
             }
@@ -119,6 +120,11 @@ namespace ABEngine.ABERuntime
             var uberPipeline = pipelineAssets["UberStandard"];
             var uberTransPipeline = uberPipeline.GetPipelineVariant("*HAS_TRANSPARENCY");
             return uberTransPipeline.GetDefaultMaterial();
+        }
+
+        public static PipelineMaterial GetParticleMaterial()
+        {
+            return GetFirstMatByName("UberParticle");
         }
 
         public static int GetPipelineCount()
@@ -324,7 +330,7 @@ namespace ABEngine.ABERuntime
 
             sharedMeshUniform_VS = wgil.CreateBindGroupLayout(ref meshVertexDesc).SetManualDispose(true);
 
-            var skinnedMeshVertexDesc = new BindGroupLayoutDescriptor()
+            var particleVertexDesc = new BindGroupLayoutDescriptor()
             {
                 Entries = new[]
                 {
@@ -342,7 +348,7 @@ namespace ABEngine.ABERuntime
             };
 
 
-            sharedSkinnedMeshUniform_VS = wgil.CreateBindGroupLayout(ref skinnedMeshVertexDesc).SetManualDispose(true);
+            sharedParticleUniform_VS = wgil.CreateBindGroupLayout(ref particleVertexDesc).SetManualDispose(true);
 
             // Normals Pipeline
 
@@ -533,7 +539,7 @@ namespace ABEngine.ABERuntime
             sharedTextureLayout?.Dispose();
 
             sharedMeshUniform_VS?.Dispose();
-            sharedSkinnedMeshUniform_VS?.Dispose();
+            sharedParticleUniform_VS?.Dispose();
             sharedMeshFrameData?.Dispose();
             normalsFrameData?.Dispose();
             sharedLightTexLayout?.Dispose();

@@ -15,14 +15,9 @@ namespace ABEngine.ABERuntime.Components
 
         public Transform[] bones { get; set; }
 
-        internal Buffer vertexUniformBuffer;
-        internal Buffer vertexSkinBuffer;
-        internal BindGroup vertexTransformSet;
-
         public SkinnedMeshRenderer()
         {
             material = GraphicsManager.GetUber3D();
-            SetupResources();
         }
 
         public SkinnedMeshRenderer(Mesh mesh) : this()
@@ -43,26 +38,9 @@ namespace ABEngine.ABERuntime.Components
             }
             this.material = material;
 
-            SetupResources();
         }
 
-        void SetupResources()
-        {
-            vertexUniformBuffer = Game.wgil.CreateBuffer(128, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
-            vertexSkinBuffer = Game.wgil.CreateBuffer(128 * 64 + 4, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
-
-            var vertexTransSkinDesc = new BindGroupDescriptor()
-            {
-                BindGroupLayout = GraphicsManager.sharedSkinnedMeshUniform_VS,
-                Entries = new BindResource[]
-                {
-                    vertexUniformBuffer,
-                    vertexSkinBuffer
-                }
-            };
-            vertexTransformSet = Game.wgil.CreateBindGroup(ref vertexTransSkinDesc);
-        }
-
+      
         public JValue Serialize()
         {
             JsonObjectBuilder jObj = new JsonObjectBuilder(200);
