@@ -228,9 +228,9 @@ Fragment
 ;
 
         internal const string ParticlePipelineAsset = @"
-UberStandard
+UberParticle
 {
-    @Pipeline:3D
+    @Pipeline:Particle
     @Cull:Back
     @RenderType:Transparent
     @Blend:Alpha
@@ -255,22 +255,14 @@ Vertex
         float Padding;
     };
 
-    layout (set = 1, binding = 0) uniform DrawData
-    {
-        mat4 TRSMatrix;
-    };
-
     layout(location = 0) in vec3 Position;
-    layout(location = 1) in vec4 Tint;
-    layout(location = 2) in vec2 uvStart;
-    layout(location = 3) in vec2 uvScale;
+    layout(location = 1) in float Size;
+    layout(location = 2) in vec4 Tint;
+    layout(location = 3) in vec2 uvStart;
+    layout(location = 4) in vec2 uvScale;
 
     layout(location = 0) out vec2 fsin_TexCoords;
     layout(location = 1) out vec4 fsin_Tint;
-    layout(location = 2) out vec2 fsin_UnitUV;
-    layout(location = 3) out vec2 fsin_UVScale;
-    layout(location = 4) out vec2 fsin_ObjScale;
-
 
     //   B____C
     //   |   /| 
@@ -290,24 +282,38 @@ Vertex
 
     void main()
     {
-        vec4 unit_quad = Quads[gl_VertexIndex];
-        vec2 unit_pos = unit_quad.xy;
-        vec2 uv_pos = unit_quad.zw;
+        vec4 unitQuad = Quads[gl_VertexIndex];
+        vec2 unitPos = unitQuad.xy;
+        vec2 unitUV = unitQuad.zw;
 
-        gl_Position = Projection * View * TRSMatrix * vec4(unit_pos, 0, 1);
+        mat3 invView = transpose(mat3(View));
 
-        vec2 uv_sample = uv_pos * uvScale + uvStart;
+        vec3 scaledVert = vec3(unitPos, 0) * Size;
+        vec3 camPos_WS = invView * scaledVert;
+        vec3 endPos_WS = camPos_WS + Position;
+         
+        gl_Position = Projection * View * vec4(endPos_WS, 1);
+
+        vec2 uv_sample = unitUV * uvScale + uvStart;
     
         fsin_TexCoords = uv_sample;
         fsin_Tint = Tint;
-        fsin_UnitUV = uv_pos;
-        fsin_UVScale = uvScale;
-        fsin_ObjScale = Scale;
     }
 }
 Fragment
 {
+    layout (set = 1, binding = 0) uniform texture2D ParticleTex; 
+    layout (set = 1, binding = 1) uniform sampler TexSampler;
 
+    layout(location = 0) in vec2 fsin_TexCoords;
+    layout(location = 1) in vec4 fsin_Tint;
+
+    layout(location = 0) out vec4 outputColor;
+
+    void main()
+    {
+        outputColor = fsin_Tint;
+    }
 }
 ";
 

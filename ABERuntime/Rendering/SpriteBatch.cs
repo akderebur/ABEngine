@@ -111,7 +111,7 @@ namespace ABEngine.ABERuntime.Rendering
         public void InitBatch()
         {
             vertices = verticesList.ToArray();
-            instanceCount = (uint)verticesList.Count;
+            instanceCount = verticesList.Count;
             //indices = indicesList.ToArray();
 
             // Texture
@@ -271,7 +271,7 @@ namespace ABEngine.ABERuntime.Rendering
                 pass.SetBindGroup(setKV.Key, setKV.Value);
             }
 
-            pass.Draw(6, (int)instanceCount);
+            pass.Draw(6, instanceCount);
         }
     }
 

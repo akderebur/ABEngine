@@ -388,8 +388,13 @@ namespace ABEngine.ABERuntime.Core.Assets
                                                 resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
                                                 resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
                                             }
+                                            else if(value.Equals("Particle"))
+                                            {
+                                                resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
+                                            }
                                             else
                                             {
+                                                // 2D
                                                 resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
                                                 resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
                                             }

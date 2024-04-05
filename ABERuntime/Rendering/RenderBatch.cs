@@ -17,7 +17,7 @@ namespace ABEngine.ABERuntime.Rendering
         public int renderOrder = 0;
         public int renderLayerIndex = 0;
         public float zValue = 0;
-        public uint instanceCount;
+        public int instanceCount;
         public bool isStatic { get; set; }
 
         internal event Action<RenderBatch> onDelete;

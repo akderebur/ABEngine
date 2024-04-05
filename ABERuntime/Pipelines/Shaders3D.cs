@@ -260,6 +260,7 @@ Fragment
     {
         float alphaRoughnessSq = materialInfo.alphaRoughness * materialInfo.alphaRoughness;
         float f = (angularInfo.NdotH * alphaRoughnessSq - angularInfo.NdotH) * angularInfo.NdotH + 1.0;
+        f += 0.0000001;
         return alphaRoughnessSq / (M_PI * f * f);
     }
 
@@ -369,7 +370,6 @@ Fragment
             Light light = Lights[i];
             color += applyDirectionalLight(light, materialInfo, normal, view);
         }
-        
 
         outputColor = vec4(color, 1.0 );
         //outputColor = vec4(normal * 0.5 + 0.5, 1.0);
