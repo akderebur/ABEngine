@@ -238,6 +238,7 @@ UberParticle
 
     #ifdef IS_STRIP
     @StepMode:Vertex
+    @Topology:TriangleStrip
     #else
     @StepMode:Instance
     #endif
@@ -255,11 +256,17 @@ Vertex
         float Padding;
     };
 
+    #ifdef IS_STRIP
+    layout(location = 0) in vec3 Position;
+    layout(location = 1) in vec2 UV;
+    layout(location = 2) in vec4 Tint;
+    #else
     layout(location = 0) in vec3 Position;
     layout(location = 1) in float Size;
     layout(location = 2) in vec4 Tint;
     layout(location = 3) in vec2 uvStart;
     layout(location = 4) in vec2 uvScale;
+    #endif
 
     layout(location = 0) out vec2 fsin_TexCoords;
     layout(location = 1) out vec4 fsin_Tint;
@@ -282,6 +289,14 @@ Vertex
 
     void main()
     {
+        #ifdef IS_STRIP
+        gl_Position = Projection * View * vec4(Position, 1);
+
+        fsin_TexCoords = UV;
+        fsin_Tint = Tint;
+
+        #else
+
         vec4 unitQuad = Quads[gl_VertexIndex];
         vec2 unitPos = unitQuad.xy;
         vec2 unitUV = unitQuad.zw;
@@ -298,6 +313,8 @@ Vertex
     
         fsin_TexCoords = uv_sample;
         fsin_Tint = Tint;
+
+        #endif
     }
 }
 Fragment

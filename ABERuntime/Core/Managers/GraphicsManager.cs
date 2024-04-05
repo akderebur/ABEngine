@@ -142,6 +142,11 @@ namespace ABEngine.ABERuntime
             if (pipelineAssets.TryGetValue(name, out PipelineAsset asset))
                 return asset;
 
+            GetFirstMatByName(name);
+
+            if (pipelineAssets.TryGetValue(name, out asset))
+                return asset;
+
             return null;
         }
 

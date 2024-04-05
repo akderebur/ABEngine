@@ -58,6 +58,8 @@ namespace ABEngine.ABERuntime.Components
 
         public Vector4 viewport { get; set; }
 
+        public Vector3 forward;
+
         public Camera()
         {
             speed = 1f;

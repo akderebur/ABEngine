@@ -585,11 +585,14 @@ namespace ABEngine.ABERuntime
                 if (camEnt != Entity.Null)
                 {
                     Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCamTrans.worldRotation);
+
                     Vector3 cameraPosition = Game.activeCamTrans.worldPosition;
                     Vector3 targetPosition = cameraPosition + forward;
                     Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCamTrans.worldRotation);
 
                     Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
+
+                    Game.activeCamera.forward = forward;
 
                     pipelineData.View = view;
                     pipelineData.Time = time;

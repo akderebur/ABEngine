@@ -8,23 +8,23 @@ using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime.Rendering
 {
-	public class ParticleBatch : RenderBatch
-	{
+    public class StripParticleBatch : RenderBatch
+    {
         // GPU Resources
         public Buffer particleBuffer;
         public BindGroup texSet;
 
         ScriptableParticleModule pm;
 
-        ParticleVertex[] vertices = null;
-        
-        public ParticleBatch(ScriptableParticleModule pm, int layer, float z)
-			 : base(pm.particleTexture, pm.particleMaterial, layer, false, z)
-		{
+        StripVertex[] vertices = null;
+
+        public StripParticleBatch(ScriptableParticleModule pm, int layer, float z)
+             : base(pm.particleTexture, pm.particleMaterial, layer, false, z)
+        {
             this.pm = pm;
 
-            vertices = new ParticleVertex[pm.maxParticles];
-            particleBuffer = _wgil.CreateBuffer(pm.maxParticles * ParticleVertex.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+            vertices = new StripVertex[pm.maxParticles * 2];
+            particleBuffer = _wgil.CreateBuffer(pm.maxParticles * 2 * StripVertex.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST);
 
             var texSetDesc = new BindGroupDescriptor()
             {
@@ -42,27 +42,30 @@ namespace ABEngine.ABERuntime.Rendering
         internal void SetParticleInstance(int instanceCount)
         {
             base.instanceCount = instanceCount;
-            _wgil.WriteBuffer(particleBuffer, vertices, 0, instanceCount * ParticleVertex.VertexSize);
+            _wgil.WriteBuffer(particleBuffer, vertices, 0, instanceCount * 2 * StripVertex.VertexSize);
         }
 
-        internal ParticleVertex[] GetParticleVertices()
+        internal StripVertex[] GetParticleVertices()
         {
             return vertices;
         }
 
         public override void UpdateBatch()
         {
-           
+
         }
 
         internal override void Render(RenderPass pass)
         {
-            material.pipelineAsset.BindPipeline(pass);
-            pass.SetBindGroup(1, texSet);
+            if(instanceCount > 1)
+            {
+                material.pipelineAsset.BindPipeline(pass);
+                pass.SetBindGroup(1, texSet);
 
-            pass.SetVertexBuffer(0, particleBuffer);
+                pass.SetVertexBuffer(0, particleBuffer);
 
-            pass.Draw(6, instanceCount);
+                pass.Draw(instanceCount * 2);
+            }
         }
 
         internal override void DeleteBatch()
@@ -78,24 +81,19 @@ namespace ABEngine.ABERuntime.Rendering
         }
     }
 
-    struct ParticleVertex
+    struct StripVertex
     {
-        public const int VertexSize = 48;
+        public const int VertexSize = 36;
 
         public Vector3 Position;
-        public float Size;
+        public Vector2 UV;
         public Vector4 Tint;
-        public Vector2 UvStart;
-        public Vector2 UvScale;
 
-        public ParticleVertex(Vector3 position, float size) : this(position, size, Vector4.One, Vector2.Zero, Vector2.One) { }
-        public ParticleVertex(Vector3 position, float size, Vector4 tint, Vector2 uvStart, Vector2 uvScale)
+        public StripVertex(Vector3 position, Vector2 uv, Vector4 tint)
         {
             Position = position;
-            Size = size;
+            UV = uv;
             Tint = tint;
-            UvStart = uvStart;
-            UvScale = uvScale;
         }
     }
 }

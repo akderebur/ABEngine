@@ -793,6 +793,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         {
             { MaterialFeature.Transparency, "HAS_TRANSPARENCY" },
             { MaterialFeature.Skinning, "HAS_SKIN" },
+            { MaterialFeature.ParticleStrip, "IS_STRIP" },
         };
     }
 
@@ -831,7 +832,8 @@ namespace ABEngine.ABERuntime.Core.Assets
     public enum MaterialFeature
     {
         Transparency,
-        Skinning
+        Skinning,
+        ParticleStrip
     }
 }
 

@@ -62,7 +62,9 @@ namespace ABEngine.ABERuntime.Components
 
         LinkedList<ScriptableParticle> particles = new LinkedList<ScriptableParticle>();
 
-        ParticleBatch particleBatch;
+        RenderBatch particleBatch;
+        Action<float> UpdateRoutine;
+
         string batchGuid;
         protected Transform moduleTrans;
 
@@ -103,7 +105,17 @@ namespace ABEngine.ABERuntime.Components
 
         public void Play()
         {
-            particleBatch = new ParticleBatch(this, 0, 0);
+            bool isStrip = _particleMaterial.pipelineAsset.DefineKey.Contains("*IS_STRIP");
+            if (isStrip)
+            {
+                particleBatch = new StripParticleBatch(this, 0, 0);
+                UpdateRoutine = UpdateStrip;
+            }
+            else
+            {
+                particleBatch = new ParticleBatch(this, 0, 0);
+                UpdateRoutine = UpdateSingle;
+            }
             particleBatch.key = "PM_Batch_" + Guid.NewGuid();
             particleBatch.active = true;
 
@@ -158,9 +170,14 @@ namespace ABEngine.ABERuntime.Components
             pTime.delta = deltaTime;
             pTime.scaledDelta = scaledDelta;
 
+            UpdateRoutine(deltaTime);
+        }
+
+        void UpdateSingle(float deltaTime)
+        {
             int instanceCount = 0;
             var curNode = particles.First;
-            ParticleVertex[] vertexData = particleBatch.GetParticleVertices();
+            ParticleVertex[] vertexData = ((ParticleBatch)particleBatch).GetParticleVertices();
 
             while (curNode != null)
             {
@@ -193,7 +210,88 @@ namespace ABEngine.ABERuntime.Components
                 curNode = nextNode;
             }
 
-            particleBatch.SetParticleInstance(instanceCount);
+            ((ParticleBatch)particleBatch).SetParticleInstance(instanceCount);
+        }
+
+        void UpdateStrip(float deltaTime)
+        {
+            int instanceCount = 0;
+            var curNode = particles.First;
+            StripVertex[] vertexData = ((StripParticleBatch)particleBatch).GetParticleVertices();
+
+            while (curNode != null)
+            {
+                ScriptableParticle particle = curNode.Value;
+                var nextNode = curNode.Next;
+                if (particle.lifetime == -10)
+                {
+                    curNode = nextNode;
+                    continue;
+                }
+
+                particle.age += deltaTime;
+                if (particle.age >= particle.lifetime)
+                {
+                    particle.lifetime = -10;
+                    particles.Remove(particle);
+                    particles.AddFirst(particle);
+                }
+                else
+                {
+                    UpdateParticle(particle, pTime);
+                    instanceCount++;
+
+                    if (instanceCount == 2)
+                    {
+                        ScriptableParticle prevPart = curNode.Previous.Value;
+                        Vector3 point1 = prevPart.position;
+                        Vector3 point2 = particle.position;
+
+                        Vector3 direction = Vector3.Normalize(point2 - point1);
+                        //Vector3 sideVector = new Vector3(-direction.Y, direction.X, 0);
+                        Vector3 sideVector = Vector3.Cross(direction, Vector3.UnitZ);
+
+                        vertexData[0] = new StripVertex(point1 - sideVector * (prevPart.size / 2f),
+                                                        Vector2.Zero,
+                                                        particle.tintColor);
+
+                        vertexData[1] = new StripVertex(point1 + sideVector * (prevPart.size / 2f),
+                                                        Vector2.Zero,
+                                                        particle.tintColor);
+
+                        vertexData[2] = new StripVertex(point2 - sideVector * (particle.size / 2f),
+                                                        Vector2.Zero,
+                                                        particle.tintColor);
+
+                        vertexData[3] = new StripVertex(point2 + sideVector * (particle.size / 2f),
+                                                       Vector2.Zero,
+                                                       particle.tintColor);
+                    }
+                    else if(instanceCount > 2)
+                    {
+                        ScriptableParticle prevPart = curNode.Previous.Value;
+                        Vector3 point1 = prevPart.position;
+                        Vector3 point2 = particle.position;
+
+                        Vector3 direction = Vector3.Normalize(point2 - point1);
+                        Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.forward);
+                        //Vector3 sideVector = new Vector3(-direction.Y, direction.X, 0);
+
+                        int index = (instanceCount - 1) * 2;
+                        vertexData[index] = new StripVertex(point2 - sideVector * (particle.size / 2f),
+                                                    Vector2.Zero,
+                                                    particle.tintColor);
+
+                        vertexData[index + 1] = new StripVertex(point2 + sideVector * (particle.size / 2f),
+                                                  Vector2.Zero,
+                                                  particle.tintColor);
+                    }
+                }
+
+                curNode = nextNode;
+            }
+
+            ((StripParticleBatch)particleBatch).SetParticleInstance(instanceCount);
         }
 
         protected virtual void UpdateParticle(ScriptableParticle particle, PTime pTime)
