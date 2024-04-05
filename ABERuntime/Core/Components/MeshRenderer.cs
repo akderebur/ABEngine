@@ -52,7 +52,7 @@ namespace ABEngine.ABERuntime.Components
 
         public MeshRenderer()
 		{
-            material = GraphicsManager.GetUber3D();
+            material = Graphics.GetUber3D();
         }
 
         public MeshRenderer(Mesh mesh) : this()
@@ -88,7 +88,7 @@ namespace ABEngine.ABERuntime.Components
                 mesh = Rendering.CubeModel.GetCubeMesh();
             var material = AssetCache.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
             if (material == null)
-                material = GraphicsManager.GetUber3D();
+                material = Graphics.GetUber3D();
 
             this.mesh = mesh;
             this.material = material;

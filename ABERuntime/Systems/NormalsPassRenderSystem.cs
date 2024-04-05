@@ -43,7 +43,7 @@ namespace ABEngine.ABERuntime
             {
                 var normalsFrameData = new BindGroupDescriptor()
                 {
-                    BindGroupLayout = GraphicsManager.normalsFrameData,
+                    BindGroupLayout = Graphics.normalsFrameData,
                     Entries = new BindResource[]
                       {
                         Game.pipelineBuffer,

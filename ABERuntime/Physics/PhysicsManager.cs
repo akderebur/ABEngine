@@ -9,7 +9,7 @@ using Box2D.NetStandard.Dynamics.Bodies;
 
 namespace ABEngine.ABERuntime.Physics
 {
-    public static class PhysicsManager
+    public static class Physics2D
     {
         static CollisionLayer defaultLayer;
         static List<CollisionLayer> collisionLayers = new List<CollisionLayer>();

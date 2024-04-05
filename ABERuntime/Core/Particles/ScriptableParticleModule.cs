@@ -74,7 +74,7 @@ namespace ABEngine.ABERuntime.Components
         {
             maxParticles = 100;
             _particleTexture = AssetCache.GetDefaultTexture();
-            _particleMaterial = GraphicsManager.GetParticleMaterial();
+            _particleMaterial = Graphics.GetParticleMaterial();
             batchGuid = Guid.NewGuid().ToString();
         }
 

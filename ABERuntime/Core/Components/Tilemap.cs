@@ -73,7 +73,7 @@ namespace ABEngine.ABERuntime.Components
 
             if (exTrans == null)
             {
-                chunkTrans = EntityManager.CreateEntity("Chunk", "").Get<Transform>();
+                chunkTrans = Entities.CreateEntity("Chunk", "").Get<Transform>();
                 chunkTrans.parent = tilemap.transform;
             }
             else
@@ -764,7 +764,7 @@ namespace ABEngine.ABERuntime.Components
                 if (tile.spriteTrans == null)
                     return false;
 
-                EntityManager.DestroyEntity(tile.spriteTrans.entity);
+                Entities.DestroyEntity(tile.spriteTrans.entity);
                 tile.spriteTrans = null;
 
                 if (tile.chunk != null)
@@ -983,7 +983,7 @@ namespace ABEngine.ABERuntime.Components
                     }
 
                     string colLayerName = jChunk["CollisionLayer"];
-                    CollisionLayer colLayer = PhysicsManager.GetCollisionLayerByName(colLayerName);
+                    CollisionLayer colLayer = Physics2D.GetCollisionLayerByName(colLayerName);
 
                     Rigidbody rb = new Rigidbody();
                     if (colLayer != null)

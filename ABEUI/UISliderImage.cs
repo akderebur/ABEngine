@@ -113,8 +113,8 @@ namespace ABEngine.ABEUI
         private void OnPassRender(RenderPass pass)
         {
             pass.SetPipeline(sliderPipeline);
-            pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-            pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
+            pass.SetVertexBuffer(0, Graphics.fullScreenVB);
+            pass.SetIndexBuffer(Graphics.fullScreenIB, IndexFormat.Uint16);
             pass.SetBindGroup(0, _sliderGroup);
             pass.DrawIndexed(6);
         }
@@ -160,7 +160,7 @@ namespace ABEngine.ABEUI
                 {
                     _infoBuffer,
                     texture2d.GetView(),
-                    GraphicsManager.pointSamplerClamp
+                    Graphics.pointSamplerClamp
 
                 }
             };
@@ -222,7 +222,7 @@ namespace ABEngine.ABEUI
                     CullFace = CullFace.None
                 },
                 BindGroupLayouts = new BindGroupLayout[] { sliderInfoLayout },
-                VertexLayouts = new[] { GraphicsManager.fullScreenVertexLayout },
+                VertexLayouts = new[] { Graphics.fullScreenVertexLayout },
                 AttachmentDescription = new AttachmentDescription()
                 {
                     ColorFormats = new TextureFormat[] { TextureFormat.Rgba8UnormSrgb }

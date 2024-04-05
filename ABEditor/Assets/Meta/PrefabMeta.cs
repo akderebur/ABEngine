@@ -39,8 +39,8 @@ namespace ABEngine.ABEditor.Assets.Meta
             string assetPath = savePath.Replace(Game.AssetPath, "");
             uint fileHash = assetPath.ToHash32();
 
-            var prefabEntity = PrefabManager.EntityToPrefab(entity, null);
-            PrefabManager.AddPrefabEntity(prefabEntity, fileHash);
+            var prefabEntity = Prefabs.EntityToPrefab(entity, null);
+            Prefabs.AddPrefabEntity(prefabEntity, fileHash);
 
             PrefabAsset prefabAsset = new PrefabAsset();
             prefabAsset.fPathHash = fileHash;
@@ -67,7 +67,7 @@ namespace ABEngine.ABEditor.Assets.Meta
         public override void MetaCreated()
         {
             // Handle prefab guid
-            var prefab = PrefabManager.GetPrefabTransform(fPathHash);
+            var prefab = Prefabs.GetPrefabTransform(fPathHash);
             if (prefab != null)
                 prefab.entity.Set<Guid>(base.uniqueID);
         }

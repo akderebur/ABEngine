@@ -48,7 +48,7 @@ namespace ABEngine.ABERuntime.Components
             mass = 1f;
             density = 1f;
             interpolationType = RBInterpolationType.None;
-            collisionLayer = PhysicsManager.GetDefaultCollisionLayer();
+            collisionLayer = Physics2D.GetDefaultCollisionLayer();
         }
 
         public JValue Serialize()
@@ -122,7 +122,7 @@ namespace ABEngine.ABERuntime.Components
             onCollisionExit = null;
             colliders.Clear();
 
-            PhysicsManager.DestroyBody(this);
+            Physics2D.DestroyBody(this);
         }
 
         public JSerializable GetCopy()

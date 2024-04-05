@@ -29,7 +29,7 @@ namespace ABEngine.ABERuntime.Physics
                     rigidbodyA = rbA,
                     rigidbodyB = rbB
                 };
-                PhysicsManager.RegisterCollision(collision);
+                Physics2D.RegisterCollision(collision);
 
                 //rbA.CollisionEnter(rbB);
                 //rbB.CollisionEnter(rbA);
@@ -50,7 +50,7 @@ namespace ABEngine.ABERuntime.Physics
                     rigidbodyA = rbA,
                     rigidbodyB = rbB
                 };
-                PhysicsManager.RegisterCollision(collision);
+                Physics2D.RegisterCollision(collision);
 
 
                 //rbA.CollisionExit(rbB);

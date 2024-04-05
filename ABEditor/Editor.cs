@@ -144,7 +144,7 @@ namespace ABEngine.ABEditor
 
             imguiRenderer.Update(elapsed, inputData);
 
-            EntityManager.CheckEntityChanges();
+            Entities.CheckEntityChanges();
 
             UpdateEditorUI();
 
@@ -196,7 +196,7 @@ namespace ABEngine.ABEditor
             foreach (var render in internalRenders)
                 render.SceneChange();
 
-            EntityManager.Init();
+            Entities.Init();
 
             TMColliderPipelineAsset tmColPipelineAsset = new TMColliderPipelineAsset();
             LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
@@ -248,8 +248,8 @@ namespace ABEngine.ABEditor
         
             // ECS and Physics Worlds
             ResetWorld();
-            PhysicsManager.ResetPhysics();
-            GraphicsManager.InitSettings();
+            Physics2D.ResetPhysics();
+            Graphics.InitSettings();
 
             // Graphics
             base.SetupGraphics(windowName);
@@ -612,7 +612,7 @@ namespace ABEngine.ABEditor
         {
             if(GameWorld != null)
                 World.Destroy(GameWorld);
-            PrefabManager.ClearScene();
+            Prefabs.ClearScene();
 
             if (isPlaying)
                 CreateWorlds();
@@ -695,7 +695,7 @@ namespace ABEngine.ABEditor
             //    Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             //});
 
-            PrefabManager.SceneInit();
+            Prefabs.SceneInit();
         }
 
         void OpenGameDummy(string path)

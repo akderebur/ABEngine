@@ -30,7 +30,7 @@ namespace ABEngine.ABERuntime.Rendering
 
             var texSetDesc = new BindGroupDescriptor()
             {
-                BindGroupLayout = GraphicsManager.sharedTextureLayout,
+                BindGroupLayout = Graphics.sharedTextureLayout,
                 Entries = new BindResource[]
                        {
                             texture2d.GetView(),

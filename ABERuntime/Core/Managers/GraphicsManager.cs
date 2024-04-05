@@ -24,7 +24,7 @@ namespace ABEngine.ABERuntime
         Matrix4x4
     }
 
-    public static class GraphicsManager
+    public static class Graphics
     {
         // Settings
         //public static TextureSampleCount msaaSampleCount { get; set; }

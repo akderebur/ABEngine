@@ -118,7 +118,7 @@ namespace ABEngine.ABERuntime.Rendering
             if (texture2d.fPathHash != 0 && texSet == null)
             {
                 var layouts = material.pipelineAsset.GetResourceLayouts();
-                if (layouts.Count > 1 && layouts[1] == GraphicsManager.sharedSpriteNormalLayout)
+                if (layouts.Count > 1 && layouts[1] == Graphics.sharedSpriteNormalLayout)
                 {
                     // Sprite normals
                     Texture2D normalTex = AssetCache.GetDefaultTexture();
@@ -133,7 +133,7 @@ namespace ABEngine.ABERuntime.Rendering
 
                     var texSetDesc = new BindGroupDescriptor()
                     {
-                        BindGroupLayout = GraphicsManager.sharedSpriteNormalLayout,
+                        BindGroupLayout = Graphics.sharedSpriteNormalLayout,
                         Entries = new BindResource[]
                         {
                             texture2d.GetView(),
@@ -150,7 +150,7 @@ namespace ABEngine.ABERuntime.Rendering
                 {
                     var texSetDesc = new BindGroupDescriptor()
                     {
-                        BindGroupLayout = GraphicsManager.sharedSpriteNormalLayout,
+                        BindGroupLayout = Graphics.sharedSpriteNormalLayout,
                         Entries = new BindResource[]
                         {
                             texture2d.GetView(),

@@ -10,8 +10,8 @@ namespace ABEngine.ABERuntime.Pipelines
     {
         public UberPipelineAdditive() : base()
         {
-            resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
-            resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
+            resourceLayouts.Add(Graphics.sharedPipelineLayout);
+            resourceLayouts.Add(Graphics.sharedSpriteNormalLayout);
             defaultMatName = "UberAdditive";
 
             base.ParseAsset(Shaders.UberPipelineAsset, false);
@@ -41,7 +41,7 @@ namespace ABEngine.ABERuntime.Pipelines
                 AttachmentDescription = new AttachmentDescription()
                 {
                     DepthFormat = TextureFormat.Depth32Float,
-                    ColorFormats = new[] { GraphicsManager.surfaceFormat, TextureFormat.Rgba8Unorm }
+                    ColorFormats = new[] { Graphics.surfaceFormat, TextureFormat.Rgba8Unorm }
                 }
             };
 

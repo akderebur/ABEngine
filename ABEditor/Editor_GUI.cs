@@ -194,9 +194,9 @@ namespace ABEngine.ABEditor
 
                         if (ImGui.BeginCombo("Sampler", texMeta.sampler.Name))
                         {
-                            for (int st = 0; st < GraphicsManager.AllSamplers.Count; st++)
+                            for (int st = 0; st < Graphics.AllSamplers.Count; st++)
                             {
-                                Sampler curSampler = GraphicsManager.AllSamplers[st];
+                                Sampler curSampler = Graphics.AllSamplers[st];
                                 bool is_selected = texMeta.sampler == curSampler;
                                 if (ImGui.Selectable(curSampler.Name, is_selected))
                                     texMeta.sampler = curSampler;
@@ -238,7 +238,7 @@ namespace ABEngine.ABEditor
                         ImGui.SameLine();
                         if (ImGui.BeginCombo("##Pipeline", matMeta.pipelineAsset.name))
                         {
-                            foreach (var pipelineKV in GraphicsManager.pipelineAssets)
+                            foreach (var pipelineKV in Graphics.pipelineAssets)
                             {
                                 bool is_selected = matMeta.pipelineAsset.name.Equals(pipelineKV.Value.name);
                                 if (ImGui.Selectable(pipelineKV.Value.name, is_selected))
@@ -512,14 +512,14 @@ namespace ABEngine.ABEditor
 
             // Grid
             if(makeTileMap)
-                EntityManager.CreateEntity("Tilemap", "NoChild", new Tilemap());
-            Entity gridEnt = EntityManager.CreateEntity("Grid", "EditorNotVisible");
+                Entities.CreateEntity("Tilemap", "NoChild", new Tilemap());
+            Entity gridEnt = Entities.CreateEntity("Grid", "EditorNotVisible");
             //gridEnt.transform.parent = tileEnt.transform;
             gridTrans = gridEnt.Get<Transform>();
 
-            GraphicsManager.AddRenderLayer("Editor");
-            int lastLayer = GraphicsManager.renderLayers.Count - 1;
-            GraphicsManager.AddRenderLayer("Tilemap");
+            Graphics.AddRenderLayer("Editor");
+            int lastLayer = Graphics.renderLayers.Count - 1;
+            Graphics.AddRenderLayer("Tilemap");
 
             Texture2D gridTex = EditorAssetCache.GetGridTexture();
             Texture2D lineTex = EditorAssetCache.GetGridLineTexture();
@@ -537,7 +537,7 @@ namespace ABEngine.ABEditor
                 // Horizontal Line
                 Sprite lineSpr = new Sprite(lineTex);
                 lineSpr.tintColor = new Vector4(1f, 1f, 1f, 0.3f);
-                Entity lineEnt = EntityManager.CreateEntity("Line_" + i, "EditorGridLine", lineSpr);
+                Entity lineEnt = Entities.CreateEntity("Line_" + i, "EditorGridLine", lineSpr);
                 lineSpr.renderLayerIndex = 1;
                 lineEnt.Get<Transform>().localScale = new Vector3(1, 1f, 1f);
                 lineEnt.Get<Transform>().localPosition = new Vector3(5f, curLinePos.Y, 0.2f);
@@ -552,7 +552,7 @@ namespace ABEngine.ABEditor
 
                         lineSpr = new Sprite(lineTex);
                         lineSpr.tintColor = new Vector4(1f, 1f, 1f, 0.3f);
-                        lineEnt = EntityManager.CreateEntity("Line_" + i, "EditorGridLine", lineSpr);
+                        lineEnt = Entities.CreateEntity("Line_" + i, "EditorGridLine", lineSpr);
                         lineSpr.renderLayerIndex = 1;
                         lineEnt.Get<Transform>().localScale = new Vector3(1f, 1f, 1f);
                         lineEnt.Get<Transform>().localEulerAngles = new Vector3(0f, 0f, MathF.PI / 2f); 
@@ -563,7 +563,7 @@ namespace ABEngine.ABEditor
                     curPos.X = j * worldOffset.X + worldOffset.X / 2f;
                     Sprite cellSpr = new Sprite(gridTex);
                     cellSpr.tintColor = new Vector4(1f, 1f, 1f, 0.3f);
-                    Entity cellEnt = EntityManager.CreateEntity("Cell_" + i + "_" + j, "EditorGridCell", cellSpr);
+                    Entity cellEnt = Entities.CreateEntity("Cell_" + i + "_" + j, "EditorGridCell", cellSpr);
                     cellSpr.renderLayerIndex = 1;
                     cellEnt.Get<Transform>().localScale = new Vector3(cellScale.X, cellScale.Y, 1f);
                     cellEnt.Get<Transform>().localPosition = new Vector3(curPos.X, curPos.Y, 0.1f);
@@ -1099,7 +1099,7 @@ namespace ABEngine.ABEditor
                     //var newEnt = GameWorld.Create("NewEntity", Guid.NewGuid());
                     //Transform newTrans = new Transform();
                     //newEnt.Add(newTrans);
-                    var newEnt = EntityManager.CreateEntity("New Entity");
+                    var newEnt = Entities.CreateEntity("New Entity");
                     hierList.Add(newEnt.Get<Transform>());
                 }
 
@@ -1127,16 +1127,16 @@ namespace ABEngine.ABEditor
                     var prefabFilePath = AssetsFolderView.files[srcIndex];
                     PrefabMeta prefabMeta = AssetHandler.GetMeta(prefabFilePath) as PrefabMeta;
 
-                    var prefabTransform = PrefabManager.GetPrefabTransform(prefabMeta.fPathHash);
+                    var prefabTransform = Prefabs.GetPrefabTransform(prefabMeta.fPathHash);
                     if (prefabTransform == null)
                     {
                         PrefabAsset prefabAsset = AssetHandler.GetAssetBinding(prefabMeta) as PrefabAsset;
-                        prefabTransform = EntityManager.LoadSerializedPrefab(prefabAsset);
+                        prefabTransform = Entities.LoadSerializedPrefab(prefabAsset);
                         //prefabTransform.entity.Get<Prefab>().prefabAsset = prefabAsset;
-                        PrefabManager.AddPrefabEntity(prefabTransform.entity, prefabAsset.fPathHash);
+                        Prefabs.AddPrefabEntity(prefabTransform.entity, prefabAsset.fPathHash);
                     }
 
-                    var entity = EntityManager.Instantiate(prefabTransform.entity);
+                    var entity = Entities.Instantiate(prefabTransform.entity);
                     hierList.Add(entity.Get<Transform>());
                 }
 

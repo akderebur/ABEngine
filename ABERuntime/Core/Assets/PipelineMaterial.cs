@@ -42,12 +42,12 @@ namespace ABEngine.ABERuntime.Core.Assets
         public PipelineMaterial(PipelineAsset pipelineAsset, BindGroupLayout propLayout, BindGroupLayout texLayout)
         {
             this.pipelineAsset = pipelineAsset;
-            this.instanceID = GraphicsManager.GetPipelineMaterialCount();
+            this.instanceID = Graphics.GetPipelineMaterialCount();
             this.propLayout = propLayout;
             this.texLayout = texLayout;
             name = pipelineAsset.name + "_" + instanceID;
 
-            GraphicsManager.AddPipelineMaterial(this);
+            Graphics.AddPipelineMaterial(this);
             this.renderOrder = (int)pipelineAsset.renderOrder;
             //Console.WriteLine(this.instanceID);
         }
@@ -139,9 +139,9 @@ namespace ABEngine.ABERuntime.Core.Assets
 
                     index++;
                     if (textureName.Equals("DepthTex"))
-                        resources[index] = GraphicsManager.pointSamplerClamp;
+                        resources[index] = Graphics.pointSamplerClamp;
                     else
-                        resources[index] = GraphicsManager.linearSamplerWrap;
+                        resources[index] = Graphics.linearSamplerWrap;
                     index++;
                 }
 

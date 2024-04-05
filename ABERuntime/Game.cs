@@ -162,16 +162,16 @@ namespace ABEngine.ABERuntime
         void MainPassWork(RenderPass pass)
         {
             resourceContext.CopyDepthTexture();
-            if (!GraphicsManager.render2DOnly)
+            if (!Graphics.render2DOnly)
                 meshRenderSystem.Render(pass);
-            for (int i = 0; i < GraphicsManager.renderLayers.Count; i++)
+            for (int i = 0; i < Graphics.renderLayers.Count; i++)
             {
                 spriteBatchSystem.Render(pass, i);
 
                 // Depth Clear
-                pass.SetPipeline(GraphicsManager.DepthClearPipeline);
-                pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-                pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
+                pass.SetPipeline(Graphics.DepthClearPipeline);
+                pass.SetVertexBuffer(0, Graphics.fullScreenVB);
+                pass.SetIndexBuffer(Graphics.fullScreenIB, IndexFormat.Uint16);
                 pass.DrawIndexed(6);
             }
         }
@@ -186,7 +186,7 @@ namespace ABEngine.ABERuntime
             //pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
             //pass.DrawIndexed(6);
 
-            spriteBatchSystem.RenderPP(pass, GraphicsManager.renderLayers.Count - 1);
+            spriteBatchSystem.RenderPP(pass, Graphics.renderLayers.Count - 1);
             meshRenderSystem.RenderPP(pass);
         }
 
@@ -206,10 +206,10 @@ namespace ABEngine.ABERuntime
             if (activePostProcess == null || !activePostProcess.BloomEnabled)
             {
                 // No Post Process - HDR
-                pass.SetPipeline(GraphicsManager.FullScreenPipeline);
+                pass.SetPipeline(Graphics.FullScreenPipeline);
                 pass.SetBindGroup(0, finalQuadRSSet);
-                pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-                pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
+                pass.SetVertexBuffer(0, Graphics.fullScreenVB);
+                pass.SetIndexBuffer(Graphics.fullScreenIB, IndexFormat.Uint16);
                 pass.DrawIndexed(6);
             }
             else
@@ -219,8 +219,8 @@ namespace ABEngine.ABERuntime
 
                 pass.SetPipeline(PostProcess.fsPipeline);
                 pass.SetBindGroup(0, activePostProcess.fsBindGroup);
-                pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
-                pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
+                pass.SetVertexBuffer(0, Graphics.fullScreenVB);
+                pass.SetIndexBuffer(Graphics.fullScreenIB, IndexFormat.Uint16);
                 pass.DrawIndexed(6);
             }
 
@@ -376,11 +376,11 @@ namespace ABEngine.ABERuntime
 
                 var finalQuadDesc = new BindGroupDescriptor()
                 {
-                    BindGroupLayout = GraphicsManager.sharedTextureLayout,
+                    BindGroupLayout = Graphics.sharedTextureLayout,
                     Entries = new BindResource[]
                     {
                         resourceContext.lightRenderView,
-                        GraphicsManager.linearSampleClamp
+                        Graphics.linearSampleClamp
                     }
                 };
 
@@ -397,7 +397,7 @@ namespace ABEngine.ABERuntime
                     Padding = 0f
                 };
 
-                GraphicsManager.RefreshMaterials();
+                Graphics.RefreshMaterials();
 
                 //lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
 
@@ -422,16 +422,16 @@ namespace ABEngine.ABERuntime
                 if (activePostProcess != null)
                     activePostProcess.RemovePostProcess();
 
-                EntityManager.SetImmediateDestroy(true);
+                Entities.SetImmediateDestroy(true);
                 CoroutineManager.StopAllCoroutines();
-                PrefabManager.ClearScene();
+                Prefabs.ClearScene();
 
                 // Recreate assets/worlds
                 World.Destroy(GameWorld);
                 CreateWorlds();
-                PhysicsManager.ResetPhysics();
+                Physics2D.ResetPhysics();
 
-                EntityManager.SetImmediateDestroy(false);
+                Entities.SetImmediateDestroy(false);
 
                 // Clean systems
                 foreach (var system in userSystems)
@@ -446,7 +446,7 @@ namespace ABEngine.ABERuntime
                 AssetCache.DisposeResources();
                 wgil.DisposeResources(false);
 
-                GraphicsManager.ResetPipelines();
+                Graphics.ResetPipelines();
 
                 foreach (var render in internalRenders)
                 {
@@ -498,8 +498,8 @@ namespace ABEngine.ABERuntime
                 notifyAnySystems.Clear();
 
                 AssetCache.ClearSceneCache();
-                EntityManager.frameSemaphore.Release();
-                EntityManager.Init();
+                Entities.frameSemaphore.Release();
+                Entities.Init();
 
                 Scene_Init();
 
@@ -520,7 +520,7 @@ namespace ABEngine.ABERuntime
                 }
 
                 spriteBatchSystem.Start();
-                if (!GraphicsManager.render2DOnly)
+                if (!Graphics.render2DOnly)
                 {
                     normalsRenderSystem.Start();
                     meshRenderSystem.Start();
@@ -547,7 +547,7 @@ namespace ABEngine.ABERuntime
             Time = newTime;
             pipelineData.Time = Time;
 
-            EntityManager.CheckEntityChanges();
+            Entities.CheckEntityChanges();
 
             if (Input.GetKeyDown(Key.KeyR))
             {
@@ -607,8 +607,8 @@ namespace ABEngine.ABERuntime
             CreateWorlds();
 
             // Init
-            PhysicsManager.ResetPhysics();
-            GraphicsManager.InitSettings();
+            Physics2D.ResetPhysics();
+            Graphics.InitSettings();
 
             // WGIL 
             SetupGraphics(windowName);
@@ -624,7 +624,7 @@ namespace ABEngine.ABERuntime
             {
                 if (steps == 0)
                 {
-                    PhysicsManager.PreFixedUpdate();
+                    Physics2D.PreFixedUpdate();
                     rbMoveSystem.PreFixedUpdate();
                 }
 
@@ -644,7 +644,7 @@ namespace ABEngine.ABERuntime
 
                 accumulator -= TimeStep;
             }
-            PhysicsManager.PostFixedUpdate();
+            Physics2D.PostFixedUpdate();
         }
 
         internal static Dictionary<BitSet, List<BaseSystem>> notifySystems;
@@ -759,7 +759,7 @@ namespace ABEngine.ABERuntime
             rbMoveSystem.Update(newTime, interpolation);
             camMoveSystem.Update(newTime, elapsed);
             spriteBatchSystem.Update(newTime, elapsed);
-            if (!GraphicsManager.render2DOnly)
+            if (!Graphics.render2DOnly)
             {
                 meshRenderSystem.Update(newTime, elapsed);
                 normalsRenderSystem.Update(newTime, elapsed);
@@ -772,7 +772,7 @@ namespace ABEngine.ABERuntime
 
         private protected virtual void Render()
         {
-            if(!GraphicsManager.render2DOnly)
+            if(!Graphics.render2DOnly)
                 normalsPass.BeginPass();
             mainPass.BeginPass();
             lightPass.BeginPass();
@@ -875,7 +875,7 @@ namespace ABEngine.ABERuntime
 
             AssetCache.InitAssetCache();
 
-            EntityManager.Init();
+            Entities.Init();
 
             // Systems
             // Shared
@@ -923,7 +923,7 @@ namespace ABEngine.ABERuntime
 
             //spriteRenderer.Start();
             spriteBatchSystem.Start();
-            if (!GraphicsManager.render2DOnly)
+            if (!Graphics.render2DOnly)
             {
                 normalsRenderSystem.Start();
                 meshRenderSystem.Start();
@@ -981,15 +981,15 @@ namespace ABEngine.ABERuntime
         private protected void CreateRenderResources(uint pixelWidth, uint pixelHeight)
         {
             resourceContext.RecreateFrameResources(pixelWidth, pixelHeight);
-            GraphicsManager.LoadPipelines();
+            Graphics.LoadPipelines();
 
             var finalQuadDesc = new BindGroupDescriptor()
             {
-                BindGroupLayout = GraphicsManager.sharedTextureLayout,
+                BindGroupLayout = Graphics.sharedTextureLayout,
                 Entries = new BindResource[]
                 {
                     resourceContext.lightRenderView,
-                    GraphicsManager.linearSampleClamp
+                    Graphics.linearSampleClamp
                 }
             };
 
@@ -997,11 +997,11 @@ namespace ABEngine.ABERuntime
 
             var ppQuadDesc = new BindGroupDescriptor()
             {
-                BindGroupLayout = GraphicsManager.sharedTextureLayout,
+                BindGroupLayout = Graphics.sharedTextureLayout,
                 Entries = new BindResource[]
                 {
                     resourceContext.mainRenderView,
-                    GraphicsManager.linearSampleClamp
+                    Graphics.linearSampleClamp
                 }
             };
 
@@ -1011,7 +1011,7 @@ namespace ABEngine.ABERuntime
 
             var pipelineSetDesc = new BindGroupDescriptor()
             {
-                BindGroupLayout = GraphicsManager.sharedPipelineLayout,
+                BindGroupLayout = Graphics.sharedPipelineLayout,
                 Entries = new BindResource[]
                 {
                     pipelineBuffer
@@ -1049,7 +1049,7 @@ namespace ABEngine.ABERuntime
                     return;
                 rb.SetTransform(entity.Get<Transform>());
                 if (b2dInitSystem.started)
-                    PhysicsManager.CreateBody(rb);
+                    Physics2D.CreateBody(rb);
             });
 
             //GameWorld.SubscribeComponentSet((in Entity entity, ref Rigidbody rb) =>
@@ -1144,7 +1144,7 @@ namespace ABEngine.ABERuntime
             //    tweener.Pause(true);
             //});
 
-            PrefabManager.SceneInit();
+            Prefabs.SceneInit();
         }
 
         internal static void TriggerCamCheck()

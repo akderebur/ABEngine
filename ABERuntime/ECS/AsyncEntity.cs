@@ -20,17 +20,17 @@ namespace ABEngine.ABERuntime.ECS
 
 		public async Task Add<T>(T component)
 		{
-            await EntityManager.creationSemaphore.WaitAsync();
-            EntityManager.cmdBuffer.Add<T>(in entity, component);
-            EntityManager.creationSemaphore.Release();
+            await Entities.creationSemaphore.WaitAsync();
+            Entities.cmdBuffer.Add<T>(in entity, component);
+            Entities.creationSemaphore.Release();
 	
 		}
 
 		public async Task Set<T>(T component)
 		{
-            await EntityManager.creationSemaphore.WaitAsync();
-			EntityManager.cmdBuffer.Set<T>(in entity, component);
-            EntityManager.creationSemaphore.Release();
+            await Entities.creationSemaphore.WaitAsync();
+			Entities.cmdBuffer.Set<T>(in entity, component);
+            Entities.creationSemaphore.Release();
         }
 
 		public bool Has<T>()

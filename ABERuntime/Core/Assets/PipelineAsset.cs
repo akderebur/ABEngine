@@ -374,29 +374,29 @@ namespace ABEngine.ABERuntime.Core.Assets
                                             {
                                                 // Set 0 - Shared pipeline data
 
-                                                resourceLayouts.Add(GraphicsManager.sharedMeshFrameData);
+                                                resourceLayouts.Add(Graphics.sharedMeshFrameData);
                                                 //if (useSkin)
                                                 //    resourceLayouts.Add(GraphicsManager.sharedSkinnedMeshUniform_VS);
                                                 //else
-                                                    resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
+                                                    resourceLayouts.Add(Graphics.sharedMeshUniform_VS);
 
                                                 pipeline3d = true;
                                             }
                                             else if(value.Equals("PostProcess2D"))
                                             {
                                                 isPP = true;
-                                                resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
-                                                resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
+                                                resourceLayouts.Add(Graphics.sharedPipelineLayout);
+                                                resourceLayouts.Add(Graphics.sharedSpriteNormalLayout);
                                             }
                                             else if(value.Equals("Particle"))
                                             {
-                                                resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
+                                                resourceLayouts.Add(Graphics.sharedPipelineLayout);
                                             }
                                             else
                                             {
                                                 // 2D
-                                                resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
-                                                resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
+                                                resourceLayouts.Add(Graphics.sharedPipelineLayout);
+                                                resourceLayouts.Add(Graphics.sharedSpriteNormalLayout);
                                             }
                                             break;
                                         case "@StepMode":
@@ -730,7 +730,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
 
             name = defaultMatName;
-            GraphicsManager.AddPipelineAsset(defaultMatName, this);
+            Graphics.AddPipelineAsset(defaultMatName, this);
         }
 
         public int GetPropID(string propName)

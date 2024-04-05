@@ -29,7 +29,7 @@ namespace ABEngine.ABERuntime
                 catch (OperationCanceledException)
                 {
                     if(createLockTask == taskInfo)
-                        EntityManager.creationSemaphore.Release();
+                        Entities.creationSemaphore.Release();
                 }
             };
 
@@ -37,7 +37,7 @@ namespace ABEngine.ABERuntime
             var task = cancellationAwareTaskFunc(cts.Token).ContinueWith((t) =>
             {
                 if (createLockTask == taskInfo)
-                    EntityManager.creationSemaphore.Release();
+                    Entities.creationSemaphore.Release();
 
                 if (taskInfos.Contains(taskInfo))
                     taskInfos.Remove(taskInfo);
@@ -90,7 +90,7 @@ namespace ABEngine.ABERuntime
                 taskInfos[i].cancelTokenSource.Cancel();
             }
             taskInfos.Clear();
-            EntityManager.creationSemaphore.Release();
+            Entities.creationSemaphore.Release();
             createLockTask = null;
         }
 
@@ -107,7 +107,7 @@ namespace ABEngine.ABERuntime
         {
             if (taskInfo == createLockTask)
             {
-                EntityManager.creationSemaphore.Release();
+                Entities.creationSemaphore.Release();
                 createLockTask = null;
             }
 

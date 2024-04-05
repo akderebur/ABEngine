@@ -10,7 +10,7 @@ using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABERuntime
 {
-	public static class PrefabManager
+	public static class Prefabs
 	{
 		static Dictionary<uint, PrefabAsset> prefabMap = new Dictionary<uint, PrefabAsset>();
         static Dictionary<uint, PrefabAsset> sharedPrefabMap = new Dictionary<uint, PrefabAsset>();
@@ -31,7 +31,7 @@ namespace ABEngine.ABERuntime
                 return default(Entity);
 
             // Set transform
-            var transComp = EntityManager.GetCopiedComponent(typeof(Transform), (JSerializable)comps[transformIndex]);
+            var transComp = Entities.GetCopiedComponent(typeof(Transform), (JSerializable)comps[transformIndex]);
             copy.Add(transComp);
 
             for (int i = 0; i < comps.Length; i++)
@@ -44,7 +44,7 @@ namespace ABEngine.ABERuntime
 
                 if (typeof(JSerializable).IsAssignableFrom(type))
                 {
-                    var newComp = EntityManager.GetCopiedComponent(type, (JSerializable)comp);
+                    var newComp = Entities.GetCopiedComponent(type, (JSerializable)comp);
                     copy.Add(newComp);
                 }
                 else if (type.IsSubclassOf(typeof(ABComponent)))
@@ -111,22 +111,22 @@ namespace ABEngine.ABERuntime
 
             // Check local instance
             if (prefabInstances.TryGetValue(hash, out Transform entityTrans))
-                return await EntityManager.InstantiateAsync(entityTrans.entity, null);
+                return await Entities.InstantiateAsync(entityTrans.entity, null);
 
             // Check local prefab
             if (prefabMap.TryGetValue(hash, out PrefabAsset prefabAsset))
             {
-                Transform prefabIns = EntityManager.LoadSerializedPrefab(prefabAsset);
+                Transform prefabIns = Entities.LoadSerializedPrefab(prefabAsset);
                 prefabInstances.Add(hash, prefabIns);
-                return await EntityManager.InstantiateAsync(prefabIns.entity, null);
+                return await Entities.InstantiateAsync(prefabIns.entity, null);
             }
 
             // Check shared prefab
             if (sharedPrefabMap.TryGetValue(hash, out PrefabAsset sharedPrefabAsset))
             {
-                Transform sharedIns = EntityManager.LoadSerializedPrefab(sharedPrefabAsset);
+                Transform sharedIns = Entities.LoadSerializedPrefab(sharedPrefabAsset);
                 prefabInstances.Add(hash, sharedIns);
-                return await EntityManager.InstantiateAsync(sharedIns.entity, null);
+                return await Entities.InstantiateAsync(sharedIns.entity, null);
 
             }
 
@@ -139,22 +139,22 @@ namespace ABEngine.ABERuntime
 
             // Check local instance
             if (prefabInstances.TryGetValue(hash, out Transform entityTrans))
-                return EntityManager.Instantiate(entityTrans.entity, null);
+                return Entities.Instantiate(entityTrans.entity, null);
 
             // Check local prefab
             if(prefabMap.TryGetValue(hash, out PrefabAsset prefabAsset))
             {
-                Transform prefabIns = EntityManager.LoadSerializedPrefab(prefabAsset);
+                Transform prefabIns = Entities.LoadSerializedPrefab(prefabAsset);
                 prefabInstances.Add(hash, prefabIns);
-                return EntityManager.Instantiate(prefabIns.entity, null);
+                return Entities.Instantiate(prefabIns.entity, null);
             }
 
             // Check shared prefab
             if (sharedPrefabMap.TryGetValue(hash, out PrefabAsset sharedPrefabAsset))
             {
-                Transform sharedIns = EntityManager.LoadSerializedPrefab(sharedPrefabAsset);
+                Transform sharedIns = Entities.LoadSerializedPrefab(sharedPrefabAsset);
                 prefabInstances.Add(hash, sharedIns);
-                return EntityManager.Instantiate(sharedIns.entity, null);
+                return Entities.Instantiate(sharedIns.entity, null);
 
             }
 
@@ -173,7 +173,7 @@ namespace ABEngine.ABERuntime
             var prefabEnt = EntityToPrefab(entity, null);
             prefabInstances.Add(hash, prefabEnt.Get<Transform>());
 
-            EntityManager.DestroyEntity(entity);
+            Entities.DestroyEntity(entity);
 
             return prefabEnt.Get<Transform>();
         }

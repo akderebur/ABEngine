@@ -254,7 +254,7 @@ namespace ABEngine.ABERuntime.Rendering
                     output,
                     input,
                     bloom,
-                    GraphicsManager.linearSampleClamp,
+                    Graphics.linearSampleClamp,
                     bloomBuffer,
                     modeBuffer
                }
@@ -380,14 +380,14 @@ namespace ABEngine.ABERuntime.Rendering
                 {
                     BlendState.OverrideBlend
                 },
-                VertexLayouts = new[] { GraphicsManager.fullScreenVertexLayout },
+                VertexLayouts = new[] { Graphics.fullScreenVertexLayout },
                 BindGroupLayouts = new[]
                 {
                     fsLayout
                 },
                 AttachmentDescription = new AttachmentDescription()
                 {
-                    ColorFormats = new TextureFormat[] { GraphicsManager.surfaceFormat }
+                    ColorFormats = new TextureFormat[] { Graphics.surfaceFormat }
                 }
             };
             fsPipeline = wgil.CreateRenderPipeline(FullScreenQuadVertex, FullScreenQuadFragment, ref fsPipeDesc, true);
@@ -406,7 +406,7 @@ namespace ABEngine.ABERuntime.Rendering
                 {
                     Game.resourceContext.lightRenderView,
                     bloomView,
-                    GraphicsManager.linearSampleClamp
+                    Graphics.linearSampleClamp
                 }
             };
             fsBindGroup = Game.wgil.CreateBindGroup(ref fsGroupDesc, true);

@@ -11,11 +11,11 @@ namespace ABEngine.ABERuntime.Physics
 		public CollisionLayer(string layerName)
 		{
 			this.layerName = layerName;
-			layerIndex = PhysicsManager.GetCollisionLayerCount();
+			layerIndex = Physics2D.GetCollisionLayerCount();
 			categoryBits = (ushort)(1 << layerIndex);
 			maskBits = 0xFFFF;
 
-			PhysicsManager.AddCollisionLayer(this);
+			Physics2D.AddCollisionLayer(this);
 		}
 
 		public void ExcludeCollisionLayer(CollisionLayer other)

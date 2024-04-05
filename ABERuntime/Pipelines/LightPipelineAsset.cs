@@ -33,7 +33,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     CullFace = CullFace.Back,
                     FrontFace = FrontFace.Cw
                 },
-                BindGroupLayouts = new[] { GraphicsManager.sharedPipelineLayout, GraphicsManager.sharedLightTexLayout },
+                BindGroupLayouts = new[] { Graphics.sharedPipelineLayout, Graphics.sharedLightTexLayout },
                 VertexLayouts = new[] { vertLayout },
                 AttachmentDescription = new AttachmentDescription()
                 {

@@ -17,8 +17,8 @@ namespace ABEngine.ABERuntime.Pipelines
 
             resourceLayouts.Clear();
 
-            resourceLayouts.Add(GraphicsManager.normalsFrameData);
-            resourceLayouts.Add(GraphicsManager.sharedMeshUniform_VS);
+            resourceLayouts.Add(Graphics.normalsFrameData);
+            resourceLayouts.Add(Graphics.sharedMeshUniform_VS);
 
             var normalsPipeDesc = new PipelineDescriptor()
             {
@@ -36,7 +36,7 @@ namespace ABEngine.ABERuntime.Pipelines
                     CullFace = CullFace.Back,
                     FrontFace = FrontFace.Cw
                 },
-                VertexLayouts = new[] { GraphicsManager.sharedMeshVertexLayout },
+                VertexLayouts = new[] { Graphics.sharedMeshVertexLayout },
                 BindGroupLayouts = resourceLayouts.ToArray(),
                 AttachmentDescription = new AttachmentDescription()
                 {

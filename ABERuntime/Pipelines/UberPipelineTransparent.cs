@@ -10,8 +10,8 @@ namespace ABEngine.ABERuntime.Pipelines
     {
         public UberPipelineTransparent() : base()
         {
-            resourceLayouts.Add(GraphicsManager.sharedPipelineLayout);
-            resourceLayouts.Add(GraphicsManager.sharedSpriteNormalLayout);
+            resourceLayouts.Add(Graphics.sharedPipelineLayout);
+            resourceLayouts.Add(Graphics.sharedSpriteNormalLayout);
             defaultMatName = "UberTransparent";
 
             base.ParseAsset(Shaders.UberPipelineAsset, false);

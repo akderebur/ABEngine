@@ -29,7 +29,7 @@ namespace ABEngine.ABEditor
 
             Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
-            gridTexture = new Texture2D(1, tex, GraphicsManager.linearSampleClamp, Vector2.Zero); ;
+            gridTexture = new Texture2D(1, tex, Graphics.linearSampleClamp, Vector2.Zero); ;
             return gridTexture;
         }
 
@@ -51,7 +51,7 @@ namespace ABEngine.ABEditor
 
             Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
-            gridLineTexture = new Texture2D(2, tex, GraphicsManager.linearSampleClamp, Vector2.Zero); ;
+            gridLineTexture = new Texture2D(2, tex, Graphics.linearSampleClamp, Vector2.Zero); ;
             return gridLineTexture;
         }
     }

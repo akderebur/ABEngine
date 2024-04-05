@@ -234,7 +234,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         //General purpose
         public static Texture2D CreateTexture2D(string texturePath)
         {
-            return GetOrCreateTexture2D(texturePath, GraphicsManager.linearSampleClamp, Vector2.Zero);
+            return GetOrCreateTexture2D(texturePath, Graphics.linearSampleClamp, Vector2.Zero);
         }
 
         public static Texture2D CreateTexture2D(string texturePath, Sampler sampler)
@@ -323,7 +323,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 string nodeName = br.ReadString();
                 int parId = br.ReadInt32();
 
-                Entity nodeEnt = EntityManager.CreateEntity(nodeName, "");
+                Entity nodeEnt = Entities.CreateEntity(nodeName, "");
                 Transform nodeTrans = nodeEnt.Get<Transform>();
                 nodeTransforms[i] = nodeTrans;
 
@@ -398,7 +398,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public static PipelineAsset CreatePipelineAsset(string pipelineName, params MaterialFeature[] materialFeatures)
         {
-            var pipeline = GraphicsManager.GetPipelineAssetByName(pipelineName);
+            var pipeline = Graphics.GetPipelineAssetByName(pipelineName);
             if(pipeline == null)
             {
                 // Try user pipeline
@@ -467,7 +467,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
             Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
-            defTexture = new Texture2D(1, tex, GraphicsManager.pointSamplerClamp, Vector2.Zero); ;
+            defTexture = new Texture2D(1, tex, Graphics.pointSamplerClamp, Vector2.Zero); ;
             return defTexture;
         }
 
@@ -481,7 +481,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 hash = texPath.ToHash32();
 
             if (sampler == null)
-                sampler = GraphicsManager.linearSampleClamp;
+                sampler = Graphics.linearSampleClamp;
 
             var tex2d = s_texture2ds.FirstOrDefault(t => t.fPathHash == hash && t.textureSampler == sampler && t.spriteSize == spriteSize);
             if (tex2d != null)
@@ -595,7 +595,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
             var asset = assetDict[oldHash];
             if (asset is PrefabAsset)
-                PrefabManager.UpdatePrefab(oldHash, hash);
+                Prefabs.UpdatePrefab(oldHash, hash);
 
             asset.fPathHash = hash;
             assetDict.Remove(oldHash);
@@ -814,9 +814,9 @@ namespace ABEngine.ABERuntime.Core.Assets
         static void LoadDefaultMaterials()
         {
             // Default Materials
-            var uberMat = GraphicsManager.GetUberMaterial();
-            var additiveMat = GraphicsManager.GetUberAdditiveMaterial();
-            var uber3d = GraphicsManager.GetUber3D();
+            var uberMat = Graphics.GetUberMaterial();
+            var additiveMat = Graphics.GetUberAdditiveMaterial();
+            var uber3d = Graphics.GetUber3D();
             //var uberTransparent = GraphicsManager.GetUberTransparentMaterial();
 
             assetDict.Add(uberMat.fPathHash, uberMat);
@@ -840,13 +840,13 @@ namespace ABEngine.ABERuntime.Core.Assets
             switch (name)
             {
                 case "LinearClamp":
-                    return GraphicsManager.linearSampleClamp;
+                    return Graphics.linearSampleClamp;
                 case "LinearWrap":
-                    return GraphicsManager.linearSamplerWrap;
+                    return Graphics.linearSamplerWrap;
                 case "PointClamp":
-                    return GraphicsManager.pointSamplerClamp;
+                    return Graphics.pointSamplerClamp;
                 default:
-                    return GraphicsManager.linearSampleClamp;
+                    return Graphics.linearSampleClamp;
             }
         }
 

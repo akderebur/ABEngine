@@ -113,12 +113,12 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     Sprite tileSprite = new Sprite(texture2d, texture2d.spriteSize);
                     tileSprite.SetUVIndent(uvIndent);
 
-                    var tileSpriteEnt = EntityManager.CreateEntity("Tile", "TilemapTile", tileSprite, false);
+                    var tileSpriteEnt = Entities.CreateEntity("Tile", "TilemapTile", tileSprite, false);
                     tileSpriteEnt.Get<Transform>().localPosition = placePosRound;
                     tileSpriteEnt.Get<Transform>().localEulerAngles = cursorSprite.Get<Transform>().localEulerAngles;
                     tileSpriteEnt.Get<Transform>().parent = lastTilemapTrans;
 
-                    tileSprite.renderLayerIndex = GraphicsManager.renderLayers.Count - 1;
+                    tileSprite.renderLayerIndex = Graphics.renderLayers.Count - 1;
 
                     lastTilemap.PlaceAutoTile(tileSprite, AutoTileDrawer.selectedAutoTile);
                 }
@@ -168,13 +168,13 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     tileSprite.SetSpriteID(recQuad.quadId);
                     tileSprite.SetUVIndent(uvIndent);
 
-                    var tileSpriteEnt = EntityManager.CreateEntity("Tile", "TilemapTile", false);
+                    var tileSpriteEnt = Entities.CreateEntity("Tile", "TilemapTile", false);
                     tileSpriteEnt.Get<Transform>().localPosition = newPos;
                     tileSpriteEnt.Get<Transform>().localEulerAngles = cursorSprite.Get<Transform>().localEulerAngles;
                     tileSpriteEnt.Get<Transform>().parent = lastTilemapTrans;
 
                     tileSpriteEnt.Set<Sprite>(tileSprite);
-                    tileSprite.renderLayerIndex = GraphicsManager.renderLayers.Count - 1;
+                    tileSprite.renderLayerIndex = Graphics.renderLayers.Count - 1;
 
                     lastTilemap.AddTile(tileSpriteEnt.Get<Transform>(), recQuad.quadId);
 
@@ -198,13 +198,13 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 tileSprite.SetSpriteID(curSelection.quadId);
                 tileSprite.SetUVIndent(uvIndent);
 
-                var tileSpriteEnt = EntityManager.CreateEntity("Tile", "TilemapTile", tileSprite, false);
+                var tileSpriteEnt = Entities.CreateEntity("Tile", "TilemapTile", tileSprite, false);
                 tileSpriteEnt.Get<Transform>().localPosition = placePosRound;
                 tileSpriteEnt.Get<Transform>().localEulerAngles = cursorSprite.Get<Transform>().localEulerAngles;
                 tileSpriteEnt.Get<Transform>().parent = lastTilemapTrans;
 
                 //tileSpriteEnt.Set<Sprite>(tileSprite);
-                tileSprite.renderLayerIndex = GraphicsManager.renderLayers.Count - 1;
+                tileSprite.renderLayerIndex = Graphics.renderLayers.Count - 1;
 
                 lastTilemap.AddTile(tileSpriteEnt.Get<Transform>(), curSelection.quadId);
                 if (placeWithCol)
@@ -305,7 +305,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                             if (tile.spriteTrans != null)
                             {
-                                var entCopy = EntityManager.Instantiate(tile.spriteTrans.entity, null);
+                                var entCopy = Entities.Instantiate(tile.spriteTrans.entity, null);
                                 entCopy.Get<Transform>().localPosition = spawnPos.ToVector3().RoundTo2Dec();
 
                                 lastTilemap.AddTile(entCopy.Get<Transform>(), entCopy.Get<Sprite>().GetSpriteID());
@@ -461,12 +461,12 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                     foreach (var tileSpr in tilemap.GetAllSprites())
                     {
-                        tileSpr.entity.Get<Sprite>().renderLayerIndex = GraphicsManager.renderLayers.Count - 1;
+                        tileSpr.entity.Get<Sprite>().renderLayerIndex = Graphics.renderLayers.Count - 1;
                     }
 
                     if (cursorSprite == Entity.Null)
                     {
-                        cursorSprite = EntityManager.CreateEntity("TilemapCursor", "EditorNotVisible", new Sprite(texture2d));
+                        cursorSprite = Entities.CreateEntity("TilemapCursor", "EditorNotVisible", new Sprite(texture2d));
                     }
                     else
                         cursorSprite.Get<Sprite>().SetTexture(texture2d);
@@ -657,7 +657,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                                 if (cursorSprite == Entity.Null)
                                 {
-                                    cursorSprite = EntityManager.CreateEntity("TilemapCursor", "EditorNotVisible", new Sprite(texture2d));
+                                    cursorSprite = Entities.CreateEntity("TilemapCursor", "EditorNotVisible", new Sprite(texture2d));
                                 }
                                 else
                                     cursorSprite.Get<Sprite>().SetTexture(texture2d);

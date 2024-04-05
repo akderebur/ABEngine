@@ -36,10 +36,10 @@ namespace ABEditor.Debug
                     FrontFace = FrontFace.Cw
                 },
                 VertexLayouts = new[] { lineVertLayout },
-                BindGroupLayouts = new[] { GraphicsManager.sharedPipelineLayout },
+                BindGroupLayouts = new[] { Graphics.sharedPipelineLayout },
                 AttachmentDescription = new AttachmentDescription()
                 {
-                    ColorFormats = new[] { GraphicsManager.surfaceFormat }
+                    ColorFormats = new[] { Graphics.surfaceFormat }
                 }
             };
 

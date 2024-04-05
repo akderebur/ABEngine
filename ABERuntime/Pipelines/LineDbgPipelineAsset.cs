@@ -32,10 +32,10 @@ namespace ABEngine.ABERuntime.Pipelines
                         }
                     }
                 },
-                BindGroupLayouts = new BindGroupLayout[] { GraphicsManager.sharedPipelineLayout },
+                BindGroupLayouts = new BindGroupLayout[] { Graphics.sharedPipelineLayout },
                 AttachmentDescription = new AttachmentDescription()
                 {
-                    ColorFormats = new TextureFormat[] { GraphicsManager.surfaceFormat }
+                    ColorFormats = new TextureFormat[] { Graphics.surfaceFormat }
                 }
             };
 

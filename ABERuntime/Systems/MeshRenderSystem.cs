@@ -268,7 +268,7 @@ namespace ABEngine.ABERuntime
 
                 var sharedFrameData = new BindGroupDescriptor()
                 {
-                    BindGroupLayout = GraphicsManager.sharedMeshFrameData,
+                    BindGroupLayout = Graphics.sharedMeshFrameData,
                     Entries = new BindResource[]
                     {
                         Game.pipelineBuffer,
@@ -286,7 +286,7 @@ namespace ABEngine.ABERuntime
 
                 var drawSetDesc = new BindGroupDescriptor()
                 {
-                    BindGroupLayout = GraphicsManager.sharedMeshUniform_VS,
+                    BindGroupLayout = Graphics.sharedMeshUniform_VS,
                     Entries = new BindResource[]
                     {
                         drawDataBuffer

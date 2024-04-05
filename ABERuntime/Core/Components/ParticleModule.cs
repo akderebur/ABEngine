@@ -98,7 +98,7 @@ namespace ABEngine.ABERuntime.Components
             maxParticles = 100;
             rnd = new Random();
             _particleTexture = AssetCache.GetDefaultTexture();
-            _particleMaterial = GraphicsManager.GetUberMaterial();
+            _particleMaterial = Graphics.GetUberMaterial();
             simulationSpace = SimulationSpace.Local;
 
             lifetimeSize = new BezierCurve(Vector2.UnitY, Vector2.One, new Vector2(0.25f, 1f), new Vector2(0.75f, 1f));

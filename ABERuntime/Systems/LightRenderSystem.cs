@@ -38,13 +38,13 @@ namespace ABEngine.ABERuntime
 
             var textureSetDesc = new BindGroupDescriptor()
             {
-                BindGroupLayout = GraphicsManager.sharedLightTexLayout,
+                BindGroupLayout = Graphics.sharedLightTexLayout,
                 Entries = new BindResource[]
                 {
                     sampledTextures[0],
-                    GraphicsManager.linearSamplerWrap,
+                    Graphics.linearSamplerWrap,
                     sampledTextures[1],
-                    GraphicsManager.linearSamplerWrap
+                    Graphics.linearSamplerWrap
                 }
             };
 

@@ -19,7 +19,7 @@ namespace ABEngine.ABEditor.Assets.Meta
 		{
 			spriteSize = Vector2.Zero;
             imageSize = Vector2.Zero;
-			sampler = GraphicsManager.linearSampleClamp;
+			sampler = Graphics.linearSampleClamp;
 		}
 
         public override JValue Serialize()
@@ -44,16 +44,16 @@ namespace ABEngine.ABEditor.Assets.Meta
             switch (sampler)
             {
                 case "LinearClamp":
-                    this.sampler = GraphicsManager.linearSampleClamp;
+                    this.sampler = Graphics.linearSampleClamp;
                     break;
                 case "LinearWrap":
-                    this.sampler = GraphicsManager.linearSamplerWrap;
+                    this.sampler = Graphics.linearSamplerWrap;
                     break;
                 case "PointClamp":
-                    this.sampler = GraphicsManager.pointSamplerClamp;
+                    this.sampler = Graphics.pointSamplerClamp;
                     break;
                 default:
-                    this.sampler = GraphicsManager.linearSampleClamp;
+                    this.sampler = Graphics.linearSampleClamp;
                     break;
             }
         }

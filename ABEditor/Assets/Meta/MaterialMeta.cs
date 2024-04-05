@@ -20,7 +20,7 @@ namespace ABEngine.ABEditor.Assets.Meta
 
         public MaterialMeta() : base()
 		{
-            pipelineAsset = GraphicsManager.GetUberMaterial().pipelineAsset;
+            pipelineAsset = Graphics.GetUberMaterial().pipelineAsset;
 		}
 
         public override JValue Serialize()
@@ -58,7 +58,7 @@ namespace ABEngine.ABEditor.Assets.Meta
         {
             string assetPath = savePath.Replace(Game.AssetPath, "");
             uint fileHash = assetPath.ToHash32();
-            PipelineMaterial mat = GraphicsManager.GetUberMaterial().GetCopy();
+            PipelineMaterial mat = Graphics.GetUberMaterial().GetCopy();
             mat.fPathHash = fileHash;
 
             File.WriteAllBytes(savePath, MaterialToRAW(mat));

@@ -16,7 +16,7 @@ using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABERuntime.ECS
 {
-    public static class EntityManager
+    public static class Entities
     {
         internal static SemaphoreSlim creationSemaphore = new SemaphoreSlim(1);
         internal static SemaphoreSlim frameSemaphore = new SemaphoreSlim(1);
@@ -27,7 +27,7 @@ namespace ABEngine.ABERuntime.ECS
 
         public static CommandBuffer cmdBuffer;
 
-        static EntityManager()
+        static Entities()
         {
         }
 
@@ -322,7 +322,7 @@ namespace ABEngine.ABERuntime.ECS
             {
                 string entName = entity["Name"];
                 string guid = entity["GUID"];
-                Entity newEnt = PrefabManager.PrefabWorld.Create(entName, Guid.Parse(guid));
+                Entity newEnt = Prefabs.PrefabWorld.Create(entName, Guid.Parse(guid));
 
                 foreach (var component in entity["Components"].Array())
                 {
@@ -364,7 +364,7 @@ namespace ABEngine.ABERuntime.ECS
 
                     var query = new QueryDescription().WithAll<Transform>();
                     var entities = new List<Entity>();
-                    PrefabManager.PrefabWorld.GetEntities(query, entities);
+                    Prefabs.PrefabWorld.GetEntities(query, entities);
 
 
                     entity.SetParent(entities.FirstOrDefault(e => e.Get<Guid>().Equals(parGuid)).Get<Transform>(), false);
@@ -469,7 +469,7 @@ namespace ABEngine.ABERuntime.ECS
 
         public static void DestroyEntity(this in Entity entity)
         {
-            if (EntityManager.immediateDestroy)
+            if (Entities.immediateDestroy)
             {
                 CheckSubscribers(in entity, false);
                 Game.GameWorld.Destroy(entity);
@@ -492,7 +492,7 @@ namespace ABEngine.ABERuntime.ECS
 
         internal static void SetImmediateDestroy(bool imDestroy)
         {
-            EntityManager.immediateDestroy = imDestroy;
+            Entities.immediateDestroy = imDestroy;
         }
 
         public static Transform FindTransformByName(string name)
@@ -527,7 +527,7 @@ namespace ABEngine.ABERuntime.ECS
 
         public static object DeserializeComponent(Type type, string serializedComponent)
         {
-            var method = typeof(EntityManager).GetMethod(nameof(DeserializeComponentGeneric)).MakeGenericMethod(type);
+            var method = typeof(Entities).GetMethod(nameof(DeserializeComponentGeneric)).MakeGenericMethod(type);
             return method.Invoke(null, new object[] { serializedComponent });
         }
 
@@ -546,7 +546,7 @@ namespace ABEngine.ABERuntime.ECS
 
         public static object GetCopiedComponent(Type type, JSerializable comp)
         {
-            var method = typeof(EntityManager).GetMethod(nameof(GetCopiedComponentGeneric)).MakeGenericMethod(type);
+            var method = typeof(Entities).GetMethod(nameof(GetCopiedComponentGeneric)).MakeGenericMethod(type);
             return method.Invoke(null, new object[] { comp });
         }
 

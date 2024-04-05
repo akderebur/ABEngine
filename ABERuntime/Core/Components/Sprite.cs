@@ -121,7 +121,7 @@ namespace ABEngine.ABERuntime.Components
 
         public Sprite() : base()
         {
-            sharedMaterial = GraphicsManager.GetUberMaterial();
+            sharedMaterial = Graphics.GetUberMaterial();
             _material = sharedMaterial;
             tintColor = Vector4.One;
             this.texture = AssetCache.GetDefaultTexture();
@@ -132,7 +132,7 @@ namespace ABEngine.ABERuntime.Components
         {
             this.texture = texture;
             Resize(texture.imageSize);
-            sharedMaterial = GraphicsManager.GetUberMaterial();
+            sharedMaterial = Graphics.GetUberMaterial();
             _material = sharedMaterial;
             tintColor = Vector4.One;
         }
@@ -144,7 +144,7 @@ namespace ABEngine.ABERuntime.Components
             Resize(texture.spriteSize);
             this.uvScale = spriteSize / texture.imageSize;
             sizeSet = true;
-            sharedMaterial = GraphicsManager.GetUberMaterial();
+            sharedMaterial = Graphics.GetUberMaterial();
             _material = sharedMaterial;
             tintColor = Vector4.One;
         }
@@ -156,7 +156,7 @@ namespace ABEngine.ABERuntime.Components
             Resize(texture.spriteSize);
             this.SetUVPosScale(spritePos / texture.imageSize, spriteSize / texture.imageSize);
             sizeSet = true;
-            sharedMaterial = GraphicsManager.GetUberMaterial();
+            sharedMaterial = Graphics.GetUberMaterial();
             _material = sharedMaterial;
             tintColor = Vector4.One;
         }

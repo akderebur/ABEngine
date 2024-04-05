@@ -32,14 +32,14 @@ namespace ABEngine.ABERuntime.Tweening
 
             try
             {
-                await EntityManager.frameSemaphore.WaitAsync();
+                await Entities.frameSemaphore.WaitAsync();
                 gotAccess = true;
                 transform.entity.Add<Tweener>(tweener);
             }
             finally
             {
                 if(gotAccess)
-                    EntityManager.frameSemaphore.Release();
+                    Entities.frameSemaphore.Release();
             }
 
             return tweener;
