@@ -218,6 +218,7 @@ namespace ABEngine.ABERuntime.Components
             int instanceCount = 0;
             var curNode = particles.First;
             StripVertex[] vertexData = ((StripParticleBatch)particleBatch).GetParticleVertices();
+            List<ScriptableParticle> toRemove = new List<ScriptableParticle>();
 
             while (curNode != null)
             {
@@ -238,6 +239,7 @@ namespace ABEngine.ABERuntime.Components
                 }
                 else
                 {
+                    float uvStep = (float)instanceCount / (particleCount - 1);
                     UpdateParticle(particle, pTime);
                     instanceCount++;
 
@@ -249,10 +251,10 @@ namespace ABEngine.ABERuntime.Components
 
                         Vector3 direction = Vector3.Normalize(point2 - point1);
                         //Vector3 sideVector = new Vector3(-direction.Y, direction.X, 0);
-                        Vector3 sideVector = Vector3.Cross(direction, Vector3.UnitZ);
+                        Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.forward);
 
                         vertexData[0] = new StripVertex(point1 - sideVector * (prevPart.size / 2f),
-                                                        Vector2.Zero,
+                                                        new Vector2(0, 1),
                                                         particle.tintColor);
 
                         vertexData[1] = new StripVertex(point1 + sideVector * (prevPart.size / 2f),
@@ -260,11 +262,11 @@ namespace ABEngine.ABERuntime.Components
                                                         particle.tintColor);
 
                         vertexData[2] = new StripVertex(point2 - sideVector * (particle.size / 2f),
-                                                        Vector2.Zero,
+                                                        new Vector2(uvStep, 1) ,
                                                         particle.tintColor);
 
                         vertexData[3] = new StripVertex(point2 + sideVector * (particle.size / 2f),
-                                                       Vector2.Zero,
+                                                       new Vector2(uvStep, 0),
                                                        particle.tintColor);
                     }
                     else if(instanceCount > 2)
@@ -279,11 +281,11 @@ namespace ABEngine.ABERuntime.Components
 
                         int index = (instanceCount - 1) * 2;
                         vertexData[index] = new StripVertex(point2 - sideVector * (particle.size / 2f),
-                                                    Vector2.Zero,
+                                                    new Vector2(uvStep, 1),
                                                     particle.tintColor);
 
                         vertexData[index + 1] = new StripVertex(point2 + sideVector * (particle.size / 2f),
-                                                  Vector2.Zero,
+                                                  new Vector2(uvStep, 0),
                                                   particle.tintColor);
                     }
                 }

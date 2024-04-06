@@ -231,7 +231,7 @@ Fragment
 UberParticle
 {
     @Pipeline:Particle
-    @Cull:Back
+    @Cull:None
     @RenderType:Transparent
     @Blend:Alpha
     @DepthWrite:True
@@ -329,7 +329,8 @@ Fragment
 
     void main()
     {
-        outputColor = fsin_Tint;
+        vec4 color = texture(sampler2D(ParticleTex, TexSampler), fsin_TexCoords);
+        outputColor = color;
     }
 }
 ";

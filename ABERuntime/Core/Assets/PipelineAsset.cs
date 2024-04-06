@@ -391,6 +391,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                                             else if(value.Equals("Particle"))
                                             {
                                                 resourceLayouts.Add(Graphics.sharedPipelineLayout);
+                                                resourceLayouts.Add(Graphics.sharedTextureLayout);
                                             }
                                             else
                                             {
