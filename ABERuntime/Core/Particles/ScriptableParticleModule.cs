@@ -54,6 +54,10 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
+        public TileMode tileMode { get; set; }
+        public float minStripDistance { get; set; }
+        public float stripXTiling { get; set; }
+
         public SimulationSpace simulationSpace;
         public bool isPlaying { get; private set; }
         protected float spawnRate { get; set; }
@@ -67,10 +71,12 @@ namespace ABEngine.ABERuntime.Components
 
         string batchGuid;
         protected Transform moduleTrans;
+        public Vector3 worldPosition => moduleTrans.worldPosition;
 
         float accumulator = 0f;
         float scale = 1f;
         int particleCount;
+
 
         public ScriptableParticleModule()
         {
@@ -78,6 +84,9 @@ namespace ABEngine.ABERuntime.Components
             _particleTexture = AssetCache.GetDefaultTexture();
             _particleMaterial = Graphics.GetParticleMaterial();
             batchGuid = Guid.NewGuid().ToString();
+
+            minStripDistance = 0.1f;
+            stripXTiling = 1f;
         }
 
         PTime pTime;
@@ -109,7 +118,11 @@ namespace ABEngine.ABERuntime.Components
             if (isStrip)
             {
                 particleBatch = new StripParticleBatch(this, 0, 0);
-                UpdateRoutine = UpdateStrip;
+
+                if(tileMode == TileMode.Stretch)
+                    UpdateRoutine = UpdateStripStretch;
+                else
+                    UpdateRoutine = UpdateStripRepeat;
             }
             else
             {
@@ -213,12 +226,13 @@ namespace ABEngine.ABERuntime.Components
             ((ParticleBatch)particleBatch).SetParticleInstance(instanceCount);
         }
 
-        void UpdateStrip(float deltaTime)
+        void UpdateStripStretch(float deltaTime)
         {
             int instanceCount = 0;
             var curNode = particles.First;
             StripVertex[] vertexData = ((StripParticleBatch)particleBatch).GetParticleVertices();
-            List<ScriptableParticle> toRemove = new List<ScriptableParticle>();
+
+            float totalDist = 0f;
 
             while (curNode != null)
             {
@@ -239,7 +253,7 @@ namespace ABEngine.ABERuntime.Components
                 }
                 else
                 {
-                    float uvStep = (float)instanceCount / (particleCount - 1);
+                    //float uvStep = (float)instanceCount / (particleCount - 1);
                     UpdateParticle(particle, pTime);
                     instanceCount++;
 
@@ -249,44 +263,217 @@ namespace ABEngine.ABERuntime.Components
                         Vector3 point1 = prevPart.position;
                         Vector3 point2 = particle.position;
 
-                        Vector3 direction = Vector3.Normalize(point2 - point1);
-                        //Vector3 sideVector = new Vector3(-direction.Y, direction.X, 0);
-                        Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.forward);
+                        Vector3 dif = point2 - point1;
 
-                        vertexData[0] = new StripVertex(point1 - sideVector * (prevPart.size / 2f),
-                                                        new Vector2(0, 1),
-                                                        particle.tintColor);
+                        float dist = dif.Length();
 
-                        vertexData[1] = new StripVertex(point1 + sideVector * (prevPart.size / 2f),
-                                                        Vector2.Zero,
-                                                        particle.tintColor);
+                        if (dist > minStripDistance)
+                        {
+                            totalDist += dist;
+                            Vector3 direction = Vector3.Normalize(dif);
+                            Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.forward);
 
-                        vertexData[2] = new StripVertex(point2 - sideVector * (particle.size / 2f),
-                                                        new Vector2(uvStep, 1) ,
-                                                        particle.tintColor);
+                            vertexData[0] = new StripVertex(point1 - sideVector * (prevPart.size / 2f),
+                                                            new Vector2(0, 1),
+                                                            particle.tintColor);
 
-                        vertexData[3] = new StripVertex(point2 + sideVector * (particle.size / 2f),
-                                                       new Vector2(uvStep, 0),
-                                                       particle.tintColor);
+                            vertexData[1] = new StripVertex(point1 + sideVector * (prevPart.size / 2f),
+                                                            Vector2.Zero,
+                                                            particle.tintColor);
+
+                            vertexData[2] = new StripVertex(point2 - sideVector * (particle.size / 2f),
+                                                            new Vector2(totalDist, 1),
+                                                            particle.tintColor);
+
+                            vertexData[3] = new StripVertex(point2 + sideVector * (particle.size / 2f),
+                                                           new Vector2(totalDist, 0),
+                                                           particle.tintColor);
+                        }
+                        else
+                        {
+                            instanceCount--;
+
+                            particle.lifetime = -10;
+                            particles.Remove(particle);
+                            particles.AddFirst(particle);
+                        }
                     }
-                    else if(instanceCount > 2)
+                    else if (instanceCount > 2)
                     {
                         ScriptableParticle prevPart = curNode.Previous.Value;
                         Vector3 point1 = prevPart.position;
                         Vector3 point2 = particle.position;
 
-                        Vector3 direction = Vector3.Normalize(point2 - point1);
+                        Vector3 dif = point2 - point1;
+                        float dist = dif.Length();
+
+                        if (dist > minStripDistance)
+                        {
+                            totalDist += dist;
+
+                            Vector3 direction = Vector3.Normalize(dif);
+                            Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.forward);
+                            //Vector3 sideVector = new Vector3(-direction.Y, direction.X, 0);
+
+                            int index = (instanceCount - 1) * 2;
+                            vertexData[index] = new StripVertex(point2 - sideVector * (particle.size / 2f),
+                                                        new Vector2(totalDist, 1),
+                                                        particle.tintColor);
+
+                            vertexData[index + 1] = new StripVertex(point2 + sideVector * (particle.size / 2f),
+                                                      new Vector2(totalDist, 0),
+                                                      particle.tintColor);
+                        }
+                        else
+                        {
+                            instanceCount--;
+
+                            particle.lifetime = -10;
+                            particles.Remove(particle);
+                            particles.AddFirst(particle);
+                        }
+
+                    }
+                }
+
+                curNode = nextNode;
+            }
+
+            ((StripParticleBatch)particleBatch).SetParticleInstance(instanceCount, totalDist);
+        }
+
+        void UpdateStripRepeat(float deltaTime)
+        {
+            int instanceCount = 0;
+            float uvStart = 0f;
+            var curNode = particles.First;
+            StripVertex[] vertexData = ((StripParticleBatch)particleBatch).GetParticleVertices();
+
+            ScriptableParticle lastPart = null;
+
+            while (curNode != null)
+            {
+                ScriptableParticle particle = curNode.Value;
+                var nextNode = curNode.Next;
+                if (particle.lifetime == -10)
+                {
+                    curNode = nextNode;
+                    continue;
+                }
+
+                particle.age += deltaTime;
+                if (particle.age >= particle.lifetime)
+                {
+                    particle.lifetime = -10;
+                    particles.Remove(particle);
+                    particles.AddFirst(particle);
+                }
+                else
+                {
+                    //float uvStep = (float)instanceCount / (particleCount - 1);
+                    UpdateParticle(particle, pTime);
+                    instanceCount++;
+
+                    if(instanceCount == 1)
+                    {
+                        lastPart = particle;
+                    }
+                    else if (instanceCount == 2)
+                    {
+                        ScriptableParticle prevPart = lastPart;
+                        Vector3 point1 = prevPart.position;
+                        Vector3 point2 = particle.position;
+
+                        Vector3 dif = point2 - point1;
+                        Vector3 direction = Vector3.Normalize(dif);
+                        Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.forward);
+                        float uvPortion = dif.Length() / stripXTiling;
+
+                        if (dif.Length() > minStripDistance)
+                        {
+                            if (!prevPart.stripUVSet)
+                            {
+                                prevPart.uvX = 0;
+                                prevPart.stripUVSet = true;
+                            }
+
+                            if (!particle.stripUVSet)
+                            {
+                                particle.uvX = prevPart.uvX + uvPortion;
+                                particle.stripUVSet = true;
+                            }
+
+                            vertexData[0] = new StripVertex(point1 - sideVector * (prevPart.size / 2f),
+                                                            new Vector2(prevPart.uvX, 1),
+                                                            particle.tintColor);
+
+                            vertexData[1] = new StripVertex(point1 + sideVector * (prevPart.size / 2f),
+                                                            new Vector2(prevPart.uvX, 0),
+                                                            particle.tintColor);
+
+                            vertexData[2] = new StripVertex(point2 - sideVector * (particle.size / 2f),
+                                                            new Vector2(particle.uvX, 1),
+                                                            particle.tintColor);
+
+                            vertexData[3] = new StripVertex(point2 + sideVector * (particle.size / 2f),
+                                                           new Vector2(particle.uvX, 0),
+                                                           particle.tintColor);
+
+                            uvStart += uvPortion;
+                            lastPart = particle;
+                        }
+                        else
+                        {
+                            instanceCount--;
+
+                            particle.lifetime = -10;
+                            particles.Remove(particle);
+                            particles.AddFirst(particle);
+                        }
+                    }
+                    else if(instanceCount > 2)
+                    {
+                        ScriptableParticle prevPart = lastPart;
+                        Vector3 point1 = prevPart.position;
+                        Vector3 point2 = particle.position;
+
+                        Vector3 dif = point2 - point1;
+                        Vector3 direction = Vector3.Normalize(dif);
                         Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.forward);
                         //Vector3 sideVector = new Vector3(-direction.Y, direction.X, 0);
 
-                        int index = (instanceCount - 1) * 2;
-                        vertexData[index] = new StripVertex(point2 - sideVector * (particle.size / 2f),
-                                                    new Vector2(uvStep, 1),
-                                                    particle.tintColor);
+                        float uvPortion = dif.Length() / stripXTiling;
 
-                        vertexData[index + 1] = new StripVertex(point2 + sideVector * (particle.size / 2f),
-                                                  new Vector2(uvStep, 0),
-                                                  particle.tintColor);
+
+                        if (dif.Length() > minStripDistance)
+                        {
+                            if (!particle.stripUVSet)
+                            {
+                                particle.uvX = prevPart.uvX + uvPortion;
+                                particle.stripUVSet = true;
+                            }
+
+
+                            int index = (instanceCount - 1) * 2;
+                            vertexData[index] = new StripVertex(point2 - sideVector * (particle.size / 2f),
+                                                        new Vector2(particle.uvX, 1),
+                                                        particle.tintColor);
+
+                            vertexData[index + 1] = new StripVertex(point2 + sideVector * (particle.size / 2f),
+                                                      new Vector2(particle.uvX, 0),
+                                                      particle.tintColor);
+
+                            uvStart += uvPortion;
+                            lastPart = particle;
+                        }
+                        else
+                        {
+                            instanceCount--;
+
+                            particle.lifetime = -10;
+                            particles.Remove(particle);
+                            particles.AddFirst(particle);
+                        }
                     }
                 }
 
@@ -310,6 +497,7 @@ namespace ABEngine.ABERuntime.Components
                 else
                 {
                     reusePart = particle;
+                    reusePart.stripUVSet = false;
                     particles.Remove(reusePart);
                     particles.AddLast(reusePart);
                     break;
@@ -444,11 +632,14 @@ namespace ABEngine.ABERuntime.Components
         public int particleID;
         public ScriptableParticleModule module;
         public Vector3 position;
+        public float uvX;
         public float size;
         public Vector4 tintColor;
         public float lifetime;
         public float age;
         public Vector3 velocity;
+
+        internal bool stripUVSet;
 
         public abstract void Init();
     }
@@ -459,5 +650,11 @@ namespace ABEngine.ABERuntime.Components
         public float gameTime;
         public float delta;
         public float scaledDelta;
+    }
+
+    public enum TileMode
+    {
+        Stretch,
+        Repeat
     }
 }

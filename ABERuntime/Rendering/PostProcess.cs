@@ -442,7 +442,7 @@ void main()
     vec4 hdr_color = texture(sampler2D(SceneTex, SceneSampler), fsTexCoord);
     vec4 bloom_color = texture(sampler2D(BloomTex, SceneSampler), fsTexCoord);
 
-    vec4 color = ((bloom_color * 10) * 0.68) + hdr_color;
+    vec4 color = ((bloom_color * 100) * 0.68) + hdr_color;
 
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     float tonemappedLuminance = luminance / (luminance + 1.0);
@@ -450,6 +450,7 @@ void main()
     // reinhard tone mapping
     vec3 mapped = color.rgb * tonemappedLuminance / luminance;
     OutputColor = vec4(mapped, color.a);
+    
 
     //OutputColor = vec4(color.rgb, color.a);
 }
@@ -503,7 +504,7 @@ fn Prefilter(colorp: vec4<f32>, uv: vec2<f32>) -> vec4<f32>
 {
 	let clamp_value = 20.0;
 	var color = min(vec4<f32>(clamp_value), colorp);
-	color = QuadraticThreshold(colorp, param.parameters.x, param.parameters.yzw);
+	color = QuadraticThreshold(color, param.parameters.x, param.parameters.yzw);
 	return color;
 }
 

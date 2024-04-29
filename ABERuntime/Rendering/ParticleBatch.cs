@@ -12,7 +12,10 @@ namespace ABEngine.ABERuntime.Rendering
 	{
         // GPU Resources
         public Buffer particleBuffer;
+        public Buffer drawBuffer;
         public BindGroup texSet;
+
+        ParticleDrawData drawData;
 
         ScriptableParticleModule pm;
 
@@ -25,18 +28,23 @@ namespace ABEngine.ABERuntime.Rendering
 
             vertices = new ParticleVertex[pm.maxParticles];
             particleBuffer = _wgil.CreateBuffer(pm.maxParticles * ParticleVertex.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+            drawBuffer = _wgil.CreateBuffer(4, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
 
             var texSetDesc = new BindGroupDescriptor()
             {
-                BindGroupLayout = Graphics.sharedTextureLayout,
+                BindGroupLayout = Graphics.sharedParticleLayout,
                 Entries = new BindResource[]
                        {
+                            drawBuffer,
                             texture2d.GetView(),
                             texture2d.textureSampler,
                        }
             };
 
             texSet = _wgil.CreateBindGroup(ref texSetDesc);
+
+            drawData.totalParticles = 1;
+            _wgil.WriteBuffer(drawBuffer, drawData);
         }
 
         internal void SetParticleInstance(int instanceCount)
@@ -97,6 +105,11 @@ namespace ABEngine.ABERuntime.Rendering
             UvStart = uvStart;
             UvScale = uvScale;
         }
+    }
+
+    public struct ParticleDrawData
+    {
+        public float totalParticles;
     }
 }
 

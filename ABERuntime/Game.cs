@@ -1112,6 +1112,8 @@ namespace ABEngine.ABERuntime
 
             GameWorld.SubscribeComponentRemoved((in Entity entity, ref ParticleModule pm) => pm.Stop());
 
+            GameWorld.SubscribeComponentRemoved((in Entity entity, ref ScriptableParticleModule spm) => spm.Stop());
+
             //GameWorld.SubscribeComponentRemoved((in Entity entity, ref Rigidbody rb) => rb.Destroy());
 
             //GameWorld.OnEnable((Entity entity, Sprite sprite) =>

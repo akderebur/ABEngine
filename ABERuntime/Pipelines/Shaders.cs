@@ -319,8 +319,13 @@ Vertex
 }
 Fragment
 {
-    layout (set = 1, binding = 0) uniform texture2D ParticleTex; 
-    layout (set = 1, binding = 1) uniform sampler TexSampler;
+    layout (set = 1, binding = 0) uniform DrawData
+    {
+        float totalParticles;
+    };
+
+    layout (set = 1, binding = 1) uniform texture2D ParticleTex; 
+    layout (set = 1, binding = 2) uniform sampler TexSampler;
 
     layout(location = 0) in vec2 fsin_TexCoords;
     layout(location = 1) in vec4 fsin_Tint;
@@ -329,8 +334,11 @@ Fragment
 
     void main()
     {
-        vec4 color = texture(sampler2D(ParticleTex, TexSampler), fsin_TexCoords);
-        outputColor = color;
+        vec2 uv = fsin_TexCoords;
+        uv.x /= totalParticles;
+
+        vec4 color = texture(sampler2D(ParticleTex, TexSampler), uv);
+        outputColor = color * fsin_Tint;
     }
 }
 ";

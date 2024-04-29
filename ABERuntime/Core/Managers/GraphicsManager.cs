@@ -64,7 +64,7 @@ namespace ABEngine.ABERuntime
         public static BindGroupLayout sharedMeshUniform_VS;
         public static BindGroupLayout sharedLightTexLayout;
 
-        public static BindGroupLayout sharedParticleUniform_VS;
+        public static BindGroupLayout sharedParticleLayout;
         public static BindGroupLayout sharedMeshFrameData;
         public static BindGroupLayout normalsFrameData;
 
@@ -335,25 +335,30 @@ namespace ABEngine.ABERuntime
 
             sharedMeshUniform_VS = wgil.CreateBindGroupLayout(ref meshVertexDesc).SetManualDispose(true);
 
-            var particleVertexDesc = new BindGroupLayoutDescriptor()
+            var particleDesc = new BindGroupLayoutDescriptor()
             {
                 Entries = new[]
                 {
                     new BindGroupLayoutEntry()
                     {
                         BindingType = BindingType.Buffer,
-                        ShaderStages = ShaderStages.VERTEX
+                        ShaderStages = ShaderStages.FRAGMENT
                     },
                     new BindGroupLayoutEntry()
                     {
-                        BindingType = BindingType.Buffer,
-                        ShaderStages = ShaderStages.VERTEX
+                        BindingType = BindingType.Texture,
+                        ShaderStages = ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Sampler,
+                        ShaderStages = ShaderStages.FRAGMENT
                     }
                 }
             };
 
 
-            sharedParticleUniform_VS = wgil.CreateBindGroupLayout(ref particleVertexDesc).SetManualDispose(true);
+            sharedParticleLayout = wgil.CreateBindGroupLayout(ref particleDesc).SetManualDispose(true);
 
             // Normals Pipeline
 
@@ -544,7 +549,7 @@ namespace ABEngine.ABERuntime
             sharedTextureLayout?.Dispose();
 
             sharedMeshUniform_VS?.Dispose();
-            sharedParticleUniform_VS?.Dispose();
+            sharedParticleLayout?.Dispose();
             sharedMeshFrameData?.Dispose();
             normalsFrameData?.Dispose();
             sharedLightTexLayout?.Dispose();

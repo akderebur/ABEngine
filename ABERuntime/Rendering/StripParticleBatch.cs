@@ -12,7 +12,10 @@ namespace ABEngine.ABERuntime.Rendering
     {
         // GPU Resources
         public Buffer particleBuffer;
+        public Buffer drawBuffer;
         public BindGroup texSet;
+
+        ParticleDrawData drawData;
 
         ScriptableParticleModule pm;
 
@@ -25,24 +28,34 @@ namespace ABEngine.ABERuntime.Rendering
 
             vertices = new StripVertex[pm.maxParticles * 2];
             particleBuffer = _wgil.CreateBuffer(pm.maxParticles * 2 * StripVertex.VertexSize, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+            drawBuffer = _wgil.CreateBuffer(4, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
 
             var texSetDesc = new BindGroupDescriptor()
             {
-                BindGroupLayout = Graphics.sharedTextureLayout,
+                BindGroupLayout = Graphics.sharedParticleLayout,
                 Entries = new BindResource[]
                        {
+                            drawBuffer,
                             texture2d.GetView(),
                             texture2d.textureSampler,
                        }
             };
 
             texSet = _wgil.CreateBindGroup(ref texSetDesc);
+
+            drawData.totalParticles = 1;
+            _wgil.WriteBuffer(drawBuffer, drawData);
         }
 
-        internal void SetParticleInstance(int instanceCount)
+        internal void SetParticleInstance(int instanceCount, float totalDistance = 1f)
         {
             base.instanceCount = instanceCount;
             _wgil.WriteBuffer(particleBuffer, vertices, 0, instanceCount * 2 * StripVertex.VertexSize);
+
+
+            drawData.totalParticles = totalDistance;
+            _wgil.WriteBuffer(drawBuffer, drawData);
+
         }
 
         internal StripVertex[] GetParticleVertices()
@@ -63,6 +76,12 @@ namespace ABEngine.ABERuntime.Rendering
                 pass.SetBindGroup(1, texSet);
 
                 pass.SetVertexBuffer(0, particleBuffer);
+
+                // Material Resource Sets
+                foreach (var setKV in material.bindableSets)
+                {
+                    pass.SetBindGroup(setKV.Key, setKV.Value);
+                }
 
                 pass.Draw(instanceCount * 2);
             }
