@@ -224,9 +224,8 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         private static PipelineAsset GetPipelineFromPK(uint hash)
         {
-            // Find material in asset dictionary
+            // Find pipeline in asset dictionary
             AssetEntry pipeAsset = assetDictPK[hash];
-
             pr.BaseStream.Position = pipeAsset.offset;
             return new UserPipelineAsset(Encoding.UTF8.GetString(pr.ReadBytes(pipeAsset.size)));
         }
