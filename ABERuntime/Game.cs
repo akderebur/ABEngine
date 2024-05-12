@@ -19,8 +19,8 @@ using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
 using ABEngine.ABERuntime.Core.Assets;
 using WGIL.IO;
-using ABEngine.ABERuntime.Windowing;
-using static SDL2.SDL;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace ABEngine.ABERuntime
 {
@@ -33,9 +33,6 @@ namespace ABEngine.ABERuntime
     public class Game
     {
         internal static WGILContext wgil;
-
-        // Resources
-        protected Sdl2Window window;
 
         // Worlds and Systems
         public static World GameWorld;
@@ -118,15 +115,16 @@ namespace ABEngine.ABERuntime
         internal static Game Instance;
         internal static ResourceContext resourceContext;
 
-        protected private static InputDataSdl inputData = new InputDataSdl();
+        private HttpClient _httpClient;
 
         // Render Passes
         RenderPass normalsPass, mainPass, mainPPPass, lightPass, fsPass;
 
-        public Game(bool debug, List<Type> userTypes)
+        public Game(bool debug, List<Type> userTypes, HttpClient httpClient)
         {
             Instance = this;
             resourceContext = new ResourceContext();
+            _httpClient = httpClient;
 
             UserTypes = userTypes;
             userSystems = new List<BaseSystem>();
@@ -161,18 +159,19 @@ namespace ABEngine.ABERuntime
 
         void MainPassWork(RenderPass pass)
         {
-            resourceContext.CopyDepthTexture();
-            if (!Graphics.render2DOnly)
-                meshRenderSystem.Render(pass);
+           
+
+            //if (!Graphics.render2DOnly)
+            //    meshRenderSystem.Render(pass);
             for (int i = 0; i < Graphics.renderLayers.Count; i++)
             {
                 spriteBatchSystem.Render(pass, i);
 
-                // Depth Clear
-                pass.SetPipeline(Graphics.DepthClearPipeline);
-                pass.SetVertexBuffer(0, Graphics.fullScreenVB);
-                pass.SetIndexBuffer(Graphics.fullScreenIB, IndexFormat.Uint16);
-                pass.DrawIndexed(6);
+                ////Depth Clear
+                //pass.SetPipeline(Graphics.DepthClearPipeline);
+                //pass.SetVertexBuffer(0, Graphics.fullScreenVB);
+                //pass.SetIndexBuffer(Graphics.fullScreenIB, IndexFormat.Uint16);
+                //pass.DrawIndexed(6);
             }
         }
 
@@ -200,7 +199,7 @@ namespace ABEngine.ABERuntime
             if (Game.activeCamera != null)
             {
                 Camera cam = Game.activeCamera;
-                pass.SetViewport(Game.pixelSize.X * cam.viewport.X, Game.pixelSize.Y * cam.viewport.Y, Game.pixelSize.X * cam.viewport.Z, Game.pixelSize.Y * cam.viewport.W);
+                //pass.SetViewport(Game.pixelSize.X * cam.viewport.X, Game.pixelSize.Y * cam.viewport.Y, Game.pixelSize.X * cam.viewport.Z, Game.pixelSize.Y * cam.viewport.W);
             }
 
             if (activePostProcess == null || !activePostProcess.BloomEnabled)
@@ -214,9 +213,7 @@ namespace ABEngine.ABERuntime
             }
             else
             {
-                // Post Process - HDR
-                activePostProcess.BloomWork.BeginCompute();
-
+                
                 pass.SetPipeline(PostProcess.fsPipeline);
                 pass.SetBindGroup(0, activePostProcess.fsBindGroup);
                 pass.SetVertexBuffer(0, Graphics.fullScreenVB);
@@ -279,6 +276,22 @@ namespace ABEngine.ABERuntime
             mainPass = wgil.CreateRenderPass(ref mainPassDesc);
             mainPass.JoinRenderQueue(MainPassWork);
 
+            var lightPassDesc = new RenderPassDescriptor()
+            {
+                IsColorClear = true,
+                ClearColor = new WGIL.Color(0f, 0f, 0f, 0f),
+                ColorAttachments = new TextureViewSet()
+                {
+                    TextureViews = new[]
+                    {
+                        resourceContext.lightRenderView
+                    }
+                }
+            };
+
+            lightPass = wgil.CreateRenderPass(ref lightPassDesc);
+            lightPass.JoinRenderQueue(LightPassWork);
+
             // Main PostProcess
 
             var mainPPDesc = new RenderPassDescriptor()
@@ -296,29 +309,21 @@ namespace ABEngine.ABERuntime
                 }
             };
 
-            mainPPPass = wgil.CreateRenderPass(ref mainPPDesc);
-            mainPPPass.JoinRenderQueue(MainPPWork);
+            //mainPPPass = wgil.CreateRenderPass(ref mainPPDesc);
+            //mainPass.AddPreWork(PPPreWork);
+            //mainPPPass.JoinRenderQueue(MainPPWork);
 
-            var lightPassDesc = new RenderPassDescriptor()
-            {
-                IsColorClear = true,
-                ClearColor = new WGIL.Color(0f, 0f, 0f, 0f),
-                ColorAttachments = new TextureViewSet()
-                {
-                    TextureViews = new[]
-                    {
-                        resourceContext.lightRenderView
-                    }
-                }
-            };
-
-            lightPass = wgil.CreateRenderPass(ref lightPassDesc);
-            lightPass.JoinRenderQueue(LightPassWork);
+            //activePostProcess = new PostProcess()
+            //{
+            //    BloomEnabled = true,
+            //    BloomThreshold = 0.8f
+            //};
+            //activePostProcess.InitPostProcess();
 
             var fsPassDesc = new RenderPassDescriptor()
             {
                 IsColorClear = true,
-                ClearColor = new WGIL.Color(0f, 0f, 0f, 1f),
+                ClearColor = new WGIL.Color(1f, 0f, 0f, 1f),
                 IsRenderSwapchain = true
             };
             fsPass = wgil.CreateRenderPass(ref fsPassDesc);
@@ -540,20 +545,16 @@ namespace ABEngine.ABERuntime
 
         private protected virtual void MainLoop(float newTime, float elapsed)
         {
-            // SDL2 Poll
-            window.ProcessEvents(inputData);
-            Input.UpdateFrameInput(inputData);
-
             Time = newTime;
             pipelineData.Time = Time;
 
             Entities.CheckEntityChanges();
 
-            if (Input.GetKeyDown(Key.KeyR))
-            {
-                reload = true;
-                newScene = true;
-            }
+            //if (Input.GetKeyDown(Key.KeyR))
+            //{
+            //    reload = true;
+            //    newScene = true;
+            //}
 
             if (reload)
             {
@@ -570,10 +571,8 @@ namespace ABEngine.ABERuntime
                 rendExt.Update(newTime, elapsed);
             }
 
-            inputData.Clear();
-
             RenderSetup(newTime);
-            wgil.BeginRender(); // Sleep
+            //wgil.BeginRender(); // Sleep
         }
 
         protected private void RenderSetup(float time)
@@ -775,11 +774,15 @@ namespace ABEngine.ABERuntime
 
         private protected virtual void Render()
         {
-            if(!Graphics.render2DOnly)
+            if (!Graphics.render2DOnly)
                 normalsPass.BeginPass();
+            resourceContext.CopyDepthTexture();
             mainPass.BeginPass();
             lightPass.BeginPass();
-            mainPPPass.BeginPass();
+            //mainPPPass.BeginPass();
+            if(activePostProcess != null && activePostProcess.BloomEnabled)
+                activePostProcess.BloomWork.BeginCompute();
+
             fsPass.BeginPass();
         }
 
@@ -820,35 +823,32 @@ namespace ABEngine.ABERuntime
         {
             wgil = new WGILContext();
             wgil.OnStart += SetupComplete;
-            wgil.OnUpdate += MainLoop;
-            wgil.OnRender += Render;
 
-            // Window and Graphics
-            var flags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE | SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI;
-            window = new Sdl2Window(windowName, 0, 0, 1280, 720, flags, out RawWindowInfo rawWindowInfo);
-            window.Closing += Window_Closing;
-            window.Resized += Window_Resized;
 
-            wgil.Start(ref rawWindowInfo);
-
-            wgil.DisposeResources(true);
+            _ = wgil.Start(windowName, new WindowInfo()
+            {
+                Width = 1024,
+                Height = 768,
+                CSSFullSize = true
+            });
         }
 
         private void Window_Resized()
         {
             // Physical Size
-            SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
+            uint pw = wgil.GetWidth();
+            uint ph = wgil.GetHeight();
             pixelSize = new Vector2(pw, ph);
-            wgil.Resize((uint)pw, (uint)ph);
 
-            SDL_GetWindowSize(window.Handle, out int w, out int h);
+            uint w = wgil.GetWidthLogical();
+            uint h = wgil.GetHeightLogical();
             virtualSize = new Vector2(w, h);
             canvas.UpdateScreenSize(virtualSize, pixelSize);
             onWindowResize?.Invoke();
             wgil.logicalSize = virtualSize;
 
-            resize = true;
-            reload = true;
+            //resize = true;
+            //reload = true;
         }
 
         private void Window_Closing()
@@ -856,13 +856,20 @@ namespace ABEngine.ABERuntime
             wgil.Stop();
         }
 
-        private protected virtual void SetupComplete()
+        private protected virtual async void SetupComplete()
         {
-            SDL_GL_GetDrawableSize(window.Handle, out int pw, out int ph);
-            SDL_GetWindowSize(window.Handle, out int w, out int h);
+            uint pw = wgil.GetWidth();
+            uint ph = wgil.GetHeight();
+
+            pw = 1920 ;
+            ph = 1080;
+
+            uint w = wgil.GetWidthLogical();
+            uint h = wgil.GetHeightLogical();
 
             pixelSize = new Vector2(pw, ph);
-            virtualSize = new Vector2(w, h);
+            virtualSize = new Vector2(w, h) * 2f;
+
             canvas = new Canvas(w, h);
             canvas.isDynamicSize = true;
             canvas.UpdateScreenSize(virtualSize, pixelSize);
@@ -876,7 +883,7 @@ namespace ABEngine.ABERuntime
             foreach (var render in internalRenders)
                 render.SceneChange();
 
-            AssetCache.InitAssetCache();
+            await AssetCache.InitAssetCache(_httpClient);
 
             Entities.Init();
 
@@ -909,7 +916,7 @@ namespace ABEngine.ABERuntime
             Scene_RegisterSystems();
             SubscribeSystems();
 
-            Scene_Setup();
+            await Scene_Setup();
             FindCamera();
             FindPostProcess();
             onSceneLoad?.Invoke();
@@ -947,8 +954,13 @@ namespace ABEngine.ABERuntime
                 rendExt.Start();
             }
 
-            reload = true;
-            resize = true;
+            //reload = true;
+            //resize = true;
+
+            wgil.OnUpdate += MainLoop;
+            wgil.OnResize += Window_Resized;
+            wgil.OnRender += Render;
+            Window_Resized();
         }
 
         protected private void FindCamera()
@@ -1176,7 +1188,7 @@ namespace ABEngine.ABERuntime
             renderExtensions.Add(renderSystem);
         }
    
-        protected virtual void Scene_Setup()
+        protected virtual async Task Scene_Setup()
         {
 
         }
@@ -1253,7 +1265,7 @@ namespace ABEngine.ABERuntime
             return scene.Build().ToString();
         }
 
-        protected void LoadScene(string json)
+        protected async Task LoadScene(string json)
         {
 
             JValue scene = JValue.Parse(json);
@@ -1265,7 +1277,7 @@ namespace ABEngine.ABERuntime
             // Assets
             var jAssets = scene["Assets"];
             AssetCache.ClearSerializeDependencies();
-            AssetCache.DeserializeAssets(jAssets);
+            await AssetCache.DeserializeAssets(jAssets);
 
             //canvas.Deserialize(scene["Canvas"].ToString());
             //projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1, -1);

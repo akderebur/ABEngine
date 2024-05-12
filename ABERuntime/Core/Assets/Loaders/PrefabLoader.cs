@@ -1,11 +1,12 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
 	internal class PrefabLoader : AssetLoader
 	{
-        internal override PrefabAsset LoadAssetRAW(byte[] data)
+        internal override async Task<Asset> LoadAssetRAW(byte[] data)
         {
             using (MemoryStream ms = new MemoryStream(data))
             using (BinaryReader br = new BinaryReader(ms))

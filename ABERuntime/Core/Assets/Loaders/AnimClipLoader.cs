@@ -1,12 +1,13 @@
 ﻿using System;
 using System.IO;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace ABEngine.ABERuntime.Core.Assets
 { 
 	internal class AnimClipLoader : AssetLoader
 	{
-        internal override Asset LoadAssetRAW(byte[] data)
+        internal override async Task<Asset> LoadAssetRAW(byte[] data)
         {
             AnimationClip clip = new AnimationClip();
 

@@ -77,6 +77,9 @@ namespace ABEngine.ABERuntime.Rendering
 
         internal void InitPostProcess()
         {
+            if (_init)
+                return;
+
             _init = true;
 
             if (fsLayout == null)
@@ -93,6 +96,8 @@ namespace ABEngine.ABERuntime.Rendering
         {
             if(BloomEnabled)
                 DestroyBloom();
+
+            _init = false;
         }
 
         internal void RecreateBloom()
@@ -437,6 +442,15 @@ layout(set = 0, binding = 2) uniform sampler SceneSampler;
 layout(location = 0) in vec2 fsTexCoord;
 layout(location = 0) out vec4 OutputColor;
 
+vec3 LinearToSRGB(vec3 rgb)
+{
+  // See https://gamedev.stackexchange.com/questions/92015/optimized-linear-to-srgb-glsl
+  return mix(1.055 * pow(rgb, vec3(1.0 / 2.4)) - 0.055,
+             rgb * 12.92,
+             lessThanEqual(rgb, vec3(0.0031308)));
+}
+
+
 void main()
 {
     vec4 hdr_color = texture(sampler2D(SceneTex, SceneSampler), fsTexCoord);
@@ -449,7 +463,7 @@ void main()
 
     // reinhard tone mapping
     vec3 mapped = color.rgb * tonemappedLuminance / luminance;
-    OutputColor = vec4(mapped, color.a);
+    OutputColor = vec4(LinearToSRGB(mapped), color.a);
     
 
     //OutputColor = vec4(color.rgb, color.a);
@@ -579,17 +593,13 @@ fn combine(existing_colorp: vec3<f32>, color_to_add: vec3<f32>, combine_constant
 }
 
 @compute @workgroup_size(8, 4, 1)
-fn cs_main(@builtin(global_invocation_id) global_invocation_id: vec3<u32>)
+fn main(@builtin(global_invocation_id) global_invocation_id: vec3<u32>)
 {
 	let mode_lod = mp.mode_lod;
 	let mode = mp.mode_lod >> 16u;
 	let lod = mp.mode_lod & 65535u;
 
-	let out_text = output_texture;
-	let in_text = input_texture;
-	let bl_text = bloom_texture;
-
-	let imgSize = textureDimensions(out_text);
+	let imgSize = textureDimensions(output_texture);
 
 	if (global_invocation_id.x <= u32(imgSize.x) && global_invocation_id.y <= u32(imgSize.y)) {
 
@@ -598,37 +608,37 @@ fn cs_main(@builtin(global_invocation_id) global_invocation_id: vec3<u32>)
 		var texCoords: vec2<f32> = vec2<f32>(f32(global_invocation_id.x) / f32(imgSize.x), f32(global_invocation_id.y) / f32(imgSize.y));
 		texCoords = texCoords + (1.0 / vec2<f32>(imgSize)) * 0.5;
 
-		let texSize = vec2<f32>(textureDimensions(in_text, i32(lod)));
+		let texSize = vec2<f32>(textureDimensions(input_texture, i32(lod)));
 		var color: vec4<f32> = vec4<f32>(1.0);
 
 		if (mode == MODE_PREFILTER)
 		{
-			color = vec4<f32>(DownsampleBox13(in_text, f32(lod), texCoords, 1.0 / texSize), 1.0);
+			color = vec4<f32>(DownsampleBox13(input_texture, f32(lod), texCoords, 1.0 / texSize), 1.0);
 			color = Prefilter(color, texCoords);
 		}
 		else if (mode == MODE_DOWNSAMPLE)
 		{
-			color = vec4<f32>(DownsampleBox13(in_text, f32(lod), texCoords, 1.0 / texSize), 1.0);
+			color = vec4<f32>(DownsampleBox13(input_texture, f32(lod), texCoords, 1.0 / texSize), 1.0);
 		}
 		else if (mode == MODE_UPSAMPLE_FIRST)
 		{
-			let bloomTexSize = textureDimensions(in_text, i32(lod) + 1);
+			let bloomTexSize = textureDimensions(input_texture, i32(lod) + 1);
 			let sampleScale = 1.0;
-			let upsampledTexture = UpsampleTent9(in_text, f32(lod) + 1.0, texCoords, 1.0 / vec2<f32>(bloomTexSize), sampleScale);
+			let upsampledTexture = UpsampleTent9(input_texture, f32(lod) + 1.0, texCoords, 1.0 / vec2<f32>(bloomTexSize), sampleScale);
 
-			let existing = textureSampleLevel(in_text, samp, texCoords, f32(lod)).rgb;
+			let existing = textureSampleLevel(input_texture, samp, texCoords, f32(lod)).rgb;
 			color = vec4<f32>(combine(existing, upsampledTexture, param.combine_constant), 1.0);
 		}
 		else if (mode == MODE_UPSAMPLE)
 		{
-			let bloomTexSize = textureDimensions(bl_text, i32(lod) + 1);
+			let bloomTexSize = textureDimensions(bloom_texture, i32(lod) + 1);
 			let sampleScale = 1.0;
-			let upsampledTexture = UpsampleTent9(bl_text, f32(lod) + 1.0, texCoords, 1.0 / vec2<f32>(bloomTexSize), sampleScale);
+			let upsampledTexture = UpsampleTent9(bloom_texture, f32(lod) + 1.0, texCoords, 1.0 / vec2<f32>(bloomTexSize), sampleScale);
 
-			let existing = textureSampleLevel(in_text, samp, texCoords, f32(lod)).rgb;
+			let existing = textureSampleLevel(input_texture, samp, texCoords, f32(lod)).rgb;
 			color = vec4<f32>(combine(existing, upsampledTexture, param.combine_constant), 1.0);
 		}
-		textureStore(out_text, vec2<i32>(global_invocation_id.xy), color);
+		textureStore(output_texture, vec2<i32>(global_invocation_id.xy), color);
 	}
 }
 ";

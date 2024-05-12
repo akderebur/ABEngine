@@ -2,12 +2,13 @@
 using Box2D.NetStandard.Collision.Shapes;
 using System.IO;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
 	internal class MeshLoader : AssetLoader
 	{
-        internal override Mesh LoadAssetRAW(byte[] data)
+        internal override async Task<Asset> LoadAssetRAW(byte[] data)
         {
             Mesh mesh = new Mesh();
             using (MemoryStream fs = new MemoryStream(data))

@@ -585,8 +585,14 @@ void main()
         private const string DepthFragment = @"
 #version 450
 
+layout(location = 0) out vec4 OutputColor;
+layout(location = 1) out vec4 OutputColor2;
+
+
 void main()
 {
+    OutputColor = vec4(1);
+    OutputColor2 = vec4(2);
     gl_FragDepth = 1.0;
 }
 ";
@@ -652,6 +658,14 @@ vec3 adjustContrast(vec3 color, float contrastFactor) {
     return (color - vec3(0.5)) * contrastFactor + vec3(0.5);
 }
 
+vec3 LinearToSRGB(vec3 rgb)
+{
+  // See https://gamedev.stackexchange.com/questions/92015/optimized-linear-to-srgb-glsl
+  return mix(1.055 * pow(rgb, vec3(1.0 / 2.4)) - 0.055,
+             rgb * 12.92,
+             lessThanEqual(rgb, vec3(0.0031308)));
+}
+
 void main()
 { 
     vec4 color = texture(sampler2D(SceneTex, SceneSampler), fsTexCoord);
@@ -663,7 +677,7 @@ void main()
     //vec3 hdrColor = color.rgb;  
     // reinhard tone mapping
     vec3 mapped = color.rgb * tonemappedLuminance / luminance;
-    OutputColor = vec4(mapped, color.a);
+    OutputColor = vec4(LinearToSRGB(mapped), color.a);
 
 
     //vec3 tonedColor = adjustSaturation(color.rgb, 1.0);

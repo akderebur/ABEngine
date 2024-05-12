@@ -1,12 +1,13 @@
 ﻿using System;
 using System.IO;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
 	internal class MaterialLoader : AssetLoader
 	{
-        internal override PipelineMaterial LoadAssetRAW(byte[] data)
+        internal override async Task<Asset> LoadAssetRAW(byte[] data)
         {
             using (MemoryStream ms = new MemoryStream(data))
             using (BinaryReader br = new BinaryReader(ms))
@@ -14,7 +15,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 string matName = br.ReadString();
                 string pipelineName = br.ReadString();
 
-                PipelineAsset pipelineAsset = AssetCache.CreatePipelineAsset(pipelineName);
+                PipelineAsset pipelineAsset = await AssetCache.CreatePipelineAsset(pipelineName);
                 PipelineMaterial mat = pipelineAsset.GetDefaultMaterial().GetCopy();
                 mat.name = matName;
 
@@ -30,7 +31,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                     uint texHash = br.ReadUInt32();
                     bool isLinear = br.ReadBoolean();
 
-                    Texture2D tex2d = AssetCache.GetOrCreateTexture2D(null, null, Vector2.Zero, texHash, isLinear);
+                    Texture2D tex2d = await AssetCache.GetOrCreateTexture2D(null, null, Vector2.Zero, texHash, isLinear);
                     mat.SetTexture(propname, tex2d);
                 }
 

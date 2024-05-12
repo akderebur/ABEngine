@@ -11,6 +11,9 @@ using ABEngine.ABERuntime.ECS;
 using Arch.Core;
 using ABEngine.ABERuntime.Components;
 using Arch.Core.Extensions;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Data;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
@@ -56,8 +59,31 @@ namespace ABEngine.ABERuntime.Core.Assets
         // Loaders
         static Dictionary<Type, AssetLoader> assetLoaders;
 
-        public static void InitAssetCache()
+        private static HttpClient _httpClient;
+
+        public static async Task<byte[]> LoadFileChunkAsync(string url, long start, long end)
         {
+            using var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
+            requestMessage.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(start, end);
+
+            var response = await _httpClient.SendAsync(requestMessage);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsByteArrayAsync();
+            }
+
+            throw new InvalidOperationException("Failed to load file chunk.");
+        }
+
+        public static async Task<byte[]> LoadFileAsync(string url)
+        {
+            return await _httpClient.GetByteArrayAsync(url);
+        }
+
+
+        public static async Task<bool> InitAssetCache(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
             assetDict = new Dictionary<uint, Asset>();
 
             // Asset Loaders
@@ -117,151 +143,146 @@ namespace ABEngine.ABERuntime.Core.Assets
                     pipelineNameToHash.Add(pipelineName, hash);
                 }
 
-                return;
+                return true;
             }
 
             // ABPK
-            FileStream fs = new FileStream(Game.AssetPath + "Assets.abhd", FileMode.Open);
-            BinaryReader br = new BinaryReader(fs);
-
-            assetDictPK = new Dictionary<uint, AssetEntry>();
-
-            int magic = br.ReadInt32();
-
-            if (magic != 1263551041) // ABPK
+            byte[] headBytes = new byte[4];
+            try
             {
-                br.Close();
-                return;
+                headBytes = await LoadFileAsync("Assets.abhd");
+            }
+            catch (Exception ex)
+            {
+                string exm = ex.Message;
             }
 
-            int sceneCount = br.ReadInt32();
-            int pipelineCount = br.ReadInt32();
-            int assetCount = br.ReadInt32();
-
-            // Scene name to hash
-            for (int i = 0; i < sceneCount; i++)
+            using (MemoryStream fs = new MemoryStream(headBytes))
+            using (BinaryReader br = new BinaryReader(fs))
             {
-                string sceneName = br.ReadString();
-                uint sceneHash = br.ReadUInt32();
+                assetDictPK = new Dictionary<uint, AssetEntry>();
 
-                sceneNameToHash.Add(sceneName, sceneHash);
-            }
+                int magic = br.ReadInt32();
 
-            // Pipeline name to hash
-            for (int i = 0; i < pipelineCount; i++)
-            {
-                string pipeName = br.ReadString();
-                uint pipeHash = br.ReadUInt32();
-
-                pipelineNameToHash.Add(pipeName, pipeHash);
-            }
-
-            // Assets
-            int offset = 0;
-            for (int a = 0; a < assetCount; a++)
-            {
-                AssetEntry asset = new AssetEntry()
+                if (magic != 1263551041) // ABPK
                 {
-                    hash = br.ReadUInt32(),
-                    size = br.ReadInt32(),
-                    offset = offset,
-                };
-                offset += asset.size;
-                assetDictPK.Add(asset.hash, asset);
+                    br.Close();
+                    return false;
+                }
+
+                int sceneCount = br.ReadInt32();
+                int pipelineCount = br.ReadInt32();
+                int assetCount = br.ReadInt32();
+
+                // Scene name to hash
+                for (int i = 0; i < sceneCount; i++)
+                {
+                    string sceneName = br.ReadString();
+                    uint sceneHash = br.ReadUInt32();
+
+                    sceneNameToHash.Add(sceneName, sceneHash);
+                }
+
+                // Pipeline name to hash
+                for (int i = 0; i < pipelineCount; i++)
+                {
+                    string pipeName = br.ReadString();
+                    uint pipeHash = br.ReadUInt32();
+
+                    pipelineNameToHash.Add(pipeName, pipeHash);
+                }
+
+                // Assets
+                int offset = 0;
+                for (int a = 0; a < assetCount; a++)
+                {
+                    AssetEntry asset = new AssetEntry()
+                    {
+                        hash = br.ReadUInt32(),
+                        size = br.ReadInt32(),
+                        offset = offset,
+                    };
+                    offset += asset.size;
+                    assetDictPK.Add(asset.hash, asset);
+                }
             }
 
-
-            pr = new BinaryReader(new FileStream(Game.AssetPath + "Assets.abpk", FileMode.Open));
+            return true;
         }
 
-        private static Texture GetTextureFromPK(uint hash)
+        private static async Task<Texture> GetTextureFromPK(uint hash)
         {
             if (!s_textures.TryGetValue(hash, out Texture tex))
             {
                 // Create Texture from asset dictionary
-
                 AssetEntry texAsset = assetDictPK[hash];
-                pr.BaseStream.Position = texAsset.offset;
-                byte[] compressed = pr.ReadBytes(texAsset.size);
+                byte[] compressed = await LoadFileChunkAsync("Assets.abpk", texAsset.offset, texAsset.offset + texAsset.size - 1);
 
-                // Decompress Data
-                using (var inputStream = new MemoryStream(compressed))
+                using (MemoryStream fs = new MemoryStream(compressed))
+                using (BinaryReader br = new BinaryReader(fs))
                 {
-                    using (var outputStream = new MemoryStream())
-                    {
-                        using (var compressionStream = new BrotliStream(inputStream, CompressionMode.Decompress))
-                        {
-                            compressionStream.CopyTo(outputStream);
-                        }
+                    int texIntType = br.ReadInt32();
+                    uint width = br.ReadUInt32();
+                    uint height = br.ReadUInt32();
+                    byte[] pixelData = br.ReadBytes(compressed.Length - 12);
 
-                        // Parse texture data
-                        BinaryReader br = new BinaryReader(outputStream);
-                        br.BaseStream.Position = 0;
+                    // Load texture
+                    tex = Game.wgil.CreateTexture(width, height, (TextureFormat)texIntType, TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST);
+                    Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
-                        int texIntType = br.ReadInt32();
-                        uint width = br.ReadUInt32();
-                        uint height = br.ReadUInt32();
-                        byte[] pixelData = br.ReadBytes((int)outputStream.Length - 12);
-
-                        // Load texture
-                        tex = Game.wgil.CreateTexture(width, height, (TextureFormat)texIntType, TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST);
-                        Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
-
-                        s_textures.Add(hash, tex);
-                    }
+                    s_textures.Add(hash, tex);
                 }
             }
 
             return tex;
         }
 
-        private static Asset LoadAssetFromPK(uint hash, AssetLoader loader)
+        private static async Task<Asset> LoadAssetFromPK(uint hash, AssetLoader loader)
         {
             AssetEntry assetEntry = assetDictPK[hash];
-            pr.BaseStream.Position = assetEntry.offset;
-            return loader.LoadAssetRAW(pr.ReadBytes(assetEntry.size));
+            byte[] bytes = await LoadFileChunkAsync("Assets.abpk", assetEntry.offset, assetEntry.offset + assetEntry.size - 1);
+            return await loader.LoadAssetRAW(bytes);
         }
 
-        private static PipelineAsset GetPipelineFromPK(uint hash)
+        private static async Task<PipelineAsset> GetPipelineFromPK(uint hash)
         {
             // Find material in asset dictionary
             AssetEntry pipeAsset = assetDictPK[hash];
-
-            pr.BaseStream.Position = pipeAsset.offset;
-            return new UserPipelineAsset(Encoding.UTF8.GetString(pr.ReadBytes(pipeAsset.size)));
+            byte[] bytes = await LoadFileChunkAsync("Assets.abpk", pipeAsset.offset, pipeAsset.offset + pipeAsset.size - 1);
+            return new UserPipelineAsset(Encoding.UTF8.GetString(bytes));
         }
 
         //General purpose
-        public static Texture2D CreateTexture2D(string texturePath)
+        public static async Task<Texture2D> CreateTexture2D(string texturePath)
         {
-            return GetOrCreateTexture2D(texturePath, Graphics.linearSampleClamp, Vector2.Zero);
+            return await GetOrCreateTexture2D(texturePath, Graphics.linearSampleClamp, Vector2.Zero);
         }
 
-        public static Texture2D CreateTexture2D(string texturePath, Sampler sampler)
+        public static async Task<Texture2D> CreateTexture2D(string texturePath, Sampler sampler)
         {
-            return GetOrCreateTexture2D(texturePath, sampler, Vector2.Zero);
+            return await GetOrCreateTexture2D(texturePath, sampler, Vector2.Zero);
         }
 
-        public static Texture2D CreateTexture2D(string texturePath, Sampler sampler, bool isLinear)
+        public static async Task<Texture2D> CreateTexture2D(string texturePath, Sampler sampler, bool isLinear)
         {
-            return GetOrCreateTexture2D(texturePath, sampler, Vector2.Zero, 0, isLinear);
+            return await GetOrCreateTexture2D(texturePath, sampler, Vector2.Zero, 0, isLinear);
         }
 
-        public static Texture2D CreateTexture2D(string texturePath, Sampler sampler, Vector2 spriteSize)
+        public static async Task<Texture2D> CreateTexture2D(string texturePath, Sampler sampler, Vector2 spriteSize)
         {
-            return GetOrCreateTexture2D(texturePath, sampler, spriteSize);
+            return await GetOrCreateTexture2D(texturePath, sampler, spriteSize);
         }
 
-        public static PipelineMaterial CreateMaterial(string matPath)
+        public static async Task<PipelineMaterial> CreateMaterial(string matPath)
         {
             var newMat = GetOrCreateAsset<PipelineMaterial>(matPath, 0);
-            return newMat;
+            return await newMat;
         }
 
-        public static PrefabAsset CreatePrefabAsset(string prefabAssetPath)
+        public static async Task<PrefabAsset> CreatePrefabAsset(string prefabAssetPath)
         {
             var newPrefab = GetOrCreateAsset<PrefabAsset>(prefabAssetPath, 0);
-            return newPrefab;
+            return await newPrefab;
         }
 
         public static SpriteClip CreateSpriteClip(string clipAssetPath)
@@ -284,17 +305,17 @@ namespace ABEngine.ABERuntime.Core.Assets
             return newClip;
         }
 
-        public static Mesh CreateMesh(string meshAssetPath)
+        public static async Task<Mesh> CreateMesh(string meshAssetPath)
         {
-            return GetOrCreateAsset<Mesh>(meshAssetPath);
+            return await GetOrCreateAsset<Mesh>(meshAssetPath);
         }
 
-        public static AnimationClip CreateAnimationClip(string clipAssetPath)
+        public static async Task<AnimationClip> CreateAnimationClip(string clipAssetPath)
         {
-            return GetOrCreateAsset<AnimationClip>(clipAssetPath);
+            return await GetOrCreateAsset<AnimationClip>(clipAssetPath);
         }
 
-        public static Transform CreateModel(string modelAssetPath)
+        public static async Task<Transform> CreateModel(string modelAssetPath)
         {
             BinaryReader br = null;
             string modAssetFolder = "";
@@ -350,7 +371,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             for (int m = 0; m < matCount; m++)
             {
                 uint matHash = br.ReadUInt32();
-                GetOrCreateAsset<PipelineMaterial>("", matHash);
+                await GetOrCreateAsset<PipelineMaterial>("", matHash);
             }
 
             int staMeshCount = br.ReadInt32();
@@ -362,8 +383,8 @@ namespace ABEngine.ABERuntime.Core.Assets
                 uint matHash = br.ReadUInt32();
                 int nodeId = br.ReadInt32();
 
-                Mesh mesh = GetOrCreateAsset<Mesh>("", meshHash);
-                PipelineMaterial material = GetOrCreateAsset<PipelineMaterial>("", matHash);
+                Mesh mesh = await GetOrCreateAsset<Mesh>("", meshHash);
+                PipelineMaterial material = await GetOrCreateAsset<PipelineMaterial>("", matHash);
 
                 SkinnedMeshRenderer mr = new SkinnedMeshRenderer(mesh, material);
                 Transform mrTrans = nodeTransforms[nodeId];
@@ -396,7 +417,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             return nodeTransforms[0];
         }
 
-        public static PipelineAsset CreatePipelineAsset(string pipelineName, params MaterialFeature[] materialFeatures)
+        public static async Task<PipelineAsset> CreatePipelineAsset(string pipelineName, params MaterialFeature[] materialFeatures)
         {
             var pipeline = Graphics.GetPipelineAssetByName(pipelineName);
             if(pipeline == null)
@@ -411,7 +432,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                     }
                     else
                     {
-                        pipeline = GetPipelineFromPK(hash);
+                        pipeline = await GetPipelineFromPK(hash);
                     }
                 }
             }
@@ -426,6 +447,26 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
 
             return pipeline;
+        }
+
+        public static async Task<string> GetSceneFile(string sceneName)
+        {
+            if (sceneNameToHash.TryGetValue(sceneName, out uint hash))
+            {
+                if (Game.debug)
+                {
+                    string filePath = hashToFName[hash];
+                    return File.ReadAllText(filePath);
+                }
+                else
+                {
+                    AssetEntry sceneAsset = assetDictPK[hash];
+                    byte[] bytes = await LoadFileChunkAsync("Assets.abpk", sceneAsset.offset, sceneAsset.offset + sceneAsset.size - 1);
+                    return Encoding.UTF8.GetString(bytes);
+                }
+            }
+
+            return null;
         }
 
         internal static Texture2D GetDefaultTexture()
@@ -474,7 +515,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         // ABE Helpers
 
-        internal static Texture2D GetOrCreateTexture2D(string texPath, Sampler sampler, Vector2 spriteSize, uint preHash = 0, bool linear = false)
+        internal static async Task<Texture2D> GetOrCreateTexture2D(string texPath, Sampler sampler, Vector2 spriteSize, uint preHash = 0, bool linear = false)
         {
             uint hash = preHash;
             if (hash == 0)
@@ -489,7 +530,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
             Texture tex = null;
             if (!Game.debug)
-                tex = GetTextureFromPK(hash);
+                tex = await GetTextureFromPK(hash);
             else
             {
                 if (preHash != 0)
@@ -527,7 +568,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 assetDict.Add(hash, asset);
         }
 
-        private static T GetOrCreateAsset<T>(string assetPath, uint preHash = 0) where T : Asset
+        private static async Task<T> GetOrCreateAsset<T>(string assetPath, uint preHash = 0) where T : Asset
         {
             T asset = GetCachedAsset<T>(assetPath, preHash, out uint hash);
 
@@ -537,12 +578,12 @@ namespace ABEngine.ABERuntime.Core.Assets
             // Not cached / Load the asset
             AssetLoader loader = assetLoaders[typeof(T)];
             if (!Game.debug)
-                asset = LoadAssetFromPK(hash, loader) as T;
+                asset = await LoadAssetFromPK(hash, loader) as T;
             else
             {
                 if (preHash != 0)
                     assetPath = hashToFName[preHash];
-                asset = loader.LoadAssetRAW(File.ReadAllBytes(Game.AssetPath + assetPath)) as T;
+                asset = await loader.LoadAssetRAW(File.ReadAllBytes(Game.AssetPath + assetPath)) as T;
             }
 
             asset.fPathHash = hash;
@@ -708,7 +749,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             return assets.Build();
         }
 
-        internal static void DeserializeAssets(JValue assets)
+        internal static async Task DeserializeAssets(JValue assets)
         {
             int assetC = assets["Count"];
            
@@ -724,16 +765,16 @@ namespace ABEngine.ABERuntime.Core.Assets
                 switch (typeID)
                 {
                     case 0: // Texture
-                        curAsset = DeserializeTexture(asset, hash);
+                        curAsset = await DeserializeTexture(asset, hash);
                         break;
                     case 1: // Material
-                        curAsset = GetOrCreateAsset<PipelineMaterial>(null, hash);
+                        curAsset = await GetOrCreateAsset<PipelineMaterial>(null, hash);
                         break;
                     case 2: // Prefab
-                        curAsset = GetOrCreateAsset<PrefabAsset>(null, hash);
+                        curAsset = await GetOrCreateAsset<PrefabAsset>(null, hash);
                         break;
                     case 3: // Mesh
-                        curAsset = GetOrCreateAsset<Mesh>(null, hash);
+                        curAsset = await GetOrCreateAsset<Mesh>(null, hash);
                         break;
                     default:
                         break;
@@ -825,13 +866,13 @@ namespace ABEngine.ABERuntime.Core.Assets
             //assetDict.Add(uberTransparent.fPathHash, uberTransparent);
         }
 
-        private static Texture2D DeserializeTexture(JValue texAsset, uint hash)
+        private static async Task<Texture2D> DeserializeTexture(JValue texAsset, uint hash)
         {
             string samplerName = texAsset["Sampler"];
             Sampler sampler = NameToSampler(samplerName);
             Vector2 spriteSize = new Vector2(texAsset["SpriteSizeX"], texAsset["SpriteSizeY"]);
 
-            return GetOrCreateTexture2D(null, sampler, spriteSize, hash);
+            return await GetOrCreateTexture2D(null, sampler, spriteSize, hash);
         }
 
 

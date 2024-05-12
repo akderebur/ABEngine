@@ -331,6 +331,7 @@ Fragment
     layout(location = 1) in vec4 fsin_Tint;
 
     layout(location = 0) out vec4 outputColor;
+    layout(location = 1) out vec4 outputColor2;
 
     void main()
     {
@@ -339,6 +340,7 @@ Fragment
 
         vec4 color = texture(sampler2D(ParticleTex, TexSampler), uv);
         outputColor = color * fsin_Tint;
+        outputColor2 = vec4(0);
     }
 }
 ";
