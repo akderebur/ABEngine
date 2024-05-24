@@ -136,7 +136,13 @@ namespace ABEngine.ABERuntime.Components
 
             isPlaying = true;
             pTime.moduleTime = 0f;
+            ModuleStart();
             SpawnInternal();
+        }
+
+        protected virtual void ModuleStart()
+        {
+            
         }
 
         int spawnC = 0;
@@ -164,6 +170,8 @@ namespace ABEngine.ABERuntime.Components
 
         public virtual void Update(float deltaTime, Transform moduleTrans)
         {
+            if (!isPlaying)
+                return;
             if(spawnRate > 0)
             {
                 spawnAcc += deltaTime;
@@ -326,6 +334,7 @@ namespace ABEngine.ABERuntime.Components
                         }
                         else
                         {
+
                             instanceCount--;
 
                             particle.lifetime = -10;
@@ -336,6 +345,7 @@ namespace ABEngine.ABERuntime.Components
                     }
                 }
 
+                particle.stripIndex = instanceCount;
                 curNode = nextNode;
             }
 
@@ -487,6 +497,16 @@ namespace ABEngine.ABERuntime.Components
         {
         }
 
+        protected virtual void SpawnUnused<T>() where T : ScriptableParticle, new()
+        {
+            T newParticle = new T();
+            newParticle.module = this;
+            newParticle.size = 1f;
+            newParticle.tintColor = Vector4.One;
+            newParticle.lifetime = -10;
+            particles.AddFirst(newParticle);
+        }
+
         protected virtual T SpawnParticle<T>() where T : ScriptableParticle, new()
         {
             ScriptableParticle reusePart = null;
@@ -508,6 +528,7 @@ namespace ABEngine.ABERuntime.Components
             if (reusePart != null)
             {
                 reusePart.age = 0;
+                reusePart.velocity = Vector3.Zero;
                 reusePart.Init();
                 return reusePart as T;
             }
@@ -565,7 +586,9 @@ namespace ABEngine.ABERuntime.Components
         {
             // Apply the force as acceleration to the particle's velocity
             Vector3 acceleration = force / 1f; // Mass
-            particle.velocity += acceleration * particle.module.GetDelta();
+            particle.velocity += acceleration;
+            //particle.position += particle.velocity * particle.module.GetDelta();
+
 
 
             Vector3 targetVelocity = force.Normalize() * 5; // assuming a maxSpeed property
@@ -575,7 +598,7 @@ namespace ABEngine.ABERuntime.Components
             particle.position += particle.velocity * particle.module.GetDelta();
 
 
-            //particle.velocity += force * particle.module.GetDelta();
+            particle.velocity += force * particle.module.GetDelta();
             //particle.transform.localPosition += particle.velocity * particle.module.GetDelta();
             particle.velocity *= 0.99f;
         }
@@ -588,9 +611,18 @@ namespace ABEngine.ABERuntime.Components
 
         public static void CurlNoise(this ScriptableParticle particle, FastNoiseLite noise, Vector3 position, float scale, float timeScale)
         {
-            float time = particle.module.GetTime() % 2f;
+            float time = particle.module.GetTime();
             particle.velocity += GlnCurlFast(noise,
                 position * 100 + Vector3.One * time * timeScale) * particle.module.GetDelta() * scale;
+            particle.position += particle.velocity * particle.module.GetDelta();
+            particle.velocity *= 0.99f;
+        }
+
+        public static void CurlNoise(this ScriptableParticle particle, FastNoiseLite noise, Vector3 position, Vector3 scale, float timeScale)
+        {
+            float time = particle.module.GetTime();
+            particle.velocity += GlnCurlFast(noise,
+                position  + Vector3.One * time * timeScale) * particle.module.GetDelta() * scale;
             particle.position += particle.velocity * particle.module.GetDelta();
             particle.velocity *= 0.99f;
         }
@@ -630,6 +662,7 @@ namespace ABEngine.ABERuntime.Components
     public abstract class ScriptableParticle
     {
         public int particleID;
+        public int stripIndex;
         public ScriptableParticleModule module;
         public Vector3 position;
         public float uvX;

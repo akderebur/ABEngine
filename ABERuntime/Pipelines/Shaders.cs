@@ -338,6 +338,12 @@ Fragment
         uv.x /= totalParticles;
 
         vec4 color = texture(sampler2D(ParticleTex, TexSampler), uv);
+
+        if(color.a < 0.1)
+            discard;
+        color.rgb *= color.a;
+        color.a = 1;
+
         outputColor = color * fsin_Tint;
     }
 }
