@@ -60,6 +60,7 @@ namespace ABEngine.ABERuntime.Components
             referenceSize = _canvasSize;
         }
 
+        // Window resize update
         public void UpdateScreenSize(Vector2 screenSize, Vector2 pixelSize)
         {
             _lastScreenSetSize = screenSize;
@@ -71,10 +72,12 @@ namespace ABEngine.ABERuntime.Components
             {
                 canvasSize = _lastScreenSetSize;
                 canvasPixelSize = _lastScreenPixelSetSize;
-                Game.RefreshProjection(this);
             }
+
+            Game.RefreshProjection(this);
         }
 
+        // Fixed Size
         public void UpdateCanvasSize(Vector2 newSize)
         {
             _lastFixedSize = newSize;
@@ -96,6 +99,11 @@ namespace ABEngine.ABERuntime.Components
         public Vector2 GetWorldSize()
         {
             return _worldSize;
+        }
+
+        public Vector2 GetScreenSize()
+        {
+            return _lastScreenSetSize;
         }
 
         public JValue Serialize()

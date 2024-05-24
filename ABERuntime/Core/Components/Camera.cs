@@ -44,7 +44,7 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
-        public bool matchCanvas { get; set; }
+        public bool matchScreen { get; set; }
         public Vector2 viewSize
         {
             get { return _viewSize; }
@@ -67,7 +67,7 @@ namespace ABEngine.ABERuntime.Components
             offset = Vector3.Zero;
             _isActive = true;
             _lastActive = _isActive;
-            matchCanvas = true;
+            matchScreen = true;
             viewSize = Vector2.One;
             viewport = new Vector4(0f, 0f, 1f, 1f);
         }
@@ -75,9 +75,9 @@ namespace ABEngine.ABERuntime.Components
         internal void OnCameraActivate()
         {
             compViewSize = viewSize;
-            if (matchCanvas)
+            if (matchScreen)
             {
-                compViewSize *= Game.canvas.canvasSize;
+                compViewSize *= Game.canvas.GetScreenSize();
             }
         }
 

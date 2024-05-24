@@ -114,7 +114,7 @@ namespace ABEngine.ABERuntime.Rendering
             const uint MODE_UPSAMPLE_FIRST = 2;
             const uint MODE_UPSAMPLE = 3;
 
-            FindMaxBloomMips((uint)Game.pixelSize.X, (uint)Game.pixelSize.Y);
+            FindMaxBloomMips((uint)Game.canvas.canvasPixelSize.X, (uint)Game.canvas.canvasPixelSize.Y);
             uniformStep = (int)wgil.GetMinUniformOffset();
             bloomGroups = new List<BindGroup>();
 
@@ -163,7 +163,7 @@ namespace ABEngine.ABERuntime.Rendering
             };
             bloomLayout = wgil.CreateBindGroupLayout(ref bloomLayoutDesc, true);
 
-            Vector2 halfSize = Game.pixelSize / 2f;
+            Vector2 halfSize = Game.canvas.canvasPixelSize / 2f;
             uint bloomW = (uint)halfSize.X;
             uint bloomH = (uint)halfSize.Y;
 

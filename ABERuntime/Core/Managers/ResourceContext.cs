@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using WGIL;
 
 namespace ABEngine.ABERuntime
@@ -29,6 +30,8 @@ namespace ABEngine.ABERuntime
         // Light
         private Texture lightRenderTexture;
         public TextureView lightRenderView;
+
+        private Vector2 _renderTextureSize;
       
 
         internal ResourceContext()
@@ -40,6 +43,8 @@ namespace ABEngine.ABERuntime
             DisposeFrameResources();
 
             var wgil = Game.wgil;
+
+            _renderTextureSize = new Vector2(width, height);
 
             TextureFormat surfaceFormat = wgil.GetSurfaceFormat();
 
@@ -112,6 +117,11 @@ namespace ABEngine.ABERuntime
         public void CopyDepthTexture()
         {
             Game.wgil.CopyTexture(normalsDepthTexture, mainDepthTexture);
+        }
+
+        public Vector2 GetRenderSize()
+        {
+            return _renderTextureSize;
         }
     }
 }

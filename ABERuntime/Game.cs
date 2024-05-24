@@ -348,67 +348,71 @@ namespace ABEngine.ABERuntime
             if (resize)
             {
                 resize = false;
-
-                // Resize render targets
-                finalQuadRSSet.Dispose();
-                foreach (var render in internalRenders)
-                    render.CleanUp(true, false, true);
-
-                resourceContext.RecreateFrameResources((uint)canvas.canvasPixelSize.X, (uint)canvas.canvasPixelSize.Y);
-
-                // Update pass attachments
-                TextureViewSet newSet = new TextureViewSet();
-
-                normalsPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
-                newSet.TextureViews = new[] { resourceContext.cameraNormalView };
-                normalsPass.UpdateColorAttachments(ref newSet);
-
-                mainPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
-                newSet.TextureViews = new[] { resourceContext.mainRenderView, resourceContext.spriteNormalsView };
-                mainPass.UpdateColorAttachments(ref newSet);
-
-             
-                newSet.TextureViews = new[] { resourceContext.lightRenderView };
-                lightPass.UpdateColorAttachments(ref newSet);
-
-                mainPPPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
-                mainPPPass.UpdateColorAttachments(ref newSet);
-
-                var finalQuadDesc = new BindGroupDescriptor()
+                bool matchRender = resourceContext.GetRenderSize() == Game.canvas.canvasPixelSize;
+                if (!matchRender)
                 {
-                    BindGroupLayout = Graphics.sharedTextureLayout,
-                    Entries = new BindResource[]
+
+                    // Resize render targets
+                    finalQuadRSSet.Dispose();
+                    foreach (var render in internalRenders)
+                        render.CleanUp(true, false, true);
+
+                    resourceContext.RecreateFrameResources((uint)canvas.canvasPixelSize.X, (uint)canvas.canvasPixelSize.Y);
+
+                    // Update pass attachments
+                    TextureViewSet newSet = new TextureViewSet();
+
+                    normalsPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
+                    newSet.TextureViews = new[] { resourceContext.cameraNormalView };
+                    normalsPass.UpdateColorAttachments(ref newSet);
+
+                    mainPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
+                    newSet.TextureViews = new[] { resourceContext.mainRenderView, resourceContext.spriteNormalsView };
+                    mainPass.UpdateColorAttachments(ref newSet);
+
+
+                    newSet.TextureViews = new[] { resourceContext.lightRenderView };
+                    lightPass.UpdateColorAttachments(ref newSet);
+
+                    mainPPPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
+                    mainPPPass.UpdateColorAttachments(ref newSet);
+
+                    var finalQuadDesc = new BindGroupDescriptor()
                     {
+                        BindGroupLayout = Graphics.sharedTextureLayout,
+                        Entries = new BindResource[]
+                        {
                         resourceContext.lightRenderView,
                         Graphics.linearSampleClamp
-                    }
-                };
+                        }
+                    };
 
-                finalQuadRSSet = wgil.CreateBindGroup(ref finalQuadDesc).SetManualDispose(true);
+                    finalQuadRSSet = wgil.CreateBindGroup(ref finalQuadDesc).SetManualDispose(true);
 
-                SetupRenderResources();
+                    SetupRenderResources();
 
-                pipelineData = new PipelineData()
-                {
-                    Projection = Matrix4x4.Identity,
-                    View = Matrix4x4.Identity,
-                    PixelSize = canvas.canvasPixelSize,
-                    Time = 0,
-                    Padding = 0f
-                };
+                    pipelineData = new PipelineData()
+                    {
+                        Projection = Matrix4x4.Identity,
+                        View = Matrix4x4.Identity,
+                        PixelSize = canvas.canvasPixelSize,
+                        Time = 0,
+                        Padding = 0f
+                    };
 
-                Graphics.RefreshMaterials();
+                    Graphics.RefreshMaterials();
 
-                //lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
+                    //lineDbgPipelineAsset = new LineDbgPipelineAsset(compositeRenderFB);
 
-                //if (debug)
-                //    colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
+                    //if (debug)
+                    //    colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
 
-                lightRenderSystem.Start();
-                //if (debug)
-                //    colDebugSystem.Start();
+                    lightRenderSystem.Start();
+                    //if (debug)
+                    //    colDebugSystem.Start();
 
-                RefreshProjection(Game.canvas);
+                    RefreshProjection(Game.canvas);
+                }
             }
         }
 
