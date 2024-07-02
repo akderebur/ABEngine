@@ -285,7 +285,7 @@ namespace ABEngine.ABERuntime
             {
                 IsColorClear = false,
                 IsDepthClear = false,
-                ClearColor = new WGIL.Color(0, 0, 0, 0),
+                ClearColor = new WGIL.Color(1, 1, 1, 1),
                 DepthAttachment = resourceContext.normalsDepthView,
                 ColorAttachments = new TextureViewSet()
                 {

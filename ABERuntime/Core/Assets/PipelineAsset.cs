@@ -795,6 +795,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             { MaterialFeature.Transparency, "HAS_TRANSPARENCY" },
             { MaterialFeature.Skinning, "HAS_SKIN" },
             { MaterialFeature.ParticleStrip, "IS_STRIP" },
+            { MaterialFeature.AdditiveBlend, "BLEND_ADDITIVE" },
         };
     }
 
@@ -834,7 +835,8 @@ namespace ABEngine.ABERuntime.Core.Assets
     {
         Transparency,
         Skinning,
-        ParticleStrip
+        ParticleStrip,
+        AdditiveBlend
     }
 }
 

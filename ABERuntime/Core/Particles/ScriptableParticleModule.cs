@@ -577,6 +577,11 @@ namespace ABEngine.ABERuntime.Components
             particle.tintColor = Vector4.Lerp(startColor, endColor, time01);
         }
 
+        public static void SetColorOverTime(this ScriptableParticle particle, ColorGradient gradient, float time01)
+        {
+            particle.tintColor = gradient.Evaluate(time01);
+        }
+
         public static void SetSize(this ScriptableParticle particle, float size)
         {
             particle.size = size;

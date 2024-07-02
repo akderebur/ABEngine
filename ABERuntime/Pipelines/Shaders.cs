@@ -231,10 +231,14 @@ Fragment
 UberParticle
 {
     @Pipeline:Particle
-    @Cull:None
+    @Cull:Back
     @RenderType:Transparent
+    #ifdef BLEND_ADDITIVE
+    @Blend:Additive
+    #else
     @Blend:Alpha
-    @DepthWrite:True
+    #endif
+    @DepthWrite:False
 
     #ifdef IS_STRIP
     @StepMode:Vertex
@@ -339,10 +343,10 @@ Fragment
 
         vec4 color = texture(sampler2D(ParticleTex, TexSampler), uv);
 
-        if(color.a < 0.1)
+        if(color.a < 0.01)
             discard;
-        color.rgb *= color.a;
-        color.a = 1;
+        //color.rgb *= color.a;
+        //color.a = 1;
 
         outputColor = color * fsin_Tint;
     }
@@ -637,6 +641,8 @@ Fragment
         if(color.a < 0.01f)
             discard;
 
+    
+
         // SHINE
         if(EnableShine == 1)
         {
@@ -663,6 +669,8 @@ Fragment
 	    //vec4 tint = blend_color(color, vec4(1, 1, 1, 1), 0.0);
         //color.rgb *= color.a;
         //color.a = 1;
+        //color.rgb *= color.a;
+
         outputColor = color;
         normalSample *= vec2(sign(fsin_ObjScale.x), sign(fsin_ObjScale.y));
         normalSample = (normalSample + 1) * 0.5;
