@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 using Arch.Core;
 using Arch.Core.Extensions;
 using System.Collections;
-using Arch.CommandBuffer;
 using Arch.Core.Utils;
 using ABEngine.ABERuntime.Core.Assets;
+using Arch.Buffer;
 
 namespace ABEngine.ABERuntime.ECS
 {
@@ -33,7 +33,7 @@ namespace ABEngine.ABERuntime.ECS
 
         public static void Init()
         {
-            cmdBuffer = new CommandBuffer(Game.GameWorld);
+            cmdBuffer = new CommandBuffer();
 
             frameSemaphore.Wait();
         }
@@ -60,7 +60,7 @@ namespace ABEngine.ABERuntime.ECS
             creationSemaphore.Wait();
             if (cmdBuffer.Size > 0)
             {
-                cmdBuffer.Playback();
+                cmdBuffer.Playback(Game.GameWorld);
             }
             creationSemaphore.Release();
 

@@ -61,7 +61,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="Crc32.NET" Version="1.2.0" />
-    <PackageReference Include="ABEngine.Arch" Version="1.2.7.1-alpha" />
+    <PackageReference Include="ABEngine.Arch" Version="1.2.8.1-alpha" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
     <PackageReference Include="Ryujinx.SDL2-CS" Version="2.28.3-build30" />
   </ItemGroup>
@@ -77,7 +77,6 @@
     <Folder Include="Systems\Base\" />
     <Folder Include="Core\MathA\" />
     <Folder Include="Core\Animation\StateMatch\" />
-    <Folder Include="Systems\Rendering\" />
     <Folder Include="Windowing\" />
     <Folder Include="Core\Particles\" />
     <Folder Include="Core\Assets\Loaders\" />
