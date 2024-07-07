@@ -344,9 +344,8 @@ namespace ABEngine.ABERuntime
 
         internal void AddGenericBatch(RenderBatch batch)
         {
-            if (!batches.ContainsKey(batch.key))
+            if (batches.TryAdd(batch.key, batch))
             {
-                batches.Add(batch.key, batch);
                 UpdateBatchPipeline(batch);
             }
         }

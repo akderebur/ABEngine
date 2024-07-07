@@ -440,7 +440,7 @@ namespace ABEngine.ABERuntime
                     {
                         BindingType = BindingType.Sampler,
                         ShaderStages = ShaderStages.FRAGMENT
-                    }
+                    },
                 }
             };
 
@@ -656,14 +656,14 @@ void main()
 { 
     vec4 color = texture(sampler2D(SceneTex, SceneSampler), fsTexCoord);
 
-    float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-    float tonemappedLuminance = luminance / (luminance + 1.0);
+    //float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+    //float tonemappedLuminance = luminance / (luminance + 1.0);
 
 
     //vec3 hdrColor = color.rgb;  
     // reinhard tone mapping
-    vec3 mapped = color.rgb * tonemappedLuminance / luminance;
-    OutputColor = vec4(mapped, color.a);
+    //vec3 mapped = color.rgb * tonemappedLuminance / luminance;
+    OutputColor = vec4(color.rgb, color.a);
 
 
     //vec3 tonedColor = adjustSaturation(color.rgb, 1.0);

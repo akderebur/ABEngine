@@ -77,22 +77,18 @@ namespace ABEngine.ABERuntime
                 return;
 
             base.Update(gameTime, deltaTime);
-
             var query = new QueryDescription().WithAll<Transform, PointLight2D>();
 
             lightCount = 0;
             lightInfos.Clear();
             Game.GameWorld.Query(in query, (ref Transform lightTrans, ref PointLight2D light) =>
             {
-
+                Vector4 sizeIntVol = new Vector4(light.radius, light.radius, light.intensity, light.volume);
                 lightInfos.Add(new LightInfo(lightTrans.worldPosition,
                                                     light.color,
-                                                    light.radius,
-                                                    light.intensity,
-                                                    light.volume,
+                                                    sizeIntVol,
                                                     light.renderLayerIndex
                                                     ));
-
                 lightCount++;
             });
         }
@@ -117,9 +113,7 @@ namespace ABEngine.ABERuntime
             // Global Light
             writemap[0] = new LightInfo(Game.activeCamTrans.worldPosition - Vector3.UnitZ,
                                                         Vector4.One,
-                                                        30,
-                                                        GlobalLightIntensity,
-                                                        0f,
+                                                        new Vector4(30, 30, GlobalLightIntensity, 0),
                                                         maxLightCount,
                                                         1);
             for (int i = 0; i < lightList.Count; i++)

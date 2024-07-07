@@ -8,37 +8,62 @@ namespace ABEngine.ABERuntime.Components
 {
 	public class SpriteAnimation
 	{
-        internal Sprite sprite;
+        internal Texture2D texture;
         internal AnimationState state;
 
         public SortedSet<int> spriteIds { get; set; }
 
         public bool isPlaying { get; set; }
 
-        public SpriteAnimation(Sprite sprite)
+        public SpriteAnimation(Texture2D texture)
 		{
-            this.sprite = sprite;
+            this.texture = texture;
             spriteIds = new SortedSet<int>();
             spriteIds.Add(0);
             RecreateState();           
             isPlaying = true;
         }
+        
+        public SpriteAnimation(Texture2D texture, SpriteClip clip)
+        {
+            this.texture = texture;
+            state = new AnimationState(clip);
+            isPlaying = true;
+        }
 
         public SpriteAnimation(Sprite sprite, SpriteClip clip)
         {
-            this.sprite = sprite;
+            this.texture = sprite.texture;
             state = new AnimationState(clip);
             isPlaying = true;
         }
 
         public SpriteAnimation(Sprite sprite, List<Vector2> poses)
         {
-            this.sprite = sprite;
-            state = new AnimationState(AssetCache.CreateSpriteClip(sprite.texture, poses));
+            this.texture = sprite.texture;
+            state = new AnimationState(AssetCache.CreateSpriteClip(texture, poses));
             isPlaying = true;
         }
 
+        public void Play()
+        {
+            isPlaying = true;
+            state.curFrame = 0;
+            state.lastFrameTime = Game.Time;
+            state.loopStartTime = Game.Time;
+            state.normalizedTime = 0f;
+        }
 
+        public void Stop()
+        {
+            isPlaying = false;
+        }
+        
+        public void Resume()
+        {
+            isPlaying = true;
+        }
+        
         internal void Refresh()
         {
             spriteIds = new SortedSet<int>();
@@ -81,9 +106,9 @@ namespace ABEngine.ABERuntime.Components
         {
             List<Vector2> poses = new List<Vector2>();
             foreach (var spriteId in spriteIds)
-                poses.Add(sprite.texture[spriteId]);
+                poses.Add(texture[spriteId]);
 
-            state = new AnimationState(AssetCache.CreateSpriteClip(sprite.texture, poses));
+            state = new AnimationState(AssetCache.CreateSpriteClip(texture, poses));
         }
 
         public void SetLooping(bool isLooping)

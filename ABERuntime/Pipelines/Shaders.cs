@@ -359,10 +359,10 @@ UberStandard
     @Pipeline:2D
     @StepMode:Instance
     @Cull:None
+    @Blend:Alpha
 
     #ifdef HAS_TRANSPARENCY
     @RenderType:Transparent
-    @Blend:Alpha
     @DepthWrite:False
     #endif
 
@@ -807,15 +807,10 @@ void main()
         vec4(0.5, -0.5, 1, 1)
     );
 
-
     layout(location = 0) in vec3 Position;
     layout(location = 1) in vec4 Color;
-    layout(location = 2) in float Radius;
-    layout(location = 3) in float Intensity;
-    layout(location = 4) in float Volume;
-    layout(location = 5) in float Layer;
-    layout(location = 6) in float Global;
-
+    layout(location = 2) in vec4 SizeIntVol;  // SizeX/SizeY/Intensity/Volume
+    layout(location = 3) in vec2 LayerType; // Layer/Type flag
 
     layout(location = 0) out vec4 fs_LightColor;
     layout(location = 1) out float fs_Intensity;
@@ -830,7 +825,7 @@ void main()
         vec2 unit_pos = unit_quad.xy;
         vec2 uv_pos = unit_quad.zw;
 
-        vec2 pos = unit_pos * Radius;
+        vec2 pos = unit_pos * SizeIntVol.xy;
         pos += Position.xy;
 
         vec3 cameraPosition = transpose(mat3(View)) * -1.0 * View[3].xyz;
@@ -839,11 +834,11 @@ void main()
         gl_Position = Projection * vec4(endPos, 1);
 
         fs_LightColor = Color;
-        fs_Intensity = Intensity;
-        fs_Volume = Volume;
+        fs_Intensity = SizeIntVol.z;
+        fs_Volume = SizeIntVol.w;
         fs_UV = uv_pos;
-        fs_Layer = Layer;
-        fs_Global = Global;
+        fs_Layer = LayerType.x;
+        fs_Global = LayerType.y;
     }
 ";
 
@@ -863,6 +858,8 @@ layout(set = 1, binding = 0) uniform texture2D MainTex;
 layout(set = 1, binding = 1) uniform sampler MainSampler;
 layout(set = 1, binding = 2) uniform texture2D NormalTex;
 layout(set = 1, binding = 3) uniform sampler NormalSampler;
+layout(set = 1, binding = 4) uniform texture2D SpriteTex;
+layout(set = 1, binding = 5) uniform sampler SpriteSampler;
 
 layout(location = 0) in vec4 fs_LightColor;
 layout(location = 1) in float fs_Intensity;

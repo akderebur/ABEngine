@@ -14,6 +14,9 @@ namespace ABEngine.ABERuntime
             var query = new QueryDescription().WithAll<SpriteAnimation, Sprite>().WithNone<Animator>();
             Game.GameWorld.Query(in query, (ref SpriteAnimation anim, ref Sprite sprite) =>
             {
+                if(!anim.isPlaying)
+                    return;
+                
                 AnimationState curState = anim.state;
                 SpriteClip curClip = curState.clip as SpriteClip;
 

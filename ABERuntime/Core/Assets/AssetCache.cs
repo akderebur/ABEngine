@@ -439,7 +439,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             byte data = 255;
             Array.Fill(pixelData, data);
 
-            int offset = 10;
+            int offset = 0;
             for (int x = 0; x < 128; x++)
             {
                 if (x < offset || x > (128 - offset))

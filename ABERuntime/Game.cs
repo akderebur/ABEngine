@@ -169,10 +169,10 @@ namespace ABEngine.ABERuntime
                 spriteBatchSystem.Render(pass, i);
 
                 // Depth Clear
-                pass.SetPipeline(Graphics.DepthClearPipeline);
+                /*pass.SetPipeline(Graphics.DepthClearPipeline);
                 pass.SetVertexBuffer(0, Graphics.fullScreenVB);
                 pass.SetIndexBuffer(Graphics.fullScreenIB, IndexFormat.Uint16);
-                pass.DrawIndexed(6);
+                pass.DrawIndexed(6);*/
             }
         }
 
@@ -301,6 +301,8 @@ namespace ABEngine.ABERuntime
 
             var lightPassDesc = new RenderPassDescriptor()
             {
+                IsDepthClear = false,
+                DepthAttachment = resourceContext.normalsDepthView,
                 IsColorClear = true,
                 ClearColor = new WGIL.Color(0f, 0f, 0f, 0f),
                 ColorAttachments = new TextureViewSet()

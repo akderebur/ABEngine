@@ -26,6 +26,12 @@ namespace ABEngine.ABERuntime.Pipelines
                         alpha = new BlendComponent() { SrcFactor = BlendFactor.One, DstFactor = BlendFactor.Zero, Operation = BlendOperation.Add }
                     }
                 },
+                DepthStencilState = new DepthStencilState()
+                {
+                    DepthTestEnabled = true,
+                    DepthWriteEnabled = false,
+                    DepthComparison = CompareFunction.Always
+                },
                 PrimitiveState = new PrimitiveState()
                 {
                     Topology = PrimitiveTopology.TriangleList,
@@ -37,6 +43,7 @@ namespace ABEngine.ABERuntime.Pipelines
                 VertexLayouts = new[] { vertLayout },
                 AttachmentDescription = new AttachmentDescription()
                 {
+                    DepthFormat =  TextureFormat.Depth32Float,
                     ColorFormats = new[] { TextureFormat.Rgba16Float }
                 }
             };

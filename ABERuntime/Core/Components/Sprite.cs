@@ -132,7 +132,7 @@ namespace ABEngine.ABERuntime.Components
         {
             this.texture = texture;
             Resize(texture.imageSize);
-            sharedMaterial = Graphics.GetUberTransparentMaterial();
+            sharedMaterial = Graphics.GetUberMaterial();
             _material = sharedMaterial;
             tintColor = Vector4.One;
         }
