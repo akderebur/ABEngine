@@ -491,7 +491,7 @@ namespace ABEngine.ABEditor
 
                         curPos.X = j * worldOffset.X + worldOffset.X / 2f;
                         gridTrans.children[childId].localScale = new Vector3(cellScale.X, cellScale.Y, 1f);
-                        gridTrans.children[childId].localPosition = new Vector3(curPos.X, curPos.Y, 0.1f);
+                        gridTrans.children[childId].localPosition = new Vector3(curPos.X, curPos.Y, -1f);
 
                         childId++;
                     }
@@ -566,7 +566,7 @@ namespace ABEngine.ABEditor
                     Entity cellEnt = Entities.CreateEntity("Cell_" + i + "_" + j, "EditorGridCell", cellSpr);
                     cellSpr.renderLayerIndex = 1;
                     cellEnt.Get<Transform>().localScale = new Vector3(cellScale.X, cellScale.Y, 1f);
-                    cellEnt.Get<Transform>().localPosition = new Vector3(curPos.X, curPos.Y, 0.1f);
+                    cellEnt.Get<Transform>().localPosition = new Vector3(curPos.X, curPos.Y, -1f);
                     cellEnt.Get<Transform>().parent = gridEnt.Get<Transform>();
                     gridCells.Add(cellEnt.Get<Transform>());
                 }

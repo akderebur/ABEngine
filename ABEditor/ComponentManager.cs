@@ -75,9 +75,8 @@ namespace ABEngine.ABEditor
         public static void AddSpriteAnimation(in Entity entity)
         {
             if (entity.Has<Sprite>())
-                entity.Add(new SpriteAnimation(entity.Get<Sprite>()));
+                entity.Add(new SpriteAnimation(entity.Get<Sprite>().texture));
         }
-
 
         public static void AddTilemap(in Entity entity)
         {

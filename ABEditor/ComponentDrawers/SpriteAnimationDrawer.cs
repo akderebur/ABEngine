@@ -89,7 +89,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
         public static void Draw(SpriteAnimation sprAnim)
         {
-            Texture2D tex = sprAnim.sprite.texture;
+            Texture2D tex = sprAnim.texture;
             bool reset = lastSprAnim != sprAnim;
             bool texReset = lastTex != tex && !reset;
 
@@ -149,7 +149,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                 lastSpriteSize = checkSize;
                 lastSprAnim = sprAnim;
-                lastTex = sprAnim.sprite.texture;
+                lastTex = sprAnim.texture;
             }
 
             if (lastCutPrWidth != cutPrWidth || lastCutPrHeight != cutPrHeight)

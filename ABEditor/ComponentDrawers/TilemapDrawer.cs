@@ -173,7 +173,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                     tileSpriteEnt.Get<Transform>().localEulerAngles = cursorSprite.Get<Transform>().localEulerAngles;
                     tileSpriteEnt.Get<Transform>().parent = lastTilemapTrans;
 
-                    tileSpriteEnt.Set<Sprite>(tileSprite);
+                    tileSpriteEnt.Add<Sprite>(tileSprite);
                     tileSprite.renderLayerIndex = Graphics.renderLayers.Count - 1;
 
                     lastTilemap.AddTile(tileSpriteEnt.Get<Transform>(), recQuad.quadId);
