@@ -237,6 +237,11 @@ namespace ABEngine.ABEditor
             imguiRenderer.WindowResized((uint)Game.pixelSize.X, (uint)Game.pixelSize.Y);
         }
 
+        protected override void OnGameClose()
+        {
+            SaveEditorSettings();
+        }
+
         protected override void Init(string windowName)
         {
             gameMode = GameMode.Editor;
@@ -684,6 +689,14 @@ namespace ABEngine.ABEditor
             });
 
             GameWorld.SubscribeComponentRemoved((in Entity entity, ref ParticleModule pm) => pm.Stop());
+           
+            GameWorld.SubscribeComponentAdded((in Entity entity, ref MeshRenderer newMr) =>
+            {
+                meshRenderSystem.AddMesh(entity.Get<Transform>(), newMr);
+            });
+
+            
+            
             //GameWorld.OnEnable((Entity entity, Sprite sprite) =>
             //{
             //    Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
@@ -719,6 +732,7 @@ namespace ABEngine.ABEditor
 
             // Start systems
             //spriteBatchSystem.Start();
+            meshRenderSystem.Start();
             lightRenderSystem.Start();
             spriteAnimSystem.Start();
             colDebugSystem.Start();

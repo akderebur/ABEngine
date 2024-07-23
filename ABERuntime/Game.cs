@@ -159,9 +159,13 @@ namespace ABEngine.ABERuntime
             normalsRenderSystem.Render(pass);
         }
 
-        void MainPassWork(RenderPass pass)
+        void AfterNormalsPassWork()
         {
             resourceContext.CopyDepthTexture();
+        }
+
+        void MainPassWork(RenderPass pass)
+        {
             if (!Graphics.render2DOnly)
                 meshRenderSystem.Render(pass);
             for (int i = 0; i < Graphics.renderLayers.Count; i++)
@@ -176,10 +180,13 @@ namespace ABEngine.ABERuntime
             }
         }
 
-        void MainPPWork(RenderPass pass)
+        void AfterMainPassWork()
         {
             resourceContext.CopyScreenTexture();
+        }
 
+        void MainPPWork(RenderPass pass)
+        {
             //pass.SetPipeline(GraphicsManager.FullScreenPipeline);
             //pass.SetBindGroup(0, mainPPQuadRSSet);
             //pass.SetVertexBuffer(0, GraphicsManager.fullScreenVB);
@@ -258,6 +265,7 @@ namespace ABEngine.ABERuntime
 
             normalsPass = wgil.CreateRenderPass(ref normalsPassDesc);
             normalsPass.JoinRenderQueue(NormalsPassWork);
+            normalsPass.onPassComplete += AfterNormalsPassWork;
 
             var mainPassDesc = new RenderPassDescriptor()
             {
@@ -278,6 +286,7 @@ namespace ABEngine.ABERuntime
 
             mainPass = wgil.CreateRenderPass(ref mainPassDesc);
             mainPass.JoinRenderQueue(MainPassWork);
+            mainPass.onPassComplete += AfterMainPassWork;
 
             // Main PostProcess
 
@@ -859,7 +868,13 @@ namespace ABEngine.ABERuntime
 
         private void Window_Closing()
         {
+            OnGameClose();
             wgil.Stop();
+        }
+
+        protected virtual void OnGameClose()
+        {
+            
         }
 
         private protected virtual void SetupComplete()

@@ -216,7 +216,6 @@ namespace ABEngine.ABEditor
                     }
                     else if (metaType.Equals(typeof(MaterialMeta)))
                     {
-
                         MaterialMeta matMeta = meta as MaterialMeta;
                         if (editMatPath != selectedAsset)
                         {

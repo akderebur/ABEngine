@@ -30,8 +30,11 @@ namespace ABEngine.ABERuntime.Core.Assets
                     uint texHash = br.ReadUInt32();
                     bool isLinear = br.ReadBoolean();
 
-                    Texture2D tex2d = AssetCache.GetOrCreateTexture2D(null, null, Vector2.Zero, texHash, isLinear);
-                    mat.SetTexture(propname, tex2d);
+                    if (texHash != 0)
+                    {
+                        Texture2D tex2d = AssetCache.GetOrCreateTexture2D(null, null, Vector2.Zero, texHash, isLinear);
+                        mat.SetTexture(propname, tex2d);
+                    }
                 }
 
                 // Vectors

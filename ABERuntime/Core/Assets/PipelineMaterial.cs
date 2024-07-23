@@ -225,8 +225,8 @@ namespace ABEngine.ABERuntime.Core.Assets
             // Cache old data
             var oldProps = shaderProps;
             var oldTextures = textures;
-            var oldPropNames = pipeline.GetPropNames();
-            var oldTexNames = pipeline.GetTextureNames();
+            var oldPropNames = pipelineAsset.GetPropNames();
+            var oldTexNames = pipelineAsset.GetTextureNames();
 
             propBuffer?.Dispose();
             foreach (var resourceSet in bindableSets.Values)

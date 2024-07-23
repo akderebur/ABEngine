@@ -73,18 +73,65 @@ namespace ABEngine.ABEditor.Assets.Meta
             {
                 bw.Write(mat.name);
                 bw.Write(mat.pipelineAsset.name);
-                bw.Write(mat.shaderProps.Count);
-                foreach (ShaderProp prop in mat.shaderProps)
+
+                // Counts dummy
+                long countPos = bw.BaseStream.Position;
+                bw.Write(0);
+                bw.Write(0);
+                bw.Write(0);
+
+                int texCount = 0;
+                int vecCount = 0;
+                int floatCount = 0;
+                
+                // Write Textures
+                foreach (var texName in mat.pipelineAsset.GetTextureNames())
                 {
-                    unsafe
-                    {
-                        var span = new Span<byte>(prop.Bytes, 24);
-                        bw.Write(span);
-                    }
+                    bw.Write(texName);
+                    bw.Write(0);
+                    bw.Write(false);
+                    texCount++;
                 }
 
-                //foreach (uint texHash in mat.texHashes)
-                //    bw.Write(texHash);
+                var propNames = mat.pipelineAsset.GetPropNames();
+                
+                // Write Vectors
+                for (int i = 0; i < mat.shaderProps.Count; i++)
+                {
+                    ShaderProp prop = mat.shaderProps[i];
+                    if(prop.SizeInBytes <= 4)
+                        continue;
+
+                    string propName = propNames[i];
+                    bw.Write(propName);
+                    
+                    unsafe
+                    {
+                        var span = new Span<byte>(prop.Bytes, 16);
+                        bw.Write(span);
+                    }
+
+                    vecCount++;
+                }
+                
+                // Write Floats
+                for (int i = 0; i < mat.shaderProps.Count; i++)
+                {
+                    ShaderProp prop = mat.shaderProps[i];
+                    if(prop.SizeInBytes > 4)
+                        continue;
+
+                    string propName = propNames[i];
+                    bw.Write(propName);
+                    
+                    bw.Write(prop.Float1);
+                    floatCount++;
+                }
+
+                bw.BaseStream.Position = countPos;
+                bw.Write(texCount);
+                bw.Write(vecCount);
+                bw.Write(floatCount);
 
                 return ms.ToArray();
             }
