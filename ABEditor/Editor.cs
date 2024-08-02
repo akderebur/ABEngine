@@ -145,6 +145,30 @@ namespace ABEngine.ABEditor
             imguiRenderer.Update(elapsed, inputData);
 
             Entities.CheckEntityChanges();
+            
+            if (!ImGui.GetIO().WantCaptureKeyboard)
+            {
+                if (Input.GetKey(Key.ArrowUp))
+                {
+                    zoomFactor = Math.Clamp(zoomFactor - elapsed * zoomSpeed, 0.2f, 1.8f);
+                    Zoom();
+                }
+                else if (Input.GetKey(Key.ArrowDown))
+                {
+                    zoomFactor = Math.Clamp(zoomFactor + elapsed * zoomSpeed, 0.2f, 1.8f);
+                    Zoom();
+                }
+            }
+
+            if (!ImGui.GetIO().WantCaptureMouse)
+            {
+                if (Input.MouseScrollDelta != 0)
+                {
+                    zoomFactor = Math.Clamp(zoomFactor - elapsed * -Input.MouseScrollDelta, 0.2f, 1.8f);
+                    Zoom();
+                }
+            }
+
 
             UpdateEditorUI();
 
