@@ -116,6 +116,18 @@ namespace ABEngine.ABERuntime.Core.Assets
                     string pipelineName = content.Substring(0, bracketInd).Trim();
                     pipelineNameToHash.Add(pipelineName, hash);
                 }
+                
+                // Get glsl includes
+                files = fileEnum.Where(s => s.ToLower().EndsWith(".glsl"));
+                foreach (var file in files)
+                {
+                    string localPath = file.ToCommonPath().Replace(commonAssetPath, "");
+                    uint hash = localPath.ToHash32();
+                    hashToFName.Add(hash, localPath);
+                    
+                    string includeName = Path.GetFileNameWithoutExtension(file);
+                    pipelineNameToHash.Add(includeName, hash);
+                }
 
                 return;
             }
@@ -228,6 +240,14 @@ namespace ABEngine.ABERuntime.Core.Assets
             AssetEntry pipeAsset = assetDictPK[hash];
             pr.BaseStream.Position = pipeAsset.offset;
             return new UserPipelineAsset(Encoding.UTF8.GetString(pr.ReadBytes(pipeAsset.size)));
+        }
+        
+        private static string GetShaderIncludeFromPK(uint hash)
+        {
+            // Find shader include in asset dictionary
+            AssetEntry pipeAsset = assetDictPK[hash];
+            pr.BaseStream.Position = pipeAsset.offset;
+            return Encoding.UTF8.GetString(pr.ReadBytes(pipeAsset.size));
         }
 
         //General purpose
@@ -393,6 +413,24 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
 
             return nodeTransforms[0];
+        }
+
+        internal static string GetUserShaderInclude(string includeName)
+        {
+            if (pipelineNameToHash.TryGetValue(includeName, out uint hash))
+            {
+                if (Game.debug)
+                {
+                    string filePath = hashToFName[hash];
+                    return File.ReadAllText(Game.AssetPath.ToCommonPath() + filePath);
+                }
+                else
+                {
+                    return GetShaderIncludeFromPK(hash);
+                }
+            }
+
+            return "";
         }
 
         public static PipelineAsset CreatePipelineAsset(string pipelineName, params MaterialFeature[] materialFeatures)

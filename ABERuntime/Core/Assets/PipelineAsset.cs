@@ -173,7 +173,15 @@ namespace ABEngine.ABERuntime.Core.Assets
                         }
                         else
                         {
-                            // TODO Check user include
+                            //  Check user include
+                            int userIncStart = incParam.IndexOf('"');
+                            int userIncEnd = incParam.LastIndexOf('"');
+                            if (userIncEnd > userIncStart)
+                            {
+                                int length = userIncEnd - userIncStart - 1;
+                                string incName = incParam.Substring(userIncStart + 1, length);
+                                sb.AppendLine(AssetCache.GetUserShaderInclude(incName));
+                            }
                         }
                     }
                     else
