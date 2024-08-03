@@ -47,7 +47,7 @@ namespace ABEngine.ABERuntime.Pipelines
 
             pipeline = Game.wgil.CreateRenderPipeline(shaders[0], shaders[1], ref normalsPipeDesc);
 
-            var skinVariant = this.GetPipelineVariant("*HAS_SKIN");
+            var skinVariant = this.GetPipelineVariant("HAS_SKIN");
             normalsPipeDesc.VertexLayouts = new VertexLayout[] { skinVariant.GetVertexLayout() };
 
             skinVariant.BuildPipeline(ref normalsPipeDesc);

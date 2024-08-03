@@ -29,12 +29,18 @@ namespace ABEngine.ABERuntime.Components
         {
             this.mesh = mesh;
 
-            bool skinSupport = material.pipelineAsset.DefineKey.Contains("*HAS_SKIN");
+            bool skinSupport = material.pipelineAsset.HasFeature(MaterialFeature.Skinning);
             if(!skinSupport)
             {
-                var skinVariant = material.pipelineAsset.GetPipelineVariant("*HAS_SKIN" + material.pipelineAsset.DefineKey);
-                if (skinVariant != null)
-                    material.ChangePipeline(skinVariant);
+                int skinDefineIndex = material.pipelineAsset.GetDefineIndex("HAS_SKIN");
+                if (skinDefineIndex > -1)
+                {
+                    int defineHash = material.pipelineAsset.DefineHash;
+                    defineHash |= (1 << skinDefineIndex);
+                    var skinVariant = material.pipelineAsset.GetPipelineVariant(defineHash);
+                    if (skinVariant != null)
+                        material.ChangePipeline(skinVariant);
+                }
             }
             this.material = material;
 

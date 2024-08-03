@@ -202,6 +202,14 @@ namespace ABEngine.ABERuntime
             lightRenderSystem.Render(pass);
         }
 
+        void PreFinalWork()
+        {
+            if (activePostProcess != null && activePostProcess.BloomEnabled)
+            {
+                activePostProcess.BloomWork.BeginCompute();
+            }
+        }
+
         void FinalPassWork(RenderPass pass)
         {
             if (Game.activeCamera != null)
@@ -222,8 +230,6 @@ namespace ABEngine.ABERuntime
             else
             {
                 // Post Process - HDR
-                activePostProcess.BloomWork.BeginCompute();
-
                 pass.SetPipeline(PostProcess.fsPipeline);
                 pass.SetBindGroup(0, activePostProcess.fsBindGroup);
                 pass.SetVertexBuffer(0, Graphics.fullScreenVB);
@@ -325,6 +331,7 @@ namespace ABEngine.ABERuntime
 
             lightPass = wgil.CreateRenderPass(ref lightPassDesc);
             lightPass.JoinRenderQueue(LightPassWork);
+            lightPass.onPassComplete += PreFinalWork;
 
             var fsPassDesc = new RenderPassDescriptor()
             {
@@ -384,6 +391,7 @@ namespace ABEngine.ABERuntime
 
                     newSet.TextureViews = new[] { resourceContext.lightRenderView };
                     lightPass.UpdateColorAttachments(ref newSet);
+                    lightPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
 
                     mainPPPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
                     mainPPPass.UpdateColorAttachments(ref newSet);

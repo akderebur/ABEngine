@@ -17,6 +17,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         public string name;
         protected string defaultMatName;
 
+        protected PipelineAsset baseAsset;
         public RenderPipeline pipeline;
 
         // Description
@@ -36,9 +37,10 @@ namespace ABEngine.ABERuntime.Core.Assets
         public RenderOrder renderOrder { get; protected set; }
         public RenderType renderType { get; protected set; }
 
-        public string DefineKey { get; protected set; }
+        public int DefineHash { get; protected set; }
 
-        Dictionary<string, VariantPipelineAsset> pipelineVariants;
+        Dictionary<int, VariantPipelineAsset> pipelineVariants;
+        protected Dictionary<string, int> defineMap;
 
         public PipelineAsset()
         {
@@ -48,12 +50,31 @@ namespace ABEngine.ABERuntime.Core.Assets
             resourceLayouts = new List<BindGroupLayout>();
             propNames = new Dictionary<string, int>();
             textureNames = new Dictionary<string, int>();
+            defineMap = new Dictionary<string, int>();
             defaultMatName = "NoName";
-            DefineKey = "";
 
             renderOrder = RenderOrder.Opaque;
             renderType = RenderType.Opaque;
+        }
 
+        public bool HasDefine(string defineName)
+        {
+            return baseAsset != this && defineMap.ContainsKey(defineName);
+        }
+
+        public bool HasFeature(MaterialFeature feature)
+        {
+            return HasDefine(MatFeatureToKey[feature]);
+        }
+
+        internal int GetDefineIndex(string defineName)
+        {
+            if(baseAsset == this)
+            {
+                return defineMap.GetValueOrDefault(defineName, -1);
+            }
+
+            return baseAsset.GetDefineIndex(defineName);
         }
 
         public virtual void BindPipeline(RenderPass pass)
@@ -61,9 +82,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             pass.SetPipeline(pipeline);
             pass.SetBindGroup(0, Game.pipelineSet);
         }
-
         
-
         public virtual void BindPipeline(RenderPass pass, int bindC, params BindGroup[] bindGroups)
         {
             pass.SetPipeline(pipeline);
@@ -95,10 +114,10 @@ namespace ABEngine.ABERuntime.Core.Assets
             "ivec4" => VertexFormat.Sint32x4,
             _ => VertexFormat.Float32
         };
-
-        public VariantPipelineAsset GetPipelineVariant(string defineKey)
+        
+        internal VariantPipelineAsset GetPipelineVariant(int defineHash)
         {
-            if (pipelineVariants != null && pipelineVariants.TryGetValue(defineKey, out VariantPipelineAsset variant))
+            if (baseAsset?.pipelineVariants != null && baseAsset.pipelineVariants.TryGetValue(defineHash, out VariantPipelineAsset variant))
             {
                 if (!variant.IsBuilt)
                     variant.Build();
@@ -106,6 +125,20 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
 
             return null;
+        }
+
+        internal VariantPipelineAsset GetPipelineVariant(params string[] defines)
+        {
+            int defineHash = 0;
+            foreach (var define in defines)
+            {
+                if (defineMap.TryGetValue(define, out int defineIndex))
+                {
+                    defineHash |= (1 << defineIndex);
+                }
+            }
+
+            return GetPipelineVariant(defineHash);
         }
 
         protected void ParseAsset(string pipelineAsset, bool readDescriptor = true)
@@ -162,21 +195,25 @@ namespace ABEngine.ABERuntime.Core.Assets
                     if(line.StartsWith("#ifdef "))
                     {
                         string defVar = line.Replace("#ifdef ", "").Trim();
-                        if(!defines.ContainsKey(defVar))
+                        if (!defines.ContainsKey(defVar))
+                        {
                             defines.Add(defVar, false);
+                            defineMap.Add(defVar, defineMap.Count);
+                        }
                     }
                 }
                 else
                     break;
             }
-
+            
             int variantCount = (int)MathF.Pow(2, defines.Count);
+            baseAsset = this;
 
             if (variantCount == 1)
-                ParseAsset(source, readDescriptor, "");
+                ParseAsset(source, readDescriptor, 0);
             else
             {
-                pipelineVariants = new Dictionary<string, VariantPipelineAsset>();
+                pipelineVariants = new Dictionary<int, VariantPipelineAsset>();
 
                 // Create each variant
                 List<string> keys = defines.Keys.ToList();
@@ -188,19 +225,18 @@ namespace ABEngine.ABERuntime.Core.Assets
                     bool defineChain = true;
                     bool elseBlock = false;
 
+                    Dictionary<string, int> variantDefineMap = new();
+                    
                     // Set defines
-                    string defineKey = "";
-                    string binary = Convert.ToString(i, 2).PadLeft(defines.Count, '0');
-                    int index = binary.Length - 1;
                     foreach (var key in keys)
                     {
-                        bool hasKey = binary[index] == '0' ? false : true;
+                        int defineIndex = defineMap[key];
+                        bool hasKey = ((i >> defineIndex) & 1) == 1;
                         defines[key] = hasKey;
-                        index--;
 
                         if (hasKey)
-                            defineKey += "*" + key;
-                    }                        
+                            variantDefineMap.Add(key, defineIndex);
+                    }
 
                     while (true)
                     {
@@ -208,7 +244,13 @@ namespace ABEngine.ABERuntime.Core.Assets
                         if (orgLine != null)
                         {
                             string line = orgLine.Trim();
-                            if (line.StartsWith("#ifdef "))
+                            if (line.StartsWith("#define "))
+                            {
+                                string defVar = line.Replace("#define ", "").Trim();
+                                if (defines.ContainsKey(defVar))
+                                    defines[defVar] = true;
+                            }
+                            else if (line.StartsWith("#ifdef "))
                             {
                                 string defVar = line.Replace("#ifdef ", "").Trim();
                                 defStack.Push(defVar);
@@ -246,18 +288,20 @@ namespace ABEngine.ABERuntime.Core.Assets
 
                     // Default - No defines
                     if(i == 0)
-                        ParseAsset(sb.ToString(), readDescriptor, defineKey);
+                        ParseAsset(sb.ToString(), readDescriptor, i);
                     else
                     {
                         // Variant
-                        VariantPipelineAsset variant = new VariantPipelineAsset(sb.ToString(), readDescriptor, defineKey);
-                        pipelineVariants.Add(defineKey, variant);
+                        VariantPipelineAsset variant = new VariantPipelineAsset(sb.ToString(), readDescriptor, i);
+                        variant.defineMap = variantDefineMap;
+                        variant.baseAsset = this;
+                        pipelineVariants.Add(i, variant);
                     }
                 }
             }
         }
 
-        protected void ParseAsset(string pipelineAsset, bool readDescriptor, string defineKey)
+        protected void ParseAsset(string pipelineAsset, bool readDescriptor, int defineHash)
         {
             var wgil = Game.wgil;
 
@@ -275,10 +319,8 @@ namespace ABEngine.ABERuntime.Core.Assets
             bool pipeline3d = false;
             bool isPP = false;
 
-            bool useSkin = defineKey.Contains("HAS_SKIN");
             bool useInstance = false;
-
-
+            
             // Descriptor Defaults
             VertexStepMode stepMode = VertexStepMode.Vertex;
 
@@ -325,8 +367,12 @@ namespace ABEngine.ABERuntime.Core.Assets
                     {
                         if (sectionIndex == -2)
                         {
-                            if(defaultMatName.Equals("NoName"))
-                                defaultMatName = lastLine + defineKey;
+                            if (defaultMatName.Equals("NoName"))
+                            {
+                                defaultMatName = lastLine;
+                                if (defineHash > 0)
+                                    defaultMatName += defineHash;
+                            }
                             sectionIndex = 0;
                         }
                         else if (lastLine.Equals("Vertex"))
@@ -806,16 +852,16 @@ namespace ABEngine.ABERuntime.Core.Assets
         private string pipelineSource;
         private bool readDescriptor;
 
-        public VariantPipelineAsset(string assetContent, bool readDescriptor, string defineKey) : base()
+        public VariantPipelineAsset(string assetContent, bool readDescriptor, int defineHash) : base()
         {
             this.pipelineSource = assetContent;
             this.readDescriptor = readDescriptor;
-            this.DefineKey = defineKey;
+            this.DefineHash = defineHash;
         }
 
         public void Build()
         {
-            base.ParseAsset(pipelineSource, readDescriptor, DefineKey);
+            base.ParseAsset(pipelineSource, readDescriptor, DefineHash);
             pipelineSource = null;
             IsBuilt = true;
         }

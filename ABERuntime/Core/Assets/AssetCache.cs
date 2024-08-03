@@ -417,11 +417,13 @@ namespace ABEngine.ABERuntime.Core.Assets
 
             if(pipeline != null && materialFeatures.Length > 0)
             {
-                string defineKey = "";
-                foreach (var feature in materialFeatures)
-                    defineKey += "*" + PipelineAsset.MatFeatureToKey[feature];
-
-                pipeline = pipeline.GetPipelineVariant(defineKey);
+                string[] defines = new string[materialFeatures.Length];
+                for (int i = 0; i < defines.Length; i++)
+                {
+                    defines[i] = PipelineAsset.MatFeatureToKey[materialFeatures[i]];;
+                }
+                
+                pipeline = pipeline.GetPipelineVariant(defines);
             }
 
             return pipeline;

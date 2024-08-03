@@ -114,7 +114,7 @@ namespace ABEngine.ABERuntime.Components
 
         public void Play()
         {
-            bool isStrip = _particleMaterial.pipelineAsset.DefineKey.Contains("*IS_STRIP");
+            bool isStrip = _particleMaterial.pipelineAsset.HasFeature(MaterialFeature.ParticleStrip);
             if (isStrip)
             {
                 particleBatch = new StripParticleBatch(this, 0, 0);

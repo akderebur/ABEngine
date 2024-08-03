@@ -118,7 +118,7 @@ namespace ABEngine.ABERuntime
         public static PipelineMaterial GetUberTransparentMaterial()
         {
             var uberPipeline = pipelineAssets["UberStandard"];
-            var uberTransPipeline = uberPipeline.GetPipelineVariant("*HAS_TRANSPARENCY");
+            var uberTransPipeline = uberPipeline.GetPipelineVariant("HAS_TRANSPARENCY");
             return uberTransPipeline.GetDefaultMaterial();
         }
 
