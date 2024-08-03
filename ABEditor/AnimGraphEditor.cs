@@ -362,7 +362,7 @@ namespace ABEngine.ABEditor
                     int srcIndex = dataPtr[0];
 
                     var clipFilePath = AssetsFolderView.files[srcIndex];
-                    Node exNode = nodes.FirstOrDefault(n => n.AnimState.clip.ClipAssetPath.Equals(clipFilePath));
+                    Node exNode = nodes.FirstOrDefault(n => n.AnimState.clip.GetHashCode().Equals(clipFilePath));
 
                     if(exNode == null)
                     {
@@ -580,10 +580,10 @@ namespace ABEngine.ABEditor
                 {
                     var state = node.AnimState;
                     var clip = state.clip;
-                    if ((gameTime - state.SampleFreq) > state.lastFrameTime)
+                    if ((gameTime - state.sampleFreq) > state.lastFrameTime)
                     {
                         state.curFrame++;
-                        if (state.curFrame >= clip.FrameCount)
+                        if (state.curFrame >= clip.frameCount)
                             state.curFrame = 0;
                         state.lastFrameTime = gameTime;
 

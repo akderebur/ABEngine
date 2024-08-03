@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Text;
-using Newtonsoft.Json;
 using System.Runtime.CompilerServices;
 using Halak;
 using WGIL;
@@ -17,8 +15,8 @@ namespace ABEngine.ABERuntime.Core.Assets
     {
         public int instanceID;
 
-        private BindGroupLayout propLayout;
-        private BindGroupLayout texLayout;
+        private BindGroupLayout _propLayout;
+        private BindGroupLayout _texLayout;
         public PipelineAsset pipelineAsset;
 
         internal List<ShaderProp> shaderProps;
@@ -26,25 +24,25 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public uint shaderPropBufferSize;
 
-        private BindResource[] texResources;
-        private Buffer propBuffer;
+        private BindResource[] _texResources;
+        private Buffer _propBuffer;
 
         public Dictionary<int, BindGroup> bindableSets = new Dictionary<int, BindGroup>();
-        private BindGroup propSet;
-        private BindGroup textureSet;
+        private BindGroup _propSet;
+        private BindGroup _textureSet;
         public bool isLateRender = false;
         public int renderOrder { get; private set; }
 
-        private byte[] shaderPropData;
+        private byte[] _shaderPropData;
 
-        internal event Action<PipelineAsset> onPipelineChanged;
+        internal event Action<PipelineAsset> OnPipelineChanged;
 
         public PipelineMaterial(PipelineAsset pipelineAsset, BindGroupLayout propLayout, BindGroupLayout texLayout)
         {
             this.pipelineAsset = pipelineAsset;
             this.instanceID = Graphics.GetPipelineMaterialCount();
-            this.propLayout = propLayout;
-            this.texLayout = texLayout;
+            this._propLayout = propLayout;
+            this._texLayout = texLayout;
             name = pipelineAsset.name + "_" + instanceID;
 
             Graphics.AddPipelineMaterial(this);
@@ -55,28 +53,28 @@ namespace ABEngine.ABERuntime.Core.Assets
         public void SetRenderOrder(int renderOrder)
         {
             this.renderOrder = renderOrder;
-            onPipelineChanged?.Invoke(this.pipelineAsset);
+            OnPipelineChanged?.Invoke(this.pipelineAsset);
         }
 
         public void SetRenderOrder(RenderOrder renderOrder)
         {
             this.renderOrder = (int)renderOrder;
-            onPipelineChanged?.Invoke(this.pipelineAsset);
+            OnPipelineChanged?.Invoke(this.pipelineAsset);
         }
 
         internal void SetShaderPropBuffer(List<ShaderProp> shaderProps, uint bufferSize)
         {
             this.shaderProps = shaderProps;
 
-            if (propLayout == null)
+            if (_propLayout == null)
                 return;
 
             this.shaderPropBufferSize = (uint)(MathF.Ceiling(bufferSize / 16f) * 16);
-            this.shaderPropData = new byte[this.shaderPropBufferSize];
+            this._shaderPropData = new byte[this.shaderPropBufferSize];
 
             unsafe
             {
-                fixed (byte* dataPtr = shaderPropData)
+                fixed (byte* dataPtr = _shaderPropData)
                 {
                     byte* tempPtr = dataPtr;
                     foreach (var prop in shaderProps)
@@ -87,20 +85,20 @@ namespace ABEngine.ABERuntime.Core.Assets
                 }
             }
 
-            propBuffer = Game.wgil.CreateBuffer((int)this.shaderPropBufferSize, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
+            _propBuffer = Game.wgil.CreateBuffer((int)this.shaderPropBufferSize, BufferUsages.UNIFORM | BufferUsages.COPY_DST);
 
             BindGroupDescriptor propSetDesc = new BindGroupDescriptor()
             {
-                BindGroupLayout = this.propLayout,
+                BindGroupLayout = this._propLayout,
                 Entries = new[]
                 {
-                    propBuffer   
+                    _propBuffer   
                 }
             };
 
-            propSet = Game.wgil.CreateBindGroup(ref propSetDesc);
-            Game.wgil.WriteBuffer(propBuffer, this.shaderPropData, 0, this.shaderPropData.Length);
-            bindableSets.Add(2, propSet);
+            _propSet = Game.wgil.CreateBindGroup(ref propSetDesc);
+            Game.wgil.WriteBuffer(_propBuffer, this._shaderPropData, 0, this._shaderPropData.Length);
+            bindableSets.Add(2, _propSet);
         }
 
         internal void SetShaderTextureResources(List<string> textureNames)
@@ -145,22 +143,22 @@ namespace ABEngine.ABERuntime.Core.Assets
                     index++;
                 }
 
-                texResources = resources;
-                if(textureSet != null)
-                    textureSet.Dispose();
+                _texResources = resources;
+                if(_textureSet != null)
+                    _textureSet.Dispose();
 
                 var textureSetDesc = new BindGroupDescriptor()
                 {
-                    BindGroupLayout = texLayout,
-                    Entries = texResources
+                    BindGroupLayout = _texLayout,
+                    Entries = _texResources
                 };
 
-                textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
+                _textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
 
-                if(propLayout != null)
-                    bindableSets.Add(3, textureSet);
+                if(_propLayout != null)
+                    bindableSets.Add(3, _textureSet);
                 else
-                    bindableSets.Add(2, textureSet);
+                    bindableSets.Add(2, _textureSet);
             }
         }
 
@@ -170,24 +168,24 @@ namespace ABEngine.ABERuntime.Core.Assets
             if(texNameInd > -1)
             {
                 int texInd = texNameInd * 2;
-                texResources[texInd] = tex2d.GetView();
-                texResources[texInd + 1] = tex2d.textureSampler;
+                _texResources[texInd] = tex2d.GetView();
+                _texResources[texInd + 1] = tex2d.textureSampler;
                 textures[texNameInd] = tex2d;
-                if(textureSet != null)
-                    textureSet.Dispose();
+                if(_textureSet != null)
+                    _textureSet.Dispose();
 
                 var textureSetDesc = new BindGroupDescriptor()
                 {
-                    BindGroupLayout = texLayout,
-                    Entries = texResources
+                    BindGroupLayout = _texLayout,
+                    Entries = _texResources
                 };
 
-                textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
+                _textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
 
-                if(propLayout != null)
-                    bindableSets[3] = textureSet;
+                if(_propLayout != null)
+                    bindableSets[3] = _textureSet;
                 else
-                    bindableSets[2] = textureSet;
+                    bindableSets[2] = _textureSet;
             }
         }
 
@@ -197,7 +195,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             if (texNameInd > -1)
             {
                 int texInd = texNameInd * 2;
-                return texResources[texInd] as TextureView;
+                return _texResources[texInd] as TextureView;
             }
 
             return AssetCache.GetDefaultTexture().GetView();
@@ -205,7 +203,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public PipelineMaterial GetCopy()
         {
-            var matCopy = new PipelineMaterial(this.pipelineAsset, this.propLayout, this.texLayout);
+            var matCopy = new PipelineMaterial(this.pipelineAsset, this._propLayout, this._texLayout);
             matCopy.SetShaderPropBuffer(this.shaderProps.ToList(), this.shaderPropBufferSize);
             matCopy.SetShaderTextureResources(this.pipelineAsset.GetTextureNames());
             matCopy.renderOrder = this.renderOrder;
@@ -228,7 +226,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             var oldPropNames = pipelineAsset.GetPropNames();
             var oldTexNames = pipelineAsset.GetTextureNames();
 
-            propBuffer?.Dispose();
+            _propBuffer?.Dispose();
             foreach (var resourceSet in bindableSets.Values)
                 resourceSet.Dispose();
             bindableSets.Clear();
@@ -236,8 +234,8 @@ namespace ABEngine.ABERuntime.Core.Assets
             var refMat = pipeline.refMaterial;
 
             this.pipelineAsset = pipeline;
-            this.propLayout = refMat.propLayout;
-            this.texLayout = refMat.texLayout;
+            this._propLayout = refMat._propLayout;
+            this._texLayout = refMat._texLayout;
 
             this.SetShaderPropBuffer(refMat.shaderProps.ToList(), refMat.shaderPropBufferSize);
             this.SetShaderTextureResources(pipeline.GetTextureNames());
@@ -255,7 +253,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                     this.SetTexture(oldTexNames[i], tex);
             }
 
-            onPipelineChanged?.Invoke(pipeline);
+            OnPipelineChanged?.Invoke(pipeline);
         }
 
         internal void UpdateSampledTextures()
@@ -267,31 +265,31 @@ namespace ABEngine.ABERuntime.Core.Assets
                 foreach (var textureName in textureNames)
                 {
                     if (textureName.Equals("ScreenTex"))
-                        texResources[index] = Game.resourceContext.mainPPView;
+                        _texResources[index] = Game.resourceContext.mainPPView;
                     else if (textureName.Equals("DepthTex"))
-                        texResources[index] = Game.normalsRenderSystem.GetDepthAttachment();
+                        _texResources[index] = Game.normalsRenderSystem.GetDepthAttachment();
                     else if(textureName.Equals("CamNormalTex"))
-                        texResources[index] = Game.normalsRenderSystem.GetMainColorAttachent();
+                        _texResources[index] = Game.normalsRenderSystem.GetMainColorAttachent();
 
                     index++;
                     index++;
                 }
 
-                if (textureSet != null)
-                    textureSet.Dispose();
+                if (_textureSet != null)
+                    _textureSet.Dispose();
 
                 var textureSetDesc = new BindGroupDescriptor()
                 {
-                    BindGroupLayout = texLayout,
-                    Entries = texResources
+                    BindGroupLayout = _texLayout,
+                    Entries = _texResources
                 };
 
-                textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
+                _textureSet = Game.wgil.CreateBindGroup(ref textureSetDesc);
 
-                if (propLayout != null)
-                    bindableSets[3] = textureSet;
+                if (_propLayout != null)
+                    bindableSets[3] = _textureSet;
                 else
-                    bindableSets[2] = textureSet;
+                    bindableSets[2] = _textureSet;
             }
         }
 
@@ -327,14 +325,14 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         private unsafe void UpdatePropBuffer(int offset, byte* data, uint size)
         {
-            fixed (byte* dataPtr = shaderPropData)
+            fixed (byte* dataPtr = _shaderPropData)
             {
                 byte* tempPtr = dataPtr;
                 tempPtr = dataPtr + offset;
                 Unsafe.CopyBlock(tempPtr, data, size);
             }
 
-            Game.wgil.WriteBuffer(propBuffer, this.shaderPropData);
+            Game.wgil.WriteBuffer(_propBuffer, this._shaderPropData);
         }
 
         internal override JValue SerializeAsset()

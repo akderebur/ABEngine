@@ -394,7 +394,7 @@ namespace ABEngine.ABERuntime
                 Vector3 dir = RotateByQuaternion(-Vector3.UnitZ, transform.worldRotation);
                 light.direction = dir;
 
-                lightInfos[lightC++] = new LightInfo3D() { Color = light.color.ToVector3(), Position = dir, Intensity = light.Intensity };
+                lightInfos[lightC++] = new LightInfo3D() { Color = light.color.ToVector3(), Position = dir, Intensity = light.intensity };
                 dirLightC++;
             });
 
@@ -473,7 +473,7 @@ namespace ABEngine.ABERuntime
                     pass.SetVertexBuffer(0, mesh.vertexBuffer);
                     pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                    pass.DrawIndexed(mesh.Indices.Length, meshGroup.renderCount);
+                    pass.DrawIndexed(mesh.indices.Length, meshGroup.renderCount);
 
                     groupID++;
                 }
@@ -505,7 +505,7 @@ namespace ABEngine.ABERuntime
                     pass.SetVertexBuffer(0, mesh.vertexBuffer);
                     pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                    pass.DrawIndexed(mesh.Indices.Length, meshGroup.renderCount);
+                    pass.DrawIndexed(mesh.indices.Length, meshGroup.renderCount);
 
                     groupID++;
                 }

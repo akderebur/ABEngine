@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.IO;
 using System.Linq;
-using System.Numerics;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Pipelines;
@@ -29,60 +24,48 @@ namespace ABEngine.ABERuntime
         // Settings
         //public static TextureSampleCount msaaSampleCount { get; set; }
 
-        static bool _render2DOnly;
-        public static bool render2DOnly
-        {
-            get { return _render2DOnly; }
-            set
-            {
-                _render2DOnly = value;
-                //Game.Instance.Toggle3D(!value);
-            }
-        }
+        public static bool render2DOnly { get; set; }
+        public static TextureFormat surfaceFormat { get; private set; }
 
-        public static TextureFormat surfaceFormat;
-
-        public static RenderPipeline FullScreenPipeline;
-        public static RenderPipeline DepthClearPipeline;
+        public static RenderPipeline fullScreenPipeline { get; private set; }
+        public static RenderPipeline depthClearPipeline { get; private set; }
 
         public static List<Sampler> AllSamplers;
 
-        public static Sampler pointSamplerClamp;
-        public static Sampler linearSamplerWrap;
-        public static Sampler linearSampleClamp;
-        public static Sampler depthSampler;
+        public static Sampler pointSamplerClamp { get; private set; }
+        public static Sampler linearSamplerWrap { get; private set; }
+        public static Sampler linearSampleClamp { get; private set; }
+        public static Sampler depthSampler { get; private set; }
 
         public static Tuple<BindGroupLayout, BindGroupLayout> SpriteLayouts;
 
-        public static VertexLayout sharedVertexLayout;
-        public static VertexLayout sharedMeshVertexLayout;
-        public static VertexLayout fullScreenVertexLayout;
+        public static VertexLayout sharedVertexLayout { get; private set; }
+        public static VertexLayout sharedMeshVertexLayout { get; private set; }
+        public static VertexLayout fullScreenVertexLayout { get; private set; }
 
-        public static BindGroupLayout sharedPipelineLayout;
-        public static BindGroupLayout sharedTextureLayout;
-        public static BindGroupLayout sharedSpriteNormalLayout;
-        public static BindGroupLayout sharedMeshUniform_VS;
-        public static BindGroupLayout sharedLightTexLayout;
+        public static BindGroupLayout sharedPipelineLayout { get; private set; }
+        public static BindGroupLayout sharedTextureLayout { get; private set; }
+        public static BindGroupLayout sharedSpriteNormalLayout { get; private set; }
+        public static BindGroupLayout sharedMeshUniform_VS { get; private set; }
+        public static BindGroupLayout sharedLightTexLayout { get; private set; }
 
-        public static BindGroupLayout sharedParticleLayout;
-        public static BindGroupLayout sharedMeshFrameData;
-        public static BindGroupLayout normalsFrameData;
+        public static BindGroupLayout sharedParticleLayout { get; private set; }
+        public static BindGroupLayout sharedMeshFrameData { get; private set; }
+        public static BindGroupLayout normalsFrameData { get; private set; }
 
+        public static TextureView defaultTexView { get; private set; }
 
-        public static TextureView defaultTexView;
+        private static List<PipelineMaterial> _pipelineMaterials = new();
+        internal static Dictionary<string, PipelineAsset> pipelineAssets = new();
 
-        public static List<PipelineMaterial> pipelineMaterials = new List<PipelineMaterial>();
-        //private static List<Pipeline> pipelines = new List<Pipeline>();
-        internal static Dictionary<string, PipelineAsset> pipelineAssets = new Dictionary<string, PipelineAsset>();
-
-        public static Buffer fullScreenVB;
-        public static Buffer fullScreenIB;
+        public static Buffer fullScreenVB { get; private set; }
+        public static Buffer fullScreenIB { get; private set; }
 
         static PipelineMaterial GetFirstMatByName(string name)
         {
             if (name.Equals("UberTransparent"))
                 name = "UberStandard";
-            var mat = pipelineMaterials.FirstOrDefault(pm => pm.name.Equals(name));
+            var mat = _pipelineMaterials.FirstOrDefault(pm => pm.name.Equals(name));
 
             if (mat == null)
             {
@@ -134,7 +117,7 @@ namespace ABEngine.ABERuntime
 
         public static int GetPipelineMaterialCount()
         {
-            return pipelineMaterials.Count;
+            return _pipelineMaterials.Count;
         }
 
         internal static PipelineAsset GetPipelineAssetByName(string name)
@@ -157,7 +140,7 @@ namespace ABEngine.ABERuntime
 
         internal static void AddPipelineMaterial(PipelineMaterial pipelineMaterial)
         {
-            pipelineMaterials.Add(pipelineMaterial);
+            _pipelineMaterials.Add(pipelineMaterial);
         }
 
         static string layersPath;
@@ -482,7 +465,7 @@ namespace ABEngine.ABERuntime
                 }
             };
 
-            FullScreenPipeline = wgil.CreateRenderPipeline(FullScreenQuadVertex, FullScreenQuadFragmentPP, ref fsPipelineDesc).SetManualDispose(true);
+            fullScreenPipeline = wgil.CreateRenderPipeline(FullScreenQuadVertex, FullScreenQuadFragmentPP, ref fsPipelineDesc).SetManualDispose(true);
 
             float[] verts = new float[]
                {
@@ -527,19 +510,19 @@ namespace ABEngine.ABERuntime
                     ColorFormats = new [] { Game.resourceContext.mainRenderView.Format, Game.resourceContext.spriteNormalsView.Format }
                 }
             };
-            DepthClearPipeline = wgil.CreateRenderPipeline(DepthVertex, DepthFragment, ref depthPipeDesc).SetManualDispose(true);
+            depthClearPipeline = wgil.CreateRenderPipeline(DepthVertex, DepthFragment, ref depthPipeDesc).SetManualDispose(true);
 
         }
 
         public static void ResetPipelines()
         {
-            pipelineMaterials = new List<PipelineMaterial>();
+            _pipelineMaterials = new List<PipelineMaterial>();
             pipelineAssets = new Dictionary<string, PipelineAsset>();
         }
 
         public static void RefreshMaterials()
         {
-            foreach (var material in pipelineMaterials)
+            foreach (var material in _pipelineMaterials)
                 material.UpdateSampledTextures();
         }
 
@@ -560,8 +543,8 @@ namespace ABEngine.ABERuntime
             fullScreenIB?.Dispose();
             fullScreenVB?.Dispose();
 
-            FullScreenPipeline?.Dispose();
-            DepthClearPipeline?.Dispose();
+            fullScreenPipeline?.Dispose();
+            depthClearPipeline?.Dispose();
 
             foreach (var sampler in AllSamplers)
             {

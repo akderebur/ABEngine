@@ -25,8 +25,8 @@ namespace ABEngine.ABERuntime
                 if (!transform.enabled)
                     return;
 
-                anim.Time += deltaTime;
-                float animTime = anim.Time;
+                anim.time += deltaTime;
+                float animTime = anim.time;
 
                 bool stateChanged = anim.CheckTransitions();
                 anim.CheckTriggers(deltaTime);
@@ -38,13 +38,13 @@ namespace ABEngine.ABERuntime
                     curState.loopStartTime = animTime;
                 }
 
-                curState.unclampedNormTime = (animTime - curState.loopStartTime) / curState.Length;
+                curState.unclampedNormTime = (animTime - curState.loopStartTime) / curState.length;
                 curState.normalizedTime = Math.Clamp(curState.unclampedNormTime, 0f, 1f);
                 if(!curState.completed)
                 {
                     if(curState.normalizedTime == 1f)
                     {
-                        if (curState.IsLooping)
+                        if (curState.isLooping)
                         {
                             float excess = curState.unclampedNormTime % 1f;
                             curState.loopStartTime = animTime;

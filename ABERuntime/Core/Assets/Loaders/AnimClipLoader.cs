@@ -25,8 +25,8 @@ namespace ABEngine.ABERuntime.Core.Assets
                 }
                 clip.times = times;
 
-                clip.FrameCount = frameC;
-                clip.SampleRate = br.ReadSingle();
+                clip.frameCount = frameC;
+                clip.sampleRate = br.ReadSingle();
 
                 int boneC = br.ReadInt32();
                 clip.bonesData = new BoneFrameData[boneC];

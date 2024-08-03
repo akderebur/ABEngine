@@ -40,8 +40,6 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         // ABE Types
         private static readonly List<Texture2D> s_texture2ds = new List<Texture2D>();
-        private static readonly List<SpriteClip> s_clips = new List<SpriteClip>();
-
         private static Texture2D defTexture = null;
 
         // Serialize
@@ -67,6 +65,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 { typeof(Mesh), new MeshLoader() },
                 { typeof(PrefabAsset), new PrefabLoader() },
                 { typeof(AnimationClip), new AnimClipLoader() },
+                { typeof(SpriteClip), new SpriteClipLoader() },
             };
 
             LoadDefaultMaterials();
@@ -285,21 +284,13 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public static SpriteClip CreateSpriteClip(string clipAssetPath)
         {
-            var exClip = FindExistingSpriteClip(clipAssetPath);
-            if (exClip != null)
-                return exClip;
-            else
-            {
-                SpriteClip newClip = new SpriteClip(clipAssetPath);
-                s_clips.Add(newClip);
-                return newClip;
-            }
+            var newSpriteClip = GetOrCreateAsset<SpriteClip>(clipAssetPath, 0);
+            return newSpriteClip;
         }
 
         public static SpriteClip CreateSpriteClip(Texture2D tex2d, List<Vector2> framePoses)
         {
-            SpriteClip newClip = new SpriteClip(s_clips.Count, tex2d, framePoses);
-            s_clips.Add(newClip);
+            SpriteClip newClip = new SpriteClip(tex2d, framePoses);
             return newClip;
         }
 
@@ -640,12 +631,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             assetDict.Remove(oldHash);
             assetDict.Add(hash, asset);
         }
-
-        private static SpriteClip FindExistingSpriteClip(string clipAssetPath)
-        {
-            return s_clips.FirstOrDefault(c => c.clipAssetPath.Equals(clipAssetPath));
-        }
-
+        
         internal static TextureView GetTextureView(Texture texture)
         {
             if (!s_textureViews.TryGetValue(texture, out TextureView view))
@@ -843,7 +829,6 @@ namespace ABEngine.ABERuntime.Core.Assets
         internal static void ClearSceneCache()
         {
             s_texture2ds.Clear();
-            s_clips.Clear();
             assetDict.Clear();
             sceneAssets.Clear();
 
@@ -916,11 +901,9 @@ namespace ABEngine.ABERuntime.Core.Assets
                 kvp.Value.Dispose();
             }
             s_textureViews.Clear();
-
-
+            
             // ABE Types
             s_texture2ds.Clear();
-            s_clips.Clear();
             defTexture = null;
         }
     }

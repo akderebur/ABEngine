@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Common;
+﻿using System.Collections.Generic;
 using System.Numerics;
-using System.Xml.Linq;
-using Box2D.NetStandard.Common;
 using Halak;
 using WGIL;
 
@@ -31,12 +27,11 @@ namespace ABEngine.ABERuntime.Core.Assets
         }
 
         public int textureID;
-        static int texInitC = 0;
-
-
+        private static int _texInitC = 0;
+        
         internal Texture2D(uint hash, Texture texture, Sampler sampler, Vector2 spriteSize)
 		{
-            textureID = texInitC++;
+            textureID = _texInitC++;
             this.texture = texture;
             imageSize = new Vector2(texture.Width, texture.Height);
 

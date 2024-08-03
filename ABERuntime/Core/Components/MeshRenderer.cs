@@ -1,10 +1,5 @@
-﻿using System;
-using System.Numerics;
-using ABEngine.ABERuntime.Components;
-using ABEngine.ABERuntime.Core.Assets;
+﻿using ABEngine.ABERuntime.Core.Assets;
 using Halak;
-using WGIL;
-using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -15,7 +10,7 @@ namespace ABEngine.ABERuntime.Components
 
         public PipelineMaterial material
         {
-            get { return _material; }
+            get => _material;
             set
             {
                 if (_material == value || value == null)
@@ -29,11 +24,10 @@ namespace ABEngine.ABERuntime.Components
                     Game.meshRenderSystem.AddMesh(transform, this);
             }
         }
-
-
+        
         public Mesh mesh
         {
-            get { return _mesh; }
+            get => _mesh;
             set
             {
                 if (_mesh == value || value == null)

@@ -35,7 +35,7 @@ namespace ABEngine.ABEditor
             //string assetPath = path.Replace(Editor.AssetPath, "");
             string assetPath = path;
             clip = new SpriteClip(assetPath);
-            _sampleFreq = clip.SampleFreq;
+            _sampleFreq = clip.sampleFreq;
             //Texture2D tex = AssetCache.CreateTexture2D(clip.imgPath);
 
             Texture tex = AssetCache.GetTextureDebug(Game.AssetPath + clip.imgPath);
@@ -61,10 +61,10 @@ namespace ABEngine.ABEditor
                 return;
             }
 
-            if ((gameTime - clip.SampleFreq) > _lastFrameTime)
+            if ((gameTime - clip.sampleFreq) > _lastFrameTime)
             {
                 _curFrame++;
-                if (_curFrame >= clip.FrameCount)
+                if (_curFrame >= clip.frameCount)
                     _curFrame = 0;
                 _lastFrameTime = gameTime;
 
@@ -76,9 +76,9 @@ namespace ABEngine.ABEditor
                 ImGui.Image(texPtr, new Vector2(100, 100), clipSprite.uvPos, clipSprite.uvPos + clipSprite.uvScale);
             if (clip != null)
             {
-                float sampleRate = clip.SampleRate;
+                float sampleRate = clip.sampleRate;
                 if (ImGui.InputFloat("Frame Rate", ref sampleRate))
-                    clip.SampleRate = sampleRate;
+                    clip.sampleRate = sampleRate;
             }
 
             if (ImGui.Button("Close"))

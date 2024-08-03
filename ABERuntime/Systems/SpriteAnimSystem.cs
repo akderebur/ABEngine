@@ -20,22 +20,22 @@ namespace ABEngine.ABERuntime
                 AnimationState curState = anim.state;
                 SpriteClip curClip = curState.clip as SpriteClip;
 
-                curState.normalizedTime = (gameTime - curState.loopStartTime) / curState.Length;
-                if ((gameTime - curState.SampleFreq) > curState.lastFrameTime)
+                curState.normalizedTime = (gameTime - curState.loopStartTime) / curState.length;
+                if ((gameTime - curState.sampleFreq) > curState.lastFrameTime)
                 {
                     curState.curFrame++;
-                    if (curState.curFrame >= curClip.FrameCount)
+                    if (curState.curFrame >= curClip.frameCount)
                     {
                         curState.normalizedTime = 1f;
 
-                        if (curState.IsLooping)
+                        if (curState.isLooping)
                         {
                             curState.curFrame = 0;
                             curState.loopStartTime = gameTime;
                         }
                         else
                         {
-                            curState.curFrame = curClip.FrameCount - 1;
+                            curState.curFrame = curClip.frameCount - 1;
                         }
                     }
                     curState.lastFrameTime = gameTime;

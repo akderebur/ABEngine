@@ -14,16 +14,16 @@ namespace ABEngine.ABERuntime.Animation
 
         // Playback
         private float _length;
-        public float Length { get { return _length; } }
+        public float length { get { return _length; } }
 
         private float _speed;
-        public float Speed { get { return _speed; } set { SampleRate = clip.SampleRate * value; _speed = value; } }
+        public float speed { get { return _speed; } set { sampleRate = clip.sampleRate * value; _speed = value; } }
 
         private float _sampleRate;
-        public float SampleRate { get { return _sampleRate; } set { SampleFreq = 1f / value; _length = SampleFreq * clip.FrameCount; _sampleRate = value; } }
-        public float SampleFreq { get; set; }
+        public float sampleRate { get { return _sampleRate; } set { sampleFreq = 1f / value; _length = sampleFreq * clip.frameCount; _sampleRate = value; } }
+        public float sampleFreq { get; set; }
 
-        public bool IsLooping { get; set; }
+        public bool isLooping { get; set; }
 
         // Clip Instance
         internal float loopStartTime { get; set; }
@@ -48,8 +48,8 @@ namespace ABEngine.ABERuntime.Animation
             curFrame = -1;
             lastFrameTime = Game.Time;
 
-            Speed = 1;
-            this.IsLooping = looping;
+            speed = 1;
+            this.isLooping = looping;
             this.transitionTime = 2f;
             this.transitionDur = 1f;
         }
@@ -110,8 +110,8 @@ namespace ABEngine.ABERuntime.Animation
             stateUID = Guid.Parse(data["UID"]);
             name = data["Name"];
             //clip = AssetCache.CreateSpriteClip(data["Clip"]);
-            Speed = 1f;
-            IsLooping = true;
+            speed = 1f;
+            isLooping = true;
             //SetClipAsset(data["Clip"]);
         }
 

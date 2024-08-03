@@ -1,12 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
-using Arch.Core.Extensions;
-using Box2D.NetStandard.Common;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -17,13 +13,13 @@ namespace ABEngine.ABERuntime.Components
         private Texture2D _particleTexture;
         public Texture2D particleTexture
         {
-            get { return _particleTexture; }
+            get => _particleTexture;
             set
             {
                 if (_particleTexture == value || _particleTexture == null)
                     return;
 
-                if (particleBatch != null)
+                if (_particleBatch != null)
                 {
                     Stop();
                     _particleTexture = value;
@@ -37,13 +33,13 @@ namespace ABEngine.ABERuntime.Components
         private PipelineMaterial _particleMaterial;
         public PipelineMaterial particleMaterial
         {
-            get { return _particleMaterial; }
+            get => _particleMaterial;
             set
             {
                 if (_particleMaterial == value || _particleMaterial == null)
                     return;
 
-                if (particleBatch != null)
+                if (_particleBatch != null)
                 {
                     Stop();
                     _particleMaterial = value;
@@ -58,52 +54,51 @@ namespace ABEngine.ABERuntime.Components
         public float minStripDistance { get; set; }
         public float stripXTiling { get; set; }
 
-        public SimulationSpace simulationSpace;
+        public SimulationSpace simulationSpace { get; set; }
         public bool isPlaying { get; private set; }
         protected float spawnRate { get; set; }
 
-        float spawnAcc = 0;
+        float _spawnAcc;
+        LinkedList<ScriptableParticle> _particles = new();
+        RenderBatch _particleBatch;
+        Action<float> _updateRoutine;
 
-        LinkedList<ScriptableParticle> particles = new LinkedList<ScriptableParticle>();
-
-        RenderBatch particleBatch;
-        Action<float> UpdateRoutine;
-
-        string batchGuid;
+        string _batchGuid;
         protected Transform moduleTrans;
         public Vector3 worldPosition => moduleTrans.worldPosition;
 
-        float accumulator = 0f;
-        float scale = 1f;
-        int particleCount;
-
-
+        float _accumulator;
+        float _scale = 1f;
+        int _particleCount;
+        
+        int _spawnC;
+        PTime _pTime;
+        
         public ScriptableParticleModule()
         {
             maxParticles = 100;
             _particleTexture = AssetCache.GetDefaultTexture();
             _particleMaterial = Graphics.GetParticleMaterial();
-            batchGuid = Guid.NewGuid().ToString();
+            _batchGuid = Guid.NewGuid().ToString();
 
             minStripDistance = 0.1f;
             stripXTiling = 1f;
         }
 
-        PTime pTime;
 
         internal float GetDelta()
         {
-            return pTime.delta;
+            return _pTime.delta;
         }
 
         internal float GetTime()
         {
-            return pTime.moduleTime;
+            return _pTime.moduleTime;
         }
 
         internal LinkedList<ScriptableParticle> GetParticles()
         {
-            return particles;
+            return _particles;
         }
 
         public void Init(Transform transform)
@@ -117,25 +112,25 @@ namespace ABEngine.ABERuntime.Components
             bool isStrip = _particleMaterial.pipelineAsset.HasFeature(MaterialFeature.ParticleStrip);
             if (isStrip)
             {
-                particleBatch = new StripParticleBatch(this, 0, 0);
+                _particleBatch = new StripParticleBatch(this, 0, 0);
 
                 if(tileMode == TileMode.Stretch)
-                    UpdateRoutine = UpdateStripStretch;
+                    _updateRoutine = UpdateStripStretch;
                 else
-                    UpdateRoutine = UpdateStripRepeat;
+                    _updateRoutine = UpdateStripRepeat;
             }
             else
             {
-                particleBatch = new ParticleBatch(this, 0, 0);
-                UpdateRoutine = UpdateSingle;
+                _particleBatch = new ParticleBatch(this, 0, 0);
+                _updateRoutine = UpdateSingle;
             }
-            particleBatch.key = "PM_Batch_" + Guid.NewGuid();
-            particleBatch.active = true;
+            _particleBatch.key = "PM_Batch_" + Guid.NewGuid();
+            _particleBatch.active = true;
 
-            Game.spriteBatchSystem.AddGenericBatch(particleBatch);
+            Game.spriteBatchSystem.AddGenericBatch(_particleBatch);
 
             isPlaying = true;
-            pTime.moduleTime = 0f;
+            _pTime.moduleTime = 0f;
             ModuleStart();
             SpawnInternal();
         }
@@ -145,10 +140,9 @@ namespace ABEngine.ABERuntime.Components
             
         }
 
-        int spawnC = 0;
         private void SpawnInternal()
         {
-            spawnC = 0;
+            _spawnC = 0;
             Spawn();
         }
 
@@ -159,12 +153,12 @@ namespace ABEngine.ABERuntime.Components
 
         public void Stop()
         {
-            particles.Clear();
+            _particles.Clear();
 
-            particleBatch.DeleteBatch();
-            Game.spriteBatchSystem.DeleteBatch(particleBatch);
+            _particleBatch.DeleteBatch();
+            Game.spriteBatchSystem.DeleteBatch(_particleBatch);
 
-            accumulator = 0f;
+            _accumulator = 0f;
             isPlaying = false;
         }
 
@@ -174,31 +168,31 @@ namespace ABEngine.ABERuntime.Components
                 return;
             if(spawnRate > 0)
             {
-                spawnAcc += deltaTime;
-                if(spawnAcc >= 1f/ spawnRate)
+                _spawnAcc += deltaTime;
+                if(_spawnAcc >= 1f/ spawnRate)
                 {
-                    spawnAcc = 0;
+                    _spawnAcc = 0;
                     SpawnInternal();
                 }
             }
 
             this.moduleTrans = moduleTrans;
-            scale = moduleTrans.worldScale.X + 0.00001f;
-            float scaledDelta = deltaTime * scale;
+            _scale = moduleTrans.worldScale.X + 0.00001f;
+            float scaledDelta = deltaTime * _scale;
 
-            pTime.moduleTime += deltaTime;
-            pTime.gameTime = Game.Time;
-            pTime.delta = deltaTime;
-            pTime.scaledDelta = scaledDelta;
+            _pTime.moduleTime += deltaTime;
+            _pTime.gameTime = Game.Time;
+            _pTime.delta = deltaTime;
+            _pTime.scaledDelta = scaledDelta;
 
-            UpdateRoutine(deltaTime);
+            _updateRoutine(deltaTime);
         }
 
         void UpdateSingle(float deltaTime)
         {
             int instanceCount = 0;
-            var curNode = particles.First;
-            ParticleVertex[] vertexData = ((ParticleBatch)particleBatch).GetParticleVertices();
+            var curNode = _particles.First;
+            ParticleVertex[] vertexData = ((ParticleBatch)_particleBatch).GetParticleVertices();
 
             while (curNode != null)
             {
@@ -214,12 +208,12 @@ namespace ABEngine.ABERuntime.Components
                 if (particle.age >= particle.lifetime)
                 {
                     particle.lifetime = -10;
-                    particles.Remove(particle);
-                    particles.AddFirst(particle);
+                    _particles.Remove(particle);
+                    _particles.AddFirst(particle);
                 }
                 else
                 {
-                    UpdateParticle(particle, pTime);
+                    UpdateParticle(particle, _pTime);
                     vertexData[instanceCount] = new ParticleVertex(particle.position,
                                                                    particle.size,
                                                                    particle.tintColor,
@@ -231,14 +225,14 @@ namespace ABEngine.ABERuntime.Components
                 curNode = nextNode;
             }
 
-            ((ParticleBatch)particleBatch).SetParticleInstance(instanceCount);
+            ((ParticleBatch)_particleBatch).SetParticleInstance(instanceCount);
         }
 
         void UpdateStripStretch(float deltaTime)
         {
             int instanceCount = 0;
-            var curNode = particles.First;
-            StripVertex[] vertexData = ((StripParticleBatch)particleBatch).GetParticleVertices();
+            var curNode = _particles.First;
+            StripVertex[] vertexData = ((StripParticleBatch)_particleBatch).GetParticleVertices();
 
             float totalDist = 0f;
 
@@ -256,13 +250,13 @@ namespace ABEngine.ABERuntime.Components
                 if (particle.age >= particle.lifetime)
                 {
                     particle.lifetime = -10;
-                    particles.Remove(particle);
-                    particles.AddFirst(particle);
+                    _particles.Remove(particle);
+                    _particles.AddFirst(particle);
                 }
                 else
                 {
                     //float uvStep = (float)instanceCount / (particleCount - 1);
-                    UpdateParticle(particle, pTime);
+                    UpdateParticle(particle, _pTime);
                     instanceCount++;
 
                     if (instanceCount == 2)
@@ -302,8 +296,8 @@ namespace ABEngine.ABERuntime.Components
                             instanceCount--;
 
                             particle.lifetime = -10;
-                            particles.Remove(particle);
-                            particles.AddFirst(particle);
+                            _particles.Remove(particle);
+                            _particles.AddFirst(particle);
                         }
                     }
                     else if (instanceCount > 2)
@@ -338,8 +332,8 @@ namespace ABEngine.ABERuntime.Components
                             instanceCount--;
 
                             particle.lifetime = -10;
-                            particles.Remove(particle);
-                            particles.AddFirst(particle);
+                            _particles.Remove(particle);
+                            _particles.AddFirst(particle);
                         }
 
                     }
@@ -349,15 +343,15 @@ namespace ABEngine.ABERuntime.Components
                 curNode = nextNode;
             }
 
-            ((StripParticleBatch)particleBatch).SetParticleInstance(instanceCount, totalDist);
+            ((StripParticleBatch)_particleBatch).SetParticleInstance(instanceCount, totalDist);
         }
 
         void UpdateStripRepeat(float deltaTime)
         {
             int instanceCount = 0;
             float uvStart = 0f;
-            var curNode = particles.First;
-            StripVertex[] vertexData = ((StripParticleBatch)particleBatch).GetParticleVertices();
+            var curNode = _particles.First;
+            StripVertex[] vertexData = ((StripParticleBatch)_particleBatch).GetParticleVertices();
 
             ScriptableParticle lastPart = null;
 
@@ -375,13 +369,13 @@ namespace ABEngine.ABERuntime.Components
                 if (particle.age >= particle.lifetime)
                 {
                     particle.lifetime = -10;
-                    particles.Remove(particle);
-                    particles.AddFirst(particle);
+                    _particles.Remove(particle);
+                    _particles.AddFirst(particle);
                 }
                 else
                 {
                     //float uvStep = (float)instanceCount / (particleCount - 1);
-                    UpdateParticle(particle, pTime);
+                    UpdateParticle(particle, _pTime);
                     instanceCount++;
 
                     if(instanceCount == 1)
@@ -437,8 +431,8 @@ namespace ABEngine.ABERuntime.Components
                             instanceCount--;
 
                             particle.lifetime = -10;
-                            particles.Remove(particle);
-                            particles.AddFirst(particle);
+                            _particles.Remove(particle);
+                            _particles.AddFirst(particle);
                         }
                     }
                     else if(instanceCount > 2)
@@ -481,8 +475,8 @@ namespace ABEngine.ABERuntime.Components
                             instanceCount--;
 
                             particle.lifetime = -10;
-                            particles.Remove(particle);
-                            particles.AddFirst(particle);
+                            _particles.Remove(particle);
+                            _particles.AddFirst(particle);
                         }
                     }
                 }
@@ -490,7 +484,7 @@ namespace ABEngine.ABERuntime.Components
                 curNode = nextNode;
             }
 
-            ((StripParticleBatch)particleBatch).SetParticleInstance(instanceCount);
+            ((StripParticleBatch)_particleBatch).SetParticleInstance(instanceCount);
         }
 
         protected virtual void UpdateParticle(ScriptableParticle particle, PTime pTime)
@@ -504,13 +498,13 @@ namespace ABEngine.ABERuntime.Components
             newParticle.size = 1f;
             newParticle.tintColor = Vector4.One;
             newParticle.lifetime = -10;
-            particles.AddFirst(newParticle);
+            _particles.AddFirst(newParticle);
         }
 
         protected virtual T SpawnParticle<T>() where T : ScriptableParticle, new()
         {
             ScriptableParticle reusePart = null;
-            foreach (var particle in particles)
+            foreach (var particle in _particles)
             {
                 if (particle.lifetime > 0)
                     break;
@@ -518,8 +512,8 @@ namespace ABEngine.ABERuntime.Components
                 {
                     reusePart = particle;
                     reusePart.stripUVSet = false;
-                    particles.Remove(reusePart);
-                    particles.AddLast(reusePart);
+                    _particles.Remove(reusePart);
+                    _particles.AddLast(reusePart);
                     break;
                 }
             }
@@ -532,7 +526,7 @@ namespace ABEngine.ABERuntime.Components
                 reusePart.Init();
                 return reusePart as T;
             }
-            else if (particleCount < maxParticles)
+            else if (_particleCount < maxParticles)
             {
                 T newParticle = new T();
                 newParticle.module = this;
@@ -541,10 +535,10 @@ namespace ABEngine.ABERuntime.Components
                 //newParticle.sprite = sprite;
                 newParticle.Init();
 
-                particles.AddLast(newParticle);
-                particleCount++;
+                _particles.AddLast(newParticle);
+                _particleCount++;
 
-                spawnC++;
+                _spawnC++;
 
                 return newParticle;
             }

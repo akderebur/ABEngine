@@ -56,13 +56,13 @@ namespace ABEngine.ABERuntime
                     frameChanged = true;
                 }
 
-                curState.normalizedTime = (animTime - curState.loopStartTime) / curState.Length;
+                curState.normalizedTime = (animTime - curState.loopStartTime) / curState.length;
 
-                float frameTime = curState.lastFrameTime + curState.SampleFreq;
+                float frameTime = curState.lastFrameTime + curState.sampleFreq;
                 while (frameTime <= animTime)
                 {
                     curState.curFrame++;
-                    frameTime += curState.SampleFreq;
+                    frameTime += curState.sampleFreq;
                     frameChanged = true;
                 }
 
@@ -74,13 +74,13 @@ namespace ABEngine.ABERuntime
 
                 if (frameChanged)
                 {
-                    frameTime -= curState.SampleFreq;
+                    frameTime -= curState.sampleFreq;
 
-                    if (curState.curFrame >= curClip.FrameCount)
+                    if (curState.curFrame >= curClip.frameCount)
                     {
                         curState.normalizedTime = 1f;
 
-                        if (curState.IsLooping)
+                        if (curState.isLooping)
                         {
                             curState.curFrame = 0;
                             curState.loopStartTime = frameTime;
@@ -91,7 +91,7 @@ namespace ABEngine.ABERuntime
                                 anim.AnimationComplete(curMatch);
 
                             curState.completed = true;
-                            curState.curFrame = curClip.FrameCount - 1;
+                            curState.curFrame = curClip.frameCount - 1;
                         }
                     }
                     curState.lastFrameTime = frameTime;

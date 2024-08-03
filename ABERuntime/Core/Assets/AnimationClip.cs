@@ -8,13 +8,19 @@ namespace ABEngine.ABERuntime.Core.Assets
 	public class AnimationClip : Asset, IClip
     {
         private float _sampleRate;
-        public float SampleRate { get { return _sampleRate; } set { SampleFreq = 1f / value; ClipLength = SampleFreq * FrameCount; _sampleRate = value; } }
-        public float SampleFreq { get; internal set; }
-        public float ClipLength { get; protected set; }
-        public int FrameCount { get; internal set; }
-
-        public string ClipAssetPath => throw new NotImplementedException();
-
+        public float sampleRate
+        {
+            get => _sampleRate;
+            set
+            {
+                sampleFreq = 1f / value; clipLength = sampleFreq * frameCount; _sampleRate = value; 
+                
+            }
+        }
+        public float sampleFreq { get; internal set; }
+        public float clipLength { get; protected set; }
+        public int frameCount { get; internal set; }
+        
         internal BoneFrameData[] bonesData;
         internal float[] times;
 
@@ -22,7 +28,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 		{
 		}
 
-        internal void Sample(float normalizedTime, Transform[] bones, float transRatio)
+        internal void Sample(float normalizedTime, Transform[] bones, float transRatio)
         {
             int index = Array.BinarySearch(times, normalizedTime);
 

@@ -16,24 +16,22 @@ namespace ABEngine.ABERuntime.Components
 
         private bool _isDynamicSize;
         private Vector2 _worldSize;
+        private Vector2 _pvRatio = Vector2.One;
 
         public Vector2 referenceSize;
-
-        Vector2 pvRatio = Vector2.One;
-
         public Vector2 canvasSize
         {
-            get { return _canvasSize; }
+            get => _canvasSize;
             private set
             {
                 _canvasSize = value;
                 _worldSize = _canvasSize.PixelToWorld();
             }
         }
+        
         public Vector2 canvasPixelSize { get; set; }
-
         public bool isDynamicSize {
-            get { return _isDynamicSize; }
+            get => _isDynamicSize;
             set
             {
                 _isDynamicSize = value;
@@ -65,8 +63,7 @@ namespace ABEngine.ABERuntime.Components
         {
             _lastScreenSetSize = screenSize;
             _lastScreenPixelSetSize = pixelSize;
-
-            pvRatio = pixelSize / screenSize;
+            _pvRatio = pixelSize / screenSize;
 
             if (isDynamicSize)
             {
@@ -81,7 +78,7 @@ namespace ABEngine.ABERuntime.Components
         public void UpdateCanvasSize(Vector2 newSize)
         {
             _lastFixedSize = newSize;
-            _lastFixedPixelSize = newSize * pvRatio;
+            _lastFixedPixelSize = newSize * _pvRatio;
             if(!isDynamicSize)
             {
                 canvasSize = _lastFixedSize;

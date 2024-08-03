@@ -1,5 +1,4 @@
-﻿using System;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Collections.Generic;
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Core.Assets;
@@ -114,7 +113,7 @@ namespace ABEngine.ABERuntime.Components
         public void SetLooping(bool isLooping)
         {
             if (state != null)
-                state.IsLooping = isLooping;
+                state.isLooping = isLooping;
         }
     }
 }

@@ -18,10 +18,10 @@ namespace ABEngine.ABEditor.PropertyDrawers
             float scale = curve.scale;
             float offset = curve.offset;
 
-            Vector2 startPoint = curve.StartPoint;
-            Vector2 endPoint = curve.EndPoint;
-            Vector2 controlPoint1 = curve.ControlPoint1;
-            Vector2 controlPoint2 = curve.ControlPoint2;
+            Vector2 startPoint = curve.startPoint;
+            Vector2 endPoint = curve.endPoint;
+            Vector2 controlPoint1 = curve.controlPoint1;
+            Vector2 controlPoint2 = curve.controlPoint2;
 
             float width = ImGui.GetWindowWidth();
             float height = width * 0.75f;
@@ -95,10 +95,10 @@ namespace ABEngine.ABEditor.PropertyDrawers
             if (ImGui.InputFloat("##Scale", ref scale))
                 curve.scale = scale;
 
-            curve.StartPoint = points[0];
-            curve.EndPoint = points[1];
-            curve.ControlPoint1 = points[2];
-            curve.ControlPoint2 = points[3];
+            curve.startPoint = points[0];
+            curve.endPoint = points[1];
+            curve.controlPoint1 = points[2];
+            curve.controlPoint2 = points[3];
         }
     }
 }

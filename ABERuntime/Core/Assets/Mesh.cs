@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Halak;
@@ -16,17 +15,17 @@ namespace ABEngine.ABERuntime.Core.Assets
         internal Buffer vertexBuffer;
         internal Buffer indexBuffer;
 
-        public Vector3[] Positions { private get; set; }
-        public Vector3[] Normals { private get; set; }
-        public Vector4[] Tangents { private get; set; }
-        public Vector2[] UV0 { private get; set; }
-        public Vector4BInt[] BoneIDs { private get; set; }
-        public Vector4[] BoneWeights { private get; set; }
+        public Vector3[] positions { private get; set; }
+        public Vector3[] normals { private get; set; }
+        public Vector4[] tangents { private get; set; }
+        public Vector2[] uv0 { private get; set; }
+        public Vector4BInt[] boneIDs { private get; set; }
+        public Vector4[] boneWeights { private get; set; }
 
         public Matrix4x4[] invBindMatrices { get; set; }
 
-        public ushort[] Indices { internal get; set; }
-        public bool IsSkinned { get; set; }
+        public ushort[] indices { internal get; set; }
+        public bool isSkinned { get; set; }
 
         public Mesh()
         {
@@ -34,7 +33,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public void UpdateMesh()
         {
-            if (Positions == null || Positions.Length == 0)
+            if (positions == null || positions.Length == 0)
                 return;
 
             CalculateBounds();
@@ -44,30 +43,30 @@ namespace ABEngine.ABERuntime.Core.Assets
                 vertexBuffer.Dispose();
 
             // Fail-safes
-            if (Normals == null || Normals.Length < Positions.Length)
-                Normals = new Vector3[Positions.Length];
-            if (Tangents == null || Tangents.Length < Positions.Length)
-                Tangents = new Vector4[Positions.Length];
-            if (UV0 == null || UV0.Length < Positions.Length)
-                UV0 = new Vector2[Positions.Length];
+            if (normals == null || normals.Length < positions.Length)
+                normals = new Vector3[positions.Length];
+            if (tangents == null || tangents.Length < positions.Length)
+                tangents = new Vector4[positions.Length];
+            if (uv0 == null || uv0.Length < positions.Length)
+                uv0 = new Vector2[positions.Length];
 
-            bool boneIDCond = BoneIDs != null && BoneIDs.Length == Positions.Length;
-            bool boneWCond = BoneWeights != null && BoneWeights.Length == Positions.Length;
-            if (IsSkinned && boneIDCond && boneWCond)
+            bool boneIDCond = boneIDs != null && boneIDs.Length == positions.Length;
+            bool boneWCond = boneWeights != null && boneWeights.Length == positions.Length;
+            if (isSkinned && boneIDCond && boneWCond)
             {
-                vertexBuffer = Game.wgil.CreateBuffer(80 * Positions.Length, BufferUsages.VERTEX | BufferUsages.COPY_DST);
-                VertexSkinned[] vertices = new VertexSkinned[Positions.Length];
+                vertexBuffer = Game.wgil.CreateBuffer(80 * positions.Length, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+                VertexSkinned[] vertices = new VertexSkinned[positions.Length];
 
                 for (int i = 0; i < vertices.Length; i++)
                 {
                     VertexSkinned vertex = new VertexSkinned()
                     {
-                        Position = Positions[i],
-                        Normal = Normals[i],
-                        Tangent = Tangents[i],
-                        UV = UV0[i],
-                        BoneIds = BoneIDs[i],
-                        Weights = BoneWeights[i]
+                        Position = positions[i],
+                        Normal = normals[i],
+                        Tangent = tangents[i],
+                        UV = uv0[i],
+                        BoneIds = boneIDs[i],
+                        Weights = boneWeights[i]
                     };
                     vertices[i] = vertex;
                 }
@@ -76,19 +75,19 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
             else
             {
-                IsSkinned = false;
-                vertexBuffer = Game.wgil.CreateBuffer(48 * Positions.Length, BufferUsages.VERTEX | BufferUsages.COPY_DST);
+                isSkinned = false;
+                vertexBuffer = Game.wgil.CreateBuffer(48 * positions.Length, BufferUsages.VERTEX | BufferUsages.COPY_DST);
 
-                VertexStandard[] vertices = new VertexStandard[Positions.Length];
+                VertexStandard[] vertices = new VertexStandard[positions.Length];
 
                 for (int i = 0; i < vertices.Length; i++)
                 {
                     VertexStandard vertex = new VertexStandard()
                     {
-                        Position = Positions[i],
-                        Normal = Normals[i],
-                        Tangent = Tangents[i],
-                        UV = UV0[i],
+                        Position = positions[i],
+                        Normal = normals[i],
+                        Tangent = tangents[i],
+                        UV = uv0[i],
                     };
                     vertices[i] = vertex;
                 }
@@ -99,8 +98,8 @@ namespace ABEngine.ABERuntime.Core.Assets
             // Index Buffer
             if (indexBuffer != null)
                 indexBuffer.Dispose();
-            indexBuffer = Game.wgil.CreateBuffer(sizeof(ushort) * Indices.Length, BufferUsages.INDEX | BufferUsages.COPY_DST);
-            Game.wgil.WriteBuffer(indexBuffer, Indices);
+            indexBuffer = Game.wgil.CreateBuffer(sizeof(ushort) * indices.Length, BufferUsages.INDEX | BufferUsages.COPY_DST);
+            Game.wgil.WriteBuffer(indexBuffer, indices);
         }
 
         internal override JValue SerializeAsset()
@@ -113,15 +112,15 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         void CalculateBounds()
         {
-            var order = Positions.OrderBy(v => v.X);
+            var order = positions.OrderBy(v => v.X);
             boundsMin.X = order.First().X;
             boundsMax.X = order.Last().X;
 
-            order = Positions.OrderBy(v => v.Y);
+            order = positions.OrderBy(v => v.Y);
             boundsMin.Y = order.First().Y;
             boundsMax.Y = order.Last().Y;
 
-            order = Positions.OrderBy(v => v.Z);
+            order = positions.OrderBy(v => v.Z);
             boundsMin.Z = order.First().Z;
             boundsMax.Z = order.Last().Z;
         }
@@ -130,38 +129,38 @@ namespace ABEngine.ABERuntime.Core.Assets
         {
             if (vertices == null)
                 return;
-            IsSkinned = false;
+            isSkinned = false;
 
-            Positions = new Vector3[vertices.Length];
+            positions = new Vector3[vertices.Length];
             for (int i = 0; i < vertices.Length; i++)
-                Positions[i] = vertices[i].Position;
+                positions[i] = vertices[i].Position;
 
             CalculateBounds();
 
             if (vertexBuffer != null)
                 vertexBuffer.Dispose();
 
-            vertexBuffer = Game.wgil.CreateBuffer(48 * Positions.Length, BufferUsages.VERTEX | BufferUsages.COPY_DST).SetManualDispose(true);
+            vertexBuffer = Game.wgil.CreateBuffer(48 * positions.Length, BufferUsages.VERTEX | BufferUsages.COPY_DST).SetManualDispose(true);
             Game.wgil.WriteBuffer(vertexBuffer, vertices);
 
             // Index Buffer
-            Indices = indices;
+            this.indices = indices;
             if (indexBuffer != null)
                 indexBuffer.Dispose();
-            indexBuffer = Game.wgil.CreateBuffer(sizeof(ushort) * Indices.Length, BufferUsages.INDEX | BufferUsages.COPY_DST).SetManualDispose(true);
+            indexBuffer = Game.wgil.CreateBuffer(sizeof(ushort) * this.indices.Length, BufferUsages.INDEX | BufferUsages.COPY_DST).SetManualDispose(true);
             Game.wgil.WriteBuffer(indexBuffer, indices);
         }
     }
 
     public interface IVertex
     {
-        public uint VertexSize { get; }
+        public uint vertexSize { get; }
     }
 
     [StructLayout(LayoutKind.Explicit)]
     public struct VertexStandard : IVertex
     {
-        public uint VertexSize => 48;
+        public uint vertexSize => 48;
 
         [FieldOffset(0)]  public Vector3 Position;
         [FieldOffset(12)] public Vector3 Normal;
@@ -181,7 +180,7 @@ namespace ABEngine.ABERuntime.Core.Assets
     [StructLayout(LayoutKind.Explicit)]
     public struct VertexSkinned : IVertex
     {
-        public uint VertexSize => 80;
+        public uint vertexSize => 80;
 
         [FieldOffset(0)]  public Vector3 Position;
         [FieldOffset(12)] public Vector3 Normal;

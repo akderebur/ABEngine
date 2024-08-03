@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using Halak;
 using ABEngine.ABERuntime.Core.MathA;
@@ -48,13 +47,10 @@ namespace ABEngine.ABERuntime.Components
         public List<Transform> children { get; private set; }
         public string name { get { return entity.Get<string>(); } }
 
-        [JSerialize]
         public bool isStatic { get; internal set; }
         public Entity entity { get; private set; }
         internal bool transformMove { get; set; }
         internal string parentGuidStr { get; private set; }
-
-        [JSerialize]
         public string tag { get; set; }
 
         bool keepWorldPos = true;
@@ -214,24 +210,21 @@ namespace ABEngine.ABERuntime.Components
         }
 
         #region Properties
-        [JSerialize]
         public Vector3 localPosition
         {
-            get { return _localPosition; }
+            get => _localPosition;
             set { _localPosition = value; RecalculateTRS(); }
         }
 
-        [JSerialize]
         public Vector3 localScale
         {
-            get { return _localScale; }
+            get => _localScale;
             set { _localScale = value; RecalculateTRS(); }
         }
 
-        [JSerialize]
         public Quaternion localRotation
         {
-            get { return _localRotation; }
+            get => _localRotation;
             set
             {
                 _localRotation = value;
@@ -242,7 +235,7 @@ namespace ABEngine.ABERuntime.Components
 
         public Vector3 localEulerAngles
         {
-            get { return _localEulerAngles; }
+            get => _localEulerAngles;
             set
             {
                 _localEulerAngles = value;
@@ -251,24 +244,13 @@ namespace ABEngine.ABERuntime.Components
             }
         }
 
-        public Vector3 worldPosition
-        {
-            get { return _worldPosition; }
-        }
-
-        public Quaternion worldRotation
-        {
-            get { return _worldRotation; }
-        }
-
-        public Vector3 worldScale
-        {
-            get { return _worldScale; }
-        }
+        public Vector3 worldPosition => _worldPosition;
+        public Quaternion worldRotation => _worldRotation;
+        public Vector3 worldScale => _worldScale;
 
         public Transform parent
         {
-            get { return _parent; }
+            get => _parent;
             set
             {
                 if (_parent == value)

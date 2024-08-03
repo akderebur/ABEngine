@@ -27,28 +27,28 @@ namespace ABEngine.ABERuntime.Core.Assets
                             Vector3[] poses = new Vector3[vertC];
                             for (int i = 0; i < vertC; i++)
                                 poses[i] = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                            mesh.Positions = poses;
+                            mesh.positions = poses;
                             break;
                         case 'U':
                             Vector2[] uv = new Vector2[vertC];
                             for (int i = 0; i < vertC; i++)
                                 uv[i] = new Vector2(br.ReadSingle(), br.ReadSingle());
-                            mesh.UV0 = uv;
+                            mesh.uv0 = uv;
                             break;
                         case 'N':
                             Vector3[] normals = new Vector3[vertC];
                             for (int i = 0; i < vertC; i++)
                                 normals[i] = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                            mesh.Normals = normals;
+                            mesh.normals = normals;
                             break;
                         case 'T':
                             Vector4[] tangents = new Vector4[vertC];
                             for (int i = 0; i < vertC; i++)
                                 tangents[i] = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                            mesh.Tangents = tangents;
+                            mesh.tangents = tangents;
                             break;
                         case 'B':
-                            mesh.IsSkinned = true;
+                            mesh.isSkinned = true;
                             Vector4BInt[] boneIds = new Vector4BInt[vertC];
                             Vector4[] boneWeights = new Vector4[vertC];
                             for (int i = 0; i < vertC; i++)
@@ -71,8 +71,8 @@ namespace ABEngine.ABERuntime.Core.Assets
                                 boneIds[i] = idVec;
                                 boneWeights[i] = weightVec;
                             }
-                            mesh.BoneIDs = boneIds;
-                            mesh.BoneWeights = boneWeights;
+                            mesh.boneIDs = boneIds;
+                            mesh.boneWeights = boneWeights;
                             break;
                         case 'M':
                             int matrixCount = br.ReadInt32();
@@ -97,7 +97,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 ushort[] indices = new ushort[indC];
                 for (int i = 0; i < indC; i++)
                     indices[i] = br.ReadUInt16();
-                mesh.Indices = indices;
+                mesh.indices = indices;
             }
 
             mesh.UpdateMesh();

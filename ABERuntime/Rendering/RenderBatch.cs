@@ -31,7 +31,7 @@ namespace ABEngine.ABERuntime.Rendering
         public RenderBatch(Texture2D texture, PipelineMaterial pipelineMaterial, int renderLayerIndex, bool isStatic, float zValue)
 		{
             _wgil = Game.wgil;
-            pipelineMaterial.onPipelineChanged += PipelineMaterial_onPipelineChanged;
+            pipelineMaterial.OnPipelineChanged += PipelineMaterial_onPipelineChanged;
 
             this.texture2d = texture;
             this.material = pipelineMaterial;
@@ -54,7 +54,7 @@ namespace ABEngine.ABERuntime.Rendering
 
         internal virtual void DeleteBatch()
         {
-            material.onPipelineChanged -= PipelineMaterial_onPipelineChanged;
+            material.OnPipelineChanged -= PipelineMaterial_onPipelineChanged;
             TriggerDelete();
         }
 

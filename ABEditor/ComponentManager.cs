@@ -100,7 +100,7 @@ namespace ABEngine.ABEditor
                 if (dirLightCount == 0)
                 {
                     var sunLight = Entities.CreateEntity("DirLight", "", new DirectionalLight()
-                    { color = Vector4.One, direction = Vector3.Normalize(-Vector3.UnitZ), Intensity = 1f });
+                    { color = Vector4.One, direction = Vector3.Normalize(-Vector3.UnitZ), intensity = 1f });
                     Editor.AddToHierList(sunLight.Get<Transform>());
                 }
             }

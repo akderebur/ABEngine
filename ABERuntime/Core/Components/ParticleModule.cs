@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Numerics;
 using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Core.MathA;
 using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
-using Box2D.NetStandard.Common;
 using Halak;
-using WGIL;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -32,13 +29,13 @@ namespace ABEngine.ABERuntime.Components
         private Texture2D _particleTexture;
         public Texture2D particleTexture
         {
-            get { return _particleTexture; }
+            get => _particleTexture;
             set
             {
                 if (_particleTexture == value || _particleTexture == null)
                     return;
 
-                if (particleBatch != null)
+                if (_particleBatch != null)
                 {
                     Stop();
                     _particleTexture = value;
@@ -52,13 +49,13 @@ namespace ABEngine.ABERuntime.Components
         private PipelineMaterial _particleMaterial;
         public PipelineMaterial particleMaterial
         {
-            get { return _particleMaterial; }
+            get => _particleMaterial;
             set
             {
                 if (_particleMaterial == value || _particleMaterial == null)
                     return;
 
-                if (particleBatch != null)
+                if (_particleBatch != null)
                 {
                     Stop();
                     _particleMaterial = value;
@@ -70,23 +67,21 @@ namespace ABEngine.ABERuntime.Components
         }
 
 
-        public SimulationSpace simulationSpace;
-        public bool isPlaying { get; private set; }
+        public SimulationSpace simulationSpace { get; set; }
+        public bool isPlaying { get; private set; } 
+        
+        LinkedList<Particle> _particles = new();
+        Random _rnd;
 
-        LinkedList<Particle> particles = new LinkedList<Particle>();
+        float _spawnInterval = 1f;
+        float _accumulator = 0f;
+        float _scale = 1f;
+        Vector3 _moveDir = Vector3.UnitY;
 
-        float spawnInterval = 1f;
-        float accumulator = 0f;
-
-        public Vector3 moveDir = Vector3.UnitY;
-        float scale = 1f;
-
-        Random rnd;
-
-        SpriteBatch particleBatch;
-        string batchGuid;
-        Transform moduleTrans;
-        int particleCount;
+        SpriteBatch _particleBatch;
+        string _batchGuid;
+        Transform _moduleTrans;
+        int _particleCount;
 
         public ParticleModule()
         {
@@ -96,7 +91,7 @@ namespace ABEngine.ABERuntime.Components
             speed = new FloatRange(2f);
             startLifetime = new FloatRange(2f);
             maxParticles = 100;
-            rnd = new Random();
+            _rnd = new Random();
             _particleTexture = AssetCache.GetDefaultTexture();
             _particleMaterial = Graphics.GetUberMaterial();
             simulationSpace = SimulationSpace.Local;
@@ -113,12 +108,12 @@ namespace ABEngine.ABERuntime.Components
                     new AlphaKey(1f, 1f)
                 }
             };
-            batchGuid = Guid.NewGuid().ToString();
+            _batchGuid = Guid.NewGuid().ToString();
         }
 
         public void Init(Transform transform)
         {
-            moduleTrans = transform;
+            _moduleTrans = transform;
             Play();
         }
 
@@ -128,38 +123,38 @@ namespace ABEngine.ABERuntime.Components
             sprite.manualBatching = true;
             sprite.SetMaterial(_particleMaterial, true);
             Transform trans = new Transform("EditorNotVisible");
-            var entity = Game.GameWorld.Create("P" + particleCount, Guid.NewGuid(), trans, sprite);
+            var entity = Game.GameWorld.Create("P" + _particleCount, Guid.NewGuid(), trans, sprite);
             trans.localPosition = new Vector3(0f, 0f, -10f);
-            Game.spriteBatchSystem.AddSpriteToBatch(trans, sprite, batchGuid);
-            particleBatch = Game.spriteBatchSystem.GetBatchFromSprite(trans, sprite, batchGuid);
-            particleBatch.isDynamicSort = true;
+            Game.spriteBatchSystem.AddSpriteToBatch(trans, sprite, _batchGuid);
+            _particleBatch = Game.spriteBatchSystem.GetBatchFromSprite(trans, sprite, _batchGuid);
+            _particleBatch.isDynamicSort = true;
 
             Particle particle = new Particle()
             {
-                Transform = trans,
-                Sprite = sprite,
-                Lifetime = -10
+                transform = trans,
+                sprite = sprite,
+                lifetime = -10
             };
-            particles.AddLast(particle);
-            particleCount++;
+            _particles.AddLast(particle);
+            _particleCount++;
             isPlaying = true;
 
             float rate = Math.Clamp(spawnRate.NextValue(), 0.5f, 10000f);
-            spawnInterval = 1f / rate;
+            _spawnInterval = 1f / rate;
         }
 
         public void Stop()
         {
-            foreach (var particle in particles)
+            foreach (var particle in _particles)
             {
-                particle.Transform.entity.DestroyEntity();
+                particle.transform.entity.DestroyEntity();
             }
-            particles.Clear();
+            _particles.Clear();
 
-            particleBatch.DeleteBatch();
-            Game.spriteBatchSystem.DeleteBatch(particleBatch);
+            _particleBatch.DeleteBatch();
+            Game.spriteBatchSystem.DeleteBatch(_particleBatch);
 
-            accumulator = 0f;
+            _accumulator = 0f;
             isPlaying = false;
         }
 
@@ -172,54 +167,54 @@ namespace ABEngine.ABERuntime.Components
                 deltaTime = 1 / 10f;
 
 
-            this.moduleTrans = moduleTrans;
-            scale = moduleTrans.worldScale.X + 0.00001f;
-            float scaledDelta = deltaTime * scale;
+            this._moduleTrans = moduleTrans;
+            _scale = moduleTrans.worldScale.X + 0.00001f;
+            float scaledDelta = deltaTime * _scale;
             float moveDelta = simulationSpace == SimulationSpace.Local ? deltaTime : scaledDelta;
 
             Matrix4x4 rotMat = Matrix4x4.CreateFromQuaternion(moduleTrans.worldRotation);
-            Vector3 rotatedMoveDir = moveDir;
+            Vector3 rotatedMoveDir = _moveDir;
 
             if (simulationSpace == SimulationSpace.World)
             {
-                rotatedMoveDir = Vector3.Transform(moveDir, rotMat);
+                rotatedMoveDir = Vector3.Transform(_moveDir, rotMat);
                 rotatedMoveDir = Vector3.Normalize(rotatedMoveDir);
                 rotatedMoveDir.Z = 0f;
             }
 
-            var curNode = particles.First;
+            var curNode = _particles.First;
             while (curNode != null)
             {
                 Particle particle = curNode.Value;
                 var nextNode = curNode.Next;
-                if (particle.Lifetime == -10)
+                if (particle.lifetime == -10)
                 {
                     curNode = nextNode;
                     continue;
                 }
 
-                particle.Lifetime -= scaledDelta;
-                float normLT = Math.Clamp(1f - particle.Lifetime / (particle.StartLifetime), 0, 1);
-                Vector3 newPos = particle.Transform.localPosition + rotatedMoveDir * particle.Speed * moveDelta;
+                particle.lifetime -= scaledDelta;
+                float normLT = Math.Clamp(1f - particle.lifetime / (particle.startLifetime), 0, 1);
+                Vector3 newPos = particle.transform.localPosition + rotatedMoveDir * particle.speed * moveDelta;
                 newPos.Z = -normLT;
-                particle.Transform.localPosition = newPos;
+                particle.transform.localPosition = newPos;
 
 
                 Vector2 sizeCurvePoint = lifetimeSize.Evaluate(normLT);
                 if (simulationSpace == SimulationSpace.Local)
-                    particle.Transform.localScale = particle.StartSize * new Vector3(sizeCurvePoint.Y, sizeCurvePoint.Y, 1f);
+                    particle.transform.localScale = particle.startSize * new Vector3(sizeCurvePoint.Y, sizeCurvePoint.Y, 1f);
                 else
-                    particle.Transform.localScale = moduleTrans.worldScale * particle.StartSize * new Vector3(sizeCurvePoint.Y, sizeCurvePoint.Y, 1f);
+                    particle.transform.localScale = moduleTrans.worldScale * particle.startSize * new Vector3(sizeCurvePoint.Y, sizeCurvePoint.Y, 1f);
 
-                particle.Sprite.tintColor = lifetimeColor.Evaluate(normLT);
-                if (particle.Lifetime <= 0)
+                particle.sprite.tintColor = lifetimeColor.Evaluate(normLT);
+                if (particle.lifetime <= 0)
                 {
-                    particle.Lifetime = -10;
-                    particles.Remove(particle);
-                    particles.AddFirst(particle);
+                    particle.lifetime = -10;
+                    _particles.Remove(particle);
+                    _particles.AddFirst(particle);
 
-                    particle.Transform.parent = null;
-                    particle.Transform.enabled = false;
+                    particle.transform.parent = null;
+                    particle.transform.enabled = false;
                     //Vector3 pos = particle.Transform.worldPosition;
                     //pos.Z = -1001;
                     //particle.Transform.localPosition = pos;
@@ -259,22 +254,22 @@ namespace ABEngine.ABERuntime.Components
             int spawnC = 0;
             bool intervalPassed = false;
 
-            accumulator += deltaTime;
-            while (accumulator >= spawnInterval && spawnC < spawnLimit)
+            _accumulator += deltaTime;
+            while (_accumulator >= _spawnInterval && spawnC < spawnLimit)
             {
-                accumulator -= spawnInterval;
+                _accumulator -= _spawnInterval;
                 intervalPassed = true;
 
                 Particle reusePart = null;
-                foreach (var particle in particles)
+                foreach (var particle in _particles)
                 {
-                    if (particle.Lifetime > 0)
+                    if (particle.lifetime > 0)
                         break;
                     else
                     {
                         reusePart = particle;
-                        particles.Remove(reusePart);
-                        particles.AddLast(reusePart);
+                        _particles.Remove(reusePart);
+                        _particles.AddLast(reusePart);
                         break;
                     }
                 }
@@ -284,25 +279,25 @@ namespace ABEngine.ABERuntime.Components
                 Vector3 spawnVec = Vector3.Transform(Vector3.UnitX, rotMat);
                 if (reusePart != null)
                 {
-                    reusePart.Lifetime = startLifetime.NextValue() * scale;
-                    reusePart.StartLifetime = reusePart.Lifetime;
-                    reusePart.Speed = speed.NextValue();
-                    reusePart.StartSize = startSize.NextValue();
+                    reusePart.lifetime = startLifetime.NextValue() * _scale;
+                    reusePart.startLifetime = reusePart.lifetime;
+                    reusePart.speed = speed.NextValue();
+                    reusePart.startSize = startSize.NextValue();
 
-                    float spawnMid = spawnRange * scale / 2f;
+                    float spawnMid = spawnRange * _scale / 2f;
 
-                    Transform trans = reusePart.Transform;
+                    Transform trans = reusePart.transform;
                     trans.enabled = true;
 
                     Vector2 startSizePoint = lifetimeSize.Evaluate(0f);
-                    trans.localPosition = moduleTrans.worldPosition + spawnVec * rnd.NextFloat(-spawnMid, spawnMid);
-                    trans.localScale = moduleTrans.worldScale * reusePart.StartSize * new Vector3(startSizePoint.Y, startSizePoint.Y, 1f);
+                    trans.localPosition = moduleTrans.worldPosition + spawnVec * _rnd.NextFloat(-spawnMid, spawnMid);
+                    trans.localScale = moduleTrans.worldScale * reusePart.startSize * new Vector3(startSizePoint.Y, startSizePoint.Y, 1f);
                     //trans.localRotation = moduleTrans.worldRotation;
                     if(simulationSpace == SimulationSpace.Local)
                         trans.parent = moduleTrans;
-                    reusePart.Sprite.tintColor = lifetimeColor.Evaluate(0f);
+                    reusePart.sprite.tintColor = lifetimeColor.Evaluate(0f);
                 }
-                else if (particleCount <= maxParticles)
+                else if (_particleCount <= maxParticles)
                 {
                     Sprite sprite = new Sprite(particleTexture);
                     sprite.manualBatching = true;
@@ -314,28 +309,28 @@ namespace ABEngine.ABERuntime.Components
                     //sprite.sharedMaterial.SetVector4("OutlineColor", Veldrid.RgbaFloat.Blue.ToVector4());
 
                     Transform trans = new Transform("EditorNotVisible");
-                    var entity = Game.GameWorld.Create("P" + particleCount, Guid.NewGuid(), trans, sprite);
+                    var entity = Game.GameWorld.Create("P" + _particleCount, Guid.NewGuid(), trans, sprite);
 
-                    float lifetime = startLifetime.NextValue() * scale;
+                    float lifetime = startLifetime.NextValue() * _scale;
                     Particle particle = new Particle()
                     {
-                        Transform = trans,
-                        Sprite = sprite,
-                        Lifetime = lifetime,
-                        StartLifetime = lifetime,
-                        Speed = speed.NextValue(),
-                        StartSize = startSize.NextValue()
+                        transform = trans,
+                        sprite = sprite,
+                        lifetime = lifetime,
+                        startLifetime = lifetime,
+                        speed = speed.NextValue(),
+                        startSize = startSize.NextValue()
                     };
-                    particles.AddLast(particle);
-                    particleCount++;
+                    _particles.AddLast(particle);
+                    _particleCount++;
 
-                    particleBatch.AddSpriteEntity(trans, sprite);
+                    _particleBatch.AddSpriteEntity(trans, sprite);
 
-                    float spawnMid = spawnRange * scale / 2f;
+                    float spawnMid = spawnRange * _scale / 2f;
 
                     Vector2 startSizePoint = lifetimeSize.Evaluate(0f);
-                    trans.localPosition = moduleTrans.worldPosition + spawnVec * rnd.NextFloat(-spawnMid, spawnMid);
-                    trans.localScale = moduleTrans.worldScale * particle.StartSize * new Vector3(startSizePoint.Y, startSizePoint.Y, 1f);
+                    trans.localPosition = moduleTrans.worldPosition + spawnVec * _rnd.NextFloat(-spawnMid, spawnMid);
+                    trans.localScale = moduleTrans.worldScale * particle.startSize * new Vector3(startSizePoint.Y, startSizePoint.Y, 1f);
                     //trans.localRotation = moduleTrans.worldRotation;
                     if (simulationSpace == SimulationSpace.Local)
                         trans.parent = moduleTrans;
@@ -348,13 +343,13 @@ namespace ABEngine.ABERuntime.Components
 
             if (spawnC > 0)
             {
-                particleBatch.InitBatch();
+                _particleBatch.InitBatch();
             }
 
             if (intervalPassed)
             {
                 float rate = Math.Clamp(spawnRate.NextValue(), 0.5f, 10000f);
-                spawnInterval = 1f / rate;
+                _spawnInterval = 1f / rate;
             }
         }
 
@@ -371,7 +366,7 @@ namespace ABEngine.ABERuntime.Components
             jObj.Put("Speed", ABComponent.Serialize(speed));
             jObj.Put("StartSize", ABComponent.Serialize(startSize));
             jObj.Put("SimulationSpace", (int)simulationSpace);
-            jObj.Put("MoveDir", moveDir);
+            jObj.Put("MoveDir", _moveDir);
 
             jObj.Put("LifetimeSize", ABComponent.Serialize(lifetimeSize));
             jObj.Put("LifetimeColor", lifetimeColor.Serialize()); ;
@@ -403,7 +398,7 @@ namespace ABEngine.ABERuntime.Components
             startSize = ABComponent.Deserialize(data["StartSize"].ToString(), typeof(FloatRange)) as FloatRange;
             int simSpaceInd = data["SimulationSpace"];
             simulationSpace = (SimulationSpace)simSpaceInd;
-            moveDir = data["MoveDir"];
+            _moveDir = data["MoveDir"];
 
             lifetimeSize = ABComponent.Deserialize(data["LifetimeSize"].ToString(), typeof(BezierCurve)) as BezierCurve;
 
@@ -436,7 +431,7 @@ namespace ABEngine.ABERuntime.Components
                 _particleMaterial = this._particleMaterial,
 
                 simulationSpace = this.simulationSpace,
-                moveDir = this.moveDir
+                _moveDir = this._moveDir
             };
 
             return pm;
@@ -445,13 +440,13 @@ namespace ABEngine.ABERuntime.Components
 
     class Particle
     {
-        public float Lifetime;
-        public Transform Transform;
-        public Sprite Sprite;
+        public float lifetime;
+        public Transform transform;
+        public Sprite sprite;
 
-        public float StartLifetime;
-        public float StartSize;
-        public float Speed;
+        public float startLifetime;
+        public float startSize;
+        public float speed;
     }
 }
 

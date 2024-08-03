@@ -221,7 +221,7 @@ namespace ABEngine.ABERuntime
             if (activePostProcess == null || !activePostProcess.BloomEnabled)
             {
                 // No Post Process - HDR
-                pass.SetPipeline(Graphics.FullScreenPipeline);
+                pass.SetPipeline(Graphics.fullScreenPipeline);
                 pass.SetBindGroup(0, finalQuadRSSet);
                 pass.SetVertexBuffer(0, Graphics.fullScreenVB);
                 pass.SetIndexBuffer(Graphics.fullScreenIB, IndexFormat.Uint16);

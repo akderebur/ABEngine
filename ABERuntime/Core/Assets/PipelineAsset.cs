@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Text;
 using ABEngine.ABERuntime.Pipelines;
 using ABEngine.ABERuntime.Rendering;
 using WGIL;
-using WGIL.IO;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
@@ -26,30 +24,30 @@ namespace ABEngine.ABERuntime.Core.Assets
         protected VertexLayout vertexLayout;
         protected VertexLayout instanceLayout;
 
-        Dictionary<string, int> propNames;
-        Dictionary<string, int> textureNames;
+        private Dictionary<string, int> _propNames;
+        private Dictionary<string, int> _textureNames;
         internal PipelineMaterial refMaterial;
 
         public int pipelineID;
 
-        static int pipelineCount = 0;
+        private static int _pipelineCount = 0;
 
         public RenderOrder renderOrder { get; protected set; }
         public RenderType renderType { get; protected set; }
 
-        public int DefineHash { get; protected set; }
+        public int defineHash { get; protected set; }
 
-        Dictionary<int, VariantPipelineAsset> pipelineVariants;
+        private Dictionary<int, VariantPipelineAsset> _pipelineVariants;
         protected Dictionary<string, int> defineMap;
 
         public PipelineAsset()
         {
-            pipelineID = pipelineCount;
-            pipelineCount++;
+            pipelineID = _pipelineCount;
+            _pipelineCount++;
 
             resourceLayouts = new List<BindGroupLayout>();
-            propNames = new Dictionary<string, int>();
-            textureNames = new Dictionary<string, int>();
+            _propNames = new Dictionary<string, int>();
+            _textureNames = new Dictionary<string, int>();
             defineMap = new Dictionary<string, int>();
             defaultMatName = "NoName";
 
@@ -117,9 +115,9 @@ namespace ABEngine.ABERuntime.Core.Assets
         
         internal VariantPipelineAsset GetPipelineVariant(int defineHash)
         {
-            if (baseAsset?.pipelineVariants != null && baseAsset.pipelineVariants.TryGetValue(defineHash, out VariantPipelineAsset variant))
+            if (baseAsset?._pipelineVariants != null && baseAsset._pipelineVariants.TryGetValue(defineHash, out VariantPipelineAsset variant))
             {
-                if (!variant.IsBuilt)
+                if (!variant.isBuilt)
                     variant.Build();
                 return variant;
             }
@@ -221,7 +219,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 ParseAsset(source, readDescriptor, 0);
             else
             {
-                pipelineVariants = new Dictionary<int, VariantPipelineAsset>();
+                _pipelineVariants = new Dictionary<int, VariantPipelineAsset>();
 
                 // Create each variant
                 List<string> keys = defines.Keys.ToList();
@@ -303,7 +301,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                         VariantPipelineAsset variant = new VariantPipelineAsset(sb.ToString(), readDescriptor, i);
                         variant.defineMap = variantDefineMap;
                         variant.baseAsset = this;
-                        pipelineVariants.Add(i, variant);
+                        _pipelineVariants.Add(i, variant);
                     }
                 }
             }
@@ -660,7 +658,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 int index = 0;
                 foreach (var textureName in textureNames)
                 {
-                    this.textureNames.Add(textureName, index / 2);
+                    this._textureNames.Add(textureName, index / 2);
                     if (textureName.Equals("DepthTex"))
                     {
                         layoutElements[index] = new BindGroupLayoutEntry { BindingType = BindingType.Texture, TextureSampleType = TextureSampleType.FloatNoFilter, ShaderStages = ShaderStages.FRAGMENT };
@@ -731,7 +729,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                         break;
                 }
 
-                propNames.Add(uniformElementNames[shaderVals.Count], shaderVals.Count);
+                _propNames.Add(uniformElementNames[shaderVals.Count], shaderVals.Count);
                 shaderVals.Add(prop);
             }
 
@@ -790,7 +788,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public int GetPropID(string propName)
         {
-            if (propNames.TryGetValue(propName, out int id))
+            if (_propNames.TryGetValue(propName, out int id))
                 return id;
 
             return -1;
@@ -798,7 +796,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public int GetTextureID(string texName)
         {
-            if (textureNames.TryGetValue(texName, out int id))
+            if (_textureNames.TryGetValue(texName, out int id))
                 return id;
 
             return -1;
@@ -806,22 +804,22 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public List<string> GetTextureNames()
         {
-            return textureNames.OrderBy(t => t.Value).Select(t => t.Key).ToList();
+            return _textureNames.OrderBy(t => t.Value).Select(t => t.Key).ToList();
         }
 
         public List<string> GetPropNames()
         {
-            return propNames.OrderBy(p => p.Value).Select(p => p.Key).ToList();
+            return _propNames.OrderBy(p => p.Value).Select(p => p.Key).ToList();
         }
 
         internal Dictionary<string, int> GetPropDict()
         {
-            return propNames;
+            return _propNames;
         }
 
         internal Dictionary<string, int> GetTextureDict()
         {
-            return textureNames;
+            return _textureNames;
         }
 
         internal List<BindGroupLayout> GetResourceLayouts()
@@ -836,12 +834,12 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public bool HasProperties()
         {
-            return propNames.Count > 0;
+            return _propNames.Count > 0;
         }
 
         public bool HasTextures()
         {
-            return textureNames.Count > 0;
+            return _textureNames.Count > 0;
         }
 
         internal static Dictionary<MaterialFeature, string> MatFeatureToKey = new()
@@ -855,23 +853,23 @@ namespace ABEngine.ABERuntime.Core.Assets
 
     public class VariantPipelineAsset : PipelineAsset
     {
-        public bool IsBuilt { get; set; }
+        public bool isBuilt { get; set; }
 
-        private string pipelineSource;
-        private bool readDescriptor;
+        private string _pipelineSource;
+        private bool _readDescriptor;
 
         public VariantPipelineAsset(string assetContent, bool readDescriptor, int defineHash) : base()
         {
-            this.pipelineSource = assetContent;
-            this.readDescriptor = readDescriptor;
-            this.DefineHash = defineHash;
+            this._pipelineSource = assetContent;
+            this._readDescriptor = readDescriptor;
+            this.defineHash = defineHash;
         }
 
         public void Build()
         {
-            base.ParseAsset(pipelineSource, readDescriptor, DefineHash);
-            pipelineSource = null;
-            IsBuilt = true;
+            base.ParseAsset(_pipelineSource, _readDescriptor, defineHash);
+            _pipelineSource = null;
+            isBuilt = true;
         }
 
         public VertexLayout GetVertexLayout()

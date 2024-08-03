@@ -29,8 +29,8 @@ namespace ABEngine.ABERuntime.Components
         private List<Rigidbody> _colliders;
 
         // Events
-        public event Action<Rigidbody, Rigidbody> onCollisionEnter;
-        public event Action<Rigidbody, Rigidbody> onCollisionExit;
+        public event Action<Rigidbody, Rigidbody> OnCollisionEnter;
+        public event Action<Rigidbody, Rigidbody> OnCollisionExit;
 
         public Vector2 previousPosition;
         public Vector2 smoothedPosition;
@@ -84,7 +84,7 @@ namespace ABEngine.ABERuntime.Components
             if (!_colliders.Contains(collider))
             {
                 _colliders.Add(collider);
-                onCollisionEnter?.Invoke(this, collider);
+                OnCollisionEnter?.Invoke(this, collider);
             }
         }
 
@@ -94,7 +94,7 @@ namespace ABEngine.ABERuntime.Components
             {
                 _colliders.Remove(collider);
 
-                onCollisionExit?.Invoke(this, collider);
+                OnCollisionExit?.Invoke(this, collider);
             }
         }
 
@@ -118,8 +118,8 @@ namespace ABEngine.ABERuntime.Components
 
         internal void Destroy()
         {
-            onCollisionEnter = null;
-            onCollisionExit = null;
+            OnCollisionEnter = null;
+            OnCollisionExit = null;
             colliders.Clear();
 
             Physics2D.DestroyBody(this);

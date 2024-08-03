@@ -1,5 +1,4 @@
-﻿using System;
-using ABEngine.ABERuntime.Core.Assets;
+﻿using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABERuntime.Components
 {

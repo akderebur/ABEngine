@@ -1,10 +1,5 @@
-﻿using System;
-using System.Numerics;
-using ABEngine.ABERuntime.Components;
-using ABEngine.ABERuntime.Core.Assets;
+﻿using ABEngine.ABERuntime.Core.Assets;
 using Halak;
-using WGIL;
-using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -35,7 +30,7 @@ namespace ABEngine.ABERuntime.Components
                 int skinDefineIndex = material.pipelineAsset.GetDefineIndex("HAS_SKIN");
                 if (skinDefineIndex > -1)
                 {
-                    int defineHash = material.pipelineAsset.DefineHash;
+                    int defineHash = material.pipelineAsset.defineHash;
                     defineHash |= (1 << skinDefineIndex);
                     var skinVariant = material.pipelineAsset.GetPipelineVariant(defineHash);
                     if (skinVariant != null)

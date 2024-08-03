@@ -1,5 +1,4 @@
-﻿using System;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -7,12 +6,12 @@ namespace ABEngine.ABERuntime.Components
 	{
 		public Vector4 color { get; set; }
 		public Vector3 direction { get; set; }
-		public float Intensity { get; set; }
+		public float intensity { get; set; }
 
 		public DirectionalLight()
 		{
 			color = Vector4.One;
-			Intensity = 1f;
+			intensity = 1f;
 		}
 	}
 }

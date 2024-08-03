@@ -126,7 +126,7 @@ namespace ABEngine.ABERuntime
 
                     if (locID > 0)
                         wgil.WriteBuffer(Game.meshRenderSystem.matrixStorageBuffer, matrixDataArray, matrixStart * 128 + skipCount * 128, locID * 128);
-                    pass.DrawIndexed(mesh.Indices.Length, renderC);
+                    pass.DrawIndexed(mesh.indices.Length, renderC);
 
                     matrixStart += renderC;
                     groupID++;
@@ -175,7 +175,7 @@ namespace ABEngine.ABERuntime
 
                     if (locID > 0)
                         wgil.WriteBuffer(Game.meshRenderSystem.boneStorageBuffer, boneDataArray, matrixStart * 64, locID * 64);
-                    pass.DrawIndexed(mesh.Indices.Length, renderC);
+                    pass.DrawIndexed(mesh.indices.Length, renderC);
 
                     matrixStart += renderC * boneCount;
                     groupID++;

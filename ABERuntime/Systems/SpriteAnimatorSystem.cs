@@ -17,8 +17,8 @@ namespace ABEngine.ABERuntime
                 if (!transform.enabled)
                     return;
 
-                anim.Time += deltaTime;
-                float animTime = anim.Time;
+                anim.time += deltaTime;
+                float animTime = anim.time;
 
                 bool frameChanged = false;
                 bool stateChanged = anim.CheckTransitions();
@@ -34,31 +34,31 @@ namespace ABEngine.ABERuntime
                     frameChanged = true;
                 }
 
-                curState.normalizedTime = (animTime - curState.loopStartTime) / curState.Length;
+                curState.normalizedTime = (animTime - curState.loopStartTime) / curState.length;
 
-                float frameTime = curState.lastFrameTime + curState.SampleFreq;
+                float frameTime = curState.lastFrameTime + curState.sampleFreq;
                 while(frameTime <= animTime)
                 {
                     curState.curFrame++;
-                    frameTime += curState.SampleFreq;
+                    frameTime += curState.sampleFreq;
                     frameChanged = true;
                 }
-                frameTime -= curState.SampleFreq;
+                frameTime -= curState.sampleFreq;
 
                 if(frameChanged)
                 {
-                    if (curState.curFrame >= curClip.FrameCount)
+                    if (curState.curFrame >= curClip.frameCount)
                     {
                         curState.normalizedTime = 1f;
 
-                        if (curState.IsLooping)
+                        if (curState.isLooping)
                         {
                             curState.curFrame = 0;
                             curState.loopStartTime = animTime;
                         }
                         else
                         {
-                            curState.curFrame = curClip.FrameCount - 1;
+                            curState.curFrame = curClip.frameCount - 1;
                         }
                     }
                     curState.lastFrameTime = frameTime;

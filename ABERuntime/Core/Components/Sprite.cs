@@ -1,7 +1,6 @@
 ﻿using System.Numerics;
 using ABEngine.ABERuntime.Core.Assets;
 using Halak;
-using WGIL;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -34,24 +33,20 @@ namespace ABEngine.ABERuntime.Components
 
     public class Sprite : JSerializable
     {
-        //private Vector2 defSize = new Vector2(100f, 100f);
-
-
         private bool _flipX;
         private bool _flipY;
 
         public bool flipX
         {
-            get { return _flipX;  }
+            get => _flipX;
             set { _flipX = value; flipScale.X = value ? -1 : 1; }
         }
         public bool flipY
         {
-            get { return _flipY; }
+            get => _flipY;
             set { _flipY = value; flipScale.Y = value ? -1 : 1;  }
         }
 
-        [JSerialize]
         public Vector4 tintColor { get; set; }
         public Vector2 size { get; set; }
         internal bool sizeSet = false;
@@ -66,7 +61,7 @@ namespace ABEngine.ABERuntime.Components
         private int _renderLayerIndex = 0;
         public int renderLayerIndex
         {
-            get { return _renderLayerIndex; }
+            get => _renderLayerIndex;
             set
             {
                 if (value != _renderLayerIndex)
@@ -78,18 +73,18 @@ namespace ABEngine.ABERuntime.Components
                 }
             }
         }
-
-        bool isMatCopy = false;
-        public PipelineMaterial _material;
+        
+        bool _isMatCopy = false;
+        private PipelineMaterial _material;
         public PipelineMaterial material {
             get
             {
-                if(!isMatCopy)
+                if(!_isMatCopy)
                 {
                     int lastMatInsId = _material.instanceID;
                     _material = _material.GetCopy();
                     sharedMaterial = _material;
-                    isMatCopy = true;
+                    _isMatCopy = true;
 
                     Game.spriteBatchSystem.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
                 }
@@ -285,7 +280,7 @@ namespace ABEngine.ABERuntime.Components
             Sprite copySprite = new Sprite()
             {
                 // Material
-                isMatCopy = this.isMatCopy,
+                _isMatCopy = this._isMatCopy,
                 sharedMaterial = this.sharedMaterial,
                 _material = this._material,
 

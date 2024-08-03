@@ -33,7 +33,7 @@ namespace ABEngine.ABERuntime.Components
         private Vector2 _chunkScale;
         public Vector2 chunkScale
         {
-            get { return _chunkScale; }
+            get => _chunkScale;
             set
             {
                 bool yChange = _chunkScale.Y != value.Y;

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.IO;
 using System.Linq;
 using Halak;
 
@@ -12,7 +10,7 @@ namespace ABEngine.ABERuntime.Animation
         private string _animGraph;
         public string animGraph
         {
-            get { return _animGraph; }
+            get => _animGraph;
             set
             {
                 _animGraph = value;
@@ -20,7 +18,7 @@ namespace ABEngine.ABERuntime.Animation
             }
         }
 
-        public float Time { get; internal set; }
+        public float time { get; internal set; }
         private AnimationState _currentState;
         private AnimationState _nextState;
         private List<string> _transitionParams;
@@ -31,9 +29,7 @@ namespace ABEngine.ABERuntime.Animation
         private Dictionary<Guid, AnimationState> _stateDict;
         private Dictionary<string, Trigger> _triggers { get; set; }
         public Dictionary<string, float> parameters { get; set; }
-
-        internal float transitionEndTime;
-
+        
         public Animator()
         {
             ResetFields();
@@ -45,7 +41,7 @@ namespace ABEngine.ABERuntime.Animation
             LoadAnimGraph();
         }
 
-        void LoadAnimGraph()
+        private void LoadAnimGraph()
         {
             ResetFields();
 
@@ -103,20 +99,17 @@ namespace ABEngine.ABERuntime.Animation
             {
                 var transTimeOrdered = _transitions.Where(t => t.startState == animState).OrderBy(t => t.exitTime);
                 var paramTranses = transTimeOrdered.Where(t => t.hasCondition);
-                if(paramTranses.Count() > 0)
+                if(paramTranses.Any())
                     animState.transitions.AddRange(paramTranses);
                 var exitTimeTranses = transTimeOrdered.Where(t => !t.hasCondition);
-                if (exitTimeTranses.Count() > 0)
+                if (exitTimeTranses.Any())
                     animState.transitions.AddRange(exitTimeTranses);
             }
         }
 
         public float GetParameter(string key)
         {
-            if (parameters.ContainsKey(key))
-                return parameters[key];
-            else
-                return float.NaN;
+            return parameters.GetValueOrDefault(key, float.NaN);
         }
 
         public void SetParameter(string key, float value)

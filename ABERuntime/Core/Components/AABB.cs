@@ -1,11 +1,5 @@
-﻿using System;
-using System.Linq;
-using System.Numerics;
+﻿using System.Numerics;
 using Arch.Core;
-using Arch.Core.Extensions;
-using Box2D.NetStandard.Common;
-using Halak;
-using Newtonsoft.Json;
 
 namespace ABEngine.ABERuntime.Components
 {

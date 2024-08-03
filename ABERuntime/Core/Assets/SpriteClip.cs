@@ -9,21 +9,19 @@ namespace ABEngine.ABERuntime.Core.Assets
     public class SpriteClip : Asset, IClip
     {
         public string imgPath { get; set; }
-        public string clipAssetPath { get; set; }
         //public string name { get; set; }
         public Texture2D texture2D { get; set; }
         public List<Vector2> uvPoses = new List<Vector2>();
         public List<Vector2> uvScales = new List<Vector2>();
 
         private float _sampleRate;
-        public float SampleRate { get { return _sampleRate; } set { SampleFreq = 1f / value; ClipLength = SampleFreq * FrameCount; _sampleRate = value; } }
-        public float SampleFreq { get; internal set; }
-        public float ClipLength { get; protected set; }
-        public int FrameCount { get; internal set; }
+        public float sampleRate { get { return _sampleRate; } set { sampleFreq = 1f / value; clipLength = sampleFreq * frameCount; _sampleRate = value; } }
+        public float sampleFreq { get; internal set; }
+        public float clipLength { get; protected set; }
+        public int frameCount { get; internal set; }
 
         public float frameWidth { get; set; }
         public float frameHeight { get; set; }
-        public string ClipAssetPath { get => clipAssetPath; set => clipAssetPath = value; }
 
         /// <summary>
         /// Load a sprite sheet animation from json description
@@ -32,7 +30,6 @@ namespace ABEngine.ABERuntime.Core.Assets
         internal SpriteClip(string jsonAssetPath)
         {
             //string folder = Path.GetFileName(Path.GetDirectoryName(jsonPath));
-            clipAssetPath = jsonAssetPath;
             name = Path.GetFileNameWithoutExtension(jsonAssetPath);
             string jsonPath = Game.AssetPath + jsonAssetPath;
             string folder = Path.GetDirectoryName(jsonAssetPath);
@@ -69,12 +66,10 @@ namespace ABEngine.ABERuntime.Core.Assets
             InitClipParams(frameC);
         }
 
-        internal SpriteClip(int id, Texture2D tex2d, List<Vector2> framePoses)
+        internal SpriteClip(Texture2D tex2d, List<Vector2> framePoses)
         {
-            clipAssetPath = id.ToString();
-            name = clipAssetPath;
+            name = GetHashCode().ToString();
             this.texture2D = tex2d;
-            //imgPath = tex2d.imagePath;
 
             frameWidth = tex2d.spriteSize.X;
             frameHeight = tex2d.spriteSize.Y;
@@ -94,8 +89,8 @@ namespace ABEngine.ABERuntime.Core.Assets
         {
             //sampleFreq = 1f / sampleRate;
 
-            FrameCount = frameC;
-            SampleRate = 10f;
+            frameCount = frameC;
+            sampleRate = 10f;
             //curFrame = -1;
             //lastFrameTime = 0f;
         }
@@ -104,31 +99,5 @@ namespace ABEngine.ABERuntime.Core.Assets
         {
             throw new NotImplementedException();
         }
-
-        //public SpriteClip(string imgPath, float frameRate)
-        //{
-        //    // Todo Remove HardCode
-
-        //    sampleRate = frameRate;
-        //    //sampleFreq = 1f / sampleRate;
-
-        //    frameCount = 25;
-        //    curFrame = -1;
-        //    lastFrameTime = 0f;
-
-        //    this.imgPath = imgPath;
-
-        //    //var texData = new ImageSharpTexture(Game.AppPath + imgPath, false);
-        //    var texData = AssetCache.GetImage(Game.AssetPath + imgPath, false);
-        //    float width = texData.Width;
-        //    float height = texData.Height;
-        //    float step = width / (float)frameCount;
-
-        //    for (int i = 0; i < frameCount; i++)
-        //    {
-        //        uvPoses.Add(new Vector2(step * i / width, 0));
-        //        uvScales.Add(new Vector2(step / width, 1f));
-        //    }
-        //}
     }
 }
