@@ -4,8 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using ABEngine.ABEditor.Assets;
-using ABEngine.ABEditor.Assets.Meta;
+using ABEngine.ABEditor.AssetHandlers;
+using ABEngine.ABEditor.AssetHandlers.Meta;
 using ABEngine.ABEditor.ComponentDrawers;
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Animation;
@@ -246,12 +246,12 @@ namespace ABEngine.ABEditor
                             }
 
                             // User types
-                            foreach (var userPipeline in AssetCache.GetUserPipelines())
+                            foreach (var userPipeline in Assets.GetUserPipelines())
                             {
                                 bool is_selected = matMeta.pipelineAsset.name.Equals(userPipeline);
                                 if (ImGui.Selectable(userPipeline, is_selected))
                                 {
-                                    var pipeline = AssetCache.CreatePipelineAsset(userPipeline);
+                                    var pipeline = Assets.CreatePipelineAsset(userPipeline);
                                     matMeta.pipelineAsset = pipeline;
                                     matMeta.changedPipeline = pipeline;
                                     changed = true;
@@ -589,7 +589,7 @@ namespace ABEngine.ABEditor
                         Editor.selectedEntity = Entity.Null;
 
                         ResetWorld();
-                        AssetCache.ClearSceneCache();
+                        Assets.ClearSceneCache();
                         AssetHandler.ResetScene();
 
                         canvas = new Canvas(virtualSize.X, virtualSize.Y);
@@ -652,10 +652,10 @@ namespace ABEngine.ABEditor
                     loadedScenePath = sceneFile;
                     fileDialogType = FileDialogType.None;
 
-                    AssetCache.DisposeResources();
+                    Assets.DisposeResources();
 
                     ResetWorld();
-                    AssetCache.ClearSceneCache();
+                    Assets.ClearSceneCache();
                     AssetHandler.ResetScene();
 
                     TMColliderGizmo.ResetGizmo();
@@ -1287,7 +1287,7 @@ namespace ABEngine.ABEditor
                         if (entry != null)
                         {
                             SpriteClip clip = entry.clip as SpriteClip;
-                            sprite.SetTexture(AssetCache.CreateTexture2D(clip.imgPath));
+                            sprite.SetTexture(Assets.CreateTexture2D(clip.imgPath));
                             sprite.Resize(new Vector2(clip.frameWidth, clip.frameHeight));
                             sprite.SetUVPosScale(clip.uvPoses[0], clip.uvScales[0]);
                         }

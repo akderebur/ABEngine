@@ -14,7 +14,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 string matName = br.ReadString();
                 string pipelineName = br.ReadString();
 
-                PipelineAsset pipelineAsset = AssetCache.CreatePipelineAsset(pipelineName);
+                PipelineAsset pipelineAsset = Assets.CreatePipelineAsset(pipelineName);
                 PipelineMaterial mat = pipelineAsset.GetDefaultMaterial().GetCopy();
                 mat.name = matName;
 
@@ -32,7 +32,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
                     if (texHash != 0)
                     {
-                        Texture2D tex2d = AssetCache.GetOrCreateTexture2D(null, null, Vector2.Zero, texHash, isLinear);
+                        Texture2D tex2d = Assets.GetOrCreateTexture2D(null, null, Vector2.Zero, texHash, isLinear);
                         mat.SetTexture(propname, tex2d);
                     }
                 }

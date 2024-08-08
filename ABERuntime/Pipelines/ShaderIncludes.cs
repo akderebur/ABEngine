@@ -58,6 +58,37 @@ namespace ABEngine.ABERuntime.Pipelines
         layout(location = 2) in vec2 texCoord;
         layout(location = 3) in vec4 tangent;
         ";
+        
+        internal static string FragmentInput3D = @"
+        layout (set = 0, binding = 0) uniform PipelineData
+        {
+            mat4 Projection;
+            mat4 View;
+            vec2 Resolution;
+            float Time;
+            float Padding;
+        };
+
+        // Lighting
+        struct Light
+        {
+            vec3 Position;
+            float Range;
+            vec3 Color;
+            float Intensity;
+        };
+
+        layout (set = 0, binding = 1) uniform SharedMeshFragment
+        {
+            Light Lights[4];
+            vec3 camPos;
+            float _padding_0;
+            int NumDirectionalLights;
+            int NumPointLights;
+            float _padding_2;
+            float _padding_3;
+        };
+        ";
 
         internal static string CalculateMeshCS = @"
         int index = matrixStartID + int(gl_InstanceIndex);

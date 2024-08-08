@@ -138,16 +138,12 @@ namespace ABEngine.ABERuntime.Core.Assets
 
             return GetPipelineVariant(defineHash);
         }
-
-        protected void ParseAsset(string pipelineAsset, bool readDescriptor = true)
+        
+        private string ParseIncludes(string source)
         {
-            Dictionary<string, bool> defines = new Dictionary<string, bool>();
-
-            string source = pipelineAsset; 
             StringReader sr = new StringReader(source);
             StringBuilder sb = new StringBuilder();
-
-            // Includes
+            
             while (true)
             {
                 string orgLine = sr.ReadLine();
@@ -166,7 +162,8 @@ namespace ABEngine.ABERuntime.Core.Assets
                             if (builtIncEnd > -1 && length > 0)
                             {
                                 string incName = incParam.Substring(builtIncStart + 1, length);
-                                sb.AppendLine(ShaderIncludes.GetShaderInclude(incName));
+                                string includeContent = ShaderIncludes.GetShaderInclude(incName);
+                                sb.AppendLine(ParseIncludes(includeContent));
                             }
                         }
                         else
@@ -178,7 +175,8 @@ namespace ABEngine.ABERuntime.Core.Assets
                             {
                                 int length = userIncEnd - userIncStart - 1;
                                 string incName = incParam.Substring(userIncStart + 1, length);
-                                sb.AppendLine(AssetCache.GetUserShaderInclude(incName));
+                                string includeContent = Assets.GetUserShaderInclude(incName);
+                                sb.AppendLine(ParseIncludes(includeContent));
                             }
                         }
                     }
@@ -188,7 +186,20 @@ namespace ABEngine.ABERuntime.Core.Assets
                 else
                     break;
             }
-            source = sb.ToString();
+
+            return sb.ToString();
+        }
+
+        protected void ParseAsset(string pipelineAsset, bool readDescriptor = true)
+        {
+            Dictionary<string, bool> defines = new Dictionary<string, bool>();
+
+            string source = pipelineAsset; 
+            StringReader sr = new StringReader(source);
+            StringBuilder sb = new StringBuilder();
+
+            // Includes
+            source = ParseIncludes(source);
 
             // Defines
             sr = new StringReader(source);

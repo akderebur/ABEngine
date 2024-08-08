@@ -10,10 +10,8 @@ using System.Numerics;
 using ABEngine.ABERuntime.Pipelines;
 using ABEngine.ABERuntime.Physics;
 using ABEngine.ABERuntime.Debug;
-using ABEngine.ABERuntime.Tweening;
 using ABEngine.ABERuntime.Components;
 using ABEditor.Debug;
-using ABEngine.ABEditor.ImGuiPlugins;
 using Halak;
 using Arch.Core;
 using Arch.Core.Extensions;
@@ -749,7 +747,9 @@ namespace ABEngine.ABEditor
             if (!Directory.Exists(AssetPath))
                 Directory.CreateDirectory(AssetPath);
 
-            AssetCache.InitAssetCache();
+            var assetCache = new DebugAssetCache();
+            Assets.SetCache(assetCache);
+            EditorAssetCache.SetCache(assetCache);
             AssetsFolderView.SetAssetsFolder(AssetPath);
 
             AnimGraphEditor.Init();

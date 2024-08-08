@@ -5,13 +5,10 @@ using WGIL;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
-	public class Texture2D : Asset
+	public class Texture2D : TextureBase
 	{
-		public Sampler textureSampler { get; set; }
-        public Texture texture { get; set; }
         //public string folderPath { get; set; }
         //public string imagePath { get; set; }
-        public Vector2 imageSize { get; set; }
         public Vector2 spriteSize { get; set; }
 
         public bool isSpriteSheet { get; set; }
@@ -29,10 +26,11 @@ namespace ABEngine.ABERuntime.Core.Assets
         public int textureID;
         private static int _texInitC = 0;
         
-        internal Texture2D(uint hash, Texture texture, Sampler sampler, Vector2 spriteSize)
+        internal Texture2D(uint hash, Texture texture, Sampler sampler, Vector2 spriteSize, bool isLinear)
 		{
             textureID = _texInitC++;
             this.texture = texture;
+            this.isLinear = isLinear;
             imageSize = new Vector2(texture.Width, texture.Height);
 
             fPathHash = hash;
@@ -49,7 +47,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         public TextureView GetView()
         {
-            return AssetCache.GetOrCreateTextureView(texture);
+            return Assets.GetOrCreateTextureView(texture);
         }
 
         internal void RetileTexture(Vector2 spriteSize)

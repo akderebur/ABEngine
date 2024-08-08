@@ -4,7 +4,7 @@ using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Core.Assets;
 using Halak;
 
-namespace ABEngine.ABEditor.Assets.Meta
+namespace ABEngine.ABEditor.AssetHandlers.Meta
 {
 	public class MeshMeta : AssetMeta
 	{
@@ -14,7 +14,7 @@ namespace ABEngine.ABEditor.Assets.Meta
 
         public override Mesh CreateAssetBinding()
         {
-            Mesh mesh = AssetCache.CreateMesh(base.fPath);
+            Mesh mesh = Assets.CreateMesh(base.fPath);
             return mesh;
         }
 

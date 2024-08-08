@@ -6,8 +6,8 @@ using ABEngine.ABERuntime.Components;
 using ImGuiNET;
 using System.Numerics;
 using WGIL;
-using ABEngine.ABEditor.Assets;
-using ABEngine.ABEditor.Assets.Meta;
+using ABEngine.ABEditor.AssetHandlers;
+using ABEngine.ABEditor.AssetHandlers.Meta;
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Core.Assets;
 

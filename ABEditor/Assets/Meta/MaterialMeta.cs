@@ -8,7 +8,7 @@ using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Core.Assets;
 using Halak;
 
-namespace ABEngine.ABEditor.Assets.Meta
+namespace ABEngine.ABEditor.AssetHandlers.Meta
 {
 	public class MaterialMeta : AssetMeta
 	{
@@ -62,10 +62,9 @@ namespace ABEngine.ABEditor.Assets.Meta
             mat.fPathHash = fileHash;
 
             File.WriteAllBytes(savePath, MaterialToRAW(mat));
-            AssetCache.AddAsset(mat, assetPath);
+            Assets.AddAsset(mat, assetPath);
         }
-
-
+        
         internal static byte[] MaterialToRAW(PipelineMaterial mat)
         {
             using (MemoryStream ms = new MemoryStream())
@@ -139,7 +138,7 @@ namespace ABEngine.ABEditor.Assets.Meta
 
         public override PipelineMaterial CreateAssetBinding()
         {
-            PipelineMaterial mat = AssetCache.CreateMaterial(base.fPath);
+            PipelineMaterial mat = Assets.CreateMaterial(base.fPath);
             mat.name = Path.GetFileNameWithoutExtension(base.fPath);
             return mat;
         }

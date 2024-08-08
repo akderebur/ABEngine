@@ -40,7 +40,7 @@ namespace ABEngine.ABERuntime.Components
         public SpriteAnimation(Sprite sprite, List<Vector2> poses)
         {
             this.texture = sprite.texture;
-            state = new AnimationState(AssetCache.CreateSpriteClip(texture, poses));
+            state = new AnimationState(Assets.CreateSpriteClip(texture, poses));
             isPlaying = true;
         }
 
@@ -107,7 +107,7 @@ namespace ABEngine.ABERuntime.Components
             foreach (var spriteId in spriteIds)
                 poses.Add(texture[spriteId]);
 
-            state = new AnimationState(AssetCache.CreateSpriteClip(texture, poses));
+            state = new AnimationState(Assets.CreateSpriteClip(texture, poses));
         }
 
         public void SetLooping(bool isLooping)

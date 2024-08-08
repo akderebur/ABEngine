@@ -11,6 +11,13 @@ namespace ABEngine.ABEditor
         private static Texture2D gridTexture = null;
         private static Texture2D gridLineTexture = null;
 
+        private static DebugAssetCache _currentCache;
+        
+        internal static void SetCache(DebugAssetCache cache)
+        {
+            _currentCache = cache;
+        }
+
         internal static Texture2D GetGridTexture()
         {
             if (gridTexture != null)
@@ -29,7 +36,7 @@ namespace ABEngine.ABEditor
 
             Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
-            gridTexture = new Texture2D(1, tex, Graphics.linearSampleClamp, Vector2.Zero); ;
+            gridTexture = new Texture2D(1, tex, Graphics.linearSampleClamp, Vector2.Zero, false); ;
             return gridTexture;
         }
 
@@ -51,8 +58,13 @@ namespace ABEngine.ABEditor
 
             Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
-            gridLineTexture = new Texture2D(2, tex, Graphics.linearSampleClamp, Vector2.Zero); ;
+            gridLineTexture = new Texture2D(2, tex, Graphics.linearSampleClamp, Vector2.Zero, false); ;
             return gridLineTexture;
+        }
+        
+        internal static DebugAssetCache GetCache()
+        {
+            return _currentCache;
         }
     }
 }

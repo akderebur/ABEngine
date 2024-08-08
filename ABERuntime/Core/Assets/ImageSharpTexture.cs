@@ -1,11 +1,7 @@
-﻿using Box2D.NetStandard.Dynamics.Fixtures;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
+﻿using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using WGIL;
 
 namespace ABEngine.ABERuntime.Core.Assets
@@ -65,14 +61,23 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
         }
 
-        public unsafe Texture CreateWGILTexture()
+        public void WriteToCubemap(Texture texture, uint depth)
+        {
+            Image<Rgba32> image = Images[0];
+            Rgba32[] copyArr = new Rgba32[Width * Height];
+            var copySpan = new Span<Rgba32>(copyArr);
+            image.CopyPixelDataTo(copySpan);
+            Game.wgil.WriteTexture(texture, copySpan, (int)(image.Width * image.Height * PixelSizeInBytes), PixelSizeInBytes, 0, depth);
+        }
+
+        public Texture CreateWGILTexture()
         {
             return CreateTextureViaWrite();
         }
 
-        private unsafe Texture CreateTextureViaWrite()
+        private Texture CreateTextureViaWrite()
         {
-            Texture tex = Game.wgil.CreateTexture(Width, Height, MipLevels, Format, TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST);
+            Texture tex = Game.wgil.CreateTexture(Width, Height, MipLevels, Format, TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST, 1);
 
             for (int level = 0; level < MipLevels; level++)
             {
@@ -82,7 +87,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 var copySpan = new Span<Rgba32>(copyArr);
                 image.CopyPixelDataTo(copySpan);
                 //if (image.DangerousTryGetSinglePixelMemory(out Memory<Rgba32> pixelMemory))
-                Game.wgil.WriteTexture(tex, copySpan, (int)(image.Width * image.Height * PixelSizeInBytes), PixelSizeInBytes, (uint)level);
+                Game.wgil.WriteTexture(tex, copySpan, (int)(image.Width * image.Height * PixelSizeInBytes), PixelSizeInBytes, (uint)level, 0);
             }
 
             return tex;

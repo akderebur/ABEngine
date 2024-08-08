@@ -532,7 +532,7 @@ namespace ABEngine.ABERuntime.Components
 
 		public Tilemap()
 		{
-			tileImage = AssetCache.GetDefaultTexture();
+			tileImage = Assets.GetDefaultTexture();
 			tiles = new Dictionary<Vector3, Tile>();
             collisionChunks = new List<CollisionChunk>();
             layerChunksDict = new Dictionary<float, List<CollisionChunk>>();
@@ -870,7 +870,7 @@ namespace ABEngine.ABERuntime.Components
             JsonObjectBuilder jObj = new JsonObjectBuilder(20000);
             jObj.Put("type", GetType().ToString());
             //jObj.Put("TransformGuid", transform.entity.Get<Guid>().ToString());
-            jObj.Put("TileImage", AssetCache.GetAssetSceneIndex(this.tileImage.fPathHash));
+            jObj.Put("TileImage", Assets.GetAssetSceneIndex(this.tileImage.fPathHash));
 
             JsonArrayBuilder tilesArr = new JsonArrayBuilder(10000);
 			foreach (var tile in tiles.Values)
@@ -912,9 +912,9 @@ namespace ABEngine.ABERuntime.Components
             //transformGuidStr = data["TransformGuid"];
 
             int assetSceneIndex = data["TileImage"];
-            tileImage = AssetCache.GetAssetFromSceneIndex(assetSceneIndex) as Texture2D;
+            tileImage = Assets.GetAssetFromSceneIndex(assetSceneIndex) as Texture2D;
             if (tileImage == null)
-                tileImage = AssetCache.GetDefaultTexture();
+                tileImage = Assets.GetDefaultTexture();
 
 
             foreach (var jTile in data["Tiles"].Array())

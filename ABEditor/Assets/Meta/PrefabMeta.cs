@@ -7,7 +7,7 @@ using Arch.Core;
 using Arch.Core.Extensions;
 using Halak;
 
-namespace ABEngine.ABEditor.Assets.Meta
+namespace ABEngine.ABEditor.AssetHandlers.Meta
 {
 	public class PrefabMeta : AssetMeta
 	{
@@ -49,19 +49,19 @@ namespace ABEngine.ABEditor.Assets.Meta
             JsonArrayBuilder entArr = new JsonArrayBuilder(10000);
 
             // Clear assets references
-            AssetCache.ClearSerializeDependencies();
+            Assets.ClearSerializeDependencies();
 
             RecurseEntity(entity.Get<Transform>(), entArr);
 
             // Save assets
-            jPrefab.Put("Assets", AssetCache.SerializeAssets());
+            jPrefab.Put("Assets", Assets.SerializeAssets());
             jPrefab.Put("Entities", entArr.Build());
 
             prefabAsset.serializedData = jPrefab.Build().Serialize();
             //entity.Get<Prefab>().prefabAsset = prefabAsset;
 
             File.WriteAllBytes(savePath, PrefabToRAW(prefabAsset));
-            AssetCache.AddAsset(prefabAsset, assetPath);
+            Assets.AddAsset(prefabAsset, assetPath);
         }
 
         public override void MetaCreated()
@@ -128,7 +128,7 @@ namespace ABEngine.ABEditor.Assets.Meta
 
         public override PrefabAsset CreateAssetBinding()
         {
-            PrefabAsset prefabAsset = AssetCache.CreatePrefabAsset(base.fPath);
+            PrefabAsset prefabAsset = Assets.CreatePrefabAsset(base.fPath);
             return prefabAsset;
         }
 

@@ -85,7 +85,8 @@ namespace ABEngine.ABEditor
             {
                 curImgPath = imgPath;
                 texName = Path.GetFileName(imgPath);
-                texture = AssetCache.GetTextureDebug(imgPath);
+                DebugAssetCache cache = EditorAssetCache.GetCache();
+                texture = cache.LoadTextureDebug(imgPath);
                 if(texture.Width > texture.Height)
                 {
                     prWidth = 720f;
@@ -111,7 +112,7 @@ namespace ABEngine.ABEditor
                 quads.Clear();
                 quads.Add(new CutQuad() { startX = 0, StartY = 0 });
 
-                texPtr = Editor.GetImGuiTexture(AssetCache.GetOrCreateTextureView(texture));
+                texPtr = Editor.GetImGuiTexture(Assets.GetOrCreateTextureView(texture));
                 isActive = true;
 
                 // Settings

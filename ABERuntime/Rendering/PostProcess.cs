@@ -168,9 +168,9 @@ namespace ABEngine.ABERuntime.Rendering
             uint bloomH = (uint)halfSize.Y;
 
             // Textures
-            downTex0 = wgil.CreateTexture(bloomW, bloomH, (uint)BloomMipCount, TextureFormat.Rgba16Float, TextureUsages.STORAGE_BINDING | TextureUsages.TEXTURE_BINDING, true);
-            downTex1 = wgil.CreateTexture(bloomW, bloomH, (uint)BloomMipCount, TextureFormat.Rgba16Float, TextureUsages.STORAGE_BINDING | TextureUsages.TEXTURE_BINDING, true);
-            upTex = wgil.CreateTexture(bloomW, bloomH, (uint)BloomMipCount, TextureFormat.Rgba16Float, TextureUsages.STORAGE_BINDING | TextureUsages.TEXTURE_BINDING, true);
+            downTex0 = wgil.CreateTexture(bloomW, bloomH, (uint)BloomMipCount, TextureFormat.Rgba16Float, TextureUsages.STORAGE_BINDING | TextureUsages.TEXTURE_BINDING, 1, true);
+            downTex1 = wgil.CreateTexture(bloomW, bloomH, (uint)BloomMipCount, TextureFormat.Rgba16Float, TextureUsages.STORAGE_BINDING | TextureUsages.TEXTURE_BINDING, 1, true);
+            upTex = wgil.CreateTexture(bloomW, bloomH, (uint)BloomMipCount, TextureFormat.Rgba16Float, TextureUsages.STORAGE_BINDING | TextureUsages.TEXTURE_BINDING, 1, true);
 
             // Views
             downTex0View = downTex0.CreateView();

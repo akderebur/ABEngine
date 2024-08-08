@@ -92,7 +92,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 BindGroupLayout = this._propLayout,
                 Entries = new[]
                 {
-                    _propBuffer   
+                    _propBuffer
                 }
             };
 
@@ -104,7 +104,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         internal void SetShaderTextureResources(List<string> textureNames)
         {
             textures = new List<Texture2D>();
-            Texture2D defTex = AssetCache.GetDefaultTexture();
+            Texture2D defTex = Assets.GetDefaultTexture();
             foreach (var texName in textureNames) // Invalid Textures
                 textures.Add(null);
 
@@ -198,7 +198,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                 return _texResources[texInd] as TextureView;
             }
 
-            return AssetCache.GetDefaultTexture().GetView();
+            return Assets.GetDefaultTexture().GetView();
         }
 
         public PipelineMaterial GetCopy()

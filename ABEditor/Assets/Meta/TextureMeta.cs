@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using ABEngine.ABERuntime.Core.Assets;
 using WGIL;
 
-namespace ABEngine.ABEditor.Assets.Meta
+namespace ABEngine.ABEditor.AssetHandlers.Meta
 {
 	public class TextureMeta : AssetMeta
 	{
@@ -75,9 +75,9 @@ namespace ABEngine.ABEditor.Assets.Meta
 
         public override Texture2D CreateAssetBinding()
         {
-            Texture2D tex = AssetCache.GetTextureEditorBinding(base.fPath);
+            Texture2D tex = Assets.GetAssetFromHash<Texture2D>(fPathHash);
             if(tex == null)
-                tex = AssetCache.CreateTexture2D(base.fPath, sampler, spriteSize);
+                tex = Assets.CreateTexture2D(base.fPath, sampler, spriteSize);
             return tex;
         }
     }

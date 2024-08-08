@@ -2,7 +2,7 @@
 using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Core.Assets;
 
-namespace ABEngine.ABEditor.Assets.Meta
+namespace ABEngine.ABEditor.AssetHandlers.Meta
 {
 	public class DummyMeta : AssetMeta
 	{

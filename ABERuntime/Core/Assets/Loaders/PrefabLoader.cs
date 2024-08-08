@@ -12,7 +12,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             {
                 PrefabAsset prefabAsset = new PrefabAsset();
                 prefabAsset.serializedData = br.ReadString();
-                if (ms.Position + 20 <= ms.Length && br.ReadInt32() == AssetCache.guidMagic)
+                if (ms.Position + 20 <= ms.Length && br.ReadInt32() == Assets.guidMagic)
                     prefabAsset.prefabGuid = new Guid(br.ReadBytes(16));
 
                 return prefabAsset;

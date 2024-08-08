@@ -77,7 +77,7 @@ namespace ABEngine.ABERuntime.Components
         public ScriptableParticleModule()
         {
             maxParticles = 100;
-            _particleTexture = AssetCache.GetDefaultTexture();
+            _particleTexture = Assets.GetDefaultTexture();
             _particleMaterial = Graphics.GetParticleMaterial();
             _batchGuid = Guid.NewGuid().ToString();
 

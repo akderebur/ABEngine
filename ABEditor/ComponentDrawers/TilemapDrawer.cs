@@ -3,8 +3,8 @@ using ABEngine.ABERuntime;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ImGuiNET;
-using ABEngine.ABEditor.Assets;
-using ABEngine.ABEditor.Assets.Meta;
+using ABEngine.ABEditor.AssetHandlers;
+using ABEngine.ABEditor.AssetHandlers.Meta;
 using static ABEngine.ABEditor.SpriteEditor;
 using System.Collections.Generic;
 using System.Runtime.ConstrainedExecution;
@@ -443,7 +443,7 @@ namespace ABEngine.ABEditor.ComponentDrawers
                 lastTilemap = tilemap;
                 lastTilemapTrans = tilemapTrans;
 
-                if(tmpTex2d != AssetCache.GetDefaultTexture())
+                if(tmpTex2d != Assets.GetDefaultTexture())
                 {
                     init = true;
                     texture2d = tmpTex2d;
@@ -737,8 +737,9 @@ namespace ABEngine.ABEditor.ComponentDrawers
 
                     spriteFilePath = AssetsFolderView.files[srcIndex];
 
-                    texture = AssetCache.GetTextureDebug(Game.AssetPath + spriteFilePath);
-                    imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(AssetCache.GetOrCreateTextureView(texture));
+                    DebugAssetCache cache = EditorAssetCache.GetCache();
+                    texture = cache.LoadTextureDebug(Game.AssetPath + spriteFilePath);
+                    imgPtr = Editor.GetImGuiRenderer().GetOrCreateImGuiBinding(Assets.GetOrCreateTextureView(texture));
                     init = false;
 
                     TextureMeta texMeta = AssetHandler.GetMeta(spriteFilePath) as TextureMeta;

@@ -92,7 +92,7 @@ namespace ABEngine.ABERuntime.Components
             startLifetime = new FloatRange(2f);
             maxParticles = 100;
             _rnd = new Random();
-            _particleTexture = AssetCache.GetDefaultTexture();
+            _particleTexture = Assets.GetDefaultTexture();
             _particleMaterial = Graphics.GetUberMaterial();
             simulationSpace = SimulationSpace.Local;
 
@@ -357,8 +357,8 @@ namespace ABEngine.ABERuntime.Components
         {
             JsonObjectBuilder jObj = new JsonObjectBuilder(500);
             jObj.Put("type", GetType().ToString());
-            jObj.Put("Texture", AssetCache.GetAssetSceneIndex(this._particleTexture.fPathHash));
-            jObj.Put("Material", AssetCache.GetAssetSceneIndex(this._particleMaterial.fPathHash));
+            jObj.Put("Texture", Assets.GetAssetSceneIndex(this._particleTexture.fPathHash));
+            jObj.Put("Material", Assets.GetAssetSceneIndex(this._particleMaterial.fPathHash));
             jObj.Put("MaxParticles", maxParticles);
             jObj.Put("SpawnRange", spawnRange);
             jObj.Put("SpawnRate", ABComponent.Serialize(spawnRate));
@@ -382,10 +382,10 @@ namespace ABEngine.ABERuntime.Components
             int texSceneIndex = data["Texture"];
             int matSceneIndex = data["Material"];
 
-            var tex2d = AssetCache.GetAssetFromSceneIndex(texSceneIndex) as Texture2D;
+            var tex2d = Assets.GetAssetFromSceneIndex(texSceneIndex) as Texture2D;
             if (tex2d == null)
-                tex2d = AssetCache.GetDefaultTexture();
-            var material = AssetCache.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
+                tex2d = Assets.GetDefaultTexture();
+            var material = Assets.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
 
             this._particleTexture = tex2d;
             this._particleMaterial = material;

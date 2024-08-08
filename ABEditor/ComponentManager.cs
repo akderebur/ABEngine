@@ -19,7 +19,7 @@ namespace ABEngine.ABEditor
 
         static ComponentManager()
         {
-            squareTex = AssetCache.GetDefaultTexture();
+            squareTex = Assets.GetDefaultTexture();
             //squareTex = AssetCache.CreateTexture2D()
             //squareTex = new Texture2D(Editor.EditorAssetPath, "Sprites/square-128.png", GraphicsManager.linearSampleClamp);
         }

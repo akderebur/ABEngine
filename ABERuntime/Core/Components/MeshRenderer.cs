@@ -64,8 +64,8 @@ namespace ABEngine.ABERuntime.Components
         {
             JsonObjectBuilder jObj = new JsonObjectBuilder(200);
             jObj.Put("type", GetType().ToString());
-            jObj.Put("Mesh", AssetCache.GetAssetSceneIndex(this.mesh.fPathHash));
-            jObj.Put("Material", AssetCache.GetAssetSceneIndex(this.material.fPathHash));
+            jObj.Put("Mesh", Assets.GetAssetSceneIndex(this.mesh.fPathHash));
+            jObj.Put("Material", Assets.GetAssetSceneIndex(this.material.fPathHash));
 
             return jObj.Build();
         }
@@ -77,10 +77,10 @@ namespace ABEngine.ABERuntime.Components
             int meshSceneIndex = data["Mesh"];
             int matSceneIndex = data["Material"];
 
-            var mesh = AssetCache.GetAssetFromSceneIndex(meshSceneIndex) as Mesh;
+            var mesh = Assets.GetAssetFromSceneIndex(meshSceneIndex) as Mesh;
             if (mesh == null)
                 mesh = Rendering.CubeModel.GetCubeMesh();
-            var material = AssetCache.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
+            var material = Assets.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
             if (material == null)
                 material = Graphics.GetUber3D();
 

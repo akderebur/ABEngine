@@ -466,7 +466,7 @@ namespace ABEngine.ABERuntime
                     colDebugSystem.CleanUp(true, true);
 
                 // Clean Resources
-                AssetCache.DisposeResources();
+                Assets.DisposeResources();
                 wgil.DisposeResources(false);
 
                 Graphics.ResetPipelines();
@@ -520,7 +520,7 @@ namespace ABEngine.ABERuntime
                 notifySystems.Clear();
                 notifyAnySystems.Clear();
 
-                AssetCache.ClearSceneCache();
+                Assets.ClearSceneCache();
                 Entities.frameSemaphore.Release();
                 Entities.Init();
 
@@ -905,7 +905,12 @@ namespace ABEngine.ABERuntime
             foreach (var render in internalRenders)
                 render.SceneChange();
 
-            AssetCache.InitAssetCache();
+            if(debug)
+                Assets.SetCache(new DebugAssetCache());
+            else
+            {
+                // TODO Release cache
+            }
 
             Entities.Init();
 
@@ -1212,7 +1217,7 @@ namespace ABEngine.ABERuntime
 
         protected virtual string SaveScene()
         {
-            AssetCache.ClearSerializeDependencies();
+            Assets.ClearSerializeDependencies();
 
             JsonObjectBuilder scene = new JsonObjectBuilder(10000);
             scene.Put("SceneName", "Test");
@@ -1274,7 +1279,7 @@ namespace ABEngine.ABERuntime
                 entArr.Push(entObj.Build());
             }
 
-            scene.Put("Assets", AssetCache.SerializeAssets());
+            scene.Put("Assets", Assets.SerializeAssets());
             scene.Put("Entities", entArr.Build());
 
             //Console.WriteLine(scene.Build().ToString());
@@ -1293,8 +1298,8 @@ namespace ABEngine.ABERuntime
 
             // Assets
             var jAssets = scene["Assets"];
-            AssetCache.ClearSerializeDependencies();
-            AssetCache.DeserializeAssets(jAssets);
+            Assets.ClearSerializeDependencies();
+            Assets.DeserializeAssets(jAssets);
 
             //canvas.Deserialize(scene["Canvas"].ToString());
             //projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, canvas.canvasSize.X / 100f, 0, canvas.canvasSize.Y / 100f, 1, -1);

@@ -269,6 +269,75 @@ namespace ABEngine.ABERuntime.Core.Assets
         {
             return GetOrCreateTexture2D(texturePath, sampler, spriteSize);
         }
+        
+        public static TextureCube CreateTextureCube(string[] texturePaths, Sampler sampler)
+        {
+            if (texturePaths.Length < 1)
+                return null;
+            
+            Texture cubeTexture = null;
+            uint depth = 0;
+            uint maxDepth = (uint)texturePaths.Length;
+            if (Game.debug)
+            {
+                bool first = true;
+                foreach (var path in texturePaths)
+                {
+                    var image = GetImageDebug(path, false, false);
+                    Texture faceTex = GetTextureDebug(image, true);
+
+                    if (first)
+                    {
+                        first = false;
+                        cubeTexture = Game.wgil.CreateTexture(faceTex.Width, faceTex.Height, 1, faceTex.Format, TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST, maxDepth);
+                    }
+                    
+                    image.WriteToCubemap(cubeTexture, depth);
+                    depth++;
+                }
+            }
+            else
+            {
+                var firstTex2D = GetOrCreateTexture2D(texturePaths[0], sampler, Vector2.Zero);
+                var firstTex = firstTex2D.texture;
+                cubeTexture = Game.wgil.CreateTexture(firstTex.Width, firstTex.Height, 1, firstTex.Format, TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST, maxDepth);
+                //int pixelSize = firstTex.Width * firstTex.Height * firstTex2D.
+                
+                foreach (var path in texturePaths)
+                {
+                    uint hash = path.ToHash32();
+                    AssetEntry texAsset = assetDictPK[hash];
+                    pr.BaseStream.Position = texAsset.offset;
+                    byte[] compressed = pr.ReadBytes(texAsset.size);
+
+                    // Decompress Data
+                    using (var inputStream = new MemoryStream(compressed))
+                    {
+                        using (var outputStream = new MemoryStream())
+                        {
+                            using (var compressionStream = new BrotliStream(inputStream, CompressionMode.Decompress))
+                            {
+                                compressionStream.CopyTo(outputStream);
+                            }
+
+                            // Parse texture data
+                            BinaryReader br = new BinaryReader(outputStream);
+                            br.BaseStream.Position = 0;
+
+                            int texIntType = br.ReadInt32();
+                            uint width = br.ReadUInt32();
+                            uint height = br.ReadUInt32();
+                            byte[] pixelData = br.ReadBytes((int)outputStream.Length - 12);
+
+                            // Write to cubemap
+                            //Game.wgil.WriteTexture(cubeTexture, pixelData, (int)(firstTex.texture.Width * firstTex.texture.Height * PixelSizeInBytes), PixelSizeInBytes, 0, depth);
+                        }
+                    }
+                }
+            }
+
+            return new TextureCube(0, cubeTexture, sampler, false);
+        }
 
         public static PipelineMaterial CreateMaterial(string matPath)
         {
@@ -497,7 +566,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
             Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
-            defTexture = new Texture2D(1, tex, Graphics.pointSamplerClamp, Vector2.Zero); ;
+            defTexture = new Texture2D(1, tex, Graphics.pointSamplerClamp, Vector2.Zero, false); ;
             return defTexture;
         }
 
@@ -527,12 +596,9 @@ namespace ABEngine.ABERuntime.Core.Assets
                 tex = GetTextureDebug(Game.AssetPath + texPath, false, linear);
             }
 
-            tex2d = new Texture2D(hash, tex, sampler, spriteSize);
+            tex2d = new Texture2D(hash, tex, sampler, spriteSize, linear);
             s_texture2ds.Add(tex2d);
-            if (assetDict.ContainsKey(hash))
-                assetDict[hash] = tex2d;
-            else
-                assetDict.Add(hash, tex2d);
+            assetDict[hash] = tex2d;
             return tex2d;
         }
 
@@ -551,10 +617,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         private static void RegisterAsset(Asset asset, uint hash)
         {
-            if (assetDict.ContainsKey(hash))
-                assetDict[hash] = asset;
-            else
-                assetDict.Add(hash, asset);
+            assetDict[hash] = asset;
         }
 
         private static T GetOrCreateAsset<T>(string assetPath, uint preHash = 0) where T : Asset
@@ -602,6 +665,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             return tex2d;
         }
 
+        // Editor ONLY remove later
         internal static void AddAsset(Asset asset, string file)
         {
             uint hash = asset.fPathHash;
@@ -611,8 +675,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             else
                 assetDict.Add(hash, asset);
         }
-
-        // Editor ONLY remove later
+        
         internal static void UpdateAsset(uint oldHash, uint hash, string file)
         {
             if (hashToFName.ContainsKey(oldHash))
@@ -703,11 +766,12 @@ namespace ABEngine.ABERuntime.Core.Assets
             return img;
         }
 
-        internal static Texture GetTextureDebug(ImageSharpTexture textureData)
+        internal static Texture GetTextureDebug(ImageSharpTexture textureData, bool isCube = false)
         {
             if (!s_textures_debug.TryGetValue(textureData, out Texture tex))
             {
-                tex = textureData.CreateWGILTexture();
+                if(!isCube)
+                    tex = textureData.CreateWGILTexture();
                 s_textures_debug.Add(textureData, tex);
             }
 

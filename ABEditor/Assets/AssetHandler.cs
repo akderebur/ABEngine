@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using ABEngine.ABERuntime;
-using ABEngine.ABEditor.Assets.Meta;
 using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
@@ -9,9 +8,10 @@ using System.Xml;
 using Halak;
 using ABEngine.ABERuntime.Core.Assets;
 using System.Linq;
+using ABEngine.ABEditor.AssetHandlers.Meta;
 using Arch.Core;
 
-namespace ABEngine.ABEditor.Assets
+namespace ABEngine.ABEditor.AssetHandlers
 {
 	public static class AssetHandler
 	{
@@ -301,7 +301,7 @@ namespace ABEngine.ABEditor.Assets
 			guidToMeta.Add(meta.uniqueID, metaAssetPath);
             loadedGuids.Add(meta.uniqueID);
 
-			AssetCache.UpdateAsset(oldHash, newHash, newFileAssetPath);
+			Assets.UpdateAsset(oldHash, newHash, newFileAssetPath);
 			UpdateSceneHash(oldHash, newHash);
         }
 
@@ -312,10 +312,7 @@ namespace ABEngine.ABEditor.Assets
 
 		public static AssetMeta GetMeta(string file)
 		{
-			if (metaDict.ContainsKey(file))
-				return metaDict[file];
-			else
-				return null;
+			return metaDict.GetValueOrDefault(file, null);
 		}
 
         public static AssetMeta GetMeta(uint hash)
@@ -325,11 +322,11 @@ namespace ABEngine.ABEditor.Assets
 
         public static Asset GetAssetBinding(AssetMeta meta)
 		{
-			if (sceneAssets.ContainsKey(meta))
-				return sceneAssets[meta];
+			if (sceneAssets.TryGetValue(meta, out Asset asset))
+				return asset;
 			else
-			{
-				var asset = meta.CreateAssetBinding();
+			{ 
+				asset = meta.CreateAssetBinding();
                 sceneAssets.Add(meta, asset);
 				return asset;
 			}
@@ -348,7 +345,7 @@ namespace ABEngine.ABEditor.Assets
 					using(BinaryWriter bw = new BinaryWriter(fs))
 					{
 						bw.Write(matData);
-						bw.Write(AssetCache.guidMagic);
+						bw.Write(Assets.guidMagic);
 						bw.Write(meta.uniqueID.ToByteArray());
 					}
 				}
@@ -376,7 +373,7 @@ namespace ABEngine.ABEditor.Assets
 			if (sceneAssets.ContainsKey(texMeta))
 			{
 				Texture2D oldTex = sceneAssets[texMeta] as Texture2D;
-				Texture2D newTex = AssetCache.CreateTexture2D(assetMeta.fPath, texMeta.sampler, texMeta.spriteSize);
+				Texture2D newTex = Assets.CreateTexture2D(assetMeta.fPath, texMeta.sampler, texMeta.spriteSize);
 
                 // Find all entities with this texture
                 var query = new QueryDescription().WithAll<Sprite>();

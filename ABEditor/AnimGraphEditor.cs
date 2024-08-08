@@ -221,7 +221,7 @@ namespace ABEngine.ABEditor
                         if (exNode == null)
                         {
                             var clip = newState.clip as SpriteClip;
-                            EditorSprite statePV = new EditorSprite(AssetCache.CreateTexture2D(clip.imgPath));
+                            EditorSprite statePV = new EditorSprite(Assets.CreateTexture2D(clip.imgPath));
                             newNode.pvTex = statePV;
                             newNode.pvTexPtr = Editor.GetImGuiTexture(statePV.frameView);
                         }
@@ -369,7 +369,7 @@ namespace ABEngine.ABEditor
                         SpriteClip newClip = new SpriteClip(clipFilePath);
                         AnimationState newState = new AnimationState(newClip);
                         Node newNode = new Node(nodes.Count, newState.name, ImGui.GetMousePos() / scale - offset / scale, newState, 1, 1);
-                        EditorSprite newPv = new EditorSprite(AssetCache.CreateTexture2D(newClip.imgPath));
+                        EditorSprite newPv = new EditorSprite(Assets.CreateTexture2D(newClip.imgPath));
                         newNode.pvTex = newPv;
                         newNode.pvTexPtr = Editor.GetImGuiTexture(newPv.frameView);
 

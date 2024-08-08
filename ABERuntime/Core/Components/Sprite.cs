@@ -119,7 +119,7 @@ namespace ABEngine.ABERuntime.Components
             sharedMaterial = Graphics.GetUberMaterial();
             _material = sharedMaterial;
             tintColor = Vector4.One;
-            this.texture = AssetCache.GetDefaultTexture();
+            this.texture = Assets.GetDefaultTexture();
             Resize(texture.imageSize);
         }
 
@@ -160,8 +160,8 @@ namespace ABEngine.ABERuntime.Components
         {
             JsonObjectBuilder jObj = new JsonObjectBuilder(200);
             jObj.Put("type", GetType().ToString());
-            jObj.Put("Texture", AssetCache.GetAssetSceneIndex(this.texture.fPathHash));
-            jObj.Put("Material", AssetCache.GetAssetSceneIndex(this.sharedMaterial.fPathHash));
+            jObj.Put("Texture", Assets.GetAssetSceneIndex(this.texture.fPathHash));
+            jObj.Put("Material", Assets.GetAssetSceneIndex(this.sharedMaterial.fPathHash));
             jObj.Put("RenderLayerIndex", renderLayerIndex);
             jObj.Put("FlipX", flipX);
             jObj.Put("FlipY", flipY);
@@ -184,8 +184,8 @@ namespace ABEngine.ABERuntime.Components
             int texSceneIndex = data["Texture"];
             int matSceneIndex = data["Material"];
 
-            var tex2d = AssetCache.GetAssetFromSceneIndex(texSceneIndex) as Texture2D;
-            var material = AssetCache.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
+            var tex2d = Assets.GetAssetFromSceneIndex(texSceneIndex) as Texture2D;
+            var material = Assets.GetAssetFromSceneIndex(matSceneIndex) as PipelineMaterial;
 
             if (tex2d != null)
             {

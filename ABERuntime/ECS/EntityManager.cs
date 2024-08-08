@@ -314,8 +314,8 @@ namespace ABEngine.ABERuntime.ECS
 
             // Assets
             var jAssets = prefab["Assets"];
-            AssetCache.ClearSerializeDependencies();
-            AssetCache.DeserializeAssets(jAssets);
+            Assets.ClearSerializeDependencies();
+            Assets.DeserializeAssets(jAssets);
 
             List<Transform> newEntities = new List<Transform>();
             foreach (var entity in prefab["Entities"].Array())

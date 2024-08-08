@@ -121,7 +121,7 @@ namespace ABEngine.ABERuntime.Rendering
                 if (layouts.Count > 1 && layouts[1] == Graphics.sharedSpriteNormalLayout)
                 {
                     // Sprite normals
-                    Texture2D normalTex = AssetCache.GetDefaultTexture();
+                    Texture2D normalTex = Assets.GetDefaultTexture();
                     foreach (var sprite in sprites)
                     {
                         if (sprite.spriteData.normalTexture != null)

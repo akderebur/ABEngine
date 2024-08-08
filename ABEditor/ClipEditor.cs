@@ -4,8 +4,8 @@ using System.IO;
 using ImGuiNET;
 using System.Numerics;
 using ABEngine.ABERuntime;
-using ABEngine.ABEditor.Assets;
-using ABEngine.ABEditor.Assets.Meta;
+using ABEngine.ABEditor.AssetHandlers;
+using ABEngine.ABEditor.AssetHandlers.Meta;
 using ABEngine.ABERuntime.Core.Assets;
 
 namespace ABEngine.ABEditor
@@ -38,10 +38,11 @@ namespace ABEngine.ABEditor
             _sampleFreq = clip.sampleFreq;
             //Texture2D tex = AssetCache.CreateTexture2D(clip.imgPath);
 
-            Texture tex = AssetCache.GetTextureDebug(Game.AssetPath + clip.imgPath);
+            DebugAssetCache cache = EditorAssetCache.GetCache();
+            Texture tex = cache.LoadTextureDebug(Game.AssetPath + clip.imgPath);
 
             TextureMeta texMeta = AssetHandler.GetMeta(clip.imgPath) as TextureMeta;
-            Texture2D tempTex2d = new Texture2D(0, tex, texMeta.sampler, texMeta.spriteSize);
+            Texture2D tempTex2d = new Texture2D(0, tex, texMeta.sampler, texMeta.spriteSize, false);
 
             clipSprite = new EditorSprite(tempTex2d);
             texPtr = Editor.GetImGuiTexture(clipSprite.frameView);

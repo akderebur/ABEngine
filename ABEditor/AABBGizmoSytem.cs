@@ -17,7 +17,7 @@ namespace ABEngine.ABEditor
 
         protected override void StartScene()
         {
-            Texture2D bboxTex = AssetCache.CreateTexture2D("Sprites/bbox_frame.png");
+            Texture2D bboxTex = Assets.CreateTexture2D("Sprites/bbox_frame.png");
             bboxSprite = new Sprite(bboxTex);
             bboxSprite.Resize(new Vector2(100f, 100f));
 

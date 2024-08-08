@@ -3,7 +3,7 @@ using ABEngine.ABERuntime;
 using ABEngine.ABERuntime.Core.Assets;
 using Halak;
 
-namespace ABEngine.ABEditor.Assets.Meta
+namespace ABEngine.ABEditor.AssetHandlers.Meta
 {
 	public abstract class AssetMeta : JSerializable
 	{
