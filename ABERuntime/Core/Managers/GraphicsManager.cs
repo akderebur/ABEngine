@@ -76,6 +76,7 @@ namespace ABEngine.ABERuntime
                     "Uber3D" => new UberPipeline3D().refMaterial,
                     "UberTransparent" => new UberPipelineAsset().refMaterial,
                     "UberParticle" => new ParticlePipeline().refMaterial,
+                    "Skybox" => new SkyboxPipeline().refMaterial,
                     _ => null
                 };
             }
@@ -96,6 +97,11 @@ namespace ABEngine.ABERuntime
         public static PipelineMaterial GetUber3D()
         {
             return GetFirstMatByName("Uber3D");
+        }
+        
+        public static PipelineMaterial GetSkyboxMaterial()
+        {
+            return GetFirstMatByName("Skybox");
         }
 
         public static PipelineMaterial GetUberTransparentMaterial()

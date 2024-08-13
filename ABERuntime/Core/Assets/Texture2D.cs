@@ -45,11 +45,6 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
 		}
 
-        public TextureView GetView()
-        {
-            return Assets.GetOrCreateTextureView(texture);
-        }
-
         internal void RetileTexture(Vector2 spriteSize)
         {
             this.spriteSize = spriteSize;

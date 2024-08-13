@@ -24,6 +24,11 @@ namespace ABEngine.ABERuntime.Components
         private Matrix4x4 _worldToLocalMatrix;
 
         private Transform _parent;
+        
+        // Directions
+        private Vector3 _forward;
+        private Vector3 _right;
+        private bool _dirCalculated;
 
         //internal bool enabled = true;
 
@@ -113,8 +118,8 @@ namespace ABEngine.ABERuntime.Components
             _localPosition = position;
             _localRotation = rotation;
             _localScale = scale;
-
             _localEulerAngles = _localRotation.ToEulerAngles();
+            _dirCalculated = false;
 
             RecalculateTRS();
         }
@@ -227,6 +232,7 @@ namespace ABEngine.ABERuntime.Components
             get => _localRotation;
             set
             {
+                _dirCalculated = false;
                 _localRotation = value;
                 _localEulerAngles = value.ToEulerAngles();
                 RecalculateTRS();
@@ -238,9 +244,37 @@ namespace ABEngine.ABERuntime.Components
             get => _localEulerAngles;
             set
             {
+                _dirCalculated = false;
                 _localEulerAngles = value;
                 _localRotation = Quaternion.CreateFromYawPitchRoll(_localEulerAngles.Y, _localEulerAngles.X, _localEulerAngles.Z);
                 RecalculateTRS();
+            }
+        }
+
+        private void CalculateDir()
+        {
+            _forward = Vector3.Transform(-Vector3.UnitZ, worldRotation);
+            _right = Vector3.Transform(Vector3.UnitX, worldRotation);
+            _dirCalculated = true;
+        }
+
+        public Vector3 forward
+        {
+            get
+            {
+                if (!_dirCalculated)
+                    CalculateDir();
+                return _forward;
+            }
+        }
+        
+        public Vector3 right
+        {
+            get
+            {
+                if (!_dirCalculated)
+                    CalculateDir();
+                return _right;
             }
         }
 

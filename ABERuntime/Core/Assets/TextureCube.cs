@@ -28,5 +28,10 @@ namespace ABEngine.ABERuntime.Core.Assets
         {
             throw new System.NotImplementedException();
         }
+
+        public override TextureView GetView()
+        {
+            return Assets.GetOrCreateTextureView(texture, true);
+        }
     }
 }

@@ -19,6 +19,9 @@ namespace ABEngine.ABERuntime.Rendering
             return _cubeMesh;
         }
 
+        public static int VertexCount => 24;
+        public static int IndexCount => 36;
+
         public static readonly VertexStandard[] Vertices = new VertexStandard[]
         {
             // Top

@@ -8,6 +8,7 @@ namespace ABEngine.ABERuntime
     {
         public bool started;
         public bool dontDestroyOnLoad { get; private set; }
+        public int executionOrder { get; set; }
 
         public BaseSystem()
         {

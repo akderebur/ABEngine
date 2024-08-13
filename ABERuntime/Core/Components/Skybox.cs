@@ -4,6 +4,6 @@ namespace ABEngine.ABERuntime.Components
 {
     public class Skybox : ABComponent
     {
-        public TextureCube textureCube { get; set; }
+        public TextureCube cubemap { get; set; }
     }
 }

@@ -27,10 +27,10 @@ namespace ABEngine.ABERuntime.Core.Assets
         private BindResource[] _texResources;
         private Buffer _propBuffer;
 
-        public Dictionary<int, BindGroup> bindableSets = new Dictionary<int, BindGroup>();
+        public Dictionary<int, BindGroup> bindableSets = new();
         private BindGroup _propSet;
         private BindGroup _textureSet;
-        public bool isLateRender = false;
+        public bool isLateRender { get; private set; }
         public int renderOrder { get; private set; }
 
         private byte[] _shaderPropData;

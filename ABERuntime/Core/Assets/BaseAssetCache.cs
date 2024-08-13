@@ -13,7 +13,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         
         // Cache
         private readonly Dictionary<Texture, TextureView> cachedViews = new();
-        private readonly List<Texture2D> cachedTexture2Ds = new();
+        private readonly List<TextureBase> cachedTextures = new();
 
         // ABE
         protected Dictionary<uint, Asset> assetDict;
@@ -88,24 +88,31 @@ namespace ABEngine.ABERuntime.Core.Assets
         
         internal Texture2D GetOrCreateTexture2D(string texPath, Sampler sampler, Vector2 spriteSize, uint preHash = 0, bool isLinear = false)
         {
-            uint hash = preHash;
-            if (hash == 0)
-                hash = texPath.ToHash32();
+            Texture2D cachedTex = GetCachedAsset<Texture2D>(texPath, preHash, out uint hash);
 
-            if (sampler == null)
-                sampler = Graphics.linearSampleClamp;
+            sampler ??= Graphics.linearSampleClamp;
 
-            var tex2d = cachedTexture2Ds.FirstOrDefault(t => t.fPathHash == hash && t.textureSampler == sampler && t.spriteSize == spriteSize);
-            if (tex2d != null)
+            if (cachedTex == null)
+            {
+                // Not cached, load texture
+                Texture tex = LoadTexture(texPath, hash, preHash, isLinear); 
+                var tex2d = new Texture2D(hash, tex, sampler, spriteSize, isLinear);
+                cachedTextures.Add(tex2d);
+                RegisterAsset(tex2d, hash);
                 return tex2d;
-
-            // Not cached, load texture
-            Texture tex = LoadTexture(texPath, hash, preHash, isLinear);
-            tex2d = new Texture2D(hash, tex, sampler, spriteSize, isLinear);
-            cachedTexture2Ds.Add(tex2d);
-            RegisterAsset(tex2d, hash);
-            return tex2d;
+            }
+            else
+            {
+                // Same texture configuration
+                if (sampler == cachedTex.textureSampler && spriteSize == cachedTex.spriteSize)
+                    return cachedTex;
+                
+                // Same texture, new conf
+                return new Texture2D(hash, cachedTex.texture, sampler, spriteSize, isLinear);
+            }
         }
+        
+       
         
         protected abstract Texture LoadTexture(string texPath, uint hash, uint preHash, bool isLinear);
         
@@ -133,11 +140,11 @@ namespace ABEngine.ABERuntime.Core.Assets
         
         protected abstract string LoadShaderInclude(uint hash);
         
-        internal TextureView GetViewFromTexture(Texture texture)
+        internal TextureView GetViewFromTexture(Texture texture, bool isCube = false)
         {
             if (!cachedViews.TryGetValue(texture, out TextureView view))
             {
-                view = texture.CreateView();
+                view = isCube ? texture.CreateCubeView() : texture.CreateView();
                 cachedViews.Add(texture, view);
             }
 
@@ -151,7 +158,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
         internal void ClearSceneCache()
         {
-            cachedTexture2Ds.Clear();
+            cachedTextures.Clear();
             assetDict.Clear();
             
             LoadDefaultMaterials();
@@ -166,7 +173,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             cachedViews.Clear();
             
             // ABE Types
-            cachedTexture2Ds.Clear();
+            cachedTextures.Clear();
         }
 
         internal List<string> GetUserPipelines()

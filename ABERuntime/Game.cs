@@ -18,6 +18,7 @@ using Arch.Core.Extensions.Internal;
 using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
 using ABEngine.ABERuntime.Core.Assets;
+using ABEngine.ABERuntime.Systems;
 using WGIL.IO;
 using ABEngine.ABERuntime.Windowing;
 using static SDL2.SDL;
@@ -55,7 +56,7 @@ namespace ABEngine.ABERuntime
         public static Canvas canvas;
         public static Vector2 pixelSize;
         public static Vector2 virtualSize;
-        public static Matrix4x4 projectionMatrix;
+        private protected  static Matrix4x4 projectionMatrix;
         public static float Time;
         internal static List<Type> UserTypes;
 
@@ -63,20 +64,16 @@ namespace ABEngine.ABERuntime
         public static event Action onWindowResize;
         public static event Action onSceneLoad;
         public static event Action onCanvasResize;
-
-
+        
         // Flags
-        protected static bool _checkCamUpdate;
-
-
+        private protected static bool _checkCamUpdate;
+        
         // BOX2D
-        protected private const float TimeStep = 1.0f / 50.0f;
+        private protected const float TimeStep = 1.0f / 50.0f;
         const int MAX_STEPS = 5;
-
         const int VelocityIterations = 8;
         const int PositionIterations = 3;
-
-
+        
         // Systems
         protected CameraMovementSystem camMoveSystem;
         internal static B2DInitSystem b2dInitSystem;
@@ -88,13 +85,14 @@ namespace ABEngine.ABERuntime
         protected Tweening.TweenSystem tweenSystem;
         protected private ColliderDebugSystem colDebugSystem;
         protected private ParticleModuleSystem particleSystem;
-
+        
         // Render Systems
         public static NormalsPassRenderSystem normalsRenderSystem;
         internal static MeshRenderSystem meshRenderSystem;
         public static SpriteBatchSystem spriteBatchSystem;
         //internal static MSAAResolveSystem msaaResolveSystem;
         public static LightRenderSystem lightRenderSystem;
+        protected SkyboxSystem skyboxSystem;
 
         public List<RenderSystem> internalRenders;
 
@@ -166,6 +164,7 @@ namespace ABEngine.ABERuntime
 
         void MainPassWork(RenderPass pass)
         {
+            skyboxSystem.Render(pass);
             if (!Graphics.render2DOnly)
                 meshRenderSystem.Render(pass);
             for (int i = 0; i < Graphics.renderLayers.Count; i++)
@@ -494,6 +493,7 @@ namespace ABEngine.ABERuntime
                 tweenSystem = new Tweening.TweenSystem();
                 particleSystem = new ParticleModuleSystem();
                 spriteBatchSystem = new SpriteBatchSystem();
+                skyboxSystem = new SkyboxSystem();
                 if (debug)
                     colDebugSystem = new ColliderDebugSystem(lineDbgPipelineAsset);
 
@@ -556,6 +556,7 @@ namespace ABEngine.ABERuntime
                 lightRenderSystem.Start();
                 tweenSystem.Start();
                 particleSystem.Start();
+                skyboxSystem.Start();
                 if (debug)
                     colDebugSystem.Start();
             }
@@ -784,12 +785,12 @@ namespace ABEngine.ABERuntime
             particleSystem.Update(newTime, elapsed);
             rbMoveSystem.Update(newTime, interpolation);
             camMoveSystem.Update(newTime, elapsed);
+            skyboxSystem.Update(newTime, elapsed);
             spriteBatchSystem.Update(newTime, elapsed);
             if (!Graphics.render2DOnly)
             {
                 meshRenderSystem.Update(newTime, elapsed);
                 normalsRenderSystem.Update(newTime, elapsed);
-
             }
             lightRenderSystem.Update(newTime, elapsed);
             if(debug)
@@ -926,6 +927,7 @@ namespace ABEngine.ABERuntime
             renderExtensions = new List<RenderSystem>();
             tweenSystem = new Tweening.TweenSystem();
             particleSystem = new ParticleModuleSystem();
+            skyboxSystem = new SkyboxSystem();
 
             if(debug)
             {
@@ -972,6 +974,7 @@ namespace ABEngine.ABERuntime
             camMoveSystem.Start();
             lightRenderSystem.Start();
             particleSystem.Start();
+            skyboxSystem.Start();
             if (debug)
                 colDebugSystem.Start();
 
@@ -1089,24 +1092,13 @@ namespace ABEngine.ABERuntime
                     Physics2D.CreateBody(rb);
             });
 
-            //GameWorld.SubscribeComponentSet((in Entity entity, ref Rigidbody rb) =>
-            //{
-            //    //if (rb.transform == null)
-            //    //    return;
-            //    rb.SetEntity(entity.Get<Transform>());
-            //    if (b2dInitSystem.started)
-            //        PhysicsManager.CreateBody(rb);
-            //});
-
             GameWorld.SubscribeComponentAdded((in Entity entity, ref Sprite sprite) =>
             {
                 sprite.SetTransform(entity.Get<Transform>());
                 if(!sprite.manualBatching)
                     Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
-
-            //GameWorld.SubscribeComponentAdded((in Entity entity, ref Camera cam) => TriggerCamCheck());
-
+            
             GameWorld.SubscribeComponentAdded((in Entity entity, ref AABB newBB) =>
             {
                 if (newBB == null)
@@ -1135,7 +1127,6 @@ namespace ABEngine.ABERuntime
                 meshRenderSystem.AddMesh(entity.Get<Transform>(), newMr);
             });
 
-
             GameWorld.SubscribeComponentAdded((in Entity entity, ref StateMatchAnimator animator) => animator.SetTransform(entity.Get<Transform>()));
 
             GameWorld.SubscribeComponentRemoved((in Entity entity, ref Sprite sprite) =>
@@ -1148,7 +1139,7 @@ namespace ABEngine.ABERuntime
 
             GameWorld.SubscribeComponentRemoved((in Entity entity, ref ScriptableParticleModule spm) => spm.Stop());
 
-            //GameWorld.SubscribeComponentRemoved((in Entity entity, ref Rigidbody rb) => rb.Destroy());
+            GameWorld.SubscribeComponentRemoved((in Entity entity, ref Rigidbody rb) => rb.Destroy());
 
             //GameWorld.OnEnable((Entity entity, Sprite sprite) =>
             //{
@@ -1289,12 +1280,10 @@ namespace ABEngine.ABERuntime
 
         protected void LoadScene(string json)
         {
-
             JValue scene = JValue.Parse(json);
 
             float sceneVersion = scene["Version"];
             SceneManager.sceneVersion = sceneVersion;
-
 
             // Assets
             var jAssets = scene["Assets"];

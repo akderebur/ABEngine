@@ -39,12 +39,12 @@ public static class Assets
         return _currentCache.GetUserShaderInclude(includeName);
     }
 
-    internal static TextureView GetOrCreateTextureView(Texture texture)
+    internal static TextureView GetOrCreateTextureView(Texture texture, bool isCube = false)
     {
         if (texture == null)
             return _defTexture.GetView();
 
-        return _currentCache.GetViewFromTexture(texture);
+        return _currentCache.GetViewFromTexture(texture, isCube);
     }
 
     //General purpose
@@ -100,6 +100,37 @@ public static class Assets
     public static AnimationClip CreateAnimationClip(string clipAssetPath)
     {
         return _currentCache.GetOrCreateAsset<AnimationClip>(clipAssetPath);
+    }
+
+    public static TextureCube CreateTextureCube(string[] texturePaths, Sampler sampler)
+    {
+        if (texturePaths.Length < 1)
+            return null;
+
+        Texture cubeTexture = null;
+        uint depth = 0;
+        uint maxDepth = (uint)texturePaths.Length;
+
+        bool first = true;
+        if (_currentCache is DebugAssetCache cache)
+        {
+            foreach (var path in texturePaths)
+            { 
+                var image = cache.GetImageDebug(Game.AssetPath.ToCommonPath() + path, false, false);
+                
+                if (first)
+                {
+                    first = false;
+                    cubeTexture = Game.wgil.CreateTexture(image.Width, image.Height, 1, image.Format,
+                        TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST, maxDepth);
+                }
+
+                image.WriteToCubemap(cubeTexture, depth);
+                depth++;
+            }
+        }
+
+        return  new TextureCube(0, cubeTexture, sampler, false);
     }
 
     public static PipelineAsset CreatePipelineAsset(string pipelineName, params MaterialFeature[] materialFeatures)

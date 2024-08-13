@@ -243,7 +243,6 @@ namespace ABEngine.ABERuntime
         Buffer fragmentUniformBuffer;
 
         BindGroup sharedFrameSet;
-
         internal BindGroup drawDataset;
 
         SharedMeshFragment sharedFragmentUniform;

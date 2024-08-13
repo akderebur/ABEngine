@@ -9,5 +9,10 @@ namespace ABEngine.ABERuntime.Core.Assets
         public Sampler textureSampler { get; set; }
         public Vector2 imageSize { get; set; }
         public bool isLinear { get; set; }
+        
+        public virtual TextureView GetView()
+        {
+            return Assets.GetOrCreateTextureView(texture);
+        }
     }
 }
