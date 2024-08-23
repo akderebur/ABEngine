@@ -18,6 +18,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         private BindGroupLayout _propLayout;
         private BindGroupLayout _texLayout;
         public PipelineAsset pipelineAsset;
+        internal List<PipelineAsset> pipelinePasses;
 
         internal List<ShaderProp> shaderProps;
         internal List<Texture2D> textures;
@@ -32,7 +33,6 @@ namespace ABEngine.ABERuntime.Core.Assets
         private BindGroup _textureSet;
         public bool isLateRender { get; private set; }
         public int renderOrder { get; private set; }
-
         private byte[] _shaderPropData;
 
         internal event Action<PipelineAsset> OnPipelineChanged;
@@ -40,6 +40,7 @@ namespace ABEngine.ABERuntime.Core.Assets
         public PipelineMaterial(PipelineAsset pipelineAsset, BindGroupLayout propLayout, BindGroupLayout texLayout)
         {
             this.pipelineAsset = pipelineAsset;
+            pipelinePasses = new List<PipelineAsset>() { pipelineAsset } ;
             this.instanceID = Graphics.GetPipelineMaterialCount();
             this._propLayout = propLayout;
             this._texLayout = texLayout;
@@ -47,7 +48,14 @@ namespace ABEngine.ABERuntime.Core.Assets
 
             Graphics.AddPipelineMaterial(this);
             this.renderOrder = (int)pipelineAsset.renderOrder;
-            //Console.WriteLine(this.instanceID);
+        }
+
+        public void AddPipelinePass(PipelineAsset pipeline)
+        {
+            if (pipeline == null)
+                return;
+            
+            pipelinePasses.Add(pipeline);
         }
 
         public void SetRenderOrder(int renderOrder)

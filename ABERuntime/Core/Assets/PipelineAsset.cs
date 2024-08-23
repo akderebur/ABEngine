@@ -335,6 +335,8 @@ namespace ABEngine.ABERuntime.Core.Assets
 
             bool pipeline3d = false;
             bool isPP = false;
+            bool isPipelinePass = false;
+            string parentPipeline = null;
 
             bool useInstance = false;
             
@@ -498,6 +500,10 @@ namespace ABEngine.ABERuntime.Core.Assets
                                             if (Enum.TryParse(value, true, out topologyAttr))
                                                 primitiveDesc.Topology = topologyAttr;
                                             break;
+                                        case "@Pass":
+                                            isPipelinePass = true;
+                                            parentPipeline = value;
+                                            break;
                                         default:
                                             break;
                                     }
@@ -640,59 +646,123 @@ namespace ABEngine.ABERuntime.Core.Assets
             else
                 vertexLayouts = new VertexLayout[] { vertexLayout };
 
-
-            // Shader propery Uniforms
             BindGroupLayout shaderPropUniform = null;
-            if (uniformElements.Count > 0)
-            {
-                var shaderPropLayoutDesc = new BindGroupLayoutDescriptor()
-                {
-                    Entries = new[]
-                    {
-                    new BindGroupLayoutEntry()
-                    {
-                        BindingType = BindingType.Buffer,
-                        ShaderStages = ShaderStages.VERTEX | ShaderStages.FRAGMENT,
-                    }
-                }
-                };
-                shaderPropUniform = wgil.CreateBindGroupLayout(ref shaderPropLayoutDesc);
-                resourceLayouts.Add(shaderPropUniform);
-            }
-
-            // Texture Uniforms
             BindGroupLayout texUniform = null;
 
-            if (textureNames.Count > 0)
+            if (isPipelinePass)
             {
-                BindGroupLayoutEntry[] layoutElements = new BindGroupLayoutEntry[textureNames.Count * 2];
-                int index = 0;
-                foreach (var textureName in textureNames)
+                if (Graphics.pipelineAssets.TryGetValue(parentPipeline, out PipelineAsset parentAsset))
                 {
-                    this._textureNames.Add(textureName, index / 2);
-                    if (textureName.Equals("DepthTex"))
+                    resourceLayouts = parentAsset.resourceLayouts;
+                }
+            }
+            else
+            {
+                // Shader propery Uniforms
+                if (uniformElements.Count > 0)
+                {
+                    var shaderPropLayoutDesc = new BindGroupLayoutDescriptor()
                     {
-                        layoutElements[index] = new BindGroupLayoutEntry { BindingType = BindingType.Texture, TextureSampleType = TextureSampleType.FloatNoFilter, ShaderStages = ShaderStages.FRAGMENT };
-                        index++;
-                        layoutElements[index] = new BindGroupLayoutEntry { BindingType = BindingType.Sampler, SamplerBindingType = SamplerBindingType.NonFiltering, ShaderStages = ShaderStages.FRAGMENT };
-                        index++;
-                    }
-                    else
-                    {
-                        layoutElements[index] = new BindGroupLayoutEntry { BindingType = BindingType.Texture, ShaderStages = ShaderStages.FRAGMENT };
-                        index++;
-                        layoutElements[index] = new BindGroupLayoutEntry { BindingType = BindingType.Sampler, ShaderStages = ShaderStages.FRAGMENT };
-                        index++;
-                    }
+                        Entries = new[]
+                        {
+                            new BindGroupLayoutEntry()
+                            {
+                                BindingType = BindingType.Buffer,
+                                ShaderStages = ShaderStages.VERTEX | ShaderStages.FRAGMENT,
+                            }
+                        }
+                    };
+                    shaderPropUniform = wgil.CreateBindGroupLayout(ref shaderPropLayoutDesc);
+                    resourceLayouts.Add(shaderPropUniform);
                 }
 
-                var texLayoutDesc = new BindGroupLayoutDescriptor()
+                // Texture Uniforms
+                if (textureNames.Count > 0)
                 {
-                    Entries = layoutElements
-                };
+                    BindGroupLayoutEntry[] layoutElements = new BindGroupLayoutEntry[textureNames.Count * 2];
+                    int index = 0;
+                    foreach (var textureName in textureNames)
+                    {
+                        this._textureNames.Add(textureName, index / 2);
+                        if (textureName.Equals("DepthTex"))
+                        {
+                            layoutElements[index] = new BindGroupLayoutEntry
+                            {
+                                BindingType = BindingType.Texture, TextureSampleType = TextureSampleType.FloatNoFilter,
+                                ShaderStages = ShaderStages.FRAGMENT
+                            };
+                            index++;
+                            layoutElements[index] = new BindGroupLayoutEntry
+                            {
+                                BindingType = BindingType.Sampler, SamplerBindingType = SamplerBindingType.NonFiltering,
+                                ShaderStages = ShaderStages.FRAGMENT
+                            };
+                            index++;
+                        }
+                        else
+                        {
+                            layoutElements[index] = new BindGroupLayoutEntry
+                                { BindingType = BindingType.Texture, ShaderStages = ShaderStages.FRAGMENT };
+                            index++;
+                            layoutElements[index] = new BindGroupLayoutEntry
+                                { BindingType = BindingType.Sampler, ShaderStages = ShaderStages.FRAGMENT };
+                            index++;
+                        }
+                    }
 
-                texUniform = wgil.CreateBindGroupLayout(ref texLayoutDesc);
-                resourceLayouts.Add(texUniform);
+                    var texLayoutDesc = new BindGroupLayoutDescriptor()
+                    {
+                        Entries = layoutElements
+                    };
+
+                    texUniform = wgil.CreateBindGroupLayout(ref texLayoutDesc);
+                    resourceLayouts.Add(texUniform);
+                }
+                
+                // Shader Props Array
+                uint vertBufferSize = 0;
+                List<ShaderProp> shaderVals = new List<ShaderProp>();
+                foreach (var uniformElement in uniformElements)
+                {
+                    ShaderProp prop = new ShaderProp();
+                    prop.Offset = (int)vertBufferSize;
+
+                    switch (uniformElement)
+                    {
+                        case UniformElement.Float1:
+                            prop.SizeInBytes = 4;
+                            vertBufferSize += 4;
+                            prop.SetValue(0f);
+                            break;
+                        case UniformElement.Float2:
+                            prop.SizeInBytes = 8;
+                            vertBufferSize += 8;
+                            prop.SetValue(Vector2.One);
+                            break;
+                        case UniformElement.Float3:
+                            prop.SizeInBytes = 12;
+                            vertBufferSize += 12;
+                            prop.SetValue(Vector3.One);
+                            break;
+                        case UniformElement.Float4:
+                            prop.SizeInBytes = 16;
+                            vertBufferSize += 16;
+                            prop.SetValue(Vector4.One);
+                            break;
+                        default:
+                            break;
+                    }
+
+                    _propNames.Add(uniformElementNames[shaderVals.Count], shaderVals.Count);
+                    shaderVals.Add(prop);
+                }
+                
+                refMaterial = new PipelineMaterial(this, shaderPropUniform, texUniform);
+                refMaterial.fPathHash = defaultMatName.ToHash32();
+                refMaterial.name = defaultMatName;
+
+                refMaterial.SetShaderPropBuffer(shaderVals, vertBufferSize);
+                refMaterial.SetShaderTextureResources(textureNames);
             }
 
             //if(readDescriptor && pipeline3d)
@@ -701,53 +771,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             // Shaders
             shaders[0] = vertexShaderSrc;
             shaders[1] = fragmentShaderSrc;
-
-            refMaterial = new PipelineMaterial(this, shaderPropUniform, texUniform);
-            refMaterial.fPathHash = defaultMatName.ToHash32();
-            refMaterial.name = defaultMatName;
-
-            // Shader Props Array
-            uint vertBufferSize = 0;
-            List<ShaderProp> shaderVals = new List<ShaderProp>();
-            foreach (var uniformElement in uniformElements)
-            {
-                ShaderProp prop = new ShaderProp();
-                prop.Offset = (int)vertBufferSize;
-
-                switch (uniformElement)
-                {
-                    case UniformElement.Float1:
-                        prop.SizeInBytes = 4;
-                        vertBufferSize += 4;
-                        prop.SetValue(0f);
-                        break;
-                    case UniformElement.Float2:
-                        prop.SizeInBytes = 8;
-                        vertBufferSize += 8;
-                        prop.SetValue(Vector2.One);
-                        break;
-                    case UniformElement.Float3:
-                        prop.SizeInBytes = 12;
-                        vertBufferSize += 12;
-                        prop.SetValue(Vector3.One);
-                        break;
-                    case UniformElement.Float4:
-                        prop.SizeInBytes = 16;
-                        vertBufferSize += 16;
-                        prop.SetValue(Vector4.One);
-                        break;
-                    default:
-                        break;
-                }
-
-                _propNames.Add(uniformElementNames[shaderVals.Count], shaderVals.Count);
-                shaderVals.Add(prop);
-            }
-
-            refMaterial.SetShaderPropBuffer(shaderVals, vertBufferSize);
-            refMaterial.SetShaderTextureResources(textureNames);
-
-
+            
             if (readDescriptor)
             {
                 if (isPP)
@@ -773,7 +797,6 @@ namespace ABEngine.ABERuntime.Core.Assets
                 }
                 else
                 {
-
                     // Create pipeline
                     var pipelineDesc = new PipelineDescriptor()
                     {

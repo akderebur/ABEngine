@@ -455,26 +455,31 @@ namespace ABEngine.ABERuntime
 
                 if (matGroup.keyList.Count == 0)
                     continue;
-
-                pass.SetPipeline(material.pipelineAsset.pipeline);
-
+                
                 foreach (var setKV in material.bindableSets)
                 {
                     pass.SetBindGroup(setKV.Key, setKV.Value);
                 }
 
-                foreach (var mesh in matGroup.keyList)
+                int groupStart = groupID;
+                foreach (var pipelineAsset in material.pipelinePasses)
                 {
-                    var meshGroup = matGroup.meshGroups[mesh];
+                    groupID = groupStart;
+                    pass.SetPipeline(pipelineAsset.pipeline);
+                    
+                    foreach (var mesh in matGroup.keyList)
+                    {
+                        var meshGroup = matGroup.meshGroups[mesh];
 
-                    pass.SetBindGroup(1, (uint)(bufferStep * groupID), drawDataset);
+                        pass.SetBindGroup(1, (uint)(bufferStep * groupID), drawDataset);
 
-                    pass.SetVertexBuffer(0, mesh.vertexBuffer);
-                    pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
+                        pass.SetVertexBuffer(0, mesh.vertexBuffer);
+                        pass.SetIndexBuffer(mesh.indexBuffer, IndexFormat.Uint16);
 
-                    pass.DrawIndexed(mesh.indices.Length, meshGroup.renderCount);
+                        pass.DrawIndexed(mesh.indices.Length, meshGroup.renderCount);
 
-                    groupID++;
+                        groupID++;
+                    }
                 }
             }
 
