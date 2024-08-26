@@ -170,7 +170,8 @@ public static class Assets
         byte data = 255;
         Array.Fill(pixelData, data);
 
-        int offset = 0;
+        // Black edges
+        /*int offset = 0;
         for (int x = 0; x < 128; x++)
         {
             if (x < offset || x > (128 - offset))
@@ -193,7 +194,7 @@ public static class Assets
                     pixelData[coord] = 0;
                 }
             }
-        }
+        }*/
 
         Game.wgil.WriteTexture(tex, pixelData.AsSpan(), pixelData.Length, 4);
 
