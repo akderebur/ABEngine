@@ -10,7 +10,7 @@
   <InternalsVisibleTo Include="ABEditor" /> 
 </ItemGroup>
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>10.0</LangVersion>
     <RootNamespace>ABEngine.ABERuntime</RootNamespace>
     <PackOnBuild>true</PackOnBuild>
@@ -82,7 +82,7 @@
     <Folder Include="Core\Assets\Loaders\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\WGIL\WGIL\WGIL.csproj" />
     <ProjectReference Include="..\Box2D\Box2D.NetStandard.csproj" />
-    <ProjectReference Include="..\..\..\Projects\WGIL\WGIL\WGIL.csproj" />
   </ItemGroup>
 </Project>

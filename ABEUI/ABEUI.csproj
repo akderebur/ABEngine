@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>ABEngine.ABEUI</RootNamespace>
   </PropertyGroup>
 
@@ -17,7 +17,8 @@
     <None Remove="Veldrid.ImGui" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\WGIL\WGIL.ImGui\WGIL.ImGui.csproj" />
+    <ProjectReference Include="..\..\WGIL\WGIL\WGIL.csproj" />
     <ProjectReference Include="..\ABERuntime\ABERuntime.csproj" />
-    <ProjectReference Include="..\..\..\Projects\WGIL\WGIL.ImGui\WGIL.ImGui.csproj" />
   </ItemGroup>
 </Project>
