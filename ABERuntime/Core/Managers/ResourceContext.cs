@@ -16,11 +16,11 @@ namespace ABEngine.ABERuntime
 
         // Main
         private Texture mainRenderTexture;
-        private Texture spriteNormalsTexture;
+        //private Texture spriteNormalsTexture;
         private Texture mainDepthTexture;
 
         public TextureView mainRenderView;
-        public TextureView spriteNormalsView;
+        //public TextureView spriteNormalsView;
         public TextureView mainDepthView;
 
         // Main PP
@@ -60,14 +60,14 @@ namespace ABEngine.ABERuntime
             mainRenderTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba16Float,
                                                    TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
-            spriteNormalsTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba8Unorm,
-                                                      TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
+            //spriteNormalsTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba8Unorm,
+            //                                          TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING, true);
 
             mainDepthTexture = wgil.CreateTexture(width, height, TextureFormat.Depth32Float,
                                                   TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST, true);
 
             mainPPTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba16Float,
-                                                   TextureUsages.RENDER_ATTACHMENT | TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST, true);
+                                                    TextureUsages.TEXTURE_BINDING | TextureUsages.COPY_DST, true);
 
             // Light
             lightRenderTexture = wgil.CreateTexture(width, height, TextureFormat.Rgba16Float,
@@ -76,7 +76,7 @@ namespace ABEngine.ABERuntime
             cameraNormalView = cameraNormalTexture.CreateView(true);
             normalsDepthView = normalsDepthTexture.CreateView(true);
             mainRenderView = mainRenderTexture.CreateView(true);
-            spriteNormalsView = spriteNormalsTexture.CreateView(true);
+            //spriteNormalsView = spriteNormalsTexture.CreateView(true);
             mainDepthView = mainDepthTexture.CreateView(true);
             mainPPView = mainPPTexture.CreateView(true);
             lightRenderView = lightRenderTexture.CreateView(true);
@@ -96,12 +96,12 @@ namespace ABEngine.ABERuntime
             normalsDepthView?.Dispose();
 
             mainRenderTexture?.Dispose();
-            spriteNormalsTexture?.Dispose();
+            //spriteNormalsTexture?.Dispose();
             mainDepthTexture?.Dispose();
             mainPPTexture?.Dispose();
 
             mainRenderView?.Dispose();
-            spriteNormalsView?.Dispose();
+            //spriteNormalsView?.Dispose();
             mainDepthView?.Dispose();
             mainPPView?.Dispose();
 

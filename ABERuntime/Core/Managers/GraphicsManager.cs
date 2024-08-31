@@ -513,7 +513,7 @@ namespace ABEngine.ABERuntime
                 AttachmentDescription = new AttachmentDescription()
                 {
                     DepthFormat = Game.resourceContext.mainDepthView.Format,
-                    ColorFormats = new [] { Game.resourceContext.mainRenderView.Format, Game.resourceContext.spriteNormalsView.Format }
+                    ColorFormats = new [] { Game.resourceContext.mainRenderView.Format, Game.resourceContext.cameraNormalView.Format }
                 }
             };
             depthClearPipeline = wgil.CreateRenderPipeline(DepthVertex, DepthFragment, ref depthPipeDesc).SetManualDispose(true);

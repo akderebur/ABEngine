@@ -134,61 +134,11 @@ namespace ABEngine.ABERuntime
                 int layerId = layerGroup.Key;
                 LayerContext layerContext = new LayerContext(layerId);
                 layerRenderGroups.Add(layerId, layerContext);
-
-
+                
                 // Opaque / PP
                 var opaqueGroups = layerGroup.Where(s => s.Get<Sprite>().sharedMaterial.pipelineAsset.renderType != RenderType.Transparent);
                 DoPipelineGrouping(opaqueGroups.ToList(), layerContext);
-
-
-                //foreach (var assetGroup in opaqueGroups)
-                //{
-                //    AssetBatchPair pair = new AssetBatchPair() { pipelineAsset = assetGroup.Key,
-                //                                                 layerIndex = layerGroup.Key };
-                //    pair.onDelete += AssetPair_onDelete;
-                //    pairs.Add(pair);
-
-                //    var textureGroups = assetGroup.GroupBy(lg => lg.Get<Sprite>().texture);
-                //    foreach (var textureGroup in textureGroups)
-                //    {
-                //        var matGroups = textureGroup.GroupBy(sg => sg.Get<Sprite>().sharedMaterial);
-
-                //        foreach (var matGroup in matGroups)
-                //        {
-                //            var statics = matGroup.Where(sg => sg.Get<Transform>().isStatic);
-                //            var dynamics = matGroup.Where(sg => !sg.Get<Transform>().isStatic);
-
-                //            if (statics.Count() > 0)
-                //            {
-                //                SpriteBatch sb = new SpriteBatch(textureGroup.Key, matGroup.Key, layerGroup.Key, true);
-                //                foreach (var spriteEnt in statics)
-                //                {
-                //                    sb.AddSpriteEntity(spriteEnt.Get<Transform>(), spriteEnt.Get<Sprite>());
-                //                }
-
-                //                sb.InitBatch();
-                //                batches.Add(layerGroup.Key + "_" + textureGroup.Key.textureID + "_" + matGroup.Key.instanceID + "_1", sb);
-                //                pair.batches.Add(sb);
-                //                sb.onDelete += pair.OnBatchDelete;
-                //            }
-
-                //            if (dynamics.Count() > 0)
-                //            {
-                //                SpriteBatch sb = new SpriteBatch(textureGroup.Key, matGroup.Key, layerGroup.Key, false);
-                //                foreach (var spriteEnt in dynamics)
-                //                {
-                //                    sb.AddSpriteEntity(spriteEnt.Get<Transform>(), spriteEnt.Get<Sprite>());
-                //                }
-
-                //                sb.InitBatch();
-                //                batches.Add(layerGroup.Key + "_" + textureGroup.Key.textureID + "_" + matGroup.Key.instanceID + "_0", sb);
-                //                pair.batches.Add(sb);
-                //                sb.onDelete += pair.OnBatchDelete;
-                //            }
-                //        }
-                //    }
-                //}
-
+                
                 // Transparent
                 var transparentGroups = layerGroup.Where(s => s.Get<Sprite>().sharedMaterial.pipelineAsset.renderType == RenderType.Transparent)
                                                   .GroupBy(lg => lg.Get<Transform>().worldPosition.Z);
@@ -230,7 +180,7 @@ namespace ABEngine.ABERuntime
                             var statics = matGroup.Where(sg => sg.Get<Transform>().isStatic);
                             var dynamics = matGroup.Where(sg => !sg.Get<Transform>().isStatic);
 
-                            if (statics.Count() > 0)
+                            if (statics.Any())
                             {
                                 SpriteBatch sb = new SpriteBatch(textureGroup.Key, matGroup.Key, layer, true, zValue);
                                 foreach (var spriteEnt in statics)
@@ -247,7 +197,7 @@ namespace ABEngine.ABERuntime
                                 sb.onDelete += pair.OnBatchDelete;
                             }
 
-                            if (dynamics.Count() > 0)
+                            if (dynamics.Any())
                             {
                                 SpriteBatch sb = new SpriteBatch(textureGroup.Key, matGroup.Key, layer, false, zValue);
                                 foreach (var spriteEnt in dynamics)

@@ -47,8 +47,8 @@ public class SkyboxSystem : RenderSystem
 
     public override void Update(float gameTime, float deltaTime)
     {
-        _skyboxTransform.localPosition = Game.activeCamTrans.worldPosition;
-        Game.wgil.WriteBuffer(_uniformBuffer, _skyboxTransform.worldMatrix);
+        /*_skyboxTransform.localPosition = Game.activeCamTrans.worldPosition;
+        Game.wgil.WriteBuffer(_uniformBuffer, _skyboxTransform.worldMatrix);*/
     }
 
     public override void Render(RenderPass pass)

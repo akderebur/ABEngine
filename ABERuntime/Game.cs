@@ -256,7 +256,7 @@ namespace ABEngine.ABERuntime
             {
                 IsColorClear = true,
                 IsDepthClear = true,
-                ClearColor = new WGIL.Color(0, 0, 0, 0),
+                ClearColor = new WGIL.Color(1, 1, 0.9f, 1),
                 DepthValue = 1f,
                 DepthAttachment = resourceContext.normalsDepthView,
                 ColorAttachments = new TextureViewSet()
@@ -284,7 +284,7 @@ namespace ABEngine.ABERuntime
                     TextureViews = new[]
                     {
                         resourceContext.mainRenderView,
-                        resourceContext.spriteNormalsView
+                        resourceContext.cameraNormalView
                     }
                 }
             };
@@ -357,7 +357,7 @@ namespace ABEngine.ABERuntime
         {
             meshRenderSystem.SetupResources();
             //msaaResolveSystem.SetupResources(resourceContext.mainRenderTexture, resourceContext.spriteNormalsTexture, resourceContext.mainDepthTexture);
-            lightRenderSystem.SetupResources(resourceContext.mainRenderView, resourceContext.spriteNormalsView);
+            lightRenderSystem.SetupResources(resourceContext.mainRenderView, resourceContext.cameraNormalView);
         }
 
         private void CheckResize()
@@ -384,7 +384,7 @@ namespace ABEngine.ABERuntime
                     normalsPass.UpdateColorAttachments(ref newSet);
 
                     mainPass.UpdateDepthAttachment(resourceContext.normalsDepthView);
-                    newSet.TextureViews = new[] { resourceContext.mainRenderView, resourceContext.spriteNormalsView };
+                    newSet.TextureViews = new[] { resourceContext.mainRenderView, resourceContext.cameraNormalView };
                     mainPass.UpdateColorAttachments(ref newSet);
 
 

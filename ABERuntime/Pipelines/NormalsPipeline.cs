@@ -104,9 +104,8 @@ Vertex
    void main()
    {
        #ifdef HAS_SKIN
-           int boneStart = boneStartID + int(gl_InstanceIndex) * meshBoneCount;
+          int boneStart = boneStartID + int(gl_InstanceIndex) * meshBoneCount;
            
-
           mat4 skinMatrix = boneMatrices[boneStart + boneIDs[0]].boneMatrix * boneWeights[0] +
                     boneMatrices[boneStart + boneIDs[1]].boneMatrix * boneWeights[1] +
                     boneMatrices[boneStart + boneIDs[2]].boneMatrix * boneWeights[2] +
