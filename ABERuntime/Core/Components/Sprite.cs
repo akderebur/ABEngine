@@ -1,5 +1,7 @@
 ﻿using System.Numerics;
 using ABEngine.ABERuntime.Core.Assets;
+using ABEngine.ABERuntime.Rendering;
+using Friflo.Engine.ECS;
 using Halak;
 
 namespace ABEngine.ABERuntime.Components
@@ -31,7 +33,7 @@ namespace ABEngine.ABERuntime.Components
         }
     }
 
-    public class Sprite : JSerializable
+    public struct Sprite : IComponent, JSerializable
     {
         private bool _flipX;
         private bool _flipY;
@@ -56,6 +58,10 @@ namespace ABEngine.ABERuntime.Components
         public Vector2 flipScale = Vector2.One;
         public Vector2 pivot;
 
+        // Batching
+        internal int groupID;
+        internal int batchID;
+        
         internal bool manualBatching = false;
 
         private int _renderLayerIndex = 0;
@@ -109,21 +115,31 @@ namespace ABEngine.ABERuntime.Components
         }
 
         public PipelineMaterial sharedMaterial;
-        public Transform transform;
 
         public Texture2D texture { get; private set; }
         public Texture2D normalTexture { get; set; }
+        public SpriteBatch batch;
 
-        public Sprite() : base()
+        public Sprite()
         {
             sharedMaterial = Graphics.GetUberMaterial();
             _material = sharedMaterial;
             tintColor = Vector4.One;
             this.texture = Assets.GetDefaultTexture();
+            _flipX = false;
+            _flipY = false;
+            uvPos = default;
+            pivot = default;
+            size = default;
+            normalTexture = Assets.GetDefaultTexture();
+            groupID = 0;
+            batchID = 0;
+            batch = null;
+            
             Resize(texture.imageSize);
         }
 
-        public Sprite(Texture2D texture)
+        public Sprite(Texture2D texture) : this()
         {
             this.texture = texture;
             Resize(texture.imageSize);
@@ -133,7 +149,7 @@ namespace ABEngine.ABERuntime.Components
         }
 
 
-        public Sprite(Texture2D texture, Vector2 spriteSize) : base()
+        public Sprite(Texture2D texture, Vector2 spriteSize) : this()
         {
             this.texture = texture;
             Resize(texture.spriteSize);
@@ -145,7 +161,7 @@ namespace ABEngine.ABERuntime.Components
         }
 
 
-        public Sprite(Texture2D texture, Vector2 spriteSize, Vector2 spritePos) : base()
+        public Sprite(Texture2D texture, Vector2 spriteSize, Vector2 spritePos) : this()
         {
             this.texture = texture;
             Resize(texture.spriteSize);
@@ -269,12 +285,7 @@ namespace ABEngine.ABERuntime.Components
         public void SetReferences()
         {
         }
-
-        public void SetTransform(Transform transform)
-        {
-            this.transform = transform;
-        }
-
+        
         public JSerializable GetCopy()
         {
             Sprite copySprite = new Sprite()

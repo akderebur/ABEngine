@@ -8,9 +8,8 @@ using System.Collections.Generic;
 using Halak;
 using Force.Crc32;
 using System.Text;
-using Arch.Core;
-using Arch.Core.Extensions;
-using ABEngine.ABERuntime.Components;
+using Friflo.Engine.ECS;
+using Transform = ABEngine.ABERuntime.Components.Transform;
 
 namespace ABEngine.ABERuntime
 {
@@ -250,8 +249,8 @@ namespace ABEngine.ABERuntime
         // ECS
         public static bool IsEnabled(this in Entity entity)
         {
-            if (entity.TryGet<Transform>(out Transform transform))
-                return transform.enabled;
+            /*if (entity.TryGet<Transform>(out Transform transform))
+                return transform.enabled;*/
 
             return false;
         }

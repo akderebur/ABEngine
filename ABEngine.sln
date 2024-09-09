@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WGIL", "..\WGIL\WGIL\WGIL.c
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WGIL.ImGui", "..\WGIL\WGIL.ImGui\WGIL.ImGui.csproj", "{BA953682-DC05-4D93-9D39-F982AB1D70FF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Friflo.Engine.ECS", "..\Friflo.Engine.ECS\src\ECS\Friflo.Engine.ECS.csproj", "{75336E51-2E28-4526-BC4B-3B3F7130DF06}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{BA953682-DC05-4D93-9D39-F982AB1D70FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA953682-DC05-4D93-9D39-F982AB1D70FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA953682-DC05-4D93-9D39-F982AB1D70FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75336E51-2E28-4526-BC4B-3B3F7130DF06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75336E51-2E28-4526-BC4B-3B3F7130DF06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75336E51-2E28-4526-BC4B-3B3F7130DF06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75336E51-2E28-4526-BC4B-3B3F7130DF06}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

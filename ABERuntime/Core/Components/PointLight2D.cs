@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Numerics;
-using Box2D.NetStandard.Collision.Shapes;
+using Friflo.Engine.ECS;
 
 namespace ABEngine.ABERuntime.Components
 {
-    public class PointLight2D : ABComponent
+    public struct PointLight2D : IComponent
     {
         public Vector4 color { get; set; }
         public float radius { get; set; }
@@ -18,6 +18,7 @@ namespace ABEngine.ABERuntime.Components
             radius = 1f;
             intensity = 1f;
             volume = 0f;
+            renderLayerIndex = 0;
         }
     }
 

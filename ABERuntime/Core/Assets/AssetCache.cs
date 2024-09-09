@@ -8,9 +8,7 @@ using System.IO.Compression;
 using WGIL;
 using Halak;
 using ABEngine.ABERuntime.ECS;
-using Arch.Core;
 using ABEngine.ABERuntime.Components;
-using Arch.Core.Extensions;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
@@ -23,7 +21,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 
     public static class AssetCache
     {
-        internal static int guidMagic = 1230324289; // ABUI
+        /*internal static int guidMagic = 1230324289; // ABUI
 
         // Debug - Raw
         private static readonly Dictionary<string, ImageSharpTexture> s_images_debug = new Dictionary<string, ImageSharpTexture>();
@@ -969,6 +967,6 @@ namespace ABEngine.ABERuntime.Core.Assets
             // ABE Types
             s_texture2ds.Clear();
             defTexture = null;
-        }
+        }*/
     }
 }

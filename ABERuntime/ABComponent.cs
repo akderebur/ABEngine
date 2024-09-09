@@ -5,9 +5,6 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using System.Reflection;
 using System.Linq;
-using Arch.Core.Extensions;
-using Arch.Core;
-using Arch.Core.Utils;
 using System.Collections.Generic;
 using ABEngine.ABERuntime.Components;
 
@@ -20,7 +17,7 @@ namespace ABEngine.ABERuntime
         public static Halak.JValue Serialize(ABComponent toSerialize)
         {
             JObject jo = JObject.FromObject(toSerialize, UtilityExtensions.jsonSerializer);
-            jo.Add("type", toSerialize.GetType().ToString());
+            /*jo.Add("type", toSerialize.GetType().ToString());
 
             //Serialize entity references
             foreach (PropertyInfo prop in toSerialize.GetType().GetProperties())
@@ -33,7 +30,7 @@ namespace ABEngine.ABERuntime
                         propGuid = entTrans.entity.Get<Guid>().ToString();
                     jo.Add(prop.Name, propGuid);
                 }
-            }
+            }*/
 
             return Halak.JValue.Parse(jo.ToString());
         }
@@ -69,13 +66,13 @@ namespace ABEngine.ABERuntime
                     if (string.IsNullOrEmpty(transGuid))
                         continue;
 
-                    var query = new QueryDescription().WithAll<Transform>();
+                    /*var query = new QueryDescription().WithAll<Transform>();
                     var entities = new List<Entity>();
                     Game.GameWorld.GetEntities(query, entities);
 
                     var transEnt = entities.FirstOrDefault(e => e.Get<Guid>().Equals(Guid.Parse(transGuid)));
                     if (transEnt != Entity.Null)
-                        prop.SetValue(obj, transEnt.Get<Transform>());
+                        prop.SetValue(obj, transEnt.Get<Transform>());*/
                 }
             }
 

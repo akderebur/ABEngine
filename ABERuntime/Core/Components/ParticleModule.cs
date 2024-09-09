@@ -123,11 +123,11 @@ namespace ABEngine.ABERuntime.Components
             sprite.manualBatching = true;
             sprite.SetMaterial(_particleMaterial, true);
             Transform trans = new Transform("EditorNotVisible");
-            var entity = Game.GameWorld.Create("P" + _particleCount, Guid.NewGuid(), trans, sprite);
+            //var entity = Game.GameWorld.Create("P" + _particleCount, Guid.NewGuid(), trans, sprite);
             trans.localPosition = new Vector3(0f, 0f, -10f);
             Game.spriteBatchSystem.AddSpriteToBatch(trans, sprite, _batchGuid);
             _particleBatch = Game.spriteBatchSystem.GetBatchFromSprite(trans, sprite, _batchGuid);
-            _particleBatch.isDynamicSort = true;
+            //_particleBatch.isDynamicSort = true;
 
             Particle particle = new Particle()
             {
@@ -152,7 +152,7 @@ namespace ABEngine.ABERuntime.Components
             _particles.Clear();
 
             _particleBatch.DeleteBatch();
-            Game.spriteBatchSystem.DeleteBatch(_particleBatch);
+            //Game.spriteBatchSystem.DeleteBatch(_particleBatch);
 
             _accumulator = 0f;
             isPlaying = false;
@@ -309,7 +309,7 @@ namespace ABEngine.ABERuntime.Components
                     //sprite.sharedMaterial.SetVector4("OutlineColor", Veldrid.RgbaFloat.Blue.ToVector4());
 
                     Transform trans = new Transform("EditorNotVisible");
-                    var entity = Game.GameWorld.Create("P" + _particleCount, Guid.NewGuid(), trans, sprite);
+                   // var entity = Game.GameWorld.Create("P" + _particleCount, Guid.NewGuid(), trans, sprite);
 
                     float lifetime = startLifetime.NextValue() * _scale;
                     Particle particle = new Particle()
@@ -324,7 +324,7 @@ namespace ABEngine.ABERuntime.Components
                     _particles.AddLast(particle);
                     _particleCount++;
 
-                    _particleBatch.AddSpriteEntity(trans, sprite);
+                    //_particleBatch.AddSpriteEntity(trans, sprite);
 
                     float spawnMid = spawnRange * _scale / 2f;
 

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ABEngine.ABERuntime.Components;
-using Arch.Core.Extensions;
-using Arch.Core.Utils;
 using Box2D.NetStandard.Dynamics.Bodies;
 
 namespace ABEngine.ABERuntime.Physics
@@ -80,7 +78,7 @@ namespace ABEngine.ABERuntime.Physics
 
         internal static void RegisterCollision(in CollisionData collision)
         {
-            BitSet typeSig1 = collision.rigidbodyA.transform.entity.GetArchetype().BitSet;
+            /*BitSet typeSig1 = collision.rigidbodyA.transform.entity.GetArchetype().BitSet;
             BitSet typeSig2 = collision.rigidbodyB.transform.entity.GetArchetype().BitSet;
 
             foreach (var notifyKP in Game.collisionAnySystems)
@@ -106,7 +104,7 @@ namespace ABEngine.ABERuntime.Physics
                         system.OnCollision(inversedData);
                     }
                 }
-            }
+            }*/
         }
     }
 }

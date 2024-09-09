@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
-using Arch.Core;
 using ABEngine.ABERuntime.Pipelines;
+using Friflo.Engine.ECS;
 using WGIL;
 using Buffer = WGIL.Buffer;
+using Transform = ABEngine.ABERuntime.Components.Transform;
 
 namespace ABEngine.ABERuntime
 {
@@ -77,29 +78,28 @@ namespace ABEngine.ABERuntime
                 return;
 
             base.Update(gameTime, deltaTime);
-            var query = new QueryDescription().WithAll<Transform, PointLight2D>();
-
+            
             lightCount = 0;
             lightInfos.Clear();
-            Game.GameWorld.Query(in query, (ref Transform lightTrans, ref PointLight2D light) =>
-            {
+            var queryLights = Game.GameWorld.Query<TRS, PointLight2D>();
+            queryLights.ForEachEntity((ref TRS transform, ref PointLight2D light, Entity entity) => {
                 Vector4 sizeIntVol = new Vector4(light.radius, light.radius, light.intensity, light.volume);
-                lightInfos.Add(new LightInfo(lightTrans.worldPosition,
-                                                    light.color,
-                                                    sizeIntVol,
-                                                    light.renderLayerIndex
-                                                    ));
+                lightInfos.Add(new LightInfo(transform.Position,
+                    light.color,
+                    sizeIntVol,
+                    light.renderLayerIndex
+                ));
                 lightCount++;
             });
         }
 
         public override void Render(RenderPass pass)
         {
-            if (Game.activeCamTrans == null)
+            if (Game.activeCamera.IsNull)
                 return;
 
             // Light pass
-            pipelineAsset.BindPipeline(pass);
+            pass.SetPipeline(pipelineAsset.pipeline);
             pass.SetBindGroup(1, textureSet);
 
             // Light Infos
@@ -111,7 +111,7 @@ namespace ABEngine.ABERuntime
             LightInfo[] writemap = new LightInfo[lightList.Count + 1];
 
             // Global Light
-            writemap[0] = new LightInfo(Game.activeCamTrans.worldPosition - Vector3.UnitZ,
+            writemap[0] = new LightInfo(Game.activeCamera.LocalTransform.Position - Vector3.UnitZ,
                                                         Vector4.One,
                                                         new Vector4(30, 30, GlobalLightIntensity, 0),
                                                         maxLightCount,

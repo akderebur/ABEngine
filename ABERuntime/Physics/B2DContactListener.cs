@@ -9,7 +9,6 @@ using Box2D.NetStandard.Dynamics.World;
 using Box2D.NetStandard.Dynamics.World.Callbacks; 
 using SixLabors.ImageSharp.ColorSpaces;
 using ABEngine.ABERuntime.Components;
-using Arch.Core.Extensions;
 
 namespace ABEngine.ABERuntime.Physics
 {
@@ -78,7 +77,8 @@ namespace ABEngine.ABERuntime.Physics
             //check if one of the fixtures is the platform
             Fixture platformFixture = null;
             Fixture otherFixture = null;
-            if (rbA.transform.entity.Has<Platform2D>())
+            // TODO
+            /*if (rbA.transform.entity.Has<Platform2D>())
             {
                 platformFixture = fixtureA;
                 otherFixture = fixtureB;
@@ -88,7 +88,7 @@ namespace ABEngine.ABERuntime.Physics
                 platformFixture = fixtureB;
                 otherFixture = fixtureA;
                 normalMult = -1;
-            }
+            }*/
 
             if(platformFixture != null) // Has platform
             {

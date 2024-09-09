@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using ABEngine.ABERuntime.Components;
 using System.Linq;
 using System.Threading.Tasks;
-using Arch.Core;
-using Arch.Core.Extensions;
 using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Core.Assets;
 
@@ -12,7 +10,7 @@ namespace ABEngine.ABERuntime
 {
 	public static class Prefabs
 	{
-		static Dictionary<uint, PrefabAsset> prefabMap = new Dictionary<uint, PrefabAsset>();
+		/*static Dictionary<uint, PrefabAsset> prefabMap = new Dictionary<uint, PrefabAsset>();
         static Dictionary<uint, PrefabAsset> sharedPrefabMap = new Dictionary<uint, PrefabAsset>();
 
         static Dictionary<uint, Transform> prefabInstances = new Dictionary<uint, Transform>();
@@ -239,7 +237,7 @@ namespace ABEngine.ABERuntime
         internal static void ClearSharedPrefabs()
 		{
 			sharedPrefabMap.Clear();
-		}
+		}*/
 	}
 }
 

@@ -2,14 +2,13 @@ using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Pipelines;
 using ABEngine.ABERuntime.Rendering;
-using Arch.Core;
 using WGIL;
 
 namespace ABEngine.ABERuntime.Systems;
 
 public class SkyboxSystem : RenderSystem
 {
-    private readonly QueryDescription skyQuery = new QueryDescription().WithAll<Skybox>();
+   // private readonly QueryDescription skyQuery = new QueryDescription().WithAll<Skybox>();
     
     private Buffer _uniformBuffer;
     private BindGroup _skyboxEngineGroup;
@@ -21,11 +20,11 @@ public class SkyboxSystem : RenderSystem
     
     protected override void StartScene()
     {
-        Game.GameWorld.Query(in skyQuery, (ref Skybox skybox, ref Transform skyboxTrans) =>
+        /*Game.GameWorld.Query(in skyQuery, (ref Skybox skybox, ref Transform skyboxTrans) =>
         {
             _skybox = skybox;
             _skyboxTransform = skyboxTrans;
-        });
+        });*/
 
         if (_skybox == null) return;
 
@@ -53,13 +52,13 @@ public class SkyboxSystem : RenderSystem
 
     public override void Render(RenderPass pass)
     {
-        if (Game.activeCamera.cameraProjection == CameraProjection.Perspective)
+        /*if (Game.activeCamera.cameraProjection == CameraProjection.Perspective)
         {
             _skyMaterial.pipelineAsset.BindPipeline(pass);
             pass.SetBindGroup(1, _skyboxEngineGroup);
             pass.SetVertexBuffer(0, _cubeMesh.vertexBuffer);
             pass.SetIndexBuffer(_cubeMesh.indexBuffer, IndexFormat.Uint16);
             pass.DrawIndexed(CubeModel.IndexCount);
-        }
+        }*/
     }
 }

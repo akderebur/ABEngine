@@ -11,17 +11,15 @@ using ABEngine.ABERuntime.Debug;
 using ABEngine.ABERuntime.Physics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Animation.StateMatch;
-using Arch.Core.Utils;
-using Arch.Core;
-using Arch.Core.Extensions;
-using Arch.Core.Extensions.Internal;
-using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Rendering;
 using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Systems;
 using WGIL.IO;
 using ABEngine.ABERuntime.Windowing;
+using Friflo.Engine.ECS;
 using static SDL2.SDL;
+using Entities = ABEngine.ABERuntime.ECS.Entities;
+using Transform = ABEngine.ABERuntime.Components.Transform;
 
 namespace ABEngine.ABERuntime
 {
@@ -39,7 +37,7 @@ namespace ABEngine.ABERuntime
         protected Sdl2Window window;
 
         // Worlds and Systems
-        public static World GameWorld;
+        public static EntityStore GameWorld;
         public static Box2D.NetStandard.Dynamics.World.World B2DWorld;
         private List<Type> userSystemTypes;
         private protected List<BaseSystem> userSystems;
@@ -50,8 +48,7 @@ namespace ABEngine.ABERuntime
         // Global Vars
         public static string AppPath;
         public static string AssetPath;
-        public static Transform activeCamTrans;
-        public static Camera activeCamera;
+        public static Entity activeCamera;
         public static PostProcess activePostProcess;
         public static Canvas canvas;
         public static Vector2 pixelSize;
@@ -95,6 +92,8 @@ namespace ABEngine.ABERuntime
         protected SkyboxSystem skyboxSystem;
 
         public List<RenderSystem> internalRenders;
+        private List<BaseSystem> updateSystems;
+        private List<RenderSystem> renderSystems;
 
         // Framebuffer
         protected BindGroup mainPPQuadRSSet;
@@ -164,6 +163,7 @@ namespace ABEngine.ABERuntime
 
         void MainPassWork(RenderPass pass)
         {
+            pass.SetBindGroup(0, pipelineSet);
             skyboxSystem.Render(pass);
             if (!Graphics.render2DOnly)
                 meshRenderSystem.Render(pass);
@@ -192,12 +192,14 @@ namespace ABEngine.ABERuntime
             //pass.SetIndexBuffer(GraphicsManager.fullScreenIB, IndexFormat.Uint16);
             //pass.DrawIndexed(6);
 
+            pass.SetBindGroup(0, pipelineSet);
             spriteBatchSystem.RenderPP(pass, Graphics.renderLayers.Count - 1);
             meshRenderSystem.RenderPP(pass);
         }
 
         void LightPassWork(RenderPass pass)
         {
+            pass.SetBindGroup(0, pipelineSet);
             lightRenderSystem.Render(pass);
         }
 
@@ -213,7 +215,7 @@ namespace ABEngine.ABERuntime
         {
             if (Game.activeCamera != null)
             {
-                Camera cam = Game.activeCamera;
+                Camera cam = Game.activeCamera.GetComponent<Camera>();
                 pass.SetViewport(Game.pixelSize.X * cam.viewport.X, Game.pixelSize.Y * cam.viewport.Y, Game.pixelSize.X * cam.viewport.Z, Game.pixelSize.Y * cam.viewport.W);
             }
 
@@ -446,10 +448,9 @@ namespace ABEngine.ABERuntime
 
                 Entities.SetImmediateDestroy(true);
                 CoroutineManager.StopAllCoroutines();
-                Prefabs.ClearScene();
+                
 
                 // Recreate assets/worlds
-                World.Destroy(GameWorld);
                 CreateWorlds();
                 Physics2D.ResetPhysics();
 
@@ -477,7 +478,7 @@ namespace ABEngine.ABERuntime
                 }
 
                 // Reset Camera
-                Game.activeCamTrans = null;
+                Game.activeCamera = default;
                 //TriggerCamCheck();
 
                 LineDbgPipelineAsset lineDbgPipelineAsset = new LineDbgPipelineAsset();
@@ -517,8 +518,9 @@ namespace ABEngine.ABERuntime
                     }
                 }
 
+                /*
                 notifySystems.Clear();
-                notifyAnySystems.Clear();
+                notifyAnySystems.Clear();*/
 
                 Assets.ClearSceneCache();
                 Entities.frameSemaphore.Release();
@@ -603,20 +605,21 @@ namespace ABEngine.ABERuntime
         protected private void RenderSetup(float time)
         {
             // First pass setup
-            if (Game.activeCamTrans != null)
+            if (!activeCamera.IsNull)
             {
-                var camEnt = Game.activeCamTrans.entity;
-                if (camEnt != Entity.Null)
+                var camEnt = activeCamera;
+                if (!camEnt.IsNull)
                 {
-                    Vector3 forward = Vector3.Transform(-Vector3.UnitZ, Game.activeCamTrans.worldRotation);
+                    ref TRS camTrans = ref camEnt.LocalTransform;
+                    Vector3 forward = Vector3.Transform(-Vector3.UnitZ, camTrans.Rotation);
 
-                    Vector3 cameraPosition = Game.activeCamTrans.worldPosition;
+                    Vector3 cameraPosition = camTrans.Position;
                     Vector3 targetPosition = cameraPosition + forward;
-                    Vector3 up = Vector3.Transform(Vector3.UnitY, Game.activeCamTrans.worldRotation);
+                    Vector3 up = Vector3.Transform(Vector3.UnitY, camTrans.Rotation);
 
                     Matrix4x4 view = Matrix4x4.CreateLookAt(cameraPosition, targetPosition, up);
 
-                    Game.activeCamera.forward = forward;
+                    Game.activeCamera.GetComponent<Camera>().forward = forward;
 
                     pipelineData.View = view;
                     pipelineData.Time = time;
@@ -673,11 +676,7 @@ namespace ABEngine.ABERuntime
             }
             Physics2D.PostFixedUpdate();
         }
-
-        internal static Dictionary<BitSet, List<BaseSystem>> notifySystems;
-        internal static Dictionary<BitSet, List<BaseSystem>> notifyAnySystems;
-        internal static Dictionary<BitSet, List<BaseSystem>> collisionAnySystems;
-
+        
 
         protected virtual void Scene_RegisterSystems() { }
 
@@ -691,7 +690,7 @@ namespace ABEngine.ABERuntime
             userSystems.Add(system);
         }
 
-        private void AddSystemFromAttribute(Type type, BaseSystem system, Type attributeType, Dictionary<BitSet, List<BaseSystem>> dict)
+        /*private void AddSystemFromAttribute(Type type, BaseSystem system, Type attributeType, Dictionary<BitSet, List<BaseSystem>> dict)
         {
             if (!typeof(Attribute).IsAssignableFrom(attributeType))
             {
@@ -733,11 +732,12 @@ namespace ABEngine.ABERuntime
                     dict.Add(bitSet, new List<BaseSystem> { system });
 
             }
-        }
+        }*/
 
         private protected void SubscribeSystems()
         {
-            notifySystems = new Dictionary<BitSet, List<BaseSystem>>();
+            // TODO subscribe systems
+            /*notifySystems = new Dictionary<BitSet, List<BaseSystem>>();
             notifyAnySystems = new Dictionary<BitSet, List<BaseSystem>>();
             collisionAnySystems = new Dictionary<BitSet, List<BaseSystem>>();
 
@@ -762,7 +762,7 @@ namespace ABEngine.ABERuntime
 
                 // Subscribe entity creation
                 AddSystemFromAttribute(type, system, typeof(SubscribeAnyAttribute), notifyAnySystems);
-            }
+            }*/
         }
 
         private protected void MainUpdate(float newTime, float elapsed, float interpolation)
@@ -777,7 +777,13 @@ namespace ABEngine.ABERuntime
             {
                 system.Update(newTime, elapsed);
             }
-            tweenSystem.Update(newTime, elapsed);
+
+            foreach (var system in updateSystems)
+            {
+                system.Update(newTime, elapsed);
+            }
+            
+            /*tweenSystem.Update(newTime, elapsed);
             spriteAnimatorSystem.Update(newTime, elapsed);
             meshAnimatorSystem.Update(newTime, elapsed);
             stateAnimatorSystem.Update(newTime, elapsed);
@@ -794,7 +800,7 @@ namespace ABEngine.ABERuntime
             }
             lightRenderSystem.Update(newTime, elapsed);
             if(debug)
-                colDebugSystem.Update(newTime, elapsed);
+                colDebugSystem.Update(newTime, elapsed);*/
         }
 
         private protected virtual void Render()
@@ -821,18 +827,18 @@ namespace ABEngine.ABERuntime
 
         internal static void RefreshProjection(Canvas canvas)
         {
-            if (Game.activeCamTrans == null)
+            if (activeCamera.IsNull)
                 return;
 
-            Camera camera = Game.activeCamera;
+            Camera camera = Game.activeCamera.GetComponent<Camera>();
             camera.OnCameraActivate();
             if (camera.cameraProjection == CameraProjection.Orthographic)
             {
-                Vector2 extents = activeCamera.compViewSize / 2f / 100f;
+                Vector2 extents = camera.compViewSize / 2f / 100f;
                 projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(-extents.X, extents.X, -extents.Y, extents.Y, -1000f, 1000f);
             }
             else
-                projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 4f, activeCamera.compViewSize.X / activeCamera.compViewSize.Y, 0.1f, 1000f);
+                projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 4f, camera.compViewSize.X / camera.compViewSize.Y, 0.1f, 1000f);
 
             //projectionMatrix = CreatePerspective(MathF.PI / 4f, canvas.canvasSize.X / canvas.canvasSize.Y, 1000f, 0.1f);
 
@@ -917,6 +923,21 @@ namespace ABEngine.ABERuntime
 
             // Systems
             // Shared
+            spriteBatchSystem = new SpriteBatchSystem();
+            updateSystems = new List<BaseSystem>()
+            {
+                new TRSSystem(),
+                spriteBatchSystem,
+                lightRenderSystem
+            };
+
+            renderSystems = new List<RenderSystem>()
+            {
+                spriteBatchSystem,
+                lightRenderSystem
+            };
+
+            
             camMoveSystem = new CameraMovementSystem();
             b2dInitSystem = new B2DInitSystem();
             spriteAnimatorSystem = new SpriteAnimatorSystem();
@@ -959,6 +980,12 @@ namespace ABEngine.ABERuntime
             {
                 system.Start();
             }
+            
+            foreach (var system in updateSystems)
+            {
+                system.Start();
+            }
+
 
             //spriteRenderer.Start();
             spriteBatchSystem.Start();
@@ -990,32 +1017,26 @@ namespace ABEngine.ABERuntime
 
         protected private void FindCamera()
         {
-            activeCamTrans = null;
-            var camQ = new QueryDescription().WithAll<Camera, Transform>();
-            GameWorld.Query(in camQ, (Entity camEnt) =>
+            var queryLights = Game.GameWorld.Query<Camera>();
+            queryLights.ForEachEntity((ref Camera camera, Entity entity) =>
             {
-                if (camEnt != Entity.Null)
-                {
-                    activeCamTrans = camEnt.Get<Transform>();
-                    activeCamera = camEnt.Get<Camera>();
-                    activeCamera.OnCameraActivate();
-                    RefreshProjection(canvas);
-                    return;
-                }
+                activeCamera = entity;
+                RefreshProjection(canvas);
             });
+            
             _checkCamUpdate = false;
         }
 
         protected private void FindPostProcess()
         {
-            activePostProcess = null;
+            /*activePostProcess = null;
             var ppQ = new QueryDescription().WithAll<PostProcess, Transform>();
             GameWorld.Query(in ppQ, (ref PostProcess pp) =>
             {
                 activePostProcess = pp;
                 activePostProcess.InitPostProcess();
                 return;
-            });
+            });*/
         }
 
         private protected void CreateRenderResources(uint pixelWidth, uint pixelHeight)
@@ -1077,8 +1098,10 @@ namespace ABEngine.ABERuntime
             B2DWorld.SetContactListener(new B2DContactListener());
 
             // ECS World
-            GameWorld = World.Create();
-            GameWorld.SubscribeComponentAdded((in Entity entity, ref Transform transform) =>
+            GameWorld = new EntityStore();
+
+            // TODO subscriptions
+            /*GameWorld.SubscribeComponentAdded((in Entity entity, ref Transform transform) =>
             {
                 transform.SetEntity(entity);
             });
@@ -1098,7 +1121,7 @@ namespace ABEngine.ABERuntime
                 if(!sprite.manualBatching)
                     Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
             });
-            
+
             GameWorld.SubscribeComponentAdded((in Entity entity, ref AABB newBB) =>
             {
                 if (newBB == null)
@@ -1139,42 +1162,7 @@ namespace ABEngine.ABERuntime
 
             GameWorld.SubscribeComponentRemoved((in Entity entity, ref ScriptableParticleModule spm) => spm.Stop());
 
-            GameWorld.SubscribeComponentRemoved((in Entity entity, ref Rigidbody rb) => rb.Destroy());
-
-            //GameWorld.OnEnable((Entity entity, Sprite sprite) =>
-            //{
-            //    Game.spriteBatchSystem.UpdateSpriteBatch(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
-            //});
-
-
-            //GameWorld.OnDisable((Entity entity, Sprite sprite) =>
-            //{
-            //    Game.spriteBatchSystem.RemoveSprite(sprite, sprite.renderLayerIndex, sprite.texture, sprite.sharedMaterial.instanceID);
-            //});
-
-            //GameWorld.OnEnable((Entity entity, Rigidbody rb) =>
-            //{
-            //    rb.SetBodyEnabled(true);
-            //});
-
-
-            //GameWorld.OnDisable((Entity entity, Rigidbody rb) =>
-            //{
-            //    rb.SetBodyEnabled(false);
-            //});
-
-            //GameWorld.OnEnable((Entity entity, Tweener tweener) =>
-            //{
-            //    tweener.Pause(false);
-            //});CreateOrthographicOffCenter
-
-
-            //GameWorld.OnDisable((Entity entity, Tweener tweener) =>
-            //{
-            //    tweener.Pause(true);
-            //});
-
-            Prefabs.SceneInit();
+            GameWorld.SubscribeComponentRemoved((in Entity entity, ref Rigidbody rb) => rb.Destroy());*/
         }
 
         internal static void TriggerCamCheck()
@@ -1226,7 +1214,8 @@ namespace ABEngine.ABERuntime
             // Scene Objects
             //scene.Put("Canvas", canvas.Serialize());
 
-            var query = new QueryDescription().WithAll<Transform>();
+            // TODO serialize
+            /*var query = new QueryDescription().WithAll<Transform>();
             var entities = new List<Entity>();
             Game.GameWorld.GetEntities(query, entities);
 
@@ -1268,10 +1257,10 @@ namespace ABEngine.ABERuntime
 
                 entObj.Put("Components", compArr.Build());
                 entArr.Push(entObj.Build());
-            }
+            }*/
 
             scene.Put("Assets", Assets.SerializeAssets());
-            scene.Put("Entities", entArr.Build());
+            //scene.Put("Entities", entArr.Build());
 
             //Console.WriteLine(scene.Build().ToString());
 
@@ -1280,7 +1269,7 @@ namespace ABEngine.ABERuntime
 
         protected void LoadScene(string json)
         {
-            JValue scene = JValue.Parse(json);
+            /*JValue scene = JValue.Parse(json);
 
             float sceneVersion = scene["Version"];
             SceneManager.sceneVersion = sceneVersion;
@@ -1383,6 +1372,7 @@ namespace ABEngine.ABERuntime
                     }
                 }
             }
+            */
 
         }
 

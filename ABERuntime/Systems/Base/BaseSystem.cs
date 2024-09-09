@@ -1,6 +1,6 @@
 ﻿using System;
 using ABEngine.ABERuntime.Physics;
-using Arch.Core;
+using Friflo.Engine.ECS;
 
 namespace ABEngine.ABERuntime
 {

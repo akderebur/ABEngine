@@ -4,8 +4,6 @@ using System.IO;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.ECS;
-using Arch.Core;
-using Arch.Core.Extensions;
 using Halak;
 using WGIL;
 
@@ -232,8 +230,10 @@ public static class Assets
             string nodeName = br.ReadString();
             int parId = br.ReadInt32();
 
-            Entity nodeEnt = Entities.CreateEntity(nodeName, "");
-            Transform nodeTrans = nodeEnt.Get<Transform>();
+            //Entity nodeEnt = Entities.CreateEntity(nodeName, "");
+            //Transform nodeTrans = nodeEnt.Get<Transform>();
+            // TODO
+            Transform nodeTrans = null;
             nodeTransforms[i] = nodeTrans;
 
             if (parId >= 0)
@@ -284,7 +284,7 @@ public static class Assets
                 mr.bones[b] = nodeTransforms[br.ReadInt32()];
             }
 
-            mrTrans.entity.Add(mr);
+            //mrTrans.entity.Add(mr);
         }
 
 
@@ -299,7 +299,7 @@ public static class Assets
             };
 
             Transform root = nodeTransforms[0];
-            root.entity.Add(skeleton);
+            //root.entity.Add(skeleton);
         }
 
         return nodeTransforms[0];

@@ -4,9 +4,7 @@ using Box2D.NetStandard.Collision.Shapes;
 using Box2D.NetStandard.Dynamics.Bodies;
 using Box2D.NetStandard.Dynamics.Fixtures;
 using ABEngine.ABERuntime.Physics;
-using ABEngine.ABERuntime.Components;
-using Arch.Core;
-using Arch.Core.Extensions;
+using Friflo.Engine.ECS;
 
 namespace ABEngine.ABERuntime
 {
@@ -18,7 +16,7 @@ namespace ABEngine.ABERuntime
 
         private void CreateBody(in Entity rbEnt)
         {
-            Rigidbody rb = rbEnt.Get<Rigidbody>();
+            /*Rigidbody rb = rbEnt.Get<Rigidbody>();
             Transform rbTrans = rbEnt.Get<Transform>();
 
             BodyDef bodyDef = new BodyDef();
@@ -103,24 +101,24 @@ namespace ABEngine.ABERuntime
             //if (!rb.entity.enabled)
             //    b2dBody.SetEnabled(false);
 
-            rb.b2dBody = b2dBody;
+            rb.b2dBody = b2dBody;*/
         }
 
         protected override void StartScene()
-        {
+        {/*
             var rbQuery = new QueryDescription().WithAll<Rigidbody>();
             Game.GameWorld.Query(in rbQuery, (Entity rbEnt) =>
             {
                 CreateBody(rbEnt);
-            });
+            });*/
         }
 
         internal void AddRBRuntime(in Entity entity)
         {
-            if (!started)
+            /*if (!started)
                 return;
 
-            CreateBody(entity);
+            CreateBody(entity);*/
         }
 
 

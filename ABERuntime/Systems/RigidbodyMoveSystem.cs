@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
-using Arch.Core;
 using Box2D.NetStandard.Dynamics.Bodies;
 
 namespace ABEngine.ABERuntime
@@ -14,7 +13,7 @@ namespace ABEngine.ABERuntime
 
         public void ResetSmoothStates()
         {
-            var query = new QueryDescription().WithAll<Transform, Rigidbody>();
+            /*var query = new QueryDescription().WithAll<Transform, Rigidbody>();
 
             Game.GameWorld.Query(in query, (ref Rigidbody rb) =>
             {
@@ -22,12 +21,12 @@ namespace ABEngine.ABERuntime
                 {
                     rb.start = rb.current = rb.target = rb.b2dBody.GetPosition();
                 }
-            });
+            });*/
         }
 
         public void PreFixedUpdate()
         {
-            var query = new QueryDescription().WithAll<Transform, Rigidbody>();
+            /*var query = new QueryDescription().WithAll<Transform, Rigidbody>();
 
             Game.GameWorld.Query(in query, (ref Transform transform, ref Rigidbody rb) =>
             {
@@ -43,12 +42,12 @@ namespace ABEngine.ABERuntime
                     rb.start = rb.current = rb.target = rb.b2dBody.GetPosition();
                 }
             }
-            );
+            );*/
         }
 
         public override void FixedUpdate(float gameTime, float fixedDeltaTime)
         {
-            var query = new QueryDescription().WithAll<Transform, Rigidbody>();
+            /*var query = new QueryDescription().WithAll<Transform, Rigidbody>();
 
             Game.GameWorld.Query(in query, (ref Transform transform, ref Rigidbody rb) =>
             {
@@ -84,12 +83,12 @@ namespace ABEngine.ABERuntime
                     transform.transformMove = false;
                 }
             }
-            );
+            );*/
         }
 
         public override void Update(float gameTime, float ratio)
         {
-            var query = new QueryDescription().WithAll<Transform, Rigidbody>();
+            /*var query = new QueryDescription().WithAll<Transform, Rigidbody>();
 
             Game.GameWorld.Query(in query, (ref Transform transform, ref Rigidbody rb) =>
             {
@@ -106,7 +105,7 @@ namespace ABEngine.ABERuntime
                     }
                 }
             }
-            );
+            );*/
         }
     }
 }

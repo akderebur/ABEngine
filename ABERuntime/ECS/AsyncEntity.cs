@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Arch.Core;
-using Arch.Core.Extensions;
 using System.Collections.Generic;
-using Arch.Core.Utils;
+using Friflo.Engine.ECS;
 
 namespace ABEngine.ABERuntime.ECS
 {
@@ -21,7 +19,7 @@ namespace ABEngine.ABERuntime.ECS
 		public async Task Add<T>(T component)
 		{
             await Entities.creationSemaphore.WaitAsync();
-            Entities.cmdBuffer.Add<T>(in entity, component);
+            //Entities.cmdBuffer.Add<T>(in entity, component);
             Entities.creationSemaphore.Release();
 	
 		}
@@ -29,13 +27,13 @@ namespace ABEngine.ABERuntime.ECS
 		public async Task Set<T>(T component)
 		{
             await Entities.creationSemaphore.WaitAsync();
-			Entities.cmdBuffer.Set<T>(in entity, component);
+			//Entities.cmdBuffer.Set<T>(in entity, component);
             Entities.creationSemaphore.Release();
         }
 
-		public bool Has<T>()
+		public bool Has<T>() where T : struct, IComponent 
 		{
-			if (entity.Has<T>())
+			if (entity.HasComponent<T>())
 				return true;
 
 			if (components.ContainsKey(typeof(T)))
@@ -44,10 +42,10 @@ namespace ABEngine.ABERuntime.ECS
 			return false;
 		}
 
-        public T Get<T>()
+        public T Get<T>() where T : struct, IComponent 
         {
-			if (entity.Has<T>())
-				return entity.Get<T>();
+			if (entity.HasComponent<T>())
+				return entity.GetComponent<T>();
 
 			if (components.TryGetValue(typeof(T), out object component))
 				return (T)component;

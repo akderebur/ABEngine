@@ -5,8 +5,6 @@ using System.Numerics;
 using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.ECS;
 using ABEngine.ABERuntime.Physics;
-using Arch.Core;
-using Arch.Core.Extensions;
 using Halak;
 
 namespace ABEngine.ABERuntime.Components
@@ -73,7 +71,7 @@ namespace ABEngine.ABERuntime.Components
 
             if (exTrans == null)
             {
-                chunkTrans = Entities.CreateEntity("Chunk", "").Get<Transform>();
+                //chunkTrans = Entities.CreateEntity("Chunk", "").Get<Transform>();
                 chunkTrans.parent = tilemap.transform;
             }
             else
@@ -481,7 +479,7 @@ namespace ABEngine.ABERuntime.Components
             JsonObjectBuilder jChunk = new JsonObjectBuilder(3000);
             jChunk.Put("Layer",     layer);
             jChunk.Put("TileSize",  tileSize);
-            jChunk.Put("ChunkGUID", chunkTrans.entity.Get<Guid>().ToString());
+            //jChunk.Put("ChunkGUID", chunkTrans.entity.Get<Guid>().ToString());
 
             JsonArrayBuilder tilesArr = new JsonArrayBuilder(2000);
             foreach (var tilePos in tiles.Keys)
@@ -541,32 +539,35 @@ namespace ABEngine.ABERuntime.Components
         List<int> layerIds;
         internal void ResetRenderLayers()
         {
-            layerIds = new List<int>();
+            /*layerIds = new List<int>();
             foreach (Tile tile in tiles.Values)
             {
                 if (tile.spriteTrans != null)
                 {
-                    var sprite = tile.spriteTrans.entity.Get<Sprite>();
+                    //var sprite = tile.spriteTrans.entity.Get<Sprite>();
+                    Sprite sprite = null;
                     layerIds.Add(sprite.renderLayerIndex);
                     sprite.renderLayerIndex = 0;
                     tile.spriteTrans.isStatic = true;
                 }
-            }
+            }*/
         }
 
         internal void RecoverRenderLayers()
         {
-            int listId = 0;
+            /*int listId = 0;
             foreach (Tile tile in tiles.Values)
             {
                 if (tile.spriteTrans != null)
                 {
                     tile.spriteTrans.isStatic = false;
-                    var sprite = tile.spriteTrans.entity.Get<Sprite>();
+                    //var sprite = tile.spriteTrans.entity.Get<Sprite>();
+                    Sprite sprite = null;
+
                     sprite.renderLayerIndex = layerIds[listId++];
                 }
             }
-            layerIds.Clear();
+            layerIds.Clear();*/
         }
 
         internal void DeleteChunk(CollisionChunk chunk)
@@ -721,7 +722,8 @@ namespace ABEngine.ABERuntime.Components
             if (tiles.TryGetValue(worldPos, out Tile tile))
             {
                 if (tile.spriteTrans != null)
-                    return tile.spriteTrans.entity.Get<Sprite>().GetSpriteID();
+                    return -1;
+                //return tile.spriteTrans.entity.Get<Sprite>().GetSpriteID();
             }
 
 			return -1;
@@ -868,7 +870,7 @@ namespace ABEngine.ABERuntime.Components
         public JValue Serialize()
         {
             JsonObjectBuilder jObj = new JsonObjectBuilder(20000);
-            jObj.Put("type", GetType().ToString());
+            /*jObj.Put("type", GetType().ToString());
             //jObj.Put("TransformGuid", transform.entity.Get<Guid>().ToString());
             jObj.Put("TileImage", Assets.GetAssetSceneIndex(this.tileImage.fPathHash));
 
@@ -900,7 +902,7 @@ namespace ABEngine.ABERuntime.Components
                 chunksArr.Push(chunk.SerializeChunk());
             }
 
-            jObj.Put("Chunks", chunksArr.Build());
+            jObj.Put("Chunks", chunksArr.Build());*/
 
             return jObj.Build();
         }
@@ -947,7 +949,8 @@ namespace ABEngine.ABERuntime.Components
             //var transGuid = Guid.Parse(transformGuidStr);
             //Transform trans = Game.GameWorld.GetEntities().FirstOrDefault(e => e.Get<Guid>().Equals(transGuid)).transform;
 
-            if (Game.gameMode == GameMode.Runtime) // Chunk collision for game
+            // TODO
+            /*if (Game.gameMode == GameMode.Runtime) // Chunk collision for game
             {
                 foreach (var jChunk in jChunks.Array())
                 {
@@ -1056,7 +1059,7 @@ namespace ABEngine.ABERuntime.Components
 
                     }
                 }
-            }
+            }*/
 
 
 			//foreach (var spriteKV in placements)

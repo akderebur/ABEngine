@@ -1,8 +1,9 @@
 ﻿using System.Numerics;
+using Friflo.Engine.ECS;
 
 namespace ABEngine.ABERuntime.Components
 {
-    public class Camera : ABComponent
+    public struct Camera : IComponent
     {
         // Cam Fields
         private bool _isActive;
@@ -64,8 +65,16 @@ namespace ABEngine.ABERuntime.Components
             _isActive = true;
             _lastActive = _isActive;
             matchScreen = true;
-            viewSize = Vector2.One;
             viewport = new Vector4(0f, 0f, 1f, 1f);
+            _projection = CameraProjection.Orthographic;
+            velocity = default;
+            _viewSize = default;
+            forward = default;
+            followTarget = null;
+            followInFixedUpdate = false;
+            cutoffY = 0;
+            compViewSize = default;
+            viewSize = Vector2.One;
         }
 
         internal void OnCameraActivate()

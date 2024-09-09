@@ -4,7 +4,6 @@ using System.Numerics;
 using Box2D.NetStandard.Dynamics.Bodies;
 using Halak;
 using ABEngine.ABERuntime.Physics;
-using Arch.Core;
 
 namespace ABEngine.ABERuntime.Components
 {

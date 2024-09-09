@@ -2,25 +2,24 @@
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
-using Arch.Core;
 
 namespace ABEngine.ABERuntime
 {
     public class MeshAnimatorSystem : BaseSystem
     {
-        private readonly QueryDescription animQuery = new QueryDescription().WithAll<Animator, Skeleton>();
+        //private readonly QueryDescription animQuery = new QueryDescription().WithAll<Animator, Skeleton>();
 
         protected override void StartScene()
         {
-            Game.GameWorld.Query(in animQuery, (ref Animator anim) =>
+            /*Game.GameWorld.Query(in animQuery, (ref Animator anim) =>
             {
                 anim.Init();
-            });
+            });*/
         }
 
         public override void Update(float gameTime, float deltaTime)
         {
-            Game.GameWorld.Query(in animQuery, (ref Animator anim, ref Skeleton skeleton, ref Transform transform) =>
+            /*Game.GameWorld.Query(in animQuery, (ref Animator anim, ref Skeleton skeleton, ref Transform transform) =>
             {
                 if (!transform.enabled)
                     return;
@@ -61,7 +60,7 @@ namespace ABEngine.ABERuntime
                     curState.transitionTime += deltaTime;
                 }
             }
-            );
+            );*/
         }
     }
 }

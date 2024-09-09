@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Halak;
 using ABEngine.ABERuntime.Core.MathA;
-using Arch.Core;
-using Arch.Core.Extensions;
+using Friflo.Engine.ECS;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -50,7 +49,7 @@ namespace ABEngine.ABERuntime.Components
         }
 
         public List<Transform> children { get; private set; }
-        public string name { get { return entity.Get<string>(); } }
+        public string name => "";
 
         public bool isStatic { get; internal set; }
         public Entity entity { get; private set; }
@@ -148,7 +147,8 @@ namespace ABEngine.ABERuntime.Components
             JsonObjectBuilder jObj = new JsonObjectBuilder(500);
             jObj.Put("type", GetType().ToString());
             jObj.Put("Tag", tag);
-            jObj.Put("ParentGuid", _parent == null ? "" : _parent.entity.Get<Guid>().ToString());
+            // TODO
+            //jObj.Put("ParentGuid", _parent == null ? "" : _parent.entity.Get<Guid>().ToString());
             jObj.Put("Static", isStatic);
             jObj.Put("Position", _localPosition);
             jObj.Put("Rotation", _localRotation);

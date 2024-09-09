@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using Arch.Core;
 
 namespace ABEngine.ABERuntime.Components
 {
@@ -37,12 +36,12 @@ namespace ABEngine.ABERuntime.Components
 
         public bool CheckCollisionMouse(Transform transform, Vector2 mousePos)
         {
-            if (Game.activeCamTrans == null)
+            if (Game.activeCamera.IsNull)
                 return false;
 
-            var camEnt = Game.activeCamTrans.entity;
+            /*var camEnt = Game.activeCamTrans.entity;
             if (camEnt == Entity.Null)
-                return false;
+                return false;*/
 
             Vector3 mouseWP = mousePos.ScreenToWorld();
 

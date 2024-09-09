@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
-using Arch.Core;
 
 namespace ABEngine.ABERuntime
 {
@@ -10,7 +9,7 @@ namespace ABEngine.ABERuntime
     {
         protected override void StartScene()
         {
-            var query = new QueryDescription().WithAll<Camera, Transform>();
+            /*var query = new QueryDescription().WithAll<Camera, Transform>();
             Game.GameWorld.Query(in query, (ref Camera cam, ref Transform camTrans) =>
             {
                 if (cam.followTarget != null)
@@ -22,12 +21,12 @@ namespace ABEngine.ABERuntime
 
                     camTrans.localPosition = destPos;
                 }
-            });
+            });*/
         }
 
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = new QueryDescription().WithAll<Camera, Transform>();
+            /*var query = new QueryDescription().WithAll<Camera, Transform>();
             Game.GameWorld.Query(in query, (ref Camera cam, ref Transform camTrans) =>
             {
                 if (!cam.followInFixedUpdate && cam.followTarget != null)
@@ -35,12 +34,12 @@ namespace ABEngine.ABERuntime
                     FollowTarget(camTrans, cam, deltaTime);
                 }
             }
-            );
+            );*/
         }
 
         public override void FixedUpdate(float gameTime, float deltaTime)
         {
-            var query = new QueryDescription().WithAll<Camera, Transform>();
+            /*var query = new QueryDescription().WithAll<Camera, Transform>();
             Game.GameWorld.Query(in query, (ref Camera cam, ref Transform camTrans) =>
             {
                 if (cam.followInFixedUpdate && cam.followTarget != null)
@@ -48,7 +47,7 @@ namespace ABEngine.ABERuntime
                     FollowTarget(camTrans, cam, deltaTime);
                 }
             }
-            );
+            );*/
         }
 
         void FollowTarget(Transform camTrans, Camera cam, float deltaTime)

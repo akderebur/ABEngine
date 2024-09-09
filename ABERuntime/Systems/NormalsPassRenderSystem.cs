@@ -1,20 +1,14 @@
-﻿using System;
-using System.Linq;
-using System.Numerics;
+﻿using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Pipelines;
-using ABEngine.ABERuntime.Rendering;
-using Arch.Core;
 using WGIL;
-using WGIL.IO;
-using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime
 {
 	public class NormalsPassRenderSystem : RenderSystem
 	{
-        private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
+        //private readonly QueryDescription meshQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
 
         MeshMatrixData matrixData;
         DrawData drawData;

@@ -2,252 +2,182 @@
 using System.Linq;
 using System.Numerics;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using WGIL;
 using ABEngine.ABERuntime.Rendering;
 using ABEngine.ABERuntime.Components;
-using Arch.Core;
-using Arch.Core.Extensions;
 using ABEngine.ABERuntime.Core.Assets;
+using Friflo.Engine.ECS;
 using WGIL.IO;
+using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime
 {
     public class SpriteBatchSystem : RenderSystem
     {
-        Dictionary<string, RenderBatch> batches = new Dictionary<string, RenderBatch>();
-        //Dictionary<int, List<AssetBatchPair>> renderGroups = new Dictionary<int, List<AssetBatchPair>>();
-
-        SortedDictionary<int, LayerContext> layerRenderGroups = new SortedDictionary<int, LayerContext>();
-
-
-        public SpriteBatchSystem() : base() { }
-
-        class OrderRender
+        class SpriteTextureGroup
         {
-            public List<AssetBatchPair> pairList { get; set; }
-            public bool isSorted;
+            private Texture2D spriteTexture;
+            private Texture2D normalTexture;
 
-            public OrderRender()
-            {
-                pairList = new List<AssetBatchPair>();
-            }
+            private Dictionary<PipelineMaterial, SpriteBatch> batches;
+            
+            // GPU
+            private BindGroup textureBindGroup;
 
-            public void AddAssetPair(AssetBatchPair pair, bool isTransparent)
+            public SpriteTextureGroup(Texture2D spriteTexture, Texture2D normalTexture, Buffer layerBuffer)
             {
-                isSorted = isSorted || isTransparent;
-                pairList.Add(pair);
-                if (isSorted)
-                   pairList = pairList.OrderBy(p => p.zValue).ToList();
-            }
+                this.spriteTexture = spriteTexture;
+                this.normalTexture = normalTexture;
 
-            public void Remove(AssetBatchPair pair)
-            {
-                pairList.Remove(pair);
-            }
-
-            public void UpdateOrder()
-            {
-                foreach (var pair in pairList)
+                BindGroupDescriptor desc = new BindGroupDescriptor()
                 {
-                    pair.UpdateBatches();
+                    BindGroupLayout = Graphics.sharedSpriteNormalLayout,
+                    Entries = new BindResource[]
+                    {
+                        spriteTexture.GetView(),
+                        spriteTexture.textureSampler,
+                        spriteTexture.GetView(),
+                        spriteTexture.textureSampler,
+                        layerBuffer
+                    }
+                };
+                textureBindGroup = Game.wgil.CreateBindGroup(ref desc);
+
+                batches = new Dictionary<PipelineMaterial, SpriteBatch>();
+            }
+
+            public SpriteBatch AddSprite(ref Sprite sprite)
+            {
+                if (batches.TryGetValue(sprite.sharedMaterial, out SpriteBatch batch))
+                {
+                   batch.AddSprite();
+                   sprite.batch = batch;
+                   return null;
+                }
+                else
+                {
+                    // Create batch
+                    batch = new SpriteBatch(sprite.sharedMaterial);
+                    batch.AddSprite();
+                    batches.Add(sprite.sharedMaterial, batch);
+                    return batch;
+                }
+            }
+
+            public void Render(RenderPass pass)
+            {
+                pass.SetBindGroup(1, textureBindGroup);
+                foreach (var batch in batches.Values)
+                {
+                    batch.Render(pass);
                 }
             }
         }
-         
 
         class LayerContext
         {
-            public SortedDictionary<int, OrderRender> orderRenders { get; set; }
-            public SortedSet<int> orderKeys { get; set; }
-            public SortedSet<int> postKeys { get; set; }
-
+            // Batched based on sprite and normal texture for each layer
             public int layerID { get; set; }
+            private Dictionary<(Texture2D, Texture2D), SpriteTextureGroup> textureGroups;
+            private List<SpriteBatch> batches;
 
+            // GPU
+            private Buffer layerBuffer;
+            
             public LayerContext(int layerId)
             {
-                orderRenders = new SortedDictionary<int, OrderRender>();
-                orderKeys = new SortedSet<int>();
-                postKeys = new SortedSet<int>();
-
                 layerID = layerId;
+                layerBuffer = Game.wgil.CreateBuffer(16, BufferUsages.COPY_DST | BufferUsages.UNIFORM);
+                Game.wgil.WriteBuffer(layerBuffer, new Vector4(layerId, 0f, 0f, 0f));
+
+                textureGroups = new Dictionary<(Texture2D, Texture2D), SpriteTextureGroup>();
+                batches = new List<SpriteBatch>();
             }
 
-            public void AddRenderToOrder(int orderId, AssetBatchPair renderPair, bool isTransparent)
+            public void AddSprite(ref Sprite sprite)
             {
-                if (orderId >= (int)RenderOrder.PostProcess)
-                    postKeys.Add(orderId);
-                else
-                    orderKeys.Add(orderId);
-
-                if (orderRenders.TryGetValue(orderId, out OrderRender orderRender))
-                    orderRender.AddAssetPair(renderPair, isTransparent);
-                else
+                if (!textureGroups.TryGetValue((sprite.texture, sprite.normalTexture), out SpriteTextureGroup group))
                 {
-                    orderRender = new OrderRender();
-                    orderRender.AddAssetPair(renderPair, isTransparent);
-                    orderRenders.Add(orderId, orderRender);
+                    group = new SpriteTextureGroup(sprite.texture, sprite.normalTexture, layerBuffer);
+                    textureGroups.Add((sprite.texture, sprite.normalTexture), group);
                 }
-                   
-                renderPair.renderOrder = orderId;
-            }
 
-            public void RemoveRender(AssetBatchPair renderPair)
-            {
-                OrderRender orderContext = orderRenders[renderPair.renderOrder];
-                orderContext.Remove(renderPair);
-
-                if (orderContext.pairList.Count == 0)
+                SpriteBatch batch = group.AddSprite(ref sprite);
+                if (batch != null)
                 {
-                    if (renderPair.renderOrder >= (int)RenderOrder.PostProcess)
-                        postKeys.Remove(renderPair.renderOrder);
-                    else
-                        orderKeys.Remove(renderPair.renderOrder);
+                    batch.batchID = batches.Count;
+                    sprite.batch = batch;
+                    batches.Add(batch);
                 }
             }
 
-            public void UpdateLayer()
+            public SpriteBatch GetBatch(int batchID)
             {
-                foreach (var order in orderRenders.Values)
+                return batches[batchID];
+            }
+
+            public void UpdateBatches()
+            {
+                foreach (var batch in batches)
                 {
-                    order.UpdateOrder();
+                    batch.UpdateBatch();
+                }
+            }
+            
+            public void InitBatches()
+            {
+                foreach (var batch in batches)
+                {
+                    batch.InitBatch();
+                }
+            }
+
+            public void RenderBatches(RenderPass pass)
+            {
+                foreach (var textureGroup in textureGroups.Values)
+                {
+                    textureGroup.Render(pass);
                 }
             }
         }
 
+        private readonly ArchetypeQuery<Sprite> spriteQuery = Game.GameWorld.Query<Sprite>();
+        private readonly ArchetypeQuery<Sprite, WorldTransform> spriteRenderQuery = Game.GameWorld.Query<Sprite, WorldTransform>();
+
+        private List<LayerContext> layers;
+        
         protected override void StartScene()
         {
-            batches = new Dictionary<string, RenderBatch>();
-            layerRenderGroups = new SortedDictionary<int, LayerContext>();
-
-            // Create batch groups
-            var query = new QueryDescription().WithAll<Sprite>();
-            var entities = new List<Entity>();
-            Game.GameWorld.GetEntities(query, entities);
-
-            var layerGroups = entities.GroupBy(s => s.Get<Sprite>().renderLayerIndex);
-
-            foreach (var layerGroup in layerGroups)
+            layers = new List<LayerContext>();
+            for (int i = 0; i < 2; i++)
             {
-                //List<AssetBatchPair> pairs = new List<AssetBatchPair>();
-                //renderGroups.Add(layerGroup.Key, pairs);
-
-                int layerId = layerGroup.Key;
-                LayerContext layerContext = new LayerContext(layerId);
-                layerRenderGroups.Add(layerId, layerContext);
-                
-                // Opaque / PP
-                var opaqueGroups = layerGroup.Where(s => s.Get<Sprite>().sharedMaterial.pipelineAsset.renderType != RenderType.Transparent);
-                DoPipelineGrouping(opaqueGroups.ToList(), layerContext);
-                
-                // Transparent
-                var transparentGroups = layerGroup.Where(s => s.Get<Sprite>().sharedMaterial.pipelineAsset.renderType == RenderType.Transparent)
-                                                  .GroupBy(lg => lg.Get<Transform>().worldPosition.Z);
-
-                foreach (var zOrderGroup in transparentGroups)
-                {
-                    DoPipelineGrouping(zOrderGroup.ToList(), layerContext, zOrderGroup.Key, true);
-                }
+                layers.Add(new LayerContext(i));
+            }
+            
+            spriteQuery.ForEachEntity((ref Sprite sprite, Entity entity) => {
+                layers[sprite.renderLayerIndex].AddSprite(ref sprite);
+            });
+            
+            foreach (var layer in layers)
+            {
+                layer.InitBatches();
             }
         }
 
-        void DoPipelineGrouping(List<Entity> spriteEnts, LayerContext layerContext, float zValue = 0f, bool isTransparent = false)
+        void DoPipelineGrouping()
         {
-            int layer = layerContext.layerID;
-
-            // Render order grouping based on material render order
-            var orderGroups = spriteEnts.GroupBy(se => se.Get<Sprite>().sharedMaterial.renderOrder);
-            foreach (var orderGroup in orderGroups)
-            {
-                var pipelineGroups = orderGroup.GroupBy(se => se.Get<Sprite>().sharedMaterial.pipelineAsset);
-                foreach (var assetGroup in pipelineGroups)
-                {
-                    AssetBatchPair pair = new AssetBatchPair()
-                    {
-                        pipelineAsset = assetGroup.Key,
-                        layerIndex = layer,
-                        zValue = zValue
-                    };
-                    pair.onDelete += AssetPair_onDelete;
-                    layerContext.AddRenderToOrder(orderGroup.Key, pair, isTransparent);
-
-                    var textureGroups = assetGroup.GroupBy(lg => lg.Get<Sprite>().texture);
-                    foreach (var textureGroup in textureGroups)
-                    {
-                        var matGroups = textureGroup.GroupBy(sg => sg.Get<Sprite>().sharedMaterial);
-
-                        foreach (var matGroup in matGroups)
-                        {
-                            var statics = matGroup.Where(sg => sg.Get<Transform>().isStatic);
-                            var dynamics = matGroup.Where(sg => !sg.Get<Transform>().isStatic);
-
-                            if (statics.Any())
-                            {
-                                SpriteBatch sb = new SpriteBatch(textureGroup.Key, matGroup.Key, layer, true, zValue);
-                                foreach (var spriteEnt in statics)
-                                {
-                                    sb.AddSpriteEntity(spriteEnt.Get<Transform>(), spriteEnt.Get<Sprite>());
-                                }
-
-                                sb.InitBatch();
-                                string batchKey = layer + "_" + textureGroup.Key.textureID + "_" + matGroup.Key.instanceID + "_1";
-                                if (isTransparent) // Z-Key
-                                    batchKey += "_" + zValue;
-                                batches.Add(batchKey, sb);
-                                pair.batches.Add(sb);
-                                sb.onDelete += pair.OnBatchDelete;
-                            }
-
-                            if (dynamics.Any())
-                            {
-                                SpriteBatch sb = new SpriteBatch(textureGroup.Key, matGroup.Key, layer, false, zValue);
-                                foreach (var spriteEnt in dynamics)
-                                {
-                                    sb.AddSpriteEntity(spriteEnt.Get<Transform>(), spriteEnt.Get<Sprite>());
-                                }
-
-                                sb.InitBatch();
-                                string batchKey = layer + "_" + textureGroup.Key.textureID + "_" + matGroup.Key.instanceID + "_0";
-                                if (isTransparent) // Z-Key
-                                    batchKey += "_" + zValue;
-                                batches.Add(batchKey, sb);
-                                pair.batches.Add(sb);
-                                sb.onDelete += pair.OnBatchDelete;
-                            }
-                        }
-                    }
-                }
-            }
         }
-
-        private void AssetPair_onDelete(AssetBatchPair pair)
-        {
-            layerRenderGroups[pair.layerIndex].RemoveRender(pair);
-        }
+        
 
         internal void RemoveSprite(Sprite sprite, int oldRenderLayerID, Texture2D oldTex, int oldMatInsId)
         {
-            if (!started || sprite.transform == null)
-                return;
 
-            int staticKey = sprite.transform.isStatic ? 1 : 0;
-            string key = oldRenderLayerID + "_" + oldTex.textureID + "_" + oldMatInsId + "_" + staticKey;
-            if (sprite.sharedMaterial.pipelineAsset.renderType == RenderType.Transparent)
-                key += "_" + sprite.transform.worldPosition.Z;
-
-            if (batches.ContainsKey(key))
-            {
-                SpriteBatch batch = batches[key] as SpriteBatch;
-                int remCount = batch.RemoveSpriteEntity(sprite);
-                if (remCount == -1)
-                    batches.Remove(key);
-            }
         }
 
         internal void DeleteBatch(RenderBatch batch)
         {
-            var batchKV = batches.FirstOrDefault(b => b.Value == batch);
-            if (!string.IsNullOrEmpty(batchKV.Key))
-                batches.Remove(batchKV.Key);
+   
         }
 
         internal SpriteBatch GetBatchFromSprite(Transform spriteTrans, Sprite sprite, string extraKey)
@@ -257,168 +187,37 @@ namespace ABEngine.ABERuntime
 
         internal SpriteBatch GetBatchFromSprite(Transform spriteTrans, Sprite sprite, Texture2D tex2D, string extraKey)
         {
-            PipelineMaterial mat = sprite.sharedMaterial;
-
-            int staticKey = spriteTrans.isStatic ? 1 : 0;
-            string key = sprite.renderLayerIndex + "_" + tex2D.textureID + "_" + mat.instanceID + "_" + staticKey;
-            if (mat.pipelineAsset.renderType == RenderType.Transparent)
-                key += "_" + spriteTrans.worldPosition.Z;
-            key += extraKey;
-
-            if (batches.TryGetValue(key, out RenderBatch batch))
-                return batch as SpriteBatch;
-
+           
             return null;
         }
 
         public void UpdateSpriteBatch(Sprite sprite, int oldRenderLayerID, Texture2D oldTex, int oldMatInsId)
         {
-            if (!started || sprite.transform == null)
-                return;
-
-            int staticKey = sprite.transform.isStatic ? 1 : 0;
-            string key = oldRenderLayerID + "_" + oldTex.textureID + "_" + oldMatInsId + "_" + staticKey;
-            if (sprite.sharedMaterial.pipelineAsset.renderType == RenderType.Transparent)
-                key += "_" + sprite.transform.worldPosition.Z;
-
-            if (batches.TryGetValue(key, out RenderBatch batch))
-            {
-                SpriteBatch sbatch = batch as SpriteBatch;
-                int remCount = sbatch.RemoveSpriteEntity(sprite);
-                if (remCount == -1)
-                    batches.Remove(key);
-            }
-
-            AddSpriteToBatch(sprite.transform, sprite);
+          
         }
 
         internal void AddGenericBatch(RenderBatch batch)
         {
-            if (batches.TryAdd(batch.key, batch))
-            {
-                UpdateBatchPipeline(batch);
-            }
+            
         }
 
         internal void RemoveGenericBatch(RenderBatch batch)
         {
-            if (batches.ContainsKey(batch.key))
-            {
-                batches.Remove(batch.key);
-            }
         }
 
         internal int DEBUG_GetBatchCount()
         {
-            return batches.Count;
+            return 0;
         }
 
         internal SpriteBatch CreateSpriteBatch(Transform spriteTrans, Sprite sprite, Texture2D tex2D, string extraKey)
         {
-            PipelineMaterial mat = sprite.sharedMaterial;
-
-            int staticKey = spriteTrans.isStatic ? 1 : 0;
-            string key = sprite.renderLayerIndex + "_" + tex2D.textureID + "_" + mat.instanceID + "_" + staticKey;
-            if (mat.pipelineAsset.renderType == RenderType.Transparent)
-                key += "_" + spriteTrans.worldPosition.Z;
-            key += extraKey;
-
-            if (batches.TryGetValue(key, out RenderBatch batch))
-                return batch as SpriteBatch;
-
-            batch = new SpriteBatch(tex2D, mat, sprite.renderLayerIndex, spriteTrans.isStatic, spriteTrans.worldPosition.Z);
-            batches.Add(key, batch);
-            UpdateBatchPipeline(batch);
-            return batch as SpriteBatch;
+            return null;
         }
 
         internal SpriteBatch AddSpriteToBatch(Transform spriteTrans, Sprite sprite, string extraKey)
         {
-            if (!started)
-                return null;
-
-            PipelineMaterial mat = sprite.sharedMaterial;
-            bool isTransparent = mat.pipelineAsset.renderType == RenderType.Transparent;
-
-            int staticKey = spriteTrans.isStatic ? 1 : 0;
-            string key = sprite.renderLayerIndex + "_" + sprite.texture.textureID + "_" + mat.instanceID + "_" + staticKey;
-            if (isTransparent)
-                key += "_" + spriteTrans.worldPosition.Z;
-            key += extraKey;
-
-            if (batches.TryGetValue(key, out RenderBatch batch))
-            {
-                SpriteBatch sbatch = batch as SpriteBatch;
-                sbatch.AddSpriteEntity(spriteTrans, sprite);
-                sbatch.InitBatch();
-                return sbatch;
-            }
-            else
-            {
-                SpriteBatch sb = new SpriteBatch(sprite.texture, mat, sprite.renderLayerIndex, spriteTrans.isStatic, spriteTrans.worldPosition.Z);
-                sb.key = key;
-                sb.AddSpriteEntity(spriteTrans, sprite);
-                sb.InitBatch();
-                batches.Add(key, sb);
-
-                // Add to render groups
-
-                // Check layer
-                if (layerRenderGroups.TryGetValue(sprite.renderLayerIndex, out LayerContext layerContext))
-                {
-                    // Check render order
-                    AssetBatchPair pair = null;
-                    if(layerContext.orderRenders.TryGetValue(sprite.sharedMaterial.renderOrder, out OrderRender orderRender))
-                    {
-                        // Check suitable pipeline
-
-                        if (isTransparent) // Match Z-Value
-                        {
-                            pair = orderRender.pairList.FirstOrDefault(p => p.pipelineAsset == sprite.sharedMaterial.pipelineAsset &&
-                                                                                       p.zValue == spriteTrans.worldPosition.Z);
-                        }
-                        else
-                            pair = orderRender.pairList.FirstOrDefault(p => p.pipelineAsset == sprite.sharedMaterial.pipelineAsset);
-                    }
-
-                    if(pair == null)
-                    {
-                        pair = new AssetBatchPair()
-                        {
-                            pipelineAsset = sprite.sharedMaterial.pipelineAsset,
-                            layerIndex = sprite.renderLayerIndex
-                        };
-                        if (isTransparent)
-                            pair.zValue = spriteTrans.worldPosition.Z;
-                        layerContext.AddRenderToOrder(sprite.sharedMaterial.renderOrder, pair, isTransparent);
-                        pair.onDelete += AssetPair_onDelete;
-                    }
-
-                    pair.batches.Add(sb);
-                    sb.onDelete += pair.OnBatchDelete;
-                }
-                else
-                {
-                    layerContext = new LayerContext(sprite.renderLayerIndex);
-
-                    AssetBatchPair pair = new AssetBatchPair()
-                    {
-                        pipelineAsset = sprite.sharedMaterial.pipelineAsset,
-                        layerIndex = sprite.renderLayerIndex
-                    };
-                    if (isTransparent)
-                        pair.zValue = spriteTrans.worldPosition.Z;
-
-                    pair.batches.Add(sb);
-                    pair.onDelete += AssetPair_onDelete;
-                    sb.onDelete += pair.OnBatchDelete;
-
-                    layerContext.AddRenderToOrder(sprite.sharedMaterial.renderOrder, pair, isTransparent);
-                    layerRenderGroups.Add(sprite.renderLayerIndex, layerContext);
-                }
-
-                return sb;
-            }
+            return null;
         }
 
         internal SpriteBatch AddSpriteToBatch(Transform spriteTrans, Sprite sprite)
@@ -428,159 +227,32 @@ namespace ABEngine.ABERuntime
 
         internal void UpdateBatchPipeline(RenderBatch sb)
         {
-            // Find suitable render group
-            if (layerRenderGroups.TryGetValue(sb.renderLayerIndex, out LayerContext layerContext))
-            {
-                // Check render order
-                AssetBatchPair pair = null;
-                if (layerContext.orderRenders.TryGetValue(sb.renderOrder, out OrderRender orderRender))
-                {
-                    // Check suitable pipeline
-
-                    if (sb.isTransparent) // Match Z-Value
-                    {
-                        pair = orderRender.pairList.FirstOrDefault(p => p.pipelineAsset == sb.material.pipelineAsset &&
-                                                                   p.zValue == sb.zValue);
-                    }
-                    else
-                        pair = orderRender.pairList.FirstOrDefault(p => p.pipelineAsset == sb.material.pipelineAsset);
-                }
-
-                if (pair == null)
-                {
-                    pair = new AssetBatchPair()
-                    {
-                        pipelineAsset = sb.material.pipelineAsset,
-                        layerIndex = sb.renderLayerIndex
-                    };
-                    if (sb.isTransparent)
-                        pair.zValue = sb.zValue;
-                    layerContext.AddRenderToOrder(sb.material.renderOrder, pair, sb.isTransparent);
-                    pair.onDelete += AssetPair_onDelete;
-                }
-
-                pair.batches.Add(sb);
-                sb.onDelete += pair.OnBatchDelete;
-            }
-            else
-            {
-                layerContext = new LayerContext(sb.renderLayerIndex);
-
-                AssetBatchPair pair = new AssetBatchPair()
-                {
-                    pipelineAsset = sb.material.pipelineAsset,
-                    layerIndex = sb.renderLayerIndex
-                };
-                if (sb.isTransparent)
-                    pair.zValue = sb.zValue;
-
-                pair.batches.Add(sb);
-                pair.onDelete += AssetPair_onDelete;
-                sb.onDelete += pair.OnBatchDelete;
-
-                layerContext.AddRenderToOrder(sb.material.renderOrder, pair, sb.isTransparent);
-                layerRenderGroups.Add(sb.renderLayerIndex, layerContext);
-            }
+            
         }
 
         public override void Update(float gameTime, float deltaTime)
         {
-            foreach (var layerContext in layerRenderGroups.Values)
+            spriteRenderQuery.ForEachEntity((ref Sprite sprite, ref WorldTransform transform, Entity entity) =>
             {
-                layerContext.UpdateLayer();
+                SpriteBatch batch = sprite.batch;
+                batch.UpdateSprite(sprite, new Vector3(transform.matrix.M41, transform.matrix.M42, transform.matrix.M43), Vector3.One);
+            });
+            
+            foreach (var layer in layers)
+            {
+                layer.UpdateBatches();
             }
         }
 
         public void RenderPP(RenderPass pass, int renderLayer)
         {
-            if (!layerRenderGroups.ContainsKey(renderLayer))
-                return;
-
-            LayerContext layerContext = layerRenderGroups[renderLayer];
-            foreach (var orderKey in layerContext.postKeys)
-            {
-                OrderRender order = layerContext.orderRenders[orderKey];
-                foreach (var group in order.pairList)
-                {
-                    group.pipelineAsset.BindPipeline(pass);
-
-                    foreach (var sb in group.batches)
-                    {
-                        if (!sb.active)
-                            continue;
-
-                        //rendC++;
-                        sb.Render(pass);                     
-                    }
-                }
-            }
+           
         }
 
         public override void Render(RenderPass pass, int renderLayer)
         {
-            if (!layerRenderGroups.ContainsKey(renderLayer))
-                return;
-
-            int rendC = 0;
-
-            LayerContext layerContext = layerRenderGroups[renderLayer];
-            foreach (var orderKey in layerContext.orderKeys)
-            {
-                OrderRender order = layerContext.orderRenders[orderKey];
-                foreach (var group in order.pairList)
-                {
-                    group.pipelineAsset.BindPipeline(pass);
-
-                    foreach (var sb in group.batches)
-                    {
-                        if (!sb.active)
-                            continue;
-
-                        //rendC++;
-                        sb.Render(pass);
-                    }
-                }
-            }
-
-            //Console.WriteLine("Draw call: " + rendC);
+            
+            layers[renderLayer].RenderBatches(pass);
         }
     }
-
-    class AssetBatchPair
-    {
-        public int layerIndex { get; set; }
-        public PipelineAsset pipelineAsset { get; set; }
-        public List<RenderBatch> batches = new List<RenderBatch>();
-        public float zValue; // Transparent only
-        public int renderOrder;
-
-        public event Action<AssetBatchPair> onDelete;
-
-        public void UpdateBatches()
-        {
-            foreach (var batch in batches)
-            {
-                batch.UpdateBatch();
-            }
-        }
-
-        //public void SortBatches()
-        //{
-        //    batches = batches.OrderBy(b => b.maxZ).ToList();
-        //    maxZ = batches.Last().maxZ;
-        //}
-
-        public void OnBatchDelete(RenderBatch sb)
-        {
-            sb.onDelete -= OnBatchDelete;
-            batches.Remove(sb);
-
-            if (batches.Count == 0) // Delete batch group
-            {
-                onDelete?.Invoke(this);
-            }
-
-        }
-    }
-
 }

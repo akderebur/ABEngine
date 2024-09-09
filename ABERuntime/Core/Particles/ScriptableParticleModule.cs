@@ -273,7 +273,7 @@ namespace ABEngine.ABERuntime.Components
                         {
                             totalDist += dist;
                             Vector3 direction = Vector3.Normalize(dif);
-                            Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.forward);
+                            Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.GetComponent<Camera>().forward);
 
                             vertexData[0] = new StripVertex(point1 - sideVector * (prevPart.size / 2f),
                                                             new Vector2(0, 1),
@@ -314,7 +314,7 @@ namespace ABEngine.ABERuntime.Components
                             totalDist += dist;
 
                             Vector3 direction = Vector3.Normalize(dif);
-                            Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.forward);
+                            Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.GetComponent<Camera>().forward);
                             //Vector3 sideVector = new Vector3(-direction.Y, direction.X, 0);
 
                             int index = (instanceCount - 1) * 2;
@@ -390,7 +390,7 @@ namespace ABEngine.ABERuntime.Components
 
                         Vector3 dif = point2 - point1;
                         Vector3 direction = Vector3.Normalize(dif);
-                        Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.forward);
+                        Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.GetComponent<Camera>().forward);
                         float uvPortion = dif.Length() / stripXTiling;
 
                         if (dif.Length() > minStripDistance)
@@ -443,7 +443,7 @@ namespace ABEngine.ABERuntime.Components
 
                         Vector3 dif = point2 - point1;
                         Vector3 direction = Vector3.Normalize(dif);
-                        Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.forward);
+                        Vector3 sideVector = Vector3.Cross(direction, Game.activeCamera.GetComponent<Camera>().forward);
                         //Vector3 sideVector = new Vector3(-direction.Y, direction.X, 0);
 
                         float uvPortion = dif.Length() / stripXTiling;

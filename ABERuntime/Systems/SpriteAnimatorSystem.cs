@@ -2,7 +2,6 @@
 using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
-using Arch.Core;
 
 namespace ABEngine.ABERuntime
 {
@@ -10,7 +9,7 @@ namespace ABEngine.ABERuntime
     {       
         public override void Update(float gameTime, float deltaTime)
         {
-            var query = new QueryDescription().WithAll<Animator, Sprite>();
+            /*var query = new QueryDescription().WithAll<Animator, Sprite>();
 
             Game.GameWorld.Query(in query ,(ref Animator anim, ref Sprite sprite, ref Transform transform) =>
             {
@@ -65,7 +64,7 @@ namespace ABEngine.ABERuntime
 
                     sprite.SetUVPosScale(curClip.uvPoses[curState.curFrame], curClip.uvScales[curState.curFrame]);
                 }
-            });
+            });*/
         }
     }
 }

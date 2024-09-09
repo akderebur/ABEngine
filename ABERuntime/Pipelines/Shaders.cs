@@ -379,16 +379,12 @@ Fragment
     {
         vec4 color = texture(sampler2D(SpriteTex, SpriteSampler), fsin_TexCoords);
         vec2 normalSample = texture(sampler2D(NormalTex, NormalSampler), fsin_TexCoords).rg * 2.0 - 1.0;
-
-        float dummy = Time - Time;
         float layer = layerVec.x;
-        //vec3 dummy2 = DummyProp - DummyProp;
 
         // Sprite Color Tint
         color *= fsin_Tint;
       
         // OUTLINE
-
         if(EnableOutline != 0)
         {
             vec2 size = fsin_UVScale * OutlineThickness;
@@ -410,7 +406,7 @@ Fragment
         if(EnableFade != 0)
         {
             vec2 coord = fsin_UnitUV * 10;
-	        float value = perlin_noise(coord) + dummy;
+	        float value = perlin_noise(coord);
             color.a *= floor(DissolveFade + min(1, value));
         }
 

@@ -3,7 +3,6 @@ using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Rendering;
-using Arch.Core;
 using WGIL;
 using Buffer = WGIL.Buffer;
 
@@ -237,8 +236,8 @@ namespace ABEngine.ABERuntime
 
     public class MeshRenderSystem : RenderSystem
     {
-        private readonly QueryDescription pointLightQuery = new QueryDescription().WithAll<Transform, PointLight>();
-        private readonly QueryDescription directionalLightQuery = new QueryDescription().WithAll<Transform, DirectionalLight>();
+        /*private readonly QueryDescription pointLightQuery = new QueryDescription().WithAll<Transform, PointLight>();
+        private readonly QueryDescription directionalLightQuery = new QueryDescription().WithAll<Transform, DirectionalLight>();*/
 
         Buffer fragmentUniformBuffer;
 
@@ -299,7 +298,7 @@ namespace ABEngine.ABERuntime
 
         protected override void StartScene()
         {
-            QueryDescription mrQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
+            /*QueryDescription mrQuery = new QueryDescription().WithAll<Transform, MeshRenderer>();
             QueryDescription smrQuery = new QueryDescription().WithAll<Transform, SkinnedMeshRenderer>();
 
             Game.GameWorld.Query(in mrQuery, (ref MeshRenderer mr, ref Transform transform) =>
@@ -310,7 +309,7 @@ namespace ABEngine.ABERuntime
             Game.GameWorld.Query(in smrQuery, (ref SkinnedMeshRenderer mr, ref Transform transform) =>
             {
                 AddMesh(transform, mr);
-            });
+            });*/
         }
 
         public Vector3 RotateByQuaternion(Vector3 vec, Quaternion rotation)
@@ -372,7 +371,7 @@ namespace ABEngine.ABERuntime
 
         public override void Update(float gameTime, float deltaTime)
         {
-            if (Game.activeCamTrans == null)
+            /*if (Game.activeCamTrans == null)
                 return;
 
             //opaqueRenderOrder.Clear();
@@ -415,7 +414,7 @@ namespace ABEngine.ABERuntime
             sharedFragmentUniform.NumDirectionalLights = dirLightC;
             sharedFragmentUniform.NumPointLights = pointLightC;
 
-            wgil.WriteBuffer(fragmentUniformBuffer, sharedFragmentUniform);
+            wgil.WriteBuffer(fragmentUniformBuffer, sharedFragmentUniform);*/
         }
 
         float LinearEyeDepth(float z)

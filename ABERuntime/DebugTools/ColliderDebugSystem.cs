@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
-using Arch.Core;
-using Arch.Core.Extensions;
 using Box2D.NetStandard.Dynamics.World;
 using WGIL;
 using WGIL.IO;
@@ -63,7 +61,7 @@ namespace ABEngine.ABERuntime.Debug
 
         public override void Update(float gameTime, float deltaTime)
         {
-            base.Update(gameTime, deltaTime);
+            /*base.Update(gameTime, deltaTime);
 
             if(Input.GetMouseButtonDown(MouseButton.Left))
             {
@@ -202,7 +200,7 @@ namespace ABEngine.ABERuntime.Debug
                         }
                     }
                 }
-            } 
+            } */
         }
 
         void SetupAABBBuffer(AABB bbox, Transform transform)

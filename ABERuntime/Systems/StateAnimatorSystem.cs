@@ -3,17 +3,16 @@ using ABEngine.ABERuntime.Animation;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Animation.StateMatch;
 using ABEngine.ABERuntime.Core.Assets;
-using Arch.Core;
 
 namespace ABEngine.ABERuntime
 {
     public class StateAnimatorSystem : BaseSystem
     {
-        private readonly QueryDescription query = new QueryDescription().WithAll<StateMatchAnimator, Sprite>();
+        //private readonly QueryDescription query = new QueryDescription().WithAll<StateMatchAnimator, Sprite>();
 
         protected override void StartScene()
         {
-            Game.GameWorld.Query(in query, (ref StateMatchAnimator anim, ref Transform transform, ref Sprite sprite) =>
+            /*Game.GameWorld.Query(in query, (ref StateMatchAnimator anim, ref Transform transform, ref Sprite sprite) =>
             {
                 foreach (SpriteClip clip in anim.GetAllClips())
                 {
@@ -25,12 +24,12 @@ namespace ABEngine.ABERuntime
                 }
 
                 anim.Init();
-            });
+            });*/
         }
 
         public override void Update(float gameTime, float deltaTime)
         {
-            Game.GameWorld.Query(in query, (ref StateMatchAnimator anim, ref Sprite sprite, ref Transform transform) =>
+            /*Game.GameWorld.Query(in query, (ref StateMatchAnimator anim, ref Sprite sprite, ref Transform transform) =>
             {
                 if (!transform.enabled)
                     return;
@@ -98,7 +97,7 @@ namespace ABEngine.ABERuntime
 
                     sprite.SetUVPosScale(curClip.uvPoses[curState.curFrame], curClip.uvScales[curState.curFrame]);
                 }
-            });
+            });*/
         }
     }
 }
