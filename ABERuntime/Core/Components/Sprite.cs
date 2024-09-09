@@ -74,8 +74,7 @@ namespace ABEngine.ABERuntime.Components
                 {
                     int oldLayer = _renderLayerIndex;
                     _renderLayerIndex = value;
-
-                    Game.spriteBatchSystem.UpdateSpriteBatch(this, oldLayer, texture, _material.instanceID);
+                    batchID = -1;
                 }
             }
         }
@@ -91,8 +90,7 @@ namespace ABEngine.ABERuntime.Components
                     _material = _material.GetCopy();
                     sharedMaterial = _material;
                     _isMatCopy = true;
-
-                    Game.spriteBatchSystem.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
+                    batchID = -1;
                 }
 
                 return _material;
@@ -101,7 +99,7 @@ namespace ABEngine.ABERuntime.Components
                 int lastMatInsId = _material.instanceID;
                 _material = value;
                 sharedMaterial = value;
-                Game.spriteBatchSystem.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
+                batchID = -1;
             }
         }
 
@@ -110,15 +108,15 @@ namespace ABEngine.ABERuntime.Components
             int lastMatInsId = _material.instanceID;
             _material = mat;
             sharedMaterial = mat;
-            if(updateBatch)
-                Game.spriteBatchSystem.UpdateSpriteBatch(this, renderLayerIndex, this.texture, lastMatInsId);
+            if (updateBatch)
+                batchID = -1;
         }
 
         public PipelineMaterial sharedMaterial;
 
         public Texture2D texture { get; private set; }
         public Texture2D normalTexture { get; set; }
-        public SpriteBatch batch;
+        //public SpriteBatch batch;
 
         public Sprite()
         {
@@ -133,8 +131,8 @@ namespace ABEngine.ABERuntime.Components
             size = default;
             normalTexture = Assets.GetDefaultTexture();
             groupID = 0;
-            batchID = 0;
-            batch = null;
+            batchID = -1;
+            //batch = null;
             
             Resize(texture.imageSize);
         }
@@ -261,8 +259,8 @@ namespace ABEngine.ABERuntime.Components
 
             this.sizeSet = true;
 
-            if(!manualBatching)
-                Game.spriteBatchSystem.UpdateSpriteBatch(this, renderLayerIndex, oldTex, _material.instanceID);
+            if (!manualBatching)
+                batchID = -1;
         }
 
         public void SetUVPosScale(Vector2 uvPos, Vector2 uvScale)

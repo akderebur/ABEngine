@@ -125,8 +125,8 @@ namespace ABEngine.ABERuntime.Components
             Transform trans = new Transform("EditorNotVisible");
             //var entity = Game.GameWorld.Create("P" + _particleCount, Guid.NewGuid(), trans, sprite);
             trans.localPosition = new Vector3(0f, 0f, -10f);
-            Game.spriteBatchSystem.AddSpriteToBatch(trans, sprite, _batchGuid);
-            _particleBatch = Game.spriteBatchSystem.GetBatchFromSprite(trans, sprite, _batchGuid);
+            //Game.spriteBatchSystem.AddSpriteToBatch(trans, sprite, _batchGuid);
+            //_particleBatch = Game.spriteBatchSystem.GetBatchFromSprite(trans, sprite, _batchGuid);
             //_particleBatch.isDynamicSort = true;
 
             Particle particle = new Particle()

@@ -37,7 +37,15 @@ namespace ABEngine.ABERuntime.Rendering
         {
             spriteCount++;
             if (vertices.Length < spriteCount)
-                vertices = new QuadVertex [(int)MathF.Floor(spriteCount * 1.5f)];
+            {
+                Array.Resize(ref vertices, (int)MathF.Floor(spriteCount * 1.5f));
+                if (vertexBuffer != null)
+                {
+                    vertexBuffer.Dispose();
+                    vertexBuffer = _wgil.CreateBuffer(vertices.Length * (int)QuadVertex.VertexSize,
+                        BufferUsages.VERTEX | BufferUsages.COPY_DST);
+                }
+            }
         }
         
 

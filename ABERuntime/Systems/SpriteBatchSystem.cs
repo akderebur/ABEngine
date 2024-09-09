@@ -1,21 +1,73 @@
-﻿using System;
-using System.Linq;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using WGIL;
 using ABEngine.ABERuntime.Rendering;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.Core.Assets;
 using Friflo.Engine.ECS;
-using WGIL.IO;
 using Buffer = WGIL.Buffer;
 
 namespace ABEngine.ABERuntime
 {
     public class SpriteBatchSystem : RenderSystem
     {
-        class SpriteTextureGroup
+        private readonly ArchetypeQuery<Sprite> spriteQuery = Game.GameWorld.Query<Sprite>();
+        private readonly ArchetypeQuery<Sprite, WorldTransform> spriteRenderQuery = Game.GameWorld.Query<Sprite, WorldTransform>();
+
+        private List<LayerContext> layers;
+        
+        protected override void StartScene()
+        {
+            layers = new List<LayerContext>();
+            for (int i = 0; i < Graphics.renderLayers.Count; i++)
+            {
+                layers.Add(new LayerContext(i));
+            }
+            
+            spriteQuery.ForEachEntity((ref Sprite sprite, Entity entity) => {
+                layers[sprite.renderLayerIndex].AddSprite(ref sprite);
+            });
+            
+            foreach (var layer in layers)
+            {
+                layer.InitBatches();
+            }
+        }
+        
+        public override void Update(float gameTime, float deltaTime)
+        {
+            foreach (var (sprites, transforms, entities) in spriteRenderQuery.Chunks)
+            {
+                for (int n = 0; n < entities.Length; n++)
+                {
+                    ref Sprite sprite = ref sprites[n];
+                    if (sprite.batchID < 0)
+                    {
+                        layers[sprite.renderLayerIndex].AddSprite(ref sprite);
+                    }
+                    
+                    WorldTransform transform =  transforms[n];
+                    layers[sprite.renderLayerIndex].GetBatch(sprite.batchID).UpdateSprite(sprite, new Vector3(transform.matrix.M41, transform.matrix.M42, transform.matrix.M43), Vector3.One);
+                }
+            }
+            
+            foreach (var layer in layers)
+            {
+                layer.UpdateBatches();
+            }
+        }
+        
+        public override void Render(RenderPass pass, int renderLayer)
+        {
+            layers[renderLayer].RenderBatches(pass);
+        }
+
+        public void RenderPP(RenderPass pass, int renderLayer)
+        {
+           
+        }
+        
+         class SpriteTextureGroup
         {
             private Texture2D spriteTexture;
             private Texture2D normalTexture;
@@ -52,7 +104,7 @@ namespace ABEngine.ABERuntime
                 if (batches.TryGetValue(sprite.sharedMaterial, out SpriteBatch batch))
                 {
                    batch.AddSprite();
-                   sprite.batch = batch;
+                   sprite.batchID = batch.batchID;
                    return null;
                 }
                 else
@@ -107,7 +159,8 @@ namespace ABEngine.ABERuntime
                 if (batch != null)
                 {
                     batch.batchID = batches.Count;
-                    sprite.batch = batch;
+                    sprite.batchID = batch.batchID;
+                    //sprite.batch = batch;
                     batches.Add(batch);
                 }
             }
@@ -140,119 +193,6 @@ namespace ABEngine.ABERuntime
                     textureGroup.Render(pass);
                 }
             }
-        }
-
-        private readonly ArchetypeQuery<Sprite> spriteQuery = Game.GameWorld.Query<Sprite>();
-        private readonly ArchetypeQuery<Sprite, WorldTransform> spriteRenderQuery = Game.GameWorld.Query<Sprite, WorldTransform>();
-
-        private List<LayerContext> layers;
-        
-        protected override void StartScene()
-        {
-            layers = new List<LayerContext>();
-            for (int i = 0; i < 2; i++)
-            {
-                layers.Add(new LayerContext(i));
-            }
-            
-            spriteQuery.ForEachEntity((ref Sprite sprite, Entity entity) => {
-                layers[sprite.renderLayerIndex].AddSprite(ref sprite);
-            });
-            
-            foreach (var layer in layers)
-            {
-                layer.InitBatches();
-            }
-        }
-
-        void DoPipelineGrouping()
-        {
-        }
-        
-
-        internal void RemoveSprite(Sprite sprite, int oldRenderLayerID, Texture2D oldTex, int oldMatInsId)
-        {
-
-        }
-
-        internal void DeleteBatch(RenderBatch batch)
-        {
-   
-        }
-
-        internal SpriteBatch GetBatchFromSprite(Transform spriteTrans, Sprite sprite, string extraKey)
-        {
-            return GetBatchFromSprite(spriteTrans, sprite, sprite.texture, extraKey);
-        }
-
-        internal SpriteBatch GetBatchFromSprite(Transform spriteTrans, Sprite sprite, Texture2D tex2D, string extraKey)
-        {
-           
-            return null;
-        }
-
-        public void UpdateSpriteBatch(Sprite sprite, int oldRenderLayerID, Texture2D oldTex, int oldMatInsId)
-        {
-          
-        }
-
-        internal void AddGenericBatch(RenderBatch batch)
-        {
-            
-        }
-
-        internal void RemoveGenericBatch(RenderBatch batch)
-        {
-        }
-
-        internal int DEBUG_GetBatchCount()
-        {
-            return 0;
-        }
-
-        internal SpriteBatch CreateSpriteBatch(Transform spriteTrans, Sprite sprite, Texture2D tex2D, string extraKey)
-        {
-            return null;
-        }
-
-        internal SpriteBatch AddSpriteToBatch(Transform spriteTrans, Sprite sprite, string extraKey)
-        {
-            return null;
-        }
-
-        internal SpriteBatch AddSpriteToBatch(Transform spriteTrans, Sprite sprite)
-        {
-            return AddSpriteToBatch(spriteTrans, sprite, "");
-        }
-
-        internal void UpdateBatchPipeline(RenderBatch sb)
-        {
-            
-        }
-
-        public override void Update(float gameTime, float deltaTime)
-        {
-            spriteRenderQuery.ForEachEntity((ref Sprite sprite, ref WorldTransform transform, Entity entity) =>
-            {
-                SpriteBatch batch = sprite.batch;
-                batch.UpdateSprite(sprite, new Vector3(transform.matrix.M41, transform.matrix.M42, transform.matrix.M43), Vector3.One);
-            });
-            
-            foreach (var layer in layers)
-            {
-                layer.UpdateBatches();
-            }
-        }
-
-        public void RenderPP(RenderPass pass, int renderLayer)
-        {
-           
-        }
-
-        public override void Render(RenderPass pass, int renderLayer)
-        {
-            
-            layers[renderLayer].RenderBatches(pass);
         }
     }
 }

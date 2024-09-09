@@ -127,7 +127,7 @@ namespace ABEngine.ABERuntime.Components
             _particleBatch.key = "PM_Batch_" + Guid.NewGuid();
             _particleBatch.active = true;
 
-            Game.spriteBatchSystem.AddGenericBatch(_particleBatch);
+            //Game.spriteBatchSystem.AddGenericBatch(_particleBatch);
 
             isPlaying = true;
             _pTime.moduleTime = 0f;
@@ -156,7 +156,7 @@ namespace ABEngine.ABERuntime.Components
             _particles.Clear();
 
             _particleBatch.DeleteBatch();
-            Game.spriteBatchSystem.DeleteBatch(_particleBatch);
+            //Game.spriteBatchSystem.DeleteBatch(_particleBatch);
 
             _accumulator = 0f;
             isPlaying = false;
