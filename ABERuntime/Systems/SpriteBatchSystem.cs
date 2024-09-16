@@ -17,10 +17,10 @@ namespace ABEngine.ABERuntime
 
         private List<LayerContext> layers;
 
-        private Buffer spriteTransformBuffer;
-        private BindGroup spriteFrameBindGroup;
+        private static Buffer spriteTransformBuffer;
+        private static BindGroup spriteFrameBindGroup;
         
-        internal void SetupResources()
+        public override void SetupResources(params TextureView[] sampledTextures)
         {
             if(spriteTransformBuffer != null)
                 return;

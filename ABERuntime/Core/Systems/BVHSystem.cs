@@ -83,7 +83,7 @@ public class BVHSystem : BaseSystem
         // Update BVHs
         sphereQuery.ForEachEntity((ref WorldTransform transform, ref BVSphere bvSphere, Entity entity) => {
             float scale = new Vector3(transform.m11, transform.m12, transform.m13).Length();
-            bvSphere.BVHGroup.AddVolume(transform.Position, bvSphere.Radius * scale);
+            bvSphere.bvhGroup.AddVolume(transform.Position, bvSphere.radius * scale);
         });
         
         // Check BVHs

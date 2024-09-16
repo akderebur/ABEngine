@@ -11,3 +11,13 @@ public struct ChildTag : ITag
 {
     
 }
+
+public struct Transparent : ITag
+{
+    
+}
+
+public struct Opaque : ITag
+{
+    
+}

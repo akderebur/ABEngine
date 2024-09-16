@@ -1,15 +1,17 @@
 ﻿using System.Numerics;
+using Friflo.Engine.ECS;
 
 namespace ABEngine.ABERuntime.Components
 {
-	public class DirectionalLight : ABComponent
+	public struct DirectionalLight : IComponent
 	{
-		public Vector4 color { get; set; }
-		public Vector3 direction { get; set; }
-		public float intensity { get; set; }
+		public Vector4 color;
+		public Vector3 direction;
+		public float intensity;
 
 		public DirectionalLight()
 		{
+			direction = -Vector3.UnitZ;;
 			color = Vector4.One;
 			intensity = 1f;
 		}

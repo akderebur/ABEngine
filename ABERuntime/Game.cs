@@ -141,6 +141,7 @@ namespace ABEngine.ABERuntime
 
         void MainPassWork(RenderPass pass)
         {
+            meshRenderSystem.Render(pass);
             spriteBatchSystem.Render(pass);
         }
 
@@ -213,8 +214,6 @@ namespace ABEngine.ABERuntime
             spriteBatchSystem = new SpriteBatchSystem();
             lightRenderSystem = new LightRenderSystem();
             
-            spriteBatchSystem.SetupResources();
-
             // Create Passes
             var normalsPassDesc = new RenderPassDescriptor()
             {
@@ -310,7 +309,6 @@ namespace ABEngine.ABERuntime
                 normalsRenderSystem,
                 meshRenderSystem,
                 spriteBatchSystem,
-                //msaaResolveSystem,
                 lightRenderSystem
             };
 
@@ -319,8 +317,8 @@ namespace ABEngine.ABERuntime
 
         protected private void SetupRenderResources()
         {
+            spriteBatchSystem.SetupResources();
             meshRenderSystem.SetupResources();
-            //msaaResolveSystem.SetupResources(resourceContext.mainRenderTexture, resourceContext.spriteNormalsTexture, resourceContext.mainDepthTexture);
             lightRenderSystem.SetupResources(resourceContext.mainRenderView, resourceContext.cameraNormalView);
         }
 
@@ -640,6 +638,7 @@ namespace ABEngine.ABERuntime
             RenderSetup(newTime);
             bvhSystem.Update(newTime, elapsed);
             spriteBatchSystem.Update(newTime, elapsed);
+            meshRenderSystem.Update(newTime, elapsed);
             lightRenderSystem.Update(newTime, elapsed);
         }
 

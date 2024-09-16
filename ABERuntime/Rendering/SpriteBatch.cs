@@ -48,21 +48,10 @@ namespace ABEngine.ABERuntime.Rendering
             }
         }
         
-
         public void UpdateSprite(in Sprite sprite, int transformID)
         {
             vertices[instanceCount++] = new QuadVertex(sprite.pivot,
                 sprite.GetSize(),
-                sprite.tintColor,
-                sprite.uvPos,
-                sprite.uvScale,
-                transformID);
-        }
-        
-        public void UpdateSpriteTest(in Sprite sprite, int transformID)
-        {
-            vertices[instanceCount++] = new QuadVertex(sprite.pivot,
-                Vector2.Zero, 
                 sprite.tintColor,
                 sprite.uvPos,
                 sprite.uvScale,

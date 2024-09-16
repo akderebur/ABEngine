@@ -1,10 +1,16 @@
 ﻿using ABEngine.ABERuntime.Core.Assets;
+using ABEngine.ABERuntime.Rendering;
+using ABEngine.ABERuntime.Systems;
+using Friflo.Engine.ECS;
 using Halak;
 
 namespace ABEngine.ABERuntime.Components
 {
-	public class MeshRenderer : JSerializable, IRenderer
-	{
+	public struct MeshRenderer : JSerializable, IRenderer, IComponent
+    {
+        public BVHGroup bvhGroup;
+        public MeshBatch batch;
+        
         private PipelineMaterial _material;
         private Mesh _mesh;
 
@@ -15,13 +21,6 @@ namespace ABEngine.ABERuntime.Components
             {
                 if (_material == value || value == null)
                     return;
-
-                Transform transform = null;
-                if(_material != null)
-                    transform = Game.meshRenderSystem.RemoveMesh(this);
-                _material = value;
-                if(transform != null)
-                    Game.meshRenderSystem.AddMesh(transform, this);
             }
         }
         
@@ -33,31 +32,28 @@ namespace ABEngine.ABERuntime.Components
                 if (_mesh == value || value == null)
                     return;
 
-                Transform transform = null;
-                if (_mesh != null)
-                    transform = Game.meshRenderSystem.RemoveMesh(this);
-                _mesh = value;
-                if (transform != null)
-                    Game.meshRenderSystem.AddMesh(transform, this);
             }
         }
-
-        internal int renderID { get; set; }
-
+        
         public MeshRenderer()
-		{
-            material = Graphics.GetUber3D();
+        {
+            batch = null;
+            bvhGroup = BVHSystem.GetDefaultBVHGroup();
+            _mesh = CubeModel.GetCubeMesh();  
+            _material = Graphics.GetUber3D();
         }
 
         public MeshRenderer(Mesh mesh) : this()
         {
-            this.mesh = mesh;
+            _mesh = mesh;
         }
 
         public MeshRenderer(Mesh mesh, PipelineMaterial material)
         {
-            this.mesh = mesh;
-            this.material = material;
+            batch = null;
+            bvhGroup = BVHSystem.GetDefaultBVHGroup();
+            _mesh = mesh;
+            _material = material;
         }
 
         public JValue Serialize()

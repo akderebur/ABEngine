@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Numerics;
+using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Systems;
 using Friflo.Engine.ECS;
 
@@ -7,13 +9,13 @@ namespace ABEngine.ABERuntime.Components;
 
 public struct BVSphere : IComponent
 {
-    public float Radius;
-    public BVHGroup BVHGroup;
+    public float radius;
+    public BVHGroup bvhGroup;
 
     public BVSphere()
     {
-        Radius = 1;
-        BVHGroup = BVHSystem.GetDefaultBVHGroup();
+        radius = 1;
+        bvhGroup = BVHSystem.GetDefaultBVHGroup();
     }
     
     public static BVSphere FromSprite(in Sprite sprite)
@@ -21,7 +23,15 @@ public struct BVSphere : IComponent
         Vector2 size = sprite.GetSize();
         return new BVSphere()
         {
-            Radius = MathF.Max(size.X, size.Y)
+            radius = MathF.Max(size.X, size.Y)
+        };
+    }
+    
+    public static BVSphere FromMesh(in Mesh mesh)
+    {
+        return new BVSphere()
+        {
+            radius = MathF.Max(MathF.Max(mesh.boundsMax.X, mesh.boundsMax.Y), mesh.boundsMax.Z)
         };
     }
 }
