@@ -58,7 +58,7 @@ namespace ABEngine.ABERuntime.Physics
             while (createQueue.Count > 0)
             {
                 var rb = createQueue.Dequeue();
-                Game.b2dInitSystem.AddRBRuntime(rb.transform.entity);
+                //Game.b2dInitSystem.AddRBRuntime(rb.transform.entity);
             }
         }
 

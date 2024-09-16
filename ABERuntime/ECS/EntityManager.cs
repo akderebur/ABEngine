@@ -12,6 +12,7 @@ namespace ABEngine.ABERuntime.ECS
 {
     public static class Entities
     {
+        internal static Entity NullEntity;
         internal static SemaphoreSlim creationSemaphore = new SemaphoreSlim(1);
         internal static SemaphoreSlim frameSemaphore = new SemaphoreSlim(1);
 
@@ -21,6 +22,7 @@ namespace ABEngine.ABERuntime.ECS
         
         static Entities()
         {
+            NullEntity = new Entity();
         }
 
         public static void Init()
@@ -301,24 +303,17 @@ namespace ABEngine.ABERuntime.ECS
                 }
             }*/
         }
-
-        public static Entity WithTRS(this in Entity entity)
-        {
-            entity.AddComponent(new TRS());
-            entity.AddComponent(new WorldTransform());
-            return entity;
-        }
-
+        
         public static Entity CreateEntity()
         {
-            var ent = Game.GameWorld.CreateEntity(new EntityName("New Entity"), new EntityGuid());
+            var ent = Game.GameWorld.CreateEntity(new EntityName("New Entity"), new EntityGuid(), new TRS(), new WorldTransform());
             CheckSubscribers(in ent, true);
             return ent;
         }
 
         public static Entity CreateEntity(string entName)
         {
-            var ent = Game.GameWorld.CreateEntity(new EntityName(entName), new EntityGuid());
+            var ent = Game.GameWorld.CreateEntity(new EntityName(entName), new EntityGuid(), new TRS(), new WorldTransform());
             CheckSubscribers(in ent, true);
             return ent;
         }
@@ -326,7 +321,7 @@ namespace ABEngine.ABERuntime.ECS
         public static Entity CreateEntity<C1>(string entName, in C1 c1)
             where C1 : struct, IComponent
         {
-            var ent = Game.GameWorld.CreateEntity(new EntityName(entName), new EntityGuid(), c1);
+            var ent = Game.GameWorld.CreateEntity(new EntityName(entName), new EntityGuid(), new TRS(), new WorldTransform(), c1);
             CheckSubscribers(in ent, true);
             return ent;
         }
@@ -335,7 +330,17 @@ namespace ABEngine.ABERuntime.ECS
             where C1 : struct, IComponent
             where C2 : struct, IComponent
         {
-            var ent = Game.GameWorld.CreateEntity(new EntityName(entName), new EntityGuid(), c1, c2);
+            var ent = Game.GameWorld.CreateEntity(new EntityName(entName), new EntityGuid(), new TRS(), new WorldTransform(), c1, c2);
+            CheckSubscribers(in ent, true);
+            return ent;
+        }
+        
+        public static Entity CreateEntity<C1, C2, C3>(string entName, C1 c1, C2 c2, C3 c3)
+            where C1 : struct, IComponent
+            where C2 : struct, IComponent
+            where C3 : struct, IComponent
+        {
+            var ent = Game.GameWorld.CreateEntity(new EntityName(entName), new EntityGuid(), new TRS(), new WorldTransform(), c1, c2, c3);
             CheckSubscribers(in ent, true);
             return ent;
         }

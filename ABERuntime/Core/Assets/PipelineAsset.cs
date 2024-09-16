@@ -100,6 +100,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             "vec3" => typeof(Vector3),
             "vec4" => typeof(Vector4),
             "ivec4" => typeof(Vector4),
+            "int" => typeof(int),
             _ => null
         };
 
@@ -110,6 +111,7 @@ namespace ABEngine.ABERuntime.Core.Assets
             "vec3" => VertexFormat.Float32x3,
             "vec4" => VertexFormat.Float32x4,
             "ivec4" => VertexFormat.Sint32x4,
+            "int" => VertexFormat.Sint32,
             _ => VertexFormat.Float32
         };
         
@@ -461,7 +463,7 @@ namespace ABEngine.ABERuntime.Core.Assets
                                             else
                                             {
                                                 // 2D
-                                                resourceLayouts.Add(Graphics.sharedPipelineLayout);
+                                                resourceLayouts.Add(Graphics.spriteSharedFrameLayout);
                                                 resourceLayouts.Add(Graphics.sharedSpriteNormalLayout);
                                             }
                                             break;

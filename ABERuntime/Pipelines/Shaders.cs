@@ -165,14 +165,17 @@ Vertex
         float Padding;
     };
 
-    layout(location = 0) in vec3 Position;
+   layout (set = 0, binding = 1) readonly buffer TransformBuffer
+   {
+        mat4 spriteTransforms[];
+   };
+
+    layout(location = 0) in vec2 Pivot;
     layout(location = 1) in vec2 Scale;
-    layout(location = 2) in vec3 WorldScale;
-    layout(location = 3) in vec4 Tint;
-    layout(location = 4) in float ZRotation;
-    layout(location = 5) in vec2 uvStart;
-    layout(location = 6) in vec2 uvScale;
-    layout(location = 7) in vec2 Pivot;
+    layout(location = 2) in vec4 Tint;
+    layout(location = 3) in vec2 uvStart;
+    layout(location = 4) in vec2 uvScale;
+    layout(location = 5) in int transformID;
 
     layout(location = 0) out vec2 fsin_TexCoords;
     layout(location = 1) out vec4 fsin_Tint;
@@ -197,31 +200,14 @@ Vertex
         vec4(0.5, -0.5, 1, 1)
     );
 
-    vec2 rotate(vec2 v, float a)
-    {
-        float s = sin(a);
-        float c = cos(a);
-        mat2 m = mat2(c, -s, s, c);
-        return m * v;
-    }
-
     void main()
     {
         vec4 unit_quad = Quads[gl_VertexIndex];
         vec2 unit_pos = unit_quad.xy;
         vec2 uv_pos = unit_quad.zw;
 
-        //vec2 srcPos = src.xy;
-        //vec2 pos = unit_pos * Scale.xy;
-        //pos = rotate(pos, ZRotation);
-        //pos += Position.xy + Pivot*Scale.xy;
-
         vec2 pos = ((unit_pos + Pivot) * Scale.xy);
-        pos *= WorldScale.xy;
-        pos = rotate(pos, ZRotation);
-        pos += Position.xy;
-
-        gl_Position = Projection * View * vec4(pos, Position.z, 1);
+        gl_Position = Projection * View * spriteTransforms[transformID] * vec4(pos, 0, 1);
 
         vec2 uv_sample = uv_pos * uvScale + uvStart;
     

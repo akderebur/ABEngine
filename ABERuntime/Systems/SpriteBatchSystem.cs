@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 using System.Collections.Generic;
 using WGIL;
 using ABEngine.ABERuntime.Rendering;
@@ -15,6 +16,30 @@ namespace ABEngine.ABERuntime
         private readonly ArchetypeQuery<Sprite, WorldTransform> spriteRenderQuery = Game.GameWorld.Query<Sprite, WorldTransform>();
 
         private List<LayerContext> layers;
+
+        private Buffer spriteTransformBuffer;
+        private BindGroup spriteFrameBindGroup;
+        
+        internal void SetupResources()
+        {
+            if(spriteTransformBuffer != null)
+                return;
+            
+            spriteTransformBuffer = wgil.CreateBuffer(64 * 300000, BufferUsages.STORAGE | BufferUsages.COPY_DST)
+                .SetManualDispose(true);
+
+            BindGroupDescriptor spriteFrameBGDesc = new BindGroupDescriptor()
+            {
+                BindGroupLayout = Graphics.spriteSharedFrameLayout,
+                Entries = new[]
+                {
+                    Game.pipelineBuffer,
+                    spriteTransformBuffer
+                }
+            };
+
+            spriteFrameBindGroup = wgil.CreateBindGroup(ref spriteFrameBGDesc).SetManualDispose(true);
+        }
         
         protected override void StartScene()
         {
@@ -36,18 +61,28 @@ namespace ABEngine.ABERuntime
         
         public override void Update(float gameTime, float deltaTime)
         {
+            int totalCount = 0;
             foreach (var (sprites, transforms, entities) in spriteRenderQuery.Chunks)
             {
+                wgil.WriteBuffer(spriteTransformBuffer, transforms.Span, totalCount * 64, entities.Length * 64);
+                
                 for (int n = 0; n < entities.Length; n++)
                 {
                     ref Sprite sprite = ref sprites[n];
-                    if (sprite.batchID < 0)
+                    if (sprite.batch == null)
                     {
                         layers[sprite.renderLayerIndex].AddSprite(ref sprite);
                     }
                     
-                    WorldTransform transform =  transforms[n];
-                    layers[sprite.renderLayerIndex].GetBatch(sprite.batchID).UpdateSprite(sprite, new Vector3(transform.matrix.M41, transform.matrix.M42, transform.matrix.M43), Vector3.One);
+                    totalCount++;
+                    if (sprite.bvhGroup.IsCulled)
+                    {
+                        //Console.WriteLine("Cull");
+                        //sprite.batch.UpdateSpriteTest(sprite, 0);
+                        continue;
+                    }
+ 
+                    sprite.batch.UpdateSprite(sprite, totalCount - 1);
                 }
             }
             
@@ -57,76 +92,12 @@ namespace ABEngine.ABERuntime
             }
         }
         
-        public override void Render(RenderPass pass, int renderLayer)
-        {
-            layers[renderLayer].RenderBatches(pass);
-        }
-
-        public void RenderPP(RenderPass pass, int renderLayer)
-        {
-           
+        public override void Render(RenderPass pass)
+        { 
+            pass.SetBindGroup(0, spriteFrameBindGroup);
+            layers[0].RenderBatches(pass);
         }
         
-         class SpriteTextureGroup
-        {
-            private Texture2D spriteTexture;
-            private Texture2D normalTexture;
-
-            private Dictionary<PipelineMaterial, SpriteBatch> batches;
-            
-            // GPU
-            private BindGroup textureBindGroup;
-
-            public SpriteTextureGroup(Texture2D spriteTexture, Texture2D normalTexture, Buffer layerBuffer)
-            {
-                this.spriteTexture = spriteTexture;
-                this.normalTexture = normalTexture;
-
-                BindGroupDescriptor desc = new BindGroupDescriptor()
-                {
-                    BindGroupLayout = Graphics.sharedSpriteNormalLayout,
-                    Entries = new BindResource[]
-                    {
-                        spriteTexture.GetView(),
-                        spriteTexture.textureSampler,
-                        spriteTexture.GetView(),
-                        spriteTexture.textureSampler,
-                        layerBuffer
-                    }
-                };
-                textureBindGroup = Game.wgil.CreateBindGroup(ref desc);
-
-                batches = new Dictionary<PipelineMaterial, SpriteBatch>();
-            }
-
-            public SpriteBatch AddSprite(ref Sprite sprite)
-            {
-                if (batches.TryGetValue(sprite.sharedMaterial, out SpriteBatch batch))
-                {
-                   batch.AddSprite();
-                   sprite.batchID = batch.batchID;
-                   return null;
-                }
-                else
-                {
-                    // Create batch
-                    batch = new SpriteBatch(sprite.sharedMaterial);
-                    batch.AddSprite();
-                    batches.Add(sprite.sharedMaterial, batch);
-                    return batch;
-                }
-            }
-
-            public void Render(RenderPass pass)
-            {
-                pass.SetBindGroup(1, textureBindGroup);
-                foreach (var batch in batches.Values)
-                {
-                    batch.Render(pass);
-                }
-            }
-        }
-
         class LayerContext
         {
             // Batched based on sprite and normal texture for each layer
@@ -159,8 +130,8 @@ namespace ABEngine.ABERuntime
                 if (batch != null)
                 {
                     batch.batchID = batches.Count;
-                    sprite.batchID = batch.batchID;
-                    //sprite.batch = batch;
+                    //sprite.batchID = batch.batchID;
+                    sprite.batch = batch;
                     batches.Add(batch);
                 }
             }
@@ -191,6 +162,60 @@ namespace ABEngine.ABERuntime
                 foreach (var textureGroup in textureGroups.Values)
                 {
                     textureGroup.Render(pass);
+                }
+            }
+        }
+        
+        class SpriteTextureGroup
+        {
+            private Dictionary<PipelineMaterial, SpriteBatch> batches;
+            
+            // GPU
+            private BindGroup textureBindGroup;
+
+            public SpriteTextureGroup(Texture2D spriteTexture, Texture2D normalTexture, Buffer layerBuffer)
+            {
+                BindGroupDescriptor desc = new BindGroupDescriptor()
+                {
+                    BindGroupLayout = Graphics.sharedSpriteNormalLayout,
+                    Entries = new BindResource[]
+                    {
+                        spriteTexture.GetView(),
+                        spriteTexture.textureSampler,
+                        normalTexture.GetView(),
+                        normalTexture.textureSampler,
+                        layerBuffer
+                    }
+                };
+                textureBindGroup = Game.wgil.CreateBindGroup(ref desc);
+
+                batches = new Dictionary<PipelineMaterial, SpriteBatch>();
+            }
+
+            public SpriteBatch AddSprite(ref Sprite sprite)
+            {
+                if (batches.TryGetValue(sprite.sharedMaterial, out SpriteBatch batch))
+                {
+                   batch.AddSprite();
+                   sprite.batch = batch;
+                   return null;
+                }
+                else
+                {
+                    // Create batch
+                    batch = new SpriteBatch(sprite.sharedMaterial);
+                    batch.AddSprite();
+                    batches.Add(sprite.sharedMaterial, batch);
+                    return batch;
+                }
+            }
+
+            public void Render(RenderPass pass)
+            {
+                pass.SetBindGroup(1, textureBindGroup);
+                foreach (var batch in batches.Values)
+                {
+                    batch.Render(pass);
                 }
             }
         }

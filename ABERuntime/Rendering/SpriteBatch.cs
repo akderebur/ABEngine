@@ -49,16 +49,24 @@ namespace ABEngine.ABERuntime.Rendering
         }
         
 
-        public void UpdateSprite(in Sprite sprite, in Vector3 position, in Vector3 scale)
+        public void UpdateSprite(in Sprite sprite, int transformID)
         {
-            vertices[instanceCount++] = new QuadVertex(position,
+            vertices[instanceCount++] = new QuadVertex(sprite.pivot,
                 sprite.GetSize(),
-                scale * 0.01f,
                 sprite.tintColor,
-                0f,
                 sprite.uvPos,
                 sprite.uvScale,
-                sprite.pivot);
+                transformID);
+        }
+        
+        public void UpdateSpriteTest(in Sprite sprite, int transformID)
+        {
+            vertices[instanceCount++] = new QuadVertex(sprite.pivot,
+                Vector2.Zero, 
+                sprite.tintColor,
+                sprite.uvPos,
+                sprite.uvScale,
+                transformID);
         }
 
         internal void DeleteBatch()
@@ -88,7 +96,6 @@ namespace ABEngine.ABERuntime.Rendering
         internal void Render(RenderPass pass)
         {
             pass.SetPipeline(material.pipelineAsset.pipeline);
-            pass.SetBindGroup(0, Game.pipelineSet);
             pass.SetVertexBuffer(0, vertexBuffer);
 
             // Material Resource Sets

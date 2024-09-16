@@ -42,12 +42,12 @@ namespace ABEngine.ABERuntime.Core.Assets
         {
             // Default Materials
             var uberMat = Graphics.GetUberMaterial();
-            var additiveMat = Graphics.GetUberAdditiveMaterial();
-            var uber3d = Graphics.GetUber3D();
+            //var additiveMat = Graphics.GetUberAdditiveMaterial();
+            //var uber3d = Graphics.GetUber3D();
 
             assetDict.Add(uberMat.fPathHash, uberMat);
-            assetDict.Add(additiveMat.fPathHash, additiveMat);
-            assetDict.Add(uber3d.fPathHash, uber3d);
+            //assetDict.Add(additiveMat.fPathHash, additiveMat);
+            //assetDict.Add(uber3d.fPathHash, uber3d);
         }
         
         private T GetCachedAsset<T>(string assetPath, uint preHash, out uint hash) where T : Asset

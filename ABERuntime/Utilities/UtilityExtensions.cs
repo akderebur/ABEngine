@@ -5,11 +5,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Halak;
 using Force.Crc32;
 using System.Text;
 using Friflo.Engine.ECS;
-using Transform = ABEngine.ABERuntime.Components.Transform;
+using Entities = ABEngine.ABERuntime.ECS.Entities;
 
 namespace ABEngine.ABERuntime
 {
@@ -41,6 +40,24 @@ namespace ABEngine.ABERuntime
         public static float NextFloat(this Random rnd, float min, float max)
         {
             return (float)rnd.NextDouble() * (max - min) + min;
+        }
+        
+        // Entity
+        public static void SetParent(this in Entity entity, in Entity parent)
+        {
+            if (parent == Entities.NullEntity)
+            {
+                if (!entity.Parent.IsNull)
+                {
+                    entity.Parent.RemoveChild(entity);
+                    entity.RemoveTag<ChildTag>();
+                }
+            }
+            else if(!parent.IsNull)
+            {
+                parent.AddChild(entity);
+                entity.AddTag<ChildTag>();
+            }
         }
 
         #region Conversions

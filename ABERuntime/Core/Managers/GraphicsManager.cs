@@ -43,6 +43,7 @@ namespace ABEngine.ABERuntime
         public static VertexLayout sharedMeshVertexLayout { get; private set; }
         public static VertexLayout fullScreenVertexLayout { get; private set; }
 
+        public static BindGroupLayout spriteSharedFrameLayout { get; private set; }
         public static BindGroupLayout sharedPipelineLayout { get; private set; }
         public static BindGroupLayout sharedTextureLayout { get; private set; }
         public static BindGroupLayout sharedSpriteNormalLayout { get; private set; }
@@ -232,6 +233,26 @@ namespace ABEngine.ABERuntime
             };
 
             sharedPipelineLayout = wgil.CreateBindGroupLayout(ref sharedPipelineLayoutDesc).SetManualDispose(true);
+            
+            // Sprite Frame
+            var spriteSharedFrameDesc = new BindGroupLayoutDescriptor()
+            {
+                Entries = new[]
+                {
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.Buffer,
+                        ShaderStages = ShaderStages.VERTEX | ShaderStages.FRAGMENT
+                    },
+                    new BindGroupLayoutEntry()
+                    {
+                        BindingType = BindingType.StorageBuffer,
+                        ShaderStages = ShaderStages.VERTEX
+                    }
+                }
+            };
+
+            spriteSharedFrameLayout = wgil.CreateBindGroupLayout(ref spriteSharedFrameDesc).SetManualDispose(true);
 
             // Texture Layout
             var texLayoutDesc = new BindGroupLayoutDescriptor()
@@ -536,6 +557,7 @@ namespace ABEngine.ABERuntime
         {
             sharedPipelineLayout?.Dispose();
             sharedTextureLayout?.Dispose();
+            spriteSharedFrameLayout?.Dispose();
 
             sharedMeshUniform_VS?.Dispose();
             sharedParticleLayout?.Dispose();

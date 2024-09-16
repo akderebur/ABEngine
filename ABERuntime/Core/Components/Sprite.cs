@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using ABEngine.ABERuntime.Core.Assets;
 using ABEngine.ABERuntime.Rendering;
+using ABEngine.ABERuntime.Systems;
 using Friflo.Engine.ECS;
 using Halak;
 
@@ -8,28 +9,24 @@ namespace ABEngine.ABERuntime.Components
 {
     public struct QuadVertex
     {
-        public const uint VertexSize = 76;
+        public const uint VertexSize = 52;
 
-        public Vector3 Position;
+        public Vector2 Pivot;
         public Vector2 Scale;
-        public Vector3 WorldScale;
         public Vector4 Tint;
-        public float ZRotation;
         public Vector2 UvStart;
         public Vector2 UvScale;
-        public Vector2 Pivot;
+        public int TransformID;
 
-        public QuadVertex(Vector3 position, Vector2 scale, Vector3 worldScale) : this(position, scale, worldScale, Vector4.One, 0f, Vector2.Zero, Vector2.One, Vector2.Zero) { }
-        public QuadVertex(Vector3 position, Vector2 scale, Vector3 worldScale, Vector4 tint, float zRotation, Vector2 uvStart, Vector2 uvScale, Vector2 pivot)
+        //public QuadVertex(Vector3 position, Vector2 scale, Vector3 worldScale) : this(position, scale, worldScale, Vector4.One, 0f, Vector2.Zero, Vector2.One, Vector2.Zero) { }
+        public QuadVertex(Vector2 pivot, Vector2 scale, Vector4 tint, Vector2 uvStart, Vector2 uvScale, int transformID)
         {
-            Position = position;
+            Pivot = pivot; 
             Scale = scale;
-            WorldScale = worldScale;
             Tint = tint;
-            ZRotation = zRotation;
             UvStart = uvStart;
             UvScale = uvScale;
-            Pivot = pivot; 
+            TransformID = transformID;
         }
     }
 
@@ -59,11 +56,7 @@ namespace ABEngine.ABERuntime.Components
         public Vector2 pivot;
 
         // Batching
-        internal int groupID;
-        internal int batchID;
-        
         internal bool manualBatching = false;
-
         private int _renderLayerIndex = 0;
         public int renderLayerIndex
         {
@@ -74,7 +67,7 @@ namespace ABEngine.ABERuntime.Components
                 {
                     int oldLayer = _renderLayerIndex;
                     _renderLayerIndex = value;
-                    batchID = -1;
+                    batch = null;
                 }
             }
         }
@@ -90,7 +83,7 @@ namespace ABEngine.ABERuntime.Components
                     _material = _material.GetCopy();
                     sharedMaterial = _material;
                     _isMatCopy = true;
-                    batchID = -1;
+                    batch = null;
                 }
 
                 return _material;
@@ -99,7 +92,7 @@ namespace ABEngine.ABERuntime.Components
                 int lastMatInsId = _material.instanceID;
                 _material = value;
                 sharedMaterial = value;
-                batchID = -1;
+                batch = null;
             }
         }
 
@@ -109,14 +102,15 @@ namespace ABEngine.ABERuntime.Components
             _material = mat;
             sharedMaterial = mat;
             if (updateBatch)
-                batchID = -1;
+                batch = null;
         }
 
         public PipelineMaterial sharedMaterial;
 
         public Texture2D texture { get; private set; }
         public Texture2D normalTexture { get; set; }
-        //public SpriteBatch batch;
+        internal SpriteBatch batch;
+        public BVHGroup bvhGroup;
 
         public Sprite()
         {
@@ -130,9 +124,8 @@ namespace ABEngine.ABERuntime.Components
             pivot = default;
             size = default;
             normalTexture = Assets.GetDefaultTexture();
-            groupID = 0;
-            batchID = -1;
-            //batch = null;
+            batch = null;
+            bvhGroup = BVHSystem.GetDefaultBVHGroup();
             
             Resize(texture.imageSize);
         }
@@ -260,7 +253,7 @@ namespace ABEngine.ABERuntime.Components
             this.sizeSet = true;
 
             if (!manualBatching)
-                batchID = -1;
+                batch = null;
         }
 
         public void SetUVPosScale(Vector2 uvPos, Vector2 uvScale)
