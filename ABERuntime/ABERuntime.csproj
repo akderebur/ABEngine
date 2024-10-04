@@ -11,7 +11,7 @@
 </ItemGroup>
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>11</LangVersion>
     <RootNamespace>ABEngine.ABERuntime</RootNamespace>
     <PackOnBuild>true</PackOnBuild>
     <PackageVersion>0.1</PackageVersion>

@@ -112,8 +112,6 @@ namespace ABEngine.ABERuntime.Core.Assets
             }
         }
         
-       
-        
         protected abstract Texture LoadTexture(string texPath, uint hash, uint preHash, bool isLinear);
         
         internal virtual PipelineAsset GetPipeline(string pipelineName)

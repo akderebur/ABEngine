@@ -12,7 +12,7 @@ namespace ABEngine.ABERuntime.Rendering
     {
         // GPU Resources
         public Buffer vertexBuffer;
-        QuadVertex[] vertices = null;
+        QuadVertex[] vertices = null; 
 
         bool autoDestroy = true;
 
@@ -48,14 +48,22 @@ namespace ABEngine.ABERuntime.Rendering
             }
         }
         
-        public void UpdateSprite(in Sprite sprite, int transformID)
+        public void UpdateSprite(ref Sprite sprite, int transformID)
         {
-            vertices[instanceCount++] = new QuadVertex(sprite.pivot,
+            int count = instanceCount;
+            /*vertices[instanceCount] = new QuadVertex(sprite.pivot,
                 sprite.GetSize(),
                 sprite.tintColor,
                 sprite.uvPos,
                 sprite.uvScale,
-                transformID);
+                transformID);*/
+            vertices[count].Pivot = sprite.pivot;
+            vertices[count].Scale = sprite.GetSize();
+            vertices[count].Tint = sprite.tintColor;
+            vertices[count].UvStart = sprite.uvPos;
+            vertices[count].UvScale = sprite.uvScale;
+            vertices[count].TransformID = transformID;
+            instanceCount = count + 1;
         }
 
         internal void DeleteBatch()

@@ -2,6 +2,7 @@
 using Halak;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
+using Friflo.Engine.ECS;
 
 namespace ABEngine.ABERuntime.Core.Assets
 {
@@ -28,7 +29,7 @@ namespace ABEngine.ABERuntime.Core.Assets
 		{
 		}
 
-        internal void Sample(float normalizedTime, Transform[] bones, float transRatio)
+        internal void Sample(float normalizedTime, Entity[] bones, float transRatio)
         {
             int index = Array.BinarySearch(times, normalizedTime);
 
@@ -40,13 +41,13 @@ namespace ABEngine.ABERuntime.Core.Assets
                 // Interpolate current pose and clip pose
                 for (int b = 0; b < bones.Length; b++)
                 {
-                    Transform bone = bones[b];
+                    ref TRS boneTRS = ref bones[b].LocalTransform;
                     BoneFrameData frameData = bonesData[b];
 
-                    Vector3 pos = Vector3.Lerp(bone.localPosition, frameData.framePoses[index], transRatio);
-                    Quaternion rot = Quaternion.Slerp(bone.localRotation, frameData.frameRotations[index], transRatio);
+                    boneTRS.Position = Vector3.Lerp(boneTRS.Position, frameData.framePoses[index], transRatio);
+                    boneTRS.Rotation = Quaternion.Slerp(boneTRS.Rotation, frameData.frameRotations[index], transRatio);
 
-                    bone.SetTRS(pos, rot, bone.localScale);
+                    //bone.SetTRS(pos, rot, bone.localScale);
                 }
             }
             else if (index >= 0)
@@ -54,10 +55,11 @@ namespace ABEngine.ABERuntime.Core.Assets
                 // Exact match
                 for (int b = 0; b < bones.Length; b++)
                 {
-                    Transform bone = bones[b];
+                    ref TRS boneTRS = ref bones[b].LocalTransform;
                     BoneFrameData frameData = bonesData[b];
 
-                    bone.SetTRS(frameData.framePoses[index], frameData.frameRotations[index], bone.localScale);
+                    boneTRS.Position = frameData.framePoses[index];
+                    boneTRS.Rotation = frameData.frameRotations[index];
                 }
             }
             else
@@ -71,13 +73,11 @@ namespace ABEngine.ABERuntime.Core.Assets
 
                 for (int b = 0; b < bones.Length; b++)
                 {
-                    Transform bone = bones[b];
+                    ref TRS boneTRS = ref bones[b].LocalTransform;
                     BoneFrameData frameData = bonesData[b];
 
-                    Vector3 pos = Vector3.Lerp(frameData.framePoses[prev], frameData.framePoses[next], t);
-                    Quaternion rot = Quaternion.Slerp(frameData.frameRotations[prev], frameData.frameRotations[next], t);
-
-                    bone.SetTRS(pos, rot, bone.localScale);
+                    boneTRS.Position = Vector3.Lerp(frameData.framePoses[prev], frameData.framePoses[next], t);
+                    boneTRS.Rotation = Quaternion.Slerp(frameData.frameRotations[prev], frameData.frameRotations[next], t);
                 }
             }
         }

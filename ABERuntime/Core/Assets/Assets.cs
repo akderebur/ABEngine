@@ -4,6 +4,7 @@ using System.IO;
 using System.Numerics;
 using ABEngine.ABERuntime.Components;
 using ABEngine.ABERuntime.ECS;
+using Friflo.Engine.ECS;
 using Halak;
 using WGIL;
 
@@ -201,7 +202,7 @@ public static class Assets
         return _defTexture;
     }
 
-    public static Transform CreateModel(string modelAssetPath)
+    public static Entity CreateModel(string modelAssetPath)
     {
         BinaryReader br = null;
         string modAssetFolder = "";
@@ -212,7 +213,7 @@ public static class Assets
             if (File.Exists(modelAbsPath))
                 br = new BinaryReader(new FileStream(modelAbsPath, FileMode.Open));
             else
-                return null;
+                return Entities.NullEntity;
         }
         else
         {
@@ -221,8 +222,8 @@ public static class Assets
 
         int nodeC = br.ReadInt32();
         int skelBoneC = br.ReadInt32();
-        Transform[] nodeTransforms = new Transform[nodeC];
-        Transform[] skeletonBones = new Transform[skelBoneC];
+        Entity[] nodes = new Entity[nodeC];
+        Entity[] skeletonBones = new Entity[skelBoneC];
 
         int skellBoneInd = 0;
         for (int i = 0; i < nodeC; i++)
@@ -230,22 +231,19 @@ public static class Assets
             string nodeName = br.ReadString();
             int parId = br.ReadInt32();
 
-            //Entity nodeEnt = Entities.CreateEntity(nodeName, "");
-            //Transform nodeTrans = nodeEnt.Get<Transform>();
-            // TODO
-            Transform nodeTrans = null;
-            nodeTransforms[i] = nodeTrans;
+            Entity nodeEnt = Entities.CreateEntity(nodeName);
+            ref TRS nodeTrans = ref nodeEnt.GetComponent<TRS>();
+            nodes[i] = nodeEnt;
 
             if (parId >= 0)
-                nodeTrans.parent = nodeTransforms[parId];
+                nodeEnt.SetParent(nodes[parId]);
 
             if (br.ReadByte() == 1) // Is skeleton bone?
-                skeletonBones[skellBoneInd++] = nodeTrans;
+                skeletonBones[skellBoneInd++] = nodeEnt;
 
-            Vector3 locPos = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-            Quaternion locRot = new Quaternion(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-            Vector3 locSca = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-            nodeTrans.SetTRS(locPos, locRot, locSca);
+            nodeTrans.Position = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+            nodeTrans.Rotation = new Quaternion(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+            nodeTrans.Scale = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
 
             // Visualize skel
             //Mesh cubeMesh = Rendering.CubeModel.GetCubeMesh();
@@ -275,19 +273,18 @@ public static class Assets
             PipelineMaterial material = _currentCache.GetOrCreateAsset<PipelineMaterial>("", matHash);
 
             SkinnedMeshRenderer mr = new SkinnedMeshRenderer(mesh, material);
-            Transform mrTrans = nodeTransforms[nodeId];
+            ref TRS mrTrans = ref nodes[nodeId].GetComponent<TRS>();
 
             int boneCount = br.ReadInt32();
-            mr.bones = new Transform[boneCount];
+            mr.Bones = new Entity[boneCount];
             for (int b = 0; b < boneCount; b++)
             {
-                mr.bones[b] = nodeTransforms[br.ReadInt32()];
+                mr.Bones[b] = nodes[br.ReadInt32()];
             }
 
             //mrTrans.entity.Add(mr);
         }
-
-
+        
         br.Close();
 
         if (skinMeshCount > 0)
@@ -295,14 +292,13 @@ public static class Assets
             // Skeleton component
             Skeleton skeleton = new Skeleton()
             {
-                bones = skeletonBones
+                Bones = skeletonBones
             };
 
-            Transform root = nodeTransforms[0];
-            //root.entity.Add(skeleton);
+            nodes[0].AddComponent(skeleton);
         }
 
-        return nodeTransforms[0];
+        return nodes[0];
     }
 
     // Serialization - For scene

@@ -25,7 +25,7 @@ namespace ABEngine.ABERuntime
             if(spriteTransformBuffer != null)
                 return;
             
-            spriteTransformBuffer = wgil.CreateBuffer(64 * 300000, BufferUsages.STORAGE | BufferUsages.COPY_DST)
+            spriteTransformBuffer = wgil.CreateBuffer(64 * 400000, BufferUsages.STORAGE | BufferUsages.COPY_DST)
                 .SetManualDispose(true);
 
             BindGroupDescriptor spriteFrameBGDesc = new BindGroupDescriptor()
@@ -65,10 +65,9 @@ namespace ABEngine.ABERuntime
             foreach (var (sprites, transforms, entities) in spriteRenderQuery.Chunks)
             {
                 wgil.WriteBuffer(spriteTransformBuffer, transforms.Span, totalCount * 64, entities.Length * 64);
-                
-                for (int n = 0; n < entities.Length; n++)
+
+                foreach (ref Sprite sprite in sprites.Span)
                 {
-                    ref Sprite sprite = ref sprites[n];
                     if (sprite.batch == null)
                     {
                         layers[sprite.renderLayerIndex].AddSprite(ref sprite);
@@ -77,12 +76,10 @@ namespace ABEngine.ABERuntime
                     totalCount++;
                     if (sprite.bvhGroup.IsCulled)
                     {
-                        //Console.WriteLine("Cull");
-                        //sprite.batch.UpdateSpriteTest(sprite, 0);
                         continue;
                     }
  
-                    sprite.batch.UpdateSprite(sprite, totalCount - 1);
+                    sprite.batch.UpdateSprite(ref sprite, totalCount - 1);
                 }
             }
             
@@ -104,6 +101,8 @@ namespace ABEngine.ABERuntime
             public int layerID { get; set; }
             private Dictionary<(Texture2D, Texture2D), SpriteTextureGroup> textureGroups;
             private List<SpriteBatch> batches;
+
+            public int BatchCount => batches.Count;
 
             // GPU
             private Buffer layerBuffer;

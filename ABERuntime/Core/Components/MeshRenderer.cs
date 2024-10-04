@@ -14,7 +14,7 @@ namespace ABEngine.ABERuntime.Components
         private PipelineMaterial _material;
         private Mesh _mesh;
 
-        public PipelineMaterial material
+        public PipelineMaterial Material
         {
             get => _material;
             set
@@ -24,7 +24,7 @@ namespace ABEngine.ABERuntime.Components
             }
         }
         
-        public Mesh mesh
+        public Mesh Mesh
         {
             get => _mesh;
             set
@@ -60,8 +60,8 @@ namespace ABEngine.ABERuntime.Components
         {
             JsonObjectBuilder jObj = new JsonObjectBuilder(200);
             jObj.Put("type", GetType().ToString());
-            jObj.Put("Mesh", Assets.GetAssetSceneIndex(this.mesh.fPathHash));
-            jObj.Put("Material", Assets.GetAssetSceneIndex(this.material.fPathHash));
+            jObj.Put("Mesh", Assets.GetAssetSceneIndex(this.Mesh.fPathHash));
+            jObj.Put("Material", Assets.GetAssetSceneIndex(this.Material.fPathHash));
 
             return jObj.Build();
         }
@@ -80,8 +80,8 @@ namespace ABEngine.ABERuntime.Components
             if (material == null)
                 material = Graphics.GetUber3D();
 
-            this.mesh = mesh;
-            this.material = material;
+            this.Mesh = mesh;
+            this.Material = material;
         }
 
         public void SetReferences()
@@ -93,8 +93,8 @@ namespace ABEngine.ABERuntime.Components
         {
             MeshRenderer copyMR = new MeshRenderer()
             {
-                material = this.material,
-                mesh = this.mesh
+                Material = this.Material,
+                Mesh = this.Mesh
             };
 
             return copyMR;

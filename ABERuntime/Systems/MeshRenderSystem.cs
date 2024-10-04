@@ -57,10 +57,10 @@ namespace ABEngine.ABERuntime
 
         public void AddMesh(ref MeshRenderer mr)
         {
-            if (!meshBatches.TryGetValue(mr.mesh, out MeshBatch batch))
+            if (!meshBatches.TryGetValue(mr.Mesh, out MeshBatch batch))
             {
-                batch = new MeshBatch(mr.mesh, mr.material);
-                meshBatches.Add(mr.mesh, batch);
+                batch = new MeshBatch(mr.Mesh, mr.Material);
+                meshBatches.Add(mr.Mesh, batch);
             }
                 
             mr.batch = batch;
@@ -133,10 +133,10 @@ namespace ABEngine.ABERuntime
         protected override void StartScene()
         {
             meshRenderQuery.ForEachEntity((ref MeshRenderer mr, ref WorldTransform Transform, Entity entity) => {
-                if (!opaqueRenders.TryGetValue(mr.material, out MaterialGroup group))
+                if (!opaqueRenders.TryGetValue(mr.Material, out MaterialGroup group))
                 {
-                    group = new MaterialGroup(mr.material);
-                    opaqueRenders.Add(mr.material, group);
+                    group = new MaterialGroup(mr.Material);
+                    opaqueRenders.Add(mr.Material, group);
                 }
                         
                 group.AddMesh(ref mr);
@@ -156,7 +156,6 @@ namespace ABEngine.ABERuntime
             });*/
         }
         
-        internal DrawData[] groupDrawDatas = new DrawData[100];
         internal SortedDictionary<PipelineMaterial, MaterialGroup> opaqueRenders = new(new MaterialKeyComparer());
         
         private readonly ArchetypeQuery<MeshRenderer, WorldTransform> meshRenderQuery = Game.GameWorld.Query<MeshRenderer, WorldTransform>();
@@ -172,10 +171,10 @@ namespace ABEngine.ABERuntime
                     ref MeshRenderer mr = ref meshRenderers[n];
                     if (mr.batch == null)
                     {
-                        if (!opaqueRenders.TryGetValue(mr.material, out MaterialGroup group))
+                        if (!opaqueRenders.TryGetValue(mr.Material, out MaterialGroup group))
                         {
-                            group = new MaterialGroup(mr.material);
-                            opaqueRenders.Add(mr.material, group);
+                            group = new MaterialGroup(mr.Material);
+                            opaqueRenders.Add(mr.Material, group);
                         }
                         
                         group.AddMesh(ref mr);
@@ -260,18 +259,9 @@ namespace ABEngine.ABERuntime
             if (renderLayer == 0)
                 Render(pass);
         }
-
-        //public void LateRender(int renderLayer)
-        //{
-        //    if (renderLayer == 0 && lateRenderOrder.Count > 0)
-        //        LateRender();
-        //}
-
+        
         public override void Render(RenderPass pass)
         {
-            // TODO Render layers
-            // TODO Pipeline batching
-
             // Bind all matrices
             pass.SetBindGroup(0, sharedFrameSet);
             

@@ -77,6 +77,9 @@ namespace ABEngine.ABERuntime.Rendering
 
         internal void InitPostProcess()
         {
+	        if (_init)
+		        return;
+	        
             _init = true;
 
             if (fsLayout == null)
@@ -93,6 +96,8 @@ namespace ABEngine.ABERuntime.Rendering
         {
             if(BloomEnabled)
                 DestroyBloom();
+            
+            _init = false;
         }
 
         internal void RecreateBloom()

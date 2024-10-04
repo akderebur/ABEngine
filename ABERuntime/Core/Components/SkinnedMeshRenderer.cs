@@ -1,28 +1,31 @@
 ﻿using ABEngine.ABERuntime.Core.Assets;
+using ABEngine.ABERuntime.Rendering;
+using Friflo.Engine.ECS;
 using Halak;
 
 namespace ABEngine.ABERuntime.Components
 {
-    public class SkinnedMeshRenderer : JSerializable, IRenderer
+    public struct SkinnedMeshRenderer : JSerializable, IRenderer, IComponent
     {
-        public PipelineMaterial material { get; set; }
-        public Mesh mesh { get; set; }
+        public PipelineMaterial Material { get; set; }
+        public Mesh Mesh { get; set; }
 
-        public Transform[] bones { get; set; }
+        public Entity[] Bones = null;
 
         public SkinnedMeshRenderer()
         {
-            material = Graphics.GetUber3D();
+            Mesh = CubeModel.GetCubeMesh();
+            Material = Graphics.GetUber3D();
         }
 
         public SkinnedMeshRenderer(Mesh mesh) : this()
         {
-            this.mesh = mesh;
+            this.Mesh = mesh;
         }
 
         public SkinnedMeshRenderer(Mesh mesh, PipelineMaterial material)
         {
-            this.mesh = mesh;
+            this.Mesh = mesh;
 
             bool skinSupport = material.pipelineAsset.HasFeature(MaterialFeature.Skinning);
             if(!skinSupport)
@@ -37,17 +40,15 @@ namespace ABEngine.ABERuntime.Components
                         material.ChangePipeline(skinVariant);
                 }
             }
-            this.material = material;
-
+            this.Material = material;
         }
-
-      
+        
         public JValue Serialize()
         {
             JsonObjectBuilder jObj = new JsonObjectBuilder(200);
             jObj.Put("type", GetType().ToString());
-            jObj.Put("Mesh", Assets.GetAssetSceneIndex(this.mesh.fPathHash));
-            jObj.Put("Material", Assets.GetAssetSceneIndex(this.material.fPathHash));
+            jObj.Put("Mesh", Assets.GetAssetSceneIndex(this.Mesh.fPathHash));
+            jObj.Put("Material", Assets.GetAssetSceneIndex(this.Material.fPathHash));
 
             return jObj.Build();
         }
@@ -66,8 +67,8 @@ namespace ABEngine.ABERuntime.Components
             if (material == null)
                 material = Graphics.GetUber3D();
 
-            this.mesh = mesh;
-            this.material = material;
+            this.Mesh = mesh;
+            this.Material = material;
         }
 
         public void SetReferences()
@@ -79,8 +80,8 @@ namespace ABEngine.ABERuntime.Components
         {
             MeshRenderer copyMR = new MeshRenderer()
             {
-                material = this.material,
-                mesh = this.mesh
+                Material = this.Material,
+                Mesh = this.Mesh
             };
 
             return copyMR;

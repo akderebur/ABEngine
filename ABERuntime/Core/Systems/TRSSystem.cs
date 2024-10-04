@@ -17,7 +17,38 @@ public class TRSSystem : BaseSystem
     private static WorldTransform transformID = new WorldTransform() { matrix = Matrix4x4.Identity };
     public override void Update(float gameTime, float deltaTime)
     {
-        flatQuery.ForEachEntity(ExecuteFlat);
+        //flatQuery.ForEachEntity(ExecuteFlat);
+        foreach (var (transforms, matrices, entities) in flatQuery.Chunks)
+        {
+            int index = 0;
+            var matricesSpan = matrices.AsSpanMatrix4x4();
+            
+            foreach (ref var transform in transforms.Span)
+            {
+                if (transform.IsDirty)
+                {
+                    ref var matrix = ref matricesSpan[index];
+                    if (transform.IsRecalc)
+                    {
+                        matrix = Matrix4x4.CreateScale(transform.Scale) *
+                                                Matrix4x4.CreateFromQuaternion(transform.Rotation) *
+                                                Matrix4x4.CreateTranslation(transform.Position);
+                    }
+                    else
+                    {
+                        Vector3 position = transform.Position;
+                        matrix.M41 = position.X;
+                        matrix.M42 = position.Y;
+                        matrix.M43 = position.Z;
+                    }
+
+                    transform.ResetDirty();
+                }
+                
+                index++;
+            }
+        }
+        
         rootQuery.ForEachEntity(ExecuteRoot);
     }
 

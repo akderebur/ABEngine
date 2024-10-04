@@ -4,8 +4,8 @@ namespace ABEngine.ABERuntime.Components
 {
 	public interface IRenderer
 	{
-		public Mesh mesh { get; set; }
-		public PipelineMaterial material { get; set; }
+		public Mesh Mesh { get; set; }
+		public PipelineMaterial Material { get; set; }
 	}
 }
 
